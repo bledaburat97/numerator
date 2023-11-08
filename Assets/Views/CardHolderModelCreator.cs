@@ -44,9 +44,9 @@ namespace Views
             }
             localPositionList = localPositionList.GetLocalPositionList(numberOfCardHolders, spacing, cardHolderSize);
 
-            foreach (Vector2 localPosition in localPositionList)
+            for (int i = 0; i < localPositionList.Count; i++)
             {
-                cardHolderModelList.Add(new CardHolderModel(){localPosition = localPosition, size = cardHolderSize});
+                cardHolderModelList.Add(new CardHolderModel(){index = i, localPosition = localPositionList[i], size = cardHolderSize});
             }
             return cardHolderModelList;
         }

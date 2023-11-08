@@ -8,12 +8,13 @@ namespace Views
         private ICardItemView _view;
         private CardItemData _cardItemData;
         private ICardHolderController _currentCardHolderController;
+        private IBoardController _boardController;
         
-        public void Initialize(ICardItemView cardItemView, CardItemData cardItemData)
+        public void Initialize(ICardItemView cardItemView, CardItemData cardItemData, IBoardController boardController)
         {
             _view = cardItemView;
             _cardItemData = cardItemData;
-            
+            _boardController = boardController;
             foreach (ICardLetterController cardLetterController in cardItemData.cardLetterControllers)
             {
                 cardLetterController.SetParent(_view.GetCardLetterHolderTransform());
@@ -51,6 +52,7 @@ namespace Views
                 _view.SetSize(boardCardHolderView.GetRectTransform().sizeDelta);
                 SetAdditionalInfoButtonsStatus(false);
                 _currentCardHolderController.SetAvailability(false);
+                _boardController.SetNumberOfCard(_currentCardHolderController.GetIndex(), _cardItemData.cardNumber);
             }
             else
             {
@@ -66,6 +68,7 @@ namespace Views
             //TODO: SetLastBoardCardHolderController availability to true;
             if (_currentCardHolderController != null)
             {
+                _boardController.SetNumberOfCard(_currentCardHolderController.GetIndex(), 0);
                 _currentCardHolderController.SetAvailability(true);
             }
 
@@ -91,7 +94,7 @@ namespace Views
 
     public interface ICardItemController
     {
-        void Initialize(ICardItemView cardItemView, CardItemData cardItemData);
+        void Initialize(ICardItemView cardItemView, CardItemData cardItemData, IBoardController boardController);
     }
 
     public class CardItemModel

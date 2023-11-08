@@ -25,7 +25,7 @@ namespace Views
 
         public void SetParent(RectTransform parent)
         {
-            transform.parent = parent;
+            transform.SetParent(parent);
         }
         
         

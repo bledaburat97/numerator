@@ -11,10 +11,15 @@ namespace Views
         
         [SerializeField] private CardHolderView cardHolderPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
+
+        private IBoardController _boardController;
+        private IResultChecker _resultChecker;
         
         void Start()
         {
             List<ICardHolderView> cardHolderViewList = CreateCardHolders();
+            _resultChecker = new ResultChecker();
+            _boardController = new BoardController(_resultChecker, 3); //TODO: get level data
             CreateCardItemsData(cardHolderViewList);
         }
 
@@ -54,7 +59,7 @@ namespace Views
             CardItemControllerFactory cardItemControllerFactory = new CardItemControllerFactory();
             ICardItemView cardItemView = cardItemViewFactory.Spawn(cardItemData.parent, cardItemPrefab);
             ICardItemController cardItemController = cardItemControllerFactory.Spawn();
-            cardItemController.Initialize(cardItemView, cardItemData);
+            cardItemController.Initialize(cardItemView, cardItemData, _boardController);
         }
 
         private List<ICardLetterController> CreateCardLetterButtons()

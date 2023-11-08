@@ -34,7 +34,7 @@ namespace Views
             _selectedBoardCardHolderIndex = GetClosestCardHolderIndex(cardItemPosition);
             if (_selectedBoardCardHolderIndex != -1)
             {
-                Debug.Log("aaaa");
+                //TODO: hiighlight.
             }
         }
         

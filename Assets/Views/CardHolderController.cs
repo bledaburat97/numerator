@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Dynamic;
+using UnityEngine;
 
 namespace Views
 {
@@ -6,11 +7,18 @@ namespace Views
     {
         private bool _isAvailable;
         private ICardHolderView _view;
+        private int _index;
         public void Initialize(ICardHolderView cardHolderView, CardHolderModel model)
         {
             _view = cardHolderView;
             SetAvailability(true);
+            _index = model.index;
             _view.Init(model);
+        }
+
+        public int GetIndex()
+        {
+            return _index;
         }
 
         public ICardHolderView GetView()
@@ -35,10 +43,12 @@ namespace Views
         ICardHolderView GetView();
         bool IsAvailable();
         void SetAvailability(bool isAvailable);
+        int GetIndex();
     }
     
     public class CardHolderModel
     {
+        public int index;
         public Vector3 localPosition;
         public Vector2 size;
     }
