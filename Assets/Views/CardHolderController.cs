@@ -11,7 +11,6 @@ namespace Views
         public void Initialize(ICardHolderView cardHolderView, CardHolderModel model)
         {
             _view = cardHolderView;
-            SetAvailability(true);
             _index = model.index;
             _view.Init(model);
         }
@@ -25,24 +24,12 @@ namespace Views
         {
             return _view;
         }
-
-        public bool IsAvailable()
-        {
-            return _isAvailable;
-        }
-
-        public void SetAvailability(bool isAvailable)
-        {
-            _isAvailable = isAvailable;
-        }
     }
     
     public interface ICardHolderController
     {
         void Initialize(ICardHolderView cardHolderView, CardHolderModel model);
         ICardHolderView GetView();
-        bool IsAvailable();
-        void SetAvailability(bool isAvailable);
         int GetIndex();
     }
     

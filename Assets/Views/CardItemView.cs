@@ -11,6 +11,7 @@ namespace Views
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private TMP_Text cardNumberText;
         [SerializeField] private Image cardImage;
+        [SerializeField] private Image cardFrame;
         [SerializeField] private RectTransform cardLetterHolder;
         [SerializeField] private RectTransform existenceButtonHolder;
         
@@ -22,6 +23,7 @@ namespace Views
         {
             InitPosition();
             SetCardNumberText(cardNumber);
+            SetFrameStatus(false);
         }
 
         public RectTransform GetCardLetterHolderTransform()
@@ -99,6 +101,11 @@ namespace Views
         {
             rectTransform.anchoredPosition = localPosition;
         }
+
+        public void SetFrameStatus(bool status)
+        {
+            cardFrame.gameObject.SetActive(status);
+        }
     }
 
     public interface ICardItemView
@@ -111,12 +118,10 @@ namespace Views
         void SetOnDrag(Action<PointerEventData> onDrag);
         void SetOnPointerDown(Action<PointerEventData> onPointerDown);
         void SetOnPointerUp(Action<PointerEventData> onPointerUp);
-        void OnDrag(PointerEventData eventData);
-        void OnPointerDown(PointerEventData eventData);
-        void OnPointerUp(PointerEventData eventData);
         void SetParent(RectTransform parentTransform);
         RectTransform GetParent();
         void SetAnchoredPosition(Vector2 localPosition);
+        void SetFrameStatus(bool status);
 
     }
 }

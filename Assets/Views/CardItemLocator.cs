@@ -1,18 +1,19 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Views
 {
     public class CardItemLocator
     {
+        private Dictionary<ICardHolderController, int> _holderToCardIndexMapping = new Dictionary<ICardHolderController, int>();
+        private int _activeCardIndex;
+        private int _probableCardHolderIndex;
         private static CardItemLocator _instance;
 
-        private List<ICardHolderController> _boardCardHolderControllerList = new List<ICardHolderController>();
-        private int _selectedBoardCardHolderIndex = -1;
-        
-        public CardItemLocator()
-        {
-        }
+        //private List<ICardHolderController> _boardCardHolderControllerList = new List<ICardHolderController>();
+        //private int _selectedBoardCardHolderIndex = -1;
+        private IBoardController _boardController;
         
         public static CardItemLocator GetInstance()
         {
@@ -24,31 +25,65 @@ namespace Views
             return _instance;
         }
 
-        public void OnBoardCreated(List<ICardHolderController> boardCardHolderControllerList)
+        public void OnBoardCreated(List<ICardHolderController> boardCardHolderControllerList, IBoardController boardController)
         {
-            _boardCardHolderControllerList = boardCardHolderControllerList;
+            foreach (ICardHolderController boardHolderController in boardCardHolderControllerList)
+            {
+                _holderToCardIndexMapping.Add(boardHolderController, -1);
+            }
+
+            _boardController = boardController;
+            _activeCardIndex = -1;
+            _probableCardHolderIndex = -1;
         }
 
-        public void OnDrag(Vector3 cardItemPosition)
+        public void OnDragStart(int cardIndex)
         {
-            _selectedBoardCardHolderIndex = GetClosestCardHolderIndex(cardItemPosition);
-            if (_selectedBoardCardHolderIndex != -1)
+            if (_holderToCardIndexMapping.ContainsValue(cardIndex))
             {
-                //TODO: hiighlight.
+                ICardHolderController cardHolderController = 
+                    _holderToCardIndexMapping.FirstOrDefault(x => x.Value == cardIndex).Key;
+                _boardController.SetNumberOfCard(cardHolderController.GetIndex(), 0);
+                _holderToCardIndexMapping[cardHolderController] = -1;
             }
         }
-        
-        public ICardHolderController GetSelectedBoardCardHolderController()
+
+        public void OnDragContinue(Vector2 pos, int cardIndex)
         {
-            if (_selectedBoardCardHolderIndex < 0) return null;
-            return _boardCardHolderControllerList[_selectedBoardCardHolderIndex];
+            _probableCardHolderIndex = GetClosestCardHolderIndex(pos);
+            if (_probableCardHolderIndex != -1)
+            {
+                _activeCardIndex = cardIndex;
+                //TODO: highlight.
+            }
+            else
+            {
+                _activeCardIndex = -1;
+            }
         }
 
-        private int GetClosestCardHolderIndex(Vector3 cardItemPosition)
+        public RectTransform OnDragComplete(int cardIndex)
         {
-            for (int i = 0; i < _boardCardHolderControllerList.Count; i++)
+            if (_activeCardIndex == cardIndex)
             {
-                ICardHolderView view = _boardCardHolderControllerList[i].GetView();
+                ICardHolderController cardHolderController = _holderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
+                _boardController.SetNumberOfCard(_probableCardHolderIndex, cardIndex + 1);
+                _holderToCardIndexMapping[cardHolderController] = cardIndex;
+                return cardHolderController.GetView().GetRectTransform();
+            }
+            return null;
+        }
+
+        private int GetClosestCardHolderIndex(Vector2 cardItemPosition)
+        {
+            for (int i = 0; i < _holderToCardIndexMapping.Count; i++)
+            {
+                ICardHolderController holderController = _holderToCardIndexMapping.Keys.ElementAt(i);
+                if (_holderToCardIndexMapping[holderController] != -1)
+                {
+                    continue;
+                }
+                ICardHolderView view = holderController.GetView();
                 Vector2 position = view.GetPosition();
                 Vector2 size = view.GetSize();
                 if (view.GetPosition().x + view.GetSize().x / 2 > cardItemPosition.x &&
@@ -57,10 +92,7 @@ namespace Views
                     if (view.GetPosition().y + view.GetSize().y / 2 > cardItemPosition.y &&
                         view.GetPosition().y - view.GetSize().y / 2 < cardItemPosition.y)
                     {
-                        if (_boardCardHolderControllerList[i].IsAvailable())
-                        {
-                            return i;
-                        }
+                        return i;
                     }
                 }
             }

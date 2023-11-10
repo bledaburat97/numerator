@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 namespace Views
@@ -7,14 +9,36 @@ namespace Views
     {
         private ICardItemView _view;
         private CardItemData _cardItemData;
-        private ICardHolderController _currentCardHolderController;
-        private IBoardController _boardController;
+        private ISelectionController _selectionController;
+        private bool _isDragStart;
+        private bool _isAlreadySelected;
+        private Action<int> _onDragStart;
+        private Action<Vector2, int> _onDragContinue;
+        private Func<int, RectTransform> _onDragComplete;
+        private ParentType _parentType;
+
+        public void SetOnDragStart(Action<int> action)
+        {
+            _onDragStart += action;
+        }
+
+        public void SetOnDragContinue(Action<Vector2, int> action)
+        {
+            _onDragContinue += action;
+        }
+
+        public void SetOnDragComplete(Func<int, RectTransform> func)
+        {
+            _onDragComplete += func;
+        }
         
-        public void Initialize(ICardItemView cardItemView, CardItemData cardItemData, IBoardController boardController)
+        public void Initialize(ICardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController)
         {
             _view = cardItemView;
             _cardItemData = cardItemData;
-            _boardController = boardController;
+            _selectionController = selectionController;
+            _selectionController.deselectCards += DeselectCard;
+            _parentType = ParentType.InitialHolder;
             foreach (ICardLetterController cardLetterController in cardItemData.cardLetterControllers)
             {
                 cardLetterController.SetParent(_view.GetCardLetterHolderTransform());
@@ -34,48 +58,69 @@ namespace Views
 
         private void OnDrag(PointerEventData data)
         {
+            if (!_isDragStart)
+            {
+                _onDragStart(_cardItemData.cardIndex);
+                _view.SetParent(_cardItemData.tempParent);
+                _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
+                SetAdditionalInfoButtonsStatus(false);
+            }
+
+            _isDragStart = true;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_view.GetParent(), data.position,
                 null, out Vector2 localPosition);
-            _view.SetAnchoredPosition(localPosition); 
-            CardItemLocator.GetInstance().OnDrag(data.position);
+            _view.SetAnchoredPosition(localPosition);
+            _onDragContinue(data.position, _cardItemData.cardIndex);
         }
         
         private void OnPointerUp(PointerEventData data)
         {
-            _currentCardHolderController = CardItemLocator.GetInstance().GetSelectedBoardCardHolderController();
-            
-            if (_currentCardHolderController != null)
+            if (!_isDragStart)
             {
-                ICardHolderView boardCardHolderView = _currentCardHolderController.GetView();
-                _view.SetParent(boardCardHolderView.GetRectTransform());
-                _view.InitPosition();
-                _view.SetSize(boardCardHolderView.GetRectTransform().sizeDelta);
-                SetAdditionalInfoButtonsStatus(false);
-                _currentCardHolderController.SetAvailability(false);
-                _boardController.SetNumberOfCard(_currentCardHolderController.GetIndex(), _cardItemData.cardNumber);
+                if (!_isAlreadySelected && _parentType == ParentType.InitialHolder)
+                {
+                    _selectionController.SetSelectionState(_cardItemData.cardIndex, true);
+                    SetFrameStatus(true);
+                }
             }
             else
             {
-                _view.SetParent(_cardItemData.parent);
+                RectTransform cardHolderTransform = _onDragComplete(_cardItemData.cardIndex);
+                RectTransform parentTransform;
+                if (cardHolderTransform != null)
+                {
+                    SetAdditionalInfoButtonsStatus(false);
+                    parentTransform = cardHolderTransform;
+                    _parentType = ParentType.BoardCardHolder;
+                }
+                else
+                {
+                    SetAdditionalInfoButtonsStatus(true);
+                    parentTransform = _cardItemData.parent;
+                    _parentType = ParentType.InitialHolder;
+                }
+                _view.SetParent(parentTransform);
                 _view.InitPosition();
-                _view.SetSize(_cardItemData.parent.sizeDelta);
-                SetAdditionalInfoButtonsStatus(true);
+                _view.SetSize(parentTransform.sizeDelta);
             }
         }
 
         private void OnPointerDown(PointerEventData data)
         {
-            //TODO: SetLastBoardCardHolderController availability to true;
-            if (_currentCardHolderController != null)
-            {
-                _boardController.SetNumberOfCard(_currentCardHolderController.GetIndex(), 0);
-                _currentCardHolderController.SetAvailability(true);
-            }
+            _isAlreadySelected = _selectionController.GetSelectionState(_cardItemData.cardIndex);
+            _selectionController.DeselectAll();
+            
+            _isDragStart = false;
+        }
 
-            _currentCardHolderController = null;
-            _view.SetParent(_cardItemData.tempParent);
-            _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
-            SetAdditionalInfoButtonsStatus(false);
+        private void DeselectCard(object sender, EventArgs args)
+        {
+            SetFrameStatus(false);
+        }
+
+        private void SetFrameStatus(bool status)
+        {
+            _view.SetFrameStatus(status);
         }
 
         private void SetAdditionalInfoButtonsStatus(bool status)
@@ -94,7 +139,10 @@ namespace Views
 
     public interface ICardItemController
     {
-        void Initialize(ICardItemView cardItemView, CardItemData cardItemData, IBoardController boardController);
+        void Initialize(ICardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController);
+        void SetOnDragStart(Action<int> action);
+        void SetOnDragContinue(Action<Vector2, int> action);
+        void SetOnDragComplete(Func<int, RectTransform> func);
     }
 
     public class CardItemModel
@@ -102,5 +150,11 @@ namespace Views
         public int cardNumber;
         public List<ICardLetterController> cardLetterControllerList = new List<ICardLetterController>(); 
         public List<IExistenceButtonController> existenceButtonControllerList = new List<IExistenceButtonController>();
+    }
+
+    public enum ParentType
+    {
+        InitialHolder,
+        BoardCardHolder
     }
 }

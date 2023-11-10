@@ -205,6 +205,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cardItemPrefab: {fileID: 8613591124439939394, guid: eef86066a137aa64a93db3892ebd31ab, type: 3}
+  cardLetterViewPrefab: {fileID: 4280299877206718819, guid: c631ae9e591e3904181e740f084ff183, type: 3}
+  existenceButtonViewPrefab: {fileID: 1792437931676048877, guid: 928780364d414184691902de3aea892a, type: 3}
   cardHolderPrefab: {fileID: 5807579108651850580, guid: 836b2deab55315a4da13c965777eef4d, type: 3}
   tempParentRectTransform: {fileID: 1317596838}
 --- !u!1 &503385417

@@ -11,15 +11,13 @@ namespace Views
         
         [SerializeField] private CardHolderView cardHolderPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
-
-        private IBoardController _boardController;
-        private IResultChecker _resultChecker;
+        
+        private ISelectionController _selectionController;
         
         void Start()
         {
             List<ICardHolderView> cardHolderViewList = CreateCardHolders();
-            _resultChecker = new ResultChecker();
-            _boardController = new BoardController(_resultChecker, 3); //TODO: get level data
+            _selectionController = new SelectionController(5); //TODO: get level data
             CreateCardItemsData(cardHolderViewList);
         }
 
@@ -46,6 +44,7 @@ namespace Views
                     {parent = cardHolderViewList[i].GetRectTransform(),
                     tempParent = tempParentRectTransform,
                     cardNumber = i + 1,
+                    cardIndex = i,
                     cardLetterControllers = CreateCardLetterButtons(),
                     existenceButtonControllers = CreateExistenceButtons()
                     };
@@ -59,7 +58,10 @@ namespace Views
             CardItemControllerFactory cardItemControllerFactory = new CardItemControllerFactory();
             ICardItemView cardItemView = cardItemViewFactory.Spawn(cardItemData.parent, cardItemPrefab);
             ICardItemController cardItemController = cardItemControllerFactory.Spawn();
-            cardItemController.Initialize(cardItemView, cardItemData, _boardController);
+            cardItemController.Initialize(cardItemView, cardItemData, _selectionController);
+            cardItemController.SetOnDragStart(CardItemLocator.GetInstance().OnDragStart);
+            cardItemController.SetOnDragContinue(CardItemLocator.GetInstance().OnDragContinue);
+            cardItemController.SetOnDragComplete(CardItemLocator.GetInstance().OnDragComplete);
         }
 
         private List<ICardLetterController> CreateCardLetterButtons()
@@ -108,6 +110,7 @@ namespace Views
         public RectTransform parent;
         public RectTransform tempParent;
         public int cardNumber;
+        public int cardIndex;
         public List<ICardLetterController> cardLetterControllers;
         public List<IExistenceButtonController> existenceButtonControllers;
     }

@@ -6,9 +6,13 @@ namespace Views
     public class BoardCreator : MonoBehaviour
     {
         [SerializeField] private CardHolderView boardCardHolderPrefab;
+        private IBoardController _boardController;
+        private IResultChecker _resultChecker;
 
         public void Start()
         {
+            _resultChecker = new ResultChecker();
+            _boardController = new BoardController(_resultChecker, 3); //TODO: get level data
             CreateBoardCardHolders();
         }
 
@@ -25,7 +29,7 @@ namespace Views
                 boardCardHolderControllerList.Add(cardHolderController);
             }
             
-            CardItemLocator.GetInstance().OnBoardCreated(boardCardHolderControllerList);
+            CardItemLocator.GetInstance().OnBoardCreated(boardCardHolderControllerList, _boardController);
         }
     }
 }
