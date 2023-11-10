@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 namespace Views
@@ -37,7 +36,7 @@ namespace Views
             _view = cardItemView;
             _cardItemData = cardItemData;
             _selectionController = selectionController;
-            _selectionController.deselectCards += DeselectCard;
+            _selectionController.SetOnDeselectCards(DeselectCard);
             _parentType = ParentType.InitialHolder;
             foreach (ICardLetterController cardLetterController in cardItemData.cardLetterControllers)
             {
@@ -113,7 +112,7 @@ namespace Views
             _isDragStart = false;
         }
 
-        private void DeselectCard(object sender, EventArgs args)
+        private void DeselectCard()
         {
             SetFrameStatus(false);
         }

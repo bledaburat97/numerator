@@ -6,6 +6,8 @@ namespace Views
     public class SelectionController : ISelectionController
     {
         private Dictionary<int, bool> _selectionStates;
+        private Action _onDeSelectCards;
+
         public SelectionController(int numOfDefaultCards)
         {
             _selectionStates = new Dictionary<int, bool>();
@@ -32,15 +34,13 @@ namespace Views
                 SetSelectionState(i, false);
             }
 
-            EventHandler handler = deselectCards;
-            if (handler != null)
-            {
-                handler(this,null);
-            }
+            _onDeSelectCards();
         }
 
-        public event EventHandler deselectCards;
-
+        public void SetOnDeselectCards(Action action)
+        {
+            _onDeSelectCards += action;
+        }
     }
     
     public interface ISelectionController
@@ -48,7 +48,7 @@ namespace Views
         void SetSelectionState(int index, bool status);
         bool GetSelectionState(int index);
         void DeselectAll();
-        event EventHandler deselectCards;
+        void SetOnDeselectCards(Action action);
     }
     
 }
