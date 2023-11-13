@@ -123,10 +123,16 @@ namespace Scripts
         {
             _view.SetFrameStatus(status);
         }
+
+        public void SetColor(Color color)
+        {
+            _view.SetColor(color);
+        }
     }
 
     public interface ICardItemController
     {
         void Initialize(ICardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
+        void SetColor(Color color);
     }
 }

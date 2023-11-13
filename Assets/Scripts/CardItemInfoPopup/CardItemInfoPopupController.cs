@@ -14,11 +14,10 @@ namespace Scripts
             { ProbabilityType.Certain, ProbabilityType.Probable, ProbabilityType.NotExisted }; //TODO set somewhere else.
 
         private int _activeCardIndex;
-        public void Initialize(ICardItemInfoPopupView view)
+        public void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager)
         {
             _view = view;
-            _cardItemInfoManager = new CardItemInfoManager();
-            _cardItemInfoManager.Init(CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Initial).Count, CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board).Count);
+            _cardItemInfoManager = cardItemInfoManager;
             CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory = new CardHolderIndicatorButtonViewFactory();
             _view.Init(cardHolderIndicatorButtonViewFactory);
             _cardHolderIndicatorButtonControllers = new List<ICardHolderIndicatorButtonController>();
@@ -114,7 +113,7 @@ namespace Scripts
     
     public interface ICardItemInfoPopupController
     {
-        void Initialize(ICardItemInfoPopupView view);
+        void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager);
         void SetCardItemInfoPopupStatus(bool status, int cardIndex);
     }
     
@@ -125,3 +124,4 @@ namespace Scripts
         public Action onClickAction;
     }
 }
+

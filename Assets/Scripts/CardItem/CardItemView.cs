@@ -40,7 +40,7 @@ namespace Scripts
             cardNumberText.text = number.ToString();
         }
 
-        private void SetColor(Color color)
+        public void SetColor(Color color)
         {
             cardImage.color = color;
         }
@@ -108,6 +108,6 @@ namespace Scripts
         RectTransform GetParent();
         void SetAnchoredPosition(Vector2 localPosition);
         void SetFrameStatus(bool status);
-
+        void SetColor(Color color);
     }
 }

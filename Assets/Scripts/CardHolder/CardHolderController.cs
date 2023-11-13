@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -7,11 +8,32 @@ namespace Scripts
         private bool _isAvailable;
         private ICardHolderView _view;
         private int _index;
+        private CardHolderModel _model;
+        private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
         public void Initialize(ICardHolderView cardHolderView, CardHolderModel model)
         {
             _view = cardHolderView;
+            _model = model;
             _index = model.index;
-            _view.Init(model);
+            _view.Init(model, new PossibleHolderIndicatorViewFactory());
+            CreatePossibleHolderIndicators();
+        }
+        
+        private void CreatePossibleHolderIndicators()
+        {
+            PossibleHolderIndicatorControllerFactory holderIndicatorControllerFactory = new PossibleHolderIndicatorControllerFactory();
+            for (int i = 0; i < _model.possibleHolderIndicatorLocalPositions.Count; i++)
+            {
+                IPossibleHolderIndicatorController holderIndicatorController = holderIndicatorControllerFactory.Spawn();
+                IPossibleHolderIndicatorView possibleHolderIndicatorView = _view.CreatePossibleHolderIndicatorView();
+                
+                holderIndicatorController.Initialize(possibleHolderIndicatorView, new PossibleHolderIndicatorModel()
+                {
+                    text = ConstantValues.HOLDER_ID_LIST[i],
+                    localPosition = _model.possibleHolderIndicatorLocalPositions[i]
+                });
+                _possibleHolderIndicatorControllerList.Add(holderIndicatorController);
+            }
         }
 
         public int GetIndex()
@@ -23,6 +45,17 @@ namespace Scripts
         {
             return _view;
         }
+
+        public void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList)
+        {
+            for (int i = 0; i < _possibleHolderIndicatorControllerList.Count; i++)
+            {
+                bool status;
+                if (activeHolderIndicatorIndexList.Contains(i)) status = true;
+                else status = false;
+                _possibleHolderIndicatorControllerList[i].SetStatus(status);
+            }
+        }
     }
     
     public interface ICardHolderController
@@ -30,6 +63,7 @@ namespace Scripts
         void Initialize(ICardHolderView cardHolderView, CardHolderModel model);
         ICardHolderView GetView();
         int GetIndex();
+        void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);
     }
     
     public class CardHolderModel
@@ -37,5 +71,6 @@ namespace Scripts
         public int index;
         public Vector3 localPosition;
         public Vector2 size;
+        public List<Vector2> possibleHolderIndicatorLocalPositions;
     }
 }

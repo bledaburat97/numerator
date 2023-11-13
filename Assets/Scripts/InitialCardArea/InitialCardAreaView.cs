@@ -7,7 +7,6 @@ namespace Scripts
         [SerializeField] private CardHolderView cardHolderPrefab;
         [SerializeField] private CardItemView cardItemPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
-
         private CardItemViewFactory _cardItemViewFactory;
         private CardHolderFactory _cardHolderFactory;
         

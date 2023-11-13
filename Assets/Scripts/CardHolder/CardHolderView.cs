@@ -5,12 +5,20 @@ namespace Scripts
     public class CardHolderView : MonoBehaviour, ICardHolderView
     {
         [SerializeField] private RectTransform rectTransform;
-        
-        public void Init(CardHolderModel model)
+        [SerializeField] private RectTransform possibleHolderIndicatorHolderTransform;
+        [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
+        private PossibleHolderIndicatorViewFactory _possibleHolderIndicatorViewFactory;
+        public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory)
         {
             transform.localScale = Vector3.one;
             transform.localPosition = model.localPosition;
             rectTransform.sizeDelta = model.size;
+            _possibleHolderIndicatorViewFactory = possibleHolderIndicatorViewFactory;
+        }
+        
+        public IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView()
+        {
+            return _possibleHolderIndicatorViewFactory.Spawn(possibleHolderIndicatorHolderTransform, possibleHolderIndicatorPrefab);
         }
 
         public Vector3 GetPosition()
@@ -31,9 +39,10 @@ namespace Scripts
 
     public interface ICardHolderView
     {
-        void Init(CardHolderModel model);
+        void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory);
         Vector3 GetPosition();
         Vector3 GetSize();
         RectTransform GetRectTransform();
+        IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
     }
 }

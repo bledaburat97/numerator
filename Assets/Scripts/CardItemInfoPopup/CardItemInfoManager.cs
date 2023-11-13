@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Scripts
 {
@@ -6,8 +7,9 @@ namespace Scripts
     {
         private Dictionary<int, CardItemInfo> cardIndexToCardItemInfosMapping = new Dictionary<int, CardItemInfo>();
         private int _numOfBoardCardHolders;
-        
-        public void Init(int numOfCards, int numOfBoardCardHolders)
+        public event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;
+        public event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
+        public void Initialize(int numOfCards, int numOfBoardCardHolders)
         {
             _numOfBoardCardHolders = numOfBoardCardHolders;
             for (int i = 0; i < numOfCards; i++)
@@ -47,7 +49,7 @@ namespace Scripts
                 {
                     if (cardItemInfo.probabilityType == ProbabilityType.Certain)
                     {
-                        cardItemInfo.probabilityType = ProbabilityType.Probable;
+                        cardItemInfo.probabilityType = ProbabilityType.Probable; 
                         cardItemInfo.possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes();
                     }
                     else if (cardItemInfo.probabilityType == ProbabilityType.Probable)
@@ -55,12 +57,19 @@ namespace Scripts
                         cardItemInfo.probabilityType = ProbabilityType.NotExisted;
                         cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
                     }
+                    ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
+                            { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex });
                 }
             }
             else
             {
                 cardItemInfo.possibleCardHolderIndicatorIndexes.Add(cardHolderIndicatorIndex);
             }
+            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
+            {
+                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
+                cardIndex = cardIndex
+            });
         }
 
         public void OnProbabilityButtonClicked(int cardIndex, ProbabilityType probabilityType)
@@ -70,6 +79,7 @@ namespace Scripts
             {
                 cardItemInfo.probabilityType = ProbabilityType.NotExisted;
                 cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
+
             }
             else if (probabilityType == ProbabilityType.Probable)
             {
@@ -87,15 +97,36 @@ namespace Scripts
                     cardItemInfo.possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes();
                 }
             }
+            ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
+                { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex });
+            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
+            {
+                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
+                cardIndex = cardIndex
+            });
         }
+    }
+    
+    public class ProbabilityChangedEventArgs : EventArgs
+    {
+        public ProbabilityType probabilityType { get; set; }
+        public int cardIndex { get; set; }
+    }
+
+    public class HolderIndicatorListChangedEventArgs : EventArgs
+    {
+        public List<int> holderIndicatorIndexList { get; set; }
+        public int cardIndex { get; set; }
     }
 
     public interface ICardItemInfoManager
     {
-        void Init(int numOfCards, int numOfBoardCardHolders);
+        void Initialize(int numOfCards, int numOfBoardCardHolders);
         CardItemInfo GetCardItemInfo(int cardIndex);
         void OnCardHolderIndicatorClicked(int cardIndex, int cardHolderIndicatorIndex);
         void OnProbabilityButtonClicked(int cardIndex, ProbabilityType probabilityType);
+        event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;
+        event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
 
     }
 

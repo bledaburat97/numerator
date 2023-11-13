@@ -12,6 +12,7 @@ namespace Scripts
         private ICardItemInfoPopupController _cardItemInfoPopupController;
         private IInitialCardAreaController _initialCardAreaController;
         private ICardItemLocator _cardItemLocator;
+        private ICardItemInfoManager _cardItemInfoManager;
         void Start()
         {
             _cardItemLocator = new CardItemLocator();
@@ -28,14 +29,17 @@ namespace Scripts
         
         private void CreateCardItemInfoPopup()
         {
+            _cardItemInfoManager = new CardItemInfoManager();
+            _cardItemInfoManager.Initialize(CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Initial).Count, CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board).Count);
+
             _cardItemInfoPopupController = new CardItemInfoPopupController();
-            _cardItemInfoPopupController.Initialize(cardItemInfoPopupView);
+            _cardItemInfoPopupController.Initialize(cardItemInfoPopupView, _cardItemInfoManager);
         }
         
         private void CreateInitialCardArea()
         {
             _initialCardAreaController = new InitialCardAreaController();
-            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus);
+            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
