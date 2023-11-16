@@ -19,7 +19,6 @@ namespace Scripts
         
         public void Init(int cardNumber)
         {
-            InitPosition();
             SetCardNumberText(cardNumber);
             SetFrameStatus(false);
         }

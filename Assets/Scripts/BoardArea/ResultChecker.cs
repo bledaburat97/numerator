@@ -9,9 +9,9 @@
             _targetNumbers = new int[] { 1, 2, 3 };
         }
 
-        public Result CheckTargetAchieved(int[] finalNumbers)
+        public Positions CheckTargetAchieved(int[] finalNumbers)
         {
-            Result result = new Result();
+            Positions result = new Positions();
             
             for (int i = 0; i < finalNumbers.Length; i++)
             {
@@ -32,10 +32,10 @@
     
     public interface IResultChecker
     {
-        Result CheckTargetAchieved(int[] finalNumbers);
+        Positions CheckTargetAchieved(int[] finalNumbers);
     }
 
-    public struct Result
+    public struct Positions
     {
         public int CorrectPos;
         public int WrongPos;

@@ -36,8 +36,6 @@ namespace Scripts
             }
         }
         
-
-        
         private void CreateCardItemsData(Action<bool, int> onCardSelected)
         {
             for (int i = 0; i < _cardHolderControllerList.Count; i++)

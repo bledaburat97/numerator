@@ -25,6 +25,7 @@ namespace Scripts
             _parentType = CardHolderType.Initial;
             
             _view.Init(_cardItemData.cardNumber);
+            _view.InitPosition();
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);

@@ -1,22 +1,22 @@
-﻿using UnityEngine;
-
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 namespace Scripts
 {
     public class BoardAreaManager : IBoardAreaManager
     {
         private int[] _numbersList;
-        private IResultChecker _resultChecker;
+        public event EventHandler<List<int>> ResultAdded;
 
-        public BoardAreaManager(IResultChecker resultChecker, int finalNumberSize)
+        public BoardAreaManager(int finalNumberSize)
         {
-            _resultChecker = resultChecker;
             _numbersList = new int[finalNumberSize];
         }
 
         public void SetNumberOfCard(int index, int numberOfCard)
         {
             _numbersList[index] = numberOfCard;
-            TryCheckFinalNumber();
+            if (CheckAllNumbersPlaced()) ResultAdded?.Invoke(this, _numbersList.ToList());
         }
 
         private bool CheckAllNumbersPlaced()
@@ -28,27 +28,11 @@ namespace Scripts
 
             return true;
         }
-
-        private void TryCheckFinalNumber()
-        {
-            if (CheckAllNumbersPlaced())
-            {
-                Result result = _resultChecker.CheckTargetAchieved(_numbersList);
-                
-                if (result.CorrectPos == _numbersList.Length)
-                {
-                    Debug.Log("WELL DONE");
-                }
-                else
-                {
-                    Debug.Log("Correct: " + result.CorrectPos + ", Wrong: " + result.WrongPos + ", NonExistence: " + result.NoExistence);
-                }
-            }
-        }
     }
     
     public interface IBoardAreaManager
     {
         void SetNumberOfCard(int index, int numberOfCard);
+        event EventHandler<List<int>> ResultAdded;
     }
 }

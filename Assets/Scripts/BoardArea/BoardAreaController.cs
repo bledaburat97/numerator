@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Scripts
 {
@@ -6,14 +7,12 @@ namespace Scripts
     {
         private IBoardAreaView _view;
         private IBoardAreaManager _boardAreaManager;
-        private IResultChecker _resultChecker;
         private ICardItemLocator _cardItemLocator;
-        public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator)
+        public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IBoardAreaManager boardAreaManager)
         {
             _view = view;
             _view.Init(new CardHolderFactory());
-            _resultChecker = new ResultChecker();
-            _boardAreaManager = new BoardAreaManager(_resultChecker, CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board).Count); //TODO: get level data
+            _boardAreaManager = boardAreaManager;
             _cardItemLocator = cardItemLocator;
             CreateBoardCardHolders();
         }
@@ -32,10 +31,11 @@ namespace Scripts
             
             _cardItemLocator.OnBoardCreated(boardCardHolderControllerList, _boardAreaManager);
         }
+
     }
 
     public interface IBoardAreaController
     {
-        void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator);
+        void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IBoardAreaManager boardAreaManager);
     }
 }
