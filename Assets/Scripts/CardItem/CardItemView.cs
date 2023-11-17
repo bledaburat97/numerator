@@ -10,7 +10,9 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private TMP_Text cardNumberText;
-        [SerializeField] private Image cardImage;
+        [SerializeField] private Image outerBGImage;
+        [SerializeField] private Image innerBGImage;
+        [SerializeField] private Image shadowImage;
         [SerializeField] private Image cardFrame;
         
         private Action<PointerEventData> _onDrag;
@@ -25,7 +27,7 @@ namespace Scripts
 
         public void InitPosition()
         {
-            transform.localScale = Vector3.one;
+            rectTransform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
         }
 
@@ -41,7 +43,15 @@ namespace Scripts
 
         public void SetColor(Color color)
         {
-            cardImage.color = color;
+            innerBGImage.color = color;
+            outerBGImage.color = color;
+        }
+
+        public void MultiplyPixelsPerUnit()
+        {
+            outerBGImage.pixelsPerUnitMultiplier = outerBGImage.pixelsPerUnitMultiplier * 2;
+            innerBGImage.pixelsPerUnitMultiplier = innerBGImage.pixelsPerUnitMultiplier * 2;
+            shadowImage.pixelsPerUnitMultiplier = shadowImage.pixelsPerUnitMultiplier * 2;
         }
         
         public void SetOnDrag(Action<PointerEventData> onDrag)
@@ -108,5 +118,6 @@ namespace Scripts
         void SetAnchoredPosition(Vector2 localPosition);
         void SetFrameStatus(bool status);
         void SetColor(Color color);
+        void MultiplyPixelsPerUnit();
     }
 }
