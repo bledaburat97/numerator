@@ -9,10 +9,10 @@ namespace Scripts
         private int _numOfBoardCardHolders;
         public event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;
         public event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
-        public void Initialize(int numOfCards, int numOfBoardCardHolders)
+        public void Initialize(ILevelTracker levelTracker)
         {
-            _numOfBoardCardHolders = numOfBoardCardHolders;
-            for (int i = 0; i < numOfCards; i++)
+            _numOfBoardCardHolders = levelTracker.GetLevelData().NumOfBoardHolders;
+            for (int i = 0; i < levelTracker.GetLevelData().NumOfCards; i++)
             {
                 CardItemInfo cardItemInfo = new CardItemInfo()
                 {
@@ -121,7 +121,7 @@ namespace Scripts
 
     public interface ICardItemInfoManager
     {
-        void Initialize(int numOfCards, int numOfBoardCardHolders);
+        void Initialize(ILevelTracker levelTracker);
         CardItemInfo GetCardItemInfo(int cardIndex);
         void OnCardHolderIndicatorClicked(int cardIndex, int cardHolderIndicatorIndex);
         void OnProbabilityButtonClicked(int cardIndex, ProbabilityType probabilityType);

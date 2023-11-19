@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Scripts
 {
@@ -8,12 +9,17 @@ namespace Scripts
         private IBoardAreaView _view;
         private IBoardAreaManager _boardAreaManager;
         private ICardItemLocator _cardItemLocator;
-        public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IBoardAreaManager boardAreaManager)
+        private ICardHolderModelCreator _cardHolderModelCreator;
+        private LevelData _levelData;
+        public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IBoardAreaManager boardAreaManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator)
         {
             _view = view;
             _view.Init(new CardHolderFactory());
             _boardAreaManager = boardAreaManager;
             _cardItemLocator = cardItemLocator;
+            _cardHolderModelCreator = cardHolderModelCreator;
+            _levelData = levelTracker.GetLevelData();
+            _cardHolderModelCreator.AddBoardCardHolderModelList(_levelData.NumOfBoardHolders);
             CreateBoardCardHolders();
         }
         
@@ -21,7 +27,7 @@ namespace Scripts
         {
             List<ICardHolderController> boardCardHolderControllerList = new List<ICardHolderController>();
             CardHolderControllerFactory cardHolderControllerFactory = new CardHolderControllerFactory();
-            foreach (CardHolderModel boardCardHolderModel in CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board))
+            foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board, 0, _levelData.NumOfBoardHolders))
             {
                 ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardCardHolderView = _view.CreateCardHolderView();
@@ -36,6 +42,6 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
-        void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IBoardAreaManager boardAreaManager);
+        void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IBoardAreaManager boardAreaManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator);
     }
 }

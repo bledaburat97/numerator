@@ -21,8 +21,9 @@ namespace Scripts
         
         private void CreatePossibleHolderIndicators()
         {
+            if(_model.possibleHolderIndicatorLocalPositionList == null) return;
             PossibleHolderIndicatorControllerFactory holderIndicatorControllerFactory = new PossibleHolderIndicatorControllerFactory();
-            for (int i = 0; i < _model.possibleHolderIndicatorLocalPositions.Count; i++)
+            for (int i = 0; i < _model.possibleHolderIndicatorLocalPositionList.Count; i++)
             {
                 IPossibleHolderIndicatorController holderIndicatorController = holderIndicatorControllerFactory.Spawn();
                 IPossibleHolderIndicatorView possibleHolderIndicatorView = _view.CreatePossibleHolderIndicatorView();
@@ -30,7 +31,7 @@ namespace Scripts
                 holderIndicatorController.Initialize(possibleHolderIndicatorView, new PossibleHolderIndicatorModel()
                 {
                     text = ConstantValues.HOLDER_ID_LIST[i],
-                    localPosition = _model.possibleHolderIndicatorLocalPositions[i]
+                    localPosition = _model.possibleHolderIndicatorLocalPositionList[i]
                 });
                 _possibleHolderIndicatorControllerList.Add(holderIndicatorController);
             }
@@ -71,6 +72,6 @@ namespace Scripts
         public int index;
         public Vector3 localPosition;
         public Vector2 size;
-        public List<Vector2> possibleHolderIndicatorLocalPositions;
+        public List<Vector2> possibleHolderIndicatorLocalPositionList;
     }
 }

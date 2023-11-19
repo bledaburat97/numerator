@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Scripts
 {
@@ -9,16 +10,18 @@ namespace Scripts
         private ICardItemInfoManager _cardItemInfoManager;
         private List<ICardHolderIndicatorButtonController> _cardHolderIndicatorButtonControllers;
         private Dictionary<ProbabilityType, IProbabilityButtonController> _probabilityButtonControllers;
-
+        private LevelData _levelData;
         private List<ProbabilityType> _probabilityTypes = new List<ProbabilityType>()
             { ProbabilityType.Certain, ProbabilityType.Probable, ProbabilityType.NotExisted }; //TODO set somewhere else.
-
+        private ICardHolderModelCreator _cardHolderModelCreator;
         private int _activeCardIndex;
-        public void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager)
+        public void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator)
         {
             _view = view;
             _cardItemInfoManager = cardItemInfoManager;
             CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory = new CardHolderIndicatorButtonViewFactory();
+            _levelData = levelTracker.GetLevelData();
+            _cardHolderModelCreator = cardHolderModelCreator;
             _view.Init(cardHolderIndicatorButtonViewFactory);
             _cardHolderIndicatorButtonControllers = new List<ICardHolderIndicatorButtonController>();
             _probabilityButtonControllers = new Dictionary<ProbabilityType, IProbabilityButtonController>(); 
@@ -50,7 +53,7 @@ namespace Scripts
 
         private void ResetCardItemInfoPopup()
         {
-            int numOfBoardCards = CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board).Count;
+            int numOfBoardCards = _levelData.NumOfBoardHolders;
             for (int i = 0; i < numOfBoardCards; i++)
             {
                 _cardHolderIndicatorButtonControllers[i].SetStatus(false);
@@ -65,7 +68,7 @@ namespace Scripts
         private void CreateCardHolderIndicatorButtons()
         {
             CardHolderIndicatorButtonControllerFactory cardHolderIndicatorButtonControllerFactory = new CardHolderIndicatorButtonControllerFactory();
-            foreach (CardHolderModel boardCardHolderModel in CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board))
+            foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board, 0, _levelData.NumOfBoardHolders))
             {
                 CardHolderIndicatorButtonModel cardHolderIndicatorButtonModel = new CardHolderIndicatorButtonModel()
                 {
@@ -113,7 +116,7 @@ namespace Scripts
     
     public interface ICardItemInfoPopupController
     {
-        void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager);
+        void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator);
         void SetCardItemInfoPopupStatus(bool status, int cardIndex);
     }
     

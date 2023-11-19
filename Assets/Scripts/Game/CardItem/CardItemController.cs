@@ -23,8 +23,9 @@ namespace Scripts
             _selectionController = selectionController;
             _selectionController.SetOnDeselectCards(DeselectCard);
             _parentType = CardHolderType.Initial;
+            int cardNumber = cardItemData.cardIndex + 1;
             
-            _view.Init(_cardItemData.cardNumber);
+            _view.Init(cardNumber);
             _view.InitPosition();
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);

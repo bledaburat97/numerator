@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -6,9 +7,12 @@ namespace Scripts
     {
         [SerializeField] private BoardAreaView boardAreaView;
         [SerializeField] private CardItemInfoPopupView cardItemInfoPopupView;
-        [SerializeField] private InitialCardAreaView initialCardAreaView;
         [SerializeField] private ResultAreaView resultAreaView;
         
+        [SerializeField] private LevelTracker levelTracker;
+        [SerializeField] private InitialCardAreaView firstInitialCardAreaView;
+        [SerializeField] private InitialCardAreaView secondInitialCardAreaView;
+
         private IBoardAreaController _boardAreaController;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
         private IInitialCardAreaController _initialCardAreaController;
@@ -16,9 +20,14 @@ namespace Scripts
         private ICardItemInfoManager _cardItemInfoManager;
         private IResultAreaController _resultAreaController;
         private IBoardAreaManager _boardAreaManager;
+        private ICardHolderModelCreator _cardHolderModelCreator;
+        
         void Start()
         {
             _cardItemLocator = new CardItemLocator();
+            levelTracker.Initialize();
+            _cardHolderModelCreator = new CardHolderModelCreator();
+            _cardHolderModelCreator.Initialize();
             CreateBoardArea();
             CreateResultArea();
             CreateCardItemInfoPopup();
@@ -27,9 +36,9 @@ namespace Scripts
         
         private void CreateBoardArea()
         {
-            _boardAreaManager = new BoardAreaManager(CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board).Count); //TODO: get level data
+            _boardAreaManager = new BoardAreaManager(levelTracker);
             _boardAreaController = new BoardAreaController();
-            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _boardAreaManager);
+            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _boardAreaManager, levelTracker, _cardHolderModelCreator);
         }
         
         private void CreateResultArea()
@@ -41,16 +50,16 @@ namespace Scripts
         private void CreateCardItemInfoPopup()
         {
             _cardItemInfoManager = new CardItemInfoManager();
-            _cardItemInfoManager.Initialize(CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Initial).Count, CardHolderModelCreator.GetInstance().GetCardHolderModelList(CardHolderType.Board).Count);
+            _cardItemInfoManager.Initialize(levelTracker);
 
             _cardItemInfoPopupController = new CardItemInfoPopupController();
-            _cardItemInfoPopupController.Initialize(cardItemInfoPopupView, _cardItemInfoManager);
+            _cardItemInfoPopupController.Initialize(cardItemInfoPopupView, _cardItemInfoManager, levelTracker, _cardHolderModelCreator);
         }
         
         private void CreateInitialCardArea()
         {
             _initialCardAreaController = new InitialCardAreaController();
-            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager);
+            _initialCardAreaController.Initialize(firstInitialCardAreaView, secondInitialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

@@ -8,9 +8,9 @@ namespace Scripts
         private int[] _numbersList;
         public event EventHandler<List<int>> ResultAdded;
 
-        public BoardAreaManager(int finalNumberSize)
+        public BoardAreaManager(ILevelTracker levelTracker)
         {
-            _numbersList = new int[finalNumberSize];
+            _numbersList = new int[levelTracker.GetLevelData().NumOfBoardHolders];
         }
 
         public void SetNumberOfCard(int index, int numberOfCard)

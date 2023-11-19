@@ -12,6 +12,7 @@ namespace Scripts
         
         public void Init(CardHolderFactory cardHolderFactory, CardItemViewFactory cardItemViewFactory)
         {
+            transform.localScale = Vector3.one;
             _cardHolderFactory = cardHolderFactory;
             _cardItemViewFactory = cardItemViewFactory;
         }
