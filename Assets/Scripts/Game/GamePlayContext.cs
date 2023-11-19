@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Scripts
 {
@@ -19,8 +18,8 @@ namespace Scripts
         private ICardItemLocator _cardItemLocator;
         private ICardItemInfoManager _cardItemInfoManager;
         private IResultAreaController _resultAreaController;
-        private IBoardAreaManager _boardAreaManager;
         private ICardHolderModelCreator _cardHolderModelCreator;
+        private IResultManager _resultManager;
         
         void Start()
         {
@@ -28,6 +27,8 @@ namespace Scripts
             levelTracker.Initialize();
             _cardHolderModelCreator = new CardHolderModelCreator();
             _cardHolderModelCreator.Initialize();
+            _resultManager = new ResultManager();
+            _resultManager.Initialize(levelTracker);
             CreateBoardArea();
             CreateResultArea();
             CreateCardItemInfoPopup();
@@ -36,15 +37,14 @@ namespace Scripts
         
         private void CreateBoardArea()
         {
-            _boardAreaManager = new BoardAreaManager(levelTracker);
             _boardAreaController = new BoardAreaController();
-            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _boardAreaManager, levelTracker, _cardHolderModelCreator);
+            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _resultManager, levelTracker, _cardHolderModelCreator);
         }
         
         private void CreateResultArea()
         {
             _resultAreaController = new ResultAreaController();
-            _resultAreaController.Initialize(resultAreaView, _boardAreaManager);
+            _resultAreaController.Initialize(resultAreaView, _resultManager);
         }
         
         private void CreateCardItemInfoPopup()

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Scripts
@@ -6,33 +7,33 @@ namespace Scripts
     public class ResultBlockController : IResultBlockController
     {
         private IResultBlockView _view;
+        private ResultBlockModel _model;
         public void Initialize(IResultBlockView view, ResultBlockModel model)
         {
             _view = view;
+            _model = model;
             _view.Init(new CardItemViewFactory(), new ResultViewFactory());
-            CreateCardItems(model.cardNumbers);
-            CreateResults(model.cardNumbers);
+            CreateCardItems();
+            CreateResults();
         }
 
-        private void CreateResults(List<int> cardNumbers)
+        private void CreateResults()
         {
-            _view.SetResultHolderLocalPosition(cardNumbers.Count, ConstantValues.RESULT_CARD_WIDTH);
-            List<ResultModel> resultModels = ResultModelListCreator.GetResultModelList(cardNumbers);
-            for (int i = 0; i < resultModels.Count; i++)
+            _view.SetResultHolderLocalPosition(_model.finalNumbers.Count, ConstantValues.RESULT_CARD_WIDTH);
+            for (int i = 0; i < _model.resultModels.Count; i++)
             {
                 IResultView resultView = _view.CreateResult();
-                resultModels[i].localPosition = Vector2.zero; //TODO: set positions
-                resultView.Init(resultModels[i]);
+                resultView.Init(_model.resultModels[i]);
             }
         }
 
-        private void CreateCardItems(List<int> cardNumbers)
+        private void CreateCardItems()
         {
             _view.SetCardsHolderLocalPosition();
-            for (int i = 0; i < cardNumbers.Count; i++)
+            for (int i = 0; i < _model.finalNumbers.Count; i++)
             {
                 ICardItemView cardItemView = _view.CreateCardItem();
-                cardItemView.Init(cardNumbers[i]);
+                cardItemView.Init(_model.finalNumbers[i]);
                 cardItemView.SetSize(new Vector2(ConstantValues.RESULT_CARD_WIDTH, ConstantValues.RESULT_CARD_HEIGHT));
                 cardItemView.InitPosition();
                 cardItemView.MultiplyPixelsPerUnit();
@@ -52,15 +53,14 @@ namespace Scripts
         NotExisted
     }
 
-    public class ResultBlockModel
+    public class ResultBlockModel : EventArgs
     {
-        public Vector2 localPosition;
-        public List<int> cardNumbers;
+        public List<int> finalNumbers;
+        public List<ResultModel> resultModels;
     }
     
     public class ResultModel
     {
-        public Vector2 localPosition;
         public Color color;
         public int number;
     }

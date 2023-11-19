@@ -6,17 +6,17 @@ namespace Scripts
     public class BoardAreaManager : IBoardAreaManager
     {
         private int[] _numbersList;
-        public event EventHandler<List<int>> ResultAdded;
-
-        public BoardAreaManager(ILevelTracker levelTracker)
+        private IResultManager _resultManager;
+        public BoardAreaManager(ILevelTracker levelTracker, IResultManager resultManager)
         {
             _numbersList = new int[levelTracker.GetLevelData().NumOfBoardHolders];
+            _resultManager = resultManager;
         }
 
         public void SetNumberOfCard(int index, int numberOfCard)
         {
             _numbersList[index] = numberOfCard;
-            if (CheckAllNumbersPlaced()) ResultAdded?.Invoke(this, _numbersList.ToList());
+            if (CheckAllNumbersPlaced()) _resultManager.CheckFinalCardList(_numbersList.ToList());
         }
 
         private bool CheckAllNumbersPlaced()
@@ -33,6 +33,5 @@ namespace Scripts
     public interface IBoardAreaManager
     {
         void SetNumberOfCard(int index, int numberOfCard);
-        event EventHandler<List<int>> ResultAdded;
     }
 }
