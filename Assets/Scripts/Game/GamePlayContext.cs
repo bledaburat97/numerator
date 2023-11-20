@@ -7,11 +7,12 @@ namespace Scripts
         [SerializeField] private BoardAreaView boardAreaView;
         [SerializeField] private CardItemInfoPopupView cardItemInfoPopupView;
         [SerializeField] private ResultAreaView resultAreaView;
-        
         [SerializeField] private LevelTracker levelTracker;
         [SerializeField] private InitialCardAreaView firstInitialCardAreaView;
         [SerializeField] private InitialCardAreaView secondInitialCardAreaView;
-
+        [SerializeField] private GamePopupCreator gamePopupCreator;
+        [SerializeField] private FadePanelView fadePanelView;
+        
         private IBoardAreaController _boardAreaController;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
         private IInitialCardAreaController _initialCardAreaController;
@@ -20,6 +21,7 @@ namespace Scripts
         private IResultAreaController _resultAreaController;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private IResultManager _resultManager;
+        private IFadePanelController _fadePanelController;
         
         void Start()
         {
@@ -33,6 +35,7 @@ namespace Scripts
             CreateResultArea();
             CreateCardItemInfoPopup();
             CreateInitialCardArea();
+            CreateGamePopupCreator();
         }
         
         private void CreateBoardArea()
@@ -65,6 +68,13 @@ namespace Scripts
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
         {
             _cardItemInfoPopupController.SetCardItemInfoPopupStatus(status, cardIndex);
+        }
+
+        private void CreateGamePopupCreator()
+        {
+            _fadePanelController = new FadePanelController();
+            _fadePanelController.Initialize(fadePanelView);
+            gamePopupCreator.Initialize(_resultManager, _fadePanelController);
         }
 
     }

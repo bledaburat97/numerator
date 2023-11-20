@@ -12,7 +12,8 @@ namespace Scripts
         private List<int> _targetCardList = new List<int>();
         private ILevelTracker _levelTracker;
         private int _tryCount;
-        public event EventHandler<ResultBlockModel> ResultAdded;
+        public event EventHandler<ResultBlockModel> ResultBlockAddition;
+        public event EventHandler<LevelEndEventArgs> LevelEnd;
         
         public void Initialize(ILevelTracker levelTracker)
         {
@@ -67,13 +68,17 @@ namespace Scripts
             if (numOfCorrectPos == _levelTracker.GetLevelData().NumOfBoardHolders)
             {
                 _levelTracker.IncrementLevelId();
-                SceneManager.LoadScene("Game");
+                LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                {
+                    isLevelCompleted = true,
+                    levelTracker = _levelTracker
+                });
             }
             else
             {
                 if (_tryCount < _levelTracker.GetLevelData().MaxNumOfTries)
                 {
-                    ResultAdded?.Invoke(this, new ResultBlockModel()
+                    ResultBlockAddition?.Invoke(this, new ResultBlockModel()
                     {
                         finalNumbers = finalCardList,
                         resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
@@ -81,7 +86,11 @@ namespace Scripts
                 }
                 else
                 {
-                    SceneManager.LoadScene("Menu");
+                    LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                    {
+                        isLevelCompleted = false,
+                        levelTracker = _levelTracker
+                    });
                 }
             }
         }
@@ -122,11 +131,17 @@ namespace Scripts
         }
     }
 
+    public class LevelEndEventArgs : EventArgs
+    {
+        public bool isLevelCompleted;
+        public ILevelTracker levelTracker;
+    }
+
     public interface IResultManager
     {
         void Initialize(ILevelTracker levelTracker);
         void CheckFinalCardList(List<int> finalCardList);
-        event EventHandler<ResultBlockModel> ResultAdded;
-
+        event EventHandler<ResultBlockModel> ResultBlockAddition;
+        event EventHandler<LevelEndEventArgs> LevelEnd;
     }
 }

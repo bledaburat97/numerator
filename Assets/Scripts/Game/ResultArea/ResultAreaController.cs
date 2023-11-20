@@ -13,7 +13,7 @@ namespace Scripts
             _view.Init(new ResultBlockViewFactory());
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockControllerList = new List<IResultBlockController>();
-            resultManager.ResultAdded += AddResultBlock;
+            resultManager.ResultBlockAddition += AddResultBlock;
         }
         
         private void AddResultBlock(object sender, ResultBlockModel resultBlockModel)

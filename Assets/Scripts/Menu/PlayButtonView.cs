@@ -18,7 +18,7 @@ namespace Scripts
 
         private void SetText(int levelId)
         {
-            text.SetText("Level" + levelId);
+            text.SetText("Level " + levelId);
         }
 
         private void SetOnClickAction(Action onClick)
