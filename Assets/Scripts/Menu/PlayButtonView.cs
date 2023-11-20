@@ -12,13 +12,8 @@ namespace Scripts
         
         public void Init(PlayButtonModel model)
         {
-            SetText(model.LevelId);
+            text.SetText(model.text);
             SetOnClickAction(model.OnClick);
-        }
-
-        private void SetText(int levelId)
-        {
-            text.SetText("Level " + levelId);
         }
 
         private void SetOnClickAction(Action onClick)
@@ -34,7 +29,7 @@ namespace Scripts
 
     public class PlayButtonModel
     {
-        public int LevelId;
+        public string text;
         public Action OnClick;
     }
 }

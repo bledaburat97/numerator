@@ -17,7 +17,7 @@
         private void CreatePlayButton()
         {
             IPlayButtonController playButtonController = new PlayButtonController();
-            playButtonController.Initialize(_view.GetPlayButtonView(), _levelTracker);
+            playButtonController.Initialize(_view.GetPlayButtonView(), "Level " + _levelTracker.GetLevelId());
         }
 
         private void CreateReturnMenuButton()

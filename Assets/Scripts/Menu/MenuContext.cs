@@ -16,7 +16,7 @@ namespace Scripts.Menu
         private void CreatePlayButton()
         {
             IPlayButtonController playButtonController = new PlayButtonController();
-            playButtonController.Initialize(playButton, levelTracker);
+            playButtonController.Initialize(playButton, "Level " + levelTracker.GetLevelId());
         }
     }
 }

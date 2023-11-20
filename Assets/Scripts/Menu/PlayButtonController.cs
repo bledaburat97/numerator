@@ -6,12 +6,12 @@ namespace Scripts
     {
         private IPlayButtonView _view;
         
-        public void Initialize(IPlayButtonView view, ILevelTracker levelTracker)
+        public void Initialize(IPlayButtonView view, string text)
         {
             _view = view;
             PlayButtonModel model = new PlayButtonModel()
             {
-                LevelId = levelTracker.GetLevelId(),
+                text = text,
                 OnClick = OnPlayButtonClick
             };
             _view.Init(model);
@@ -25,6 +25,6 @@ namespace Scripts
 
     public interface IPlayButtonController
     {
-        void Initialize(IPlayButtonView view, ILevelTracker levelTracker);
+        void Initialize(IPlayButtonView view, string text);
     }
 }

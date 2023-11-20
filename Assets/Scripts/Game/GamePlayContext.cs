@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -12,6 +13,8 @@ namespace Scripts
         [SerializeField] private InitialCardAreaView secondInitialCardAreaView;
         [SerializeField] private GamePopupCreator gamePopupCreator;
         [SerializeField] private FadePanelView fadePanelView;
+        [SerializeField] private TMP_Text levelIdText;
+        [SerializeField] private SettingsButtonView settingsButtonView;
         
         private IBoardAreaController _boardAreaController;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
@@ -22,7 +25,7 @@ namespace Scripts
         private ICardHolderModelCreator _cardHolderModelCreator;
         private IResultManager _resultManager;
         private IFadePanelController _fadePanelController;
-        
+        private ISettingsButtonController _settingsButtonController;
         void Start()
         {
             _cardItemLocator = new CardItemLocator();
@@ -31,11 +34,24 @@ namespace Scripts
             _cardHolderModelCreator.Initialize();
             _resultManager = new ResultManager();
             _resultManager.Initialize(levelTracker);
+            SetLevelId();
+            CreateSettingsButton();
             CreateBoardArea();
             CreateResultArea();
             CreateCardItemInfoPopup();
             CreateInitialCardArea();
             CreateGamePopupCreator();
+        }
+
+        private void SetLevelId()
+        {
+            levelIdText.SetText("Level " + levelTracker.GetLevelId());
+        }
+
+        private void CreateSettingsButton()
+        {
+            _settingsButtonController = new SettingsButtonController();
+            _settingsButtonController.Initialize(settingsButtonView);
         }
         
         private void CreateBoardArea()
@@ -74,7 +90,7 @@ namespace Scripts
         {
             _fadePanelController = new FadePanelController();
             _fadePanelController.Initialize(fadePanelView);
-            gamePopupCreator.Initialize(_resultManager, _fadePanelController);
+            gamePopupCreator.Initialize(_resultManager, _fadePanelController, _settingsButtonController);
         }
 
     }
