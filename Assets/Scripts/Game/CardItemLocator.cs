@@ -34,6 +34,7 @@ namespace Scripts
 
             foreach (ICardHolderController tempCardHolderController in tempCardHolderControllerList)
             {
+                _boardAreaManager.SetNumberOfCard(tempCardHolderController.GetIndex(), 0);
                 _boardHolderToCardIndexMapping[tempCardHolderController] = -1;
             }
 

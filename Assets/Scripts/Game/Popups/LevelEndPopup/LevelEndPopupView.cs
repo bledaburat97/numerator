@@ -8,8 +8,13 @@ namespace Scripts
         [SerializeField] private TMP_Text title;
         [SerializeField] private PlayButtonView playButtonView;
         [SerializeField] private ReturnMenuButtonView returnMenuButtonView;
-        public void Init()
+        [SerializeField] private RectTransform starHolder;
+        [SerializeField] private StarImageView starImagePrefab;
+
+        private StarImageViewFactory _starImageViewFactory;
+        public void Init(StarImageViewFactory starImageViewFactory)
         {
+            _starImageViewFactory = starImageViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
         }
@@ -28,13 +33,19 @@ namespace Scripts
         {
             return returnMenuButtonView;
         }
+        
+        public IStarImageView CreateStarImage()
+        {
+            return _starImageViewFactory.Spawn(starHolder, starImagePrefab);
+        }
     }
     
     public interface ILevelEndPopupView
     {
-        void Init();
+        void Init(StarImageViewFactory starImageViewFactory);
         void SetTitle(string text);
         IPlayButtonView GetPlayButtonView();
         IReturnMenuButtonView GetReturnMenuButtonView();
+        IStarImageView CreateStarImage();
     }
 }

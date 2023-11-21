@@ -1,4 +1,6 @@
-﻿namespace Scripts
+﻿using UnityEngine;
+
+namespace Scripts
 {
     public class LevelEndPopupController : ILevelEndPopupController
     {
@@ -8,10 +10,11 @@
         {
             _view = view;
             _levelTracker = args.levelTracker;
-            _view.Init();
+            _view.Init(new StarImageViewFactory());
             _view.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreatePlayButton();
             CreateReturnMenuButton();
+            CreateStars(args.starCount);
         }
         
         private void CreatePlayButton()
@@ -24,6 +27,22 @@
         {
             IReturnMenuButtonController returnMenuButtonController = new ReturnMenuButtonController();
             returnMenuButtonController.Initialize(_view.GetReturnMenuButtonView());
+        }
+
+        private void CreateStars(int numOfStars)
+        {
+            Vector2[] starsPosition = new Vector2[numOfStars];
+            Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
+                ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
+            starsPosition = starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size);
+            
+            for (int i = 0; i < numOfStars; i++)
+            {
+                IStarImageView starImageView = _view.CreateStarImage();
+                starImageView.Init(starsPosition[i]);
+                starImageView.SetSize(size);
+            }
+            
         }
     }
 

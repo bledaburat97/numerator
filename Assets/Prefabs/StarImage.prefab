@@ -205,6 +205,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   star: {fileID: 6486002998265864464}
+  rectTransform: {fileID: 6486002996941193330}
 --- !u!1 &6486002998265864466
 GameObject:
   m_ObjectHideFlags: 0
