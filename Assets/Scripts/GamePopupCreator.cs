@@ -14,14 +14,14 @@ namespace Scripts
         private SettingsPopupViewFactory _settingsPopupViewFactory;
         private IFadePanelController _fadePanelController;
         
-        public void Initialize(IResultManager resultManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
             _fadePanelController = fadePanelController;
-            resultManager.LevelEnd += CreateLevelEndPopup;
+            levelManager.LevelEnd += CreateLevelEndPopup;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
         }
         

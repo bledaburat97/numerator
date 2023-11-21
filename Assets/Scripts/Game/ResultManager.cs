@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Random = System.Random;
 
 namespace Scripts
@@ -11,9 +10,8 @@ namespace Scripts
     {
         private List<int> _targetCardList = new List<int>();
         private ILevelTracker _levelTracker;
-        private int _tryCount;
         public event EventHandler<ResultBlockModel> ResultBlockAddition;
-        public event EventHandler<LevelEndEventArgs> LevelEnd;
+        public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         
         public void Initialize(ILevelTracker levelTracker)
         {
@@ -21,7 +19,6 @@ namespace Scripts
             _targetCardList = GetTargetCardList(_levelTracker.GetLevelData().NumOfCards,
                 _levelTracker.GetLevelData().NumOfBoardHolders);
             Debug.Log(_targetCardList);
-            _tryCount = 0;
         }
         
         private List<int> GetTargetCardList(int numOfCards, int numOfBoardHolders)
@@ -60,38 +57,28 @@ namespace Scripts
                 }
             }
             DetermineAction(finalCardList, numOfCorrectPos, numOfWrongPos);
-            _tryCount += 1;
         }
 
         private void DetermineAction(List<int> finalCardList, int numOfCorrectPos, int numOfWrongPos)
         {
             if (numOfCorrectPos == _levelTracker.GetLevelData().NumOfBoardHolders)
             {
-                _levelTracker.IncrementLevelId();
-                LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
                 {
-                    isLevelCompleted = true,
-                    levelTracker = _levelTracker
+                    isGuessRight = true,
                 });
             }
             else
             {
-                if (_tryCount < _levelTracker.GetLevelData().MaxNumOfTries)
+                ResultBlockAddition?.Invoke(this, new ResultBlockModel()
                 {
-                    ResultBlockAddition?.Invoke(this, new ResultBlockModel()
-                    {
-                        finalNumbers = finalCardList,
-                        resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
-                    });
-                }
-                else
+                    finalNumbers = finalCardList,
+                    resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
+                });
+                NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
                 {
-                    LevelEnd?.Invoke(this, new LevelEndEventArgs()
-                    {
-                        isLevelCompleted = false,
-                        levelTracker = _levelTracker
-                    });
-                }
+                    isGuessRight = false,
+                });
             }
         }
 
@@ -130,11 +117,10 @@ namespace Scripts
             return resultModels;
         }
     }
-
-    public class LevelEndEventArgs : EventArgs
+    
+    public class NumberGuessedEventArgs : EventArgs
     {
-        public bool isLevelCompleted;
-        public ILevelTracker levelTracker;
+        public bool isGuessRight;
     }
 
     public interface IResultManager
@@ -142,6 +128,6 @@ namespace Scripts
         void Initialize(ILevelTracker levelTracker);
         void CheckFinalCardList(List<int> finalCardList);
         event EventHandler<ResultBlockModel> ResultBlockAddition;
-        event EventHandler<LevelEndEventArgs> LevelEnd;
+        event EventHandler<NumberGuessedEventArgs> NumberGuessed;
     }
 }
