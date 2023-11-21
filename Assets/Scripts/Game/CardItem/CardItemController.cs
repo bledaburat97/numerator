@@ -73,6 +73,15 @@ namespace Scripts
             _view.SetAnchoredPosition(localPosition);
             _onDragContinue(data.position, _cardItemData.cardIndex);
         }
+
+        public void ResetPosition()
+        {
+            _parentType = CardHolderType.Initial;
+            RectTransform parentTransform = _cardItemData.parent;
+            _view.SetParent(parentTransform);
+            _view.InitPosition();
+            _view.SetSize(parentTransform.sizeDelta);
+        }
         
         private void OnPointerUp(PointerEventData data)
         {
@@ -136,5 +145,6 @@ namespace Scripts
     {
         void Initialize(ICardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
         void SetColor(Color color);
+        void ResetPosition();
     }
 }

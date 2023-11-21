@@ -15,7 +15,7 @@ namespace Scripts
         private int _currentInitialCardAreaIndex;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private List<IInitialCardAreaView> _initialCardAreaViews;
-        public void Initialize(IInitialCardAreaView firstInitialCardAreaView, IInitialCardAreaView secondInitialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator)
+        public void Initialize(IInitialCardAreaView firstInitialCardAreaView, IInitialCardAreaView secondInitialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController)
         {
             _initialCardAreaViews = new List<IInitialCardAreaView>()
                 { firstInitialCardAreaView, secondInitialCardAreaView };
@@ -27,6 +27,16 @@ namespace Scripts
             InitInitialCardAreaViews(onCardSelected);
             cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
             cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
+            resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
+        }
+
+        private void ResetPositionsOfCardItems(object sender, EventArgs args)
+        {
+            _cardItemLocator.ResetBoard();
+            foreach (ICardItemController cardItemController in _cardItemControllerList)
+            {
+                cardItemController.ResetPosition();
+            }
         }
 
         private void AddInitialCardAreaViews(int numOfCards)
@@ -113,7 +123,7 @@ namespace Scripts
     
     public interface IInitialCardAreaController
     {
-        void Initialize(IInitialCardAreaView firstInitialCardAreaView, IInitialCardAreaView secondInitialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator);
+        void Initialize(IInitialCardAreaView firstInitialCardAreaView, IInitialCardAreaView secondInitialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController);
     }
     
     public class CardItemData

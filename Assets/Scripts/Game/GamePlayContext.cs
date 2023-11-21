@@ -15,6 +15,8 @@ namespace Scripts
         [SerializeField] private FadePanelView fadePanelView;
         [SerializeField] private TMP_Text levelIdText;
         [SerializeField] private SettingsButtonView settingsButtonView;
+        [SerializeField] private CheckButtonView checkButtonView;
+        [SerializeField] private ResetButtonView resetButtonView;
         
         private IBoardAreaController _boardAreaController;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
@@ -26,6 +28,9 @@ namespace Scripts
         private IResultManager _resultManager;
         private IFadePanelController _fadePanelController;
         private ISettingsButtonController _settingsButtonController;
+        private ICheckButtonController _checkButtonController;
+        private IResetButtonController _resetButtonController;
+
         void Start()
         {
             _cardItemLocator = new CardItemLocator();
@@ -36,6 +41,8 @@ namespace Scripts
             _resultManager.Initialize(levelTracker);
             SetLevelId();
             CreateSettingsButton();
+            CreateCheckButton();
+            CreateResetButton();
             CreateBoardArea();
             CreateResultArea();
             CreateCardItemInfoPopup();
@@ -54,10 +61,22 @@ namespace Scripts
             _settingsButtonController.Initialize(settingsButtonView);
         }
         
+        private void CreateCheckButton()
+        {
+            _checkButtonController = new CheckButtonController();
+            _checkButtonController.Initialize(checkButtonView);
+        }
+        
+        private void CreateResetButton()
+        {
+            _resetButtonController = new ResetButtonController();
+            _resetButtonController.Initialize(resetButtonView);
+        }
+        
         private void CreateBoardArea()
         {
             _boardAreaController = new BoardAreaController();
-            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _resultManager, levelTracker, _cardHolderModelCreator);
+            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _resultManager, levelTracker, _cardHolderModelCreator, _checkButtonController);
         }
         
         private void CreateResultArea()
@@ -78,7 +97,7 @@ namespace Scripts
         private void CreateInitialCardArea()
         {
             _initialCardAreaController = new InitialCardAreaController();
-            _initialCardAreaController.Initialize(firstInitialCardAreaView, secondInitialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator);
+            _initialCardAreaController.Initialize(firstInitialCardAreaView, secondInitialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator, _resetButtonController);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

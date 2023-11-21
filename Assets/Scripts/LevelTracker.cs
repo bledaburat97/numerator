@@ -10,7 +10,8 @@ namespace Scripts
         
         public void Initialize()
         {
-            _levelId = PlayerPrefs.GetInt("level_id", 1);
+            //_levelId = PlayerPrefs.GetInt("level_id", 1);
+            _levelId = 1;
             _levelDataList = LevelDataGetter.GetLevelDataFromJson();
         }
 

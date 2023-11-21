@@ -23,6 +23,24 @@ namespace Scripts
             _probableCardHolderIndex = -1;
         }
 
+        public void ResetBoard()
+        {
+            List<ICardHolderController> tempCardHolderControllerList = new List<ICardHolderController>();
+            
+            foreach (KeyValuePair<ICardHolderController, int> pair in _boardHolderToCardIndexMapping)
+            {
+                tempCardHolderControllerList.Add(pair.Key);
+            }
+
+            foreach (ICardHolderController tempCardHolderController in tempCardHolderControllerList)
+            {
+                _boardHolderToCardIndexMapping[tempCardHolderController] = -1;
+            }
+
+            _activeCardIndex = -1;
+            _probableCardHolderIndex = -1;
+        }
+
         public void OnDragStart(int cardIndex)
         {
             if (_boardHolderToCardIndexMapping.ContainsValue(cardIndex))
@@ -93,5 +111,6 @@ namespace Scripts
         void OnDragStart(int cardIndex);
         void OnDragContinue(Vector2 pos, int cardIndex);
         RectTransform OnDragComplete(int cardIndex);
+        void ResetBoard();
     }
 }

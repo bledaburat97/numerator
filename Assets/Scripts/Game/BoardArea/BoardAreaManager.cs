@@ -7,16 +7,25 @@ namespace Scripts
     {
         private int[] _numbersList;
         private IResultManager _resultManager;
-        public BoardAreaManager(ILevelTracker levelTracker, IResultManager resultManager)
+        public BoardAreaManager(ILevelTracker levelTracker, IResultManager resultManager, ICheckButtonController checkButtonController)
         {
             _numbersList = new int[levelTracker.GetLevelData().NumOfBoardHolders];
             _resultManager = resultManager;
+            checkButtonController.CheckFinalNumbers += CheckFinalNumbers;
         }
 
         public void SetNumberOfCard(int index, int numberOfCard)
         {
             _numbersList[index] = numberOfCard;
-            if (CheckAllNumbersPlaced()) _resultManager.CheckFinalCardList(_numbersList.ToList());
+            
+        }
+
+        private void CheckFinalNumbers(object sender, EventArgs args)
+        {
+            if (CheckAllNumbersPlaced())
+            {
+                _resultManager.CheckFinalCardList(_numbersList.ToList());
+            }
         }
 
         private bool CheckAllNumbersPlaced()
