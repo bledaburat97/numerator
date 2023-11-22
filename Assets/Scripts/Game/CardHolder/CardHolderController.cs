@@ -57,6 +57,11 @@ namespace Scripts
                 _possibleHolderIndicatorControllerList[i].SetStatus(status);
             }
         }
+
+        public void SetHighlightStatus(bool status)
+        {
+            _view.SetHighlightStatus(status);
+        }
     }
     
     public interface ICardHolderController
@@ -65,6 +70,7 @@ namespace Scripts
         ICardHolderView GetView();
         int GetIndex();
         void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);
+        void SetHighlightStatus(bool status);
     }
     
     public class CardHolderModel

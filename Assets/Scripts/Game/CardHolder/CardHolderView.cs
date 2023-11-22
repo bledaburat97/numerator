@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scripts
 {
@@ -7,6 +8,8 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private RectTransform possibleHolderIndicatorHolderTransform;
         [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
+        [SerializeField] private Image highlightImage;
+        
         private PossibleHolderIndicatorViewFactory _possibleHolderIndicatorViewFactory;
         public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory)
         {
@@ -35,6 +38,11 @@ namespace Scripts
         {
             return rectTransform.sizeDelta;
         }
+
+        public void SetHighlightStatus(bool status)
+        {
+            highlightImage.gameObject.SetActive(status);
+        }
     }
 
     public interface ICardHolderView
@@ -44,5 +52,6 @@ namespace Scripts
         Vector3 GetSize();
         RectTransform GetRectTransform();
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
+        void SetHighlightStatus(bool status);
     }
 }

@@ -10,7 +10,12 @@ namespace Scripts
         private int _activeCardIndex;
         private int _probableCardHolderIndex;
         private IBoardAreaManager _boardAreaManager;
-
+        private Canvas _canvas;
+        public CardItemLocator(Canvas canvas)
+        {
+            _canvas = canvas;
+        }
+        
         public void OnBoardCreated(List<ICardHolderController> boardCardHolderControllerList, IBoardAreaManager boardAreaManager)
         {
             foreach (ICardHolderController boardHolderController in boardCardHolderControllerList)
@@ -55,14 +60,20 @@ namespace Scripts
 
         public void OnDragContinue(Vector2 pos, int cardIndex)
         {
+            float a = _canvas.scaleFactor;
             _probableCardHolderIndex = GetClosestCardHolderIndex(pos);
             if (_probableCardHolderIndex != -1)
             {
                 _activeCardIndex = cardIndex;
+                _boardHolderToCardIndexMapping.ElementAt(_probableCardHolderIndex).Key.SetHighlightStatus(true);
                 //TODO: highlight.
             }
             else
             {
+                foreach (KeyValuePair<ICardHolderController, int> pair in _boardHolderToCardIndexMapping)
+                {
+                    pair.Key.SetHighlightStatus(false);
+                }
                 _activeCardIndex = -1;
             }
         }
@@ -90,12 +101,12 @@ namespace Scripts
                 }
                 ICardHolderView view = holderController.GetView();
                 Vector2 position = view.GetPosition();
-                Vector2 size = view.GetSize();
-                if (view.GetPosition().x + view.GetSize().x / 2 > cardItemPosition.x &&
-                    view.GetPosition().x - view.GetSize().x / 2 < cardItemPosition.x)
+                Vector2 size = view.GetSize() * _canvas.scaleFactor;
+                if (position.x + size.x / 2 > cardItemPosition.x &&
+                    position.x - size.x / 2 < cardItemPosition.x)
                 {
-                    if (view.GetPosition().y + view.GetSize().y / 2 > cardItemPosition.y &&
-                        view.GetPosition().y - view.GetSize().y / 2 < cardItemPosition.y)
+                    if (position.y + size.y / 2 > cardItemPosition.y &&
+                        position.y - size.y / 2 < cardItemPosition.y)
                     {
                         return i;
                     }

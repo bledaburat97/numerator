@@ -18,6 +18,7 @@ namespace Scripts
         [SerializeField] private CheckButtonView checkButtonView;
         [SerializeField] private ResetButtonView resetButtonView;
         [SerializeField] private StarProgressBarView starProgressBarView;
+        [SerializeField] private Canvas canvas;
         
         private IBoardAreaController _boardAreaController;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
@@ -36,7 +37,7 @@ namespace Scripts
 
         void Start()
         {
-            _cardItemLocator = new CardItemLocator();
+            _cardItemLocator = new CardItemLocator(canvas);
             levelTracker.Initialize();
             _cardHolderModelCreator = new CardHolderModelCreator();
             _cardHolderModelCreator.Initialize();

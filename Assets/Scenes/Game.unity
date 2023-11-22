@@ -1675,6 +1675,7 @@ MonoBehaviour:
   checkButtonView: {fileID: 907650605}
   resetButtonView: {fileID: 378137704}
   starProgressBarView: {fileID: 2064214270}
+  canvas: {fileID: 2064828894}
 --- !u!114 &1391204196
 MonoBehaviour:
   m_ObjectHideFlags: 0
