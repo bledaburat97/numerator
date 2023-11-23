@@ -18,7 +18,6 @@ namespace Scripts
             _levelTracker = levelTracker;
             _targetCardList = GetTargetCardList(_levelTracker.GetLevelData().NumOfCards,
                 _levelTracker.GetLevelData().NumOfBoardHolders);
-            Debug.Log(_targetCardList);
         }
         
         private List<int> GetTargetCardList(int numOfCards, int numOfBoardHolders)

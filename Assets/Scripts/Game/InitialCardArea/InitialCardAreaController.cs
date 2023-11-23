@@ -15,6 +15,7 @@ namespace Scripts
         private int _currentInitialCardAreaIndex;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private List<IInitialCardAreaView> _initialCardAreaViews;
+
         public void Initialize(IInitialCardAreaView firstInitialCardAreaView, IInitialCardAreaView secondInitialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController)
         {
             _initialCardAreaViews = new List<IInitialCardAreaView>()
@@ -23,6 +24,8 @@ namespace Scripts
             _cardHolderModelCreator = cardHolderModelCreator;
             AddInitialCardAreaViews(levelTracker.GetLevelData().NumOfCards);
             _selectionController = new SelectionController(levelTracker.GetLevelData().NumOfCards);
+            IInvisibleClickHandler invisibleClickHandler = _initialCardAreaViews[0].GetInvisibleClickHandler();
+            invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaViews(onCardSelected);
             cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;

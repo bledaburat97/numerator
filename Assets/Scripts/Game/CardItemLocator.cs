@@ -66,7 +66,6 @@ namespace Scripts
             {
                 _activeCardIndex = cardIndex;
                 _boardHolderToCardIndexMapping.ElementAt(_probableCardHolderIndex).Key.SetHighlightStatus(true);
-                //TODO: highlight.
             }
             else
             {
@@ -85,6 +84,7 @@ namespace Scripts
                 ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
                 _boardAreaManager.SetNumberOfCard(_probableCardHolderIndex, cardIndex + 1);
                 _boardHolderToCardIndexMapping[cardHolderController] = cardIndex;
+                cardHolderController.SetHighlightStatus(false);
                 return cardHolderController.GetView().GetRectTransform();
             }
             return null;

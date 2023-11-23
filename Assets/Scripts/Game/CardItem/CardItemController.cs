@@ -87,7 +87,7 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
-                if (!_isAlreadySelected && _parentType == CardHolderType.Initial)
+                if (!_isAlreadySelected)
                 {
                     _selectionController.SetSelectionState(_cardItemData.cardIndex, true);
                     SetFrameStatus(true);

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -7,6 +8,8 @@ namespace Scripts
         [SerializeField] private CardHolderView cardHolderPrefab;
         [SerializeField] private CardItemView cardItemPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
+        [SerializeField] private InvisibleClickHandler invisibleClickHandler;
+        
         private CardItemViewFactory _cardItemViewFactory;
         private CardHolderFactory _cardHolderFactory;
         
@@ -15,6 +18,11 @@ namespace Scripts
             transform.localScale = Vector3.one;
             _cardHolderFactory = cardHolderFactory;
             _cardItemViewFactory = cardItemViewFactory;
+        }
+
+        public IInvisibleClickHandler GetInvisibleClickHandler()
+        {
+            return invisibleClickHandler;
         }
         
         public ICardHolderView CreateCardHolderView()
@@ -39,5 +47,6 @@ namespace Scripts
         ICardHolderView CreateCardHolderView();
         ICardItemView CreateCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
+        IInvisibleClickHandler GetInvisibleClickHandler();
     }
 }
