@@ -9,7 +9,7 @@ namespace Scripts
     {
         private ISelectionController _selectionController;
         private List<ICardHolderController> _cardHolderControllerList = new List<ICardHolderController>();
-        private List<ICardItemController> _cardItemControllerList = new List<ICardItemController>();
+        private List<IDraggableCardItemController> _cardItemControllerList = new List<IDraggableCardItemController>();
         private ICardItemLocator _cardItemLocator;
         private Dictionary<int, List<int>> _initialCardAreaIndexToCardIndexesMapping;
         private int _currentInitialCardAreaIndex;
@@ -36,7 +36,7 @@ namespace Scripts
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
             _cardItemLocator.ResetBoard();
-            foreach (ICardItemController cardItemController in _cardItemControllerList)
+            foreach (IDraggableCardItemController cardItemController in _cardItemControllerList)
             {
                 cardItemController.ResetPosition();
             }
@@ -65,7 +65,7 @@ namespace Scripts
             foreach (KeyValuePair<int, List<int>> pair in _initialCardAreaIndexToCardIndexesMapping)
             {
                 _currentInitialCardAreaIndex = pair.Key;
-                _initialCardAreaViews[_currentInitialCardAreaIndex].Init(new CardHolderFactory(), new CardItemViewFactory());
+                _initialCardAreaViews[_currentInitialCardAreaIndex].Init(new CardHolderFactory(), new DraggableCardItemViewFactory());
                 CreateCardHolders();
                 CreateCardItemsData(onCardSelected);
             }
@@ -106,9 +106,9 @@ namespace Scripts
         
         private void CreateCardItem(CardItemData cardItemData)
         {
-            CardItemControllerFactory cardItemControllerFactory = new CardItemControllerFactory();
-            ICardItemView cardItemView = _initialCardAreaViews[_currentInitialCardAreaIndex].CreateCardItemView(cardItemData.parent);
-            ICardItemController cardItemController = cardItemControllerFactory.Spawn();
+            DraggableCardItemControllerFactory draggableCardItemControllerFactory = new DraggableCardItemControllerFactory();
+            IDraggableCardItemView cardItemView = _initialCardAreaViews[_currentInitialCardAreaIndex].CreateCardItemView(cardItemData.parent);
+            IDraggableCardItemController cardItemController = draggableCardItemControllerFactory.Spawn();
             cardItemController.Initialize(cardItemView, cardItemData, _selectionController, _cardItemLocator);
             _cardItemControllerList.Add(cardItemController);
         }

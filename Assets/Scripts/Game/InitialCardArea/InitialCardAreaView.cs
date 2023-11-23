@@ -1,23 +1,21 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Scripts
 {
     public class InitialCardAreaView : MonoBehaviour, IInitialCardAreaView
     {
         [SerializeField] private CardHolderView cardHolderPrefab;
-        [SerializeField] private CardItemView cardItemPrefab;
+        [SerializeField] private DraggableCardItemView _draggableCardItemPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
         [SerializeField] private InvisibleClickHandler invisibleClickHandler;
-        
-        private CardItemViewFactory _cardItemViewFactory;
+        private DraggableCardItemViewFactory _draggableCardItemViewFactory;
         private CardHolderFactory _cardHolderFactory;
         
-        public void Init(CardHolderFactory cardHolderFactory, CardItemViewFactory cardItemViewFactory)
+        public void Init(CardHolderFactory cardHolderFactory, DraggableCardItemViewFactory draggableCardItemViewFactory)
         {
             transform.localScale = Vector3.one;
             _cardHolderFactory = cardHolderFactory;
-            _cardItemViewFactory = cardItemViewFactory;
+            _draggableCardItemViewFactory = draggableCardItemViewFactory;
         }
 
         public IInvisibleClickHandler GetInvisibleClickHandler()
@@ -30,9 +28,9 @@ namespace Scripts
             return _cardHolderFactory.Spawn(transform, cardHolderPrefab);
         }
 
-        public ICardItemView CreateCardItemView(Transform parent)
+        public IDraggableCardItemView CreateCardItemView(Transform parent)
         {
-            return _cardItemViewFactory.Spawn(parent, cardItemPrefab);
+            return _draggableCardItemViewFactory.Spawn(parent, _draggableCardItemPrefab);
         }
 
         public RectTransform GetTempRectTransform()
@@ -43,9 +41,9 @@ namespace Scripts
     
     public interface IInitialCardAreaView
     {
-        void Init(CardHolderFactory cardHolderFactory, CardItemViewFactory cardItemViewFactory);
+        void Init(CardHolderFactory cardHolderFactory, DraggableCardItemViewFactory draggableCardItemViewFactory);
         ICardHolderView CreateCardHolderView();
-        ICardItemView CreateCardItemView(Transform parent);
+        IDraggableCardItemView CreateCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();
     }

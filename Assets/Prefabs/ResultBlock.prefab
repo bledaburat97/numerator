@@ -132,7 +132,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 3390900973314479688}
   resultPrefab: {fileID: 1902068423835448789, guid: 9f6c85f5e5a7bb84297bf3d2068bee94, type: 3}
-  cardItemPrefab: {fileID: 8613591124439939394, guid: eef86066a137aa64a93db3892ebd31ab, type: 3}
+  nonDraggableCardItemPrefab: {fileID: 3368461494000725629, guid: 8988d5eb31f198f49837a03c49598dda, type: 3}
   cardsHolder: {fileID: 3390900972961722180}
   resultsHolder: {fileID: 3390900973919726945}
   horizontalLayoutGroupOfCardsHolder: {fileID: 2097527055979369299}

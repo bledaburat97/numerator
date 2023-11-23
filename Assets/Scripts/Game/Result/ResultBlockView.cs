@@ -7,18 +7,18 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private ResultView resultPrefab;
-        [SerializeField] private CardItemView cardItemPrefab;
+        [SerializeField] private NonDraggableCardItemView nonDraggableCardItemPrefab;
         [SerializeField] private RectTransform cardsHolder;
         [SerializeField] private RectTransform resultsHolder;
         [SerializeField] private HorizontalLayoutGroup horizontalLayoutGroupOfCardsHolder;
         [SerializeField] private float spacingBetweenCardsAndResult;
         private ResultViewFactory _resultViewFactory;
-        private CardItemViewFactory _cardItemViewFactory;
+        private NonDraggableCardItemViewFactory _nonDraggableCardItemViewFactory;
         
         
-        public void Init(CardItemViewFactory cardItemViewFactory, ResultViewFactory resultViewFactory)
+        public void Init(NonDraggableCardItemViewFactory nonDraggableCardItemViewFactory, ResultViewFactory resultViewFactory)
         {
-            _cardItemViewFactory = cardItemViewFactory;
+            _nonDraggableCardItemViewFactory = nonDraggableCardItemViewFactory;
             _resultViewFactory = resultViewFactory;
             rectTransform.localScale = Vector3.one;
         }
@@ -42,18 +42,18 @@ namespace Scripts
             resultsHolder.localPosition = new Vector2(sizeX + spacingBetweenCardsAndResult, 0f);
         }
 
-        public ICardItemView CreateCardItem()
+        public INonDraggableCardItemView CreateCardItem()
         {
-            return _cardItemViewFactory.Spawn(cardsHolder, cardItemPrefab);
+            return _nonDraggableCardItemViewFactory.Spawn(cardsHolder, nonDraggableCardItemPrefab);
         }
     }
 
     public interface IResultBlockView
     {
-        void Init(CardItemViewFactory cardItemViewFactory, ResultViewFactory resultViewFactory);
+        void Init(NonDraggableCardItemViewFactory nonDraggableCardItemViewFactory, ResultViewFactory resultViewFactory);
         IResultView CreateResult();
         void SetResultHolderLocalPosition(int numOfCards, float horizontalSizeOfCards);
         void SetCardsHolderLocalPosition();
-        ICardItemView CreateCardItem();
+        INonDraggableCardItemView CreateCardItem();
     }
 }

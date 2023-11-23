@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1445150972712788324}
-  - component: {fileID: 8613591124439939394}
   - component: {fileID: 8917381596642948652}
+  - component: {fileID: 3368461494000725629}
   m_Layer: 0
-  m_Name: CardItem
+  m_Name: NonDraggableCardItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -42,24 +42,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 60, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &8613591124439939394
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1614145412177302120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0259633141964184b379d19563fef47f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rectTransform: {fileID: 1445150972712788324}
-  cardNumberText: {fileID: 4488422079029886289}
-  outerBGImage: {fileID: 3936936582331623423}
-  innerBGImage: {fileID: 6021538845946115262}
-  shadowImage: {fileID: 5598195464458495719}
-  cardFrame: {fileID: 4994893504704688496}
 --- !u!222 &8917381596642948652
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -68,6 +50,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1614145412177302120}
   m_CullTransparentMesh: 1
+--- !u!114 &3368461494000725629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1614145412177302120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 698476f3e0974bdda8e0649690ce1124, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rectTransform: {fileID: 1445150972712788324}
+  cardNumberText: {fileID: 4488422079029886289}
+  outerBGImage: {fileID: 3936936582331623423}
+  innerBGImage: {fileID: 6021538845946115262}
+  shadowImage: {fileID: 5598195464458495719}
+  cardFrame: {fileID: 4994893504704688496}
 --- !u!1 &2477493052748394349
 GameObject:
   m_ObjectHideFlags: 0

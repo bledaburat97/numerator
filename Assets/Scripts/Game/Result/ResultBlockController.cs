@@ -12,7 +12,7 @@ namespace Scripts
         {
             _view = view;
             _model = model;
-            _view.Init(new CardItemViewFactory(), new ResultViewFactory());
+            _view.Init(new NonDraggableCardItemViewFactory(), new ResultViewFactory());
             CreateCardItems();
             CreateResults();
         }
@@ -32,7 +32,7 @@ namespace Scripts
             _view.SetCardsHolderLocalPosition();
             for (int i = 0; i < _model.finalNumbers.Count; i++)
             {
-                ICardItemView cardItemView = _view.CreateCardItem();
+                INonDraggableCardItemView cardItemView = _view.CreateCardItem();
                 cardItemView.Init(_model.finalNumbers[i]);
                 cardItemView.SetSize(new Vector2(ConstantValues.RESULT_CARD_WIDTH, ConstantValues.RESULT_CARD_HEIGHT));
                 cardItemView.InitPosition();

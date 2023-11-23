@@ -3,9 +3,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 namespace Scripts
 {
-    public class CardItemController : ICardItemController
+    public class DraggableItemController : IDraggableCardItemController
     {
-        private ICardItemView _view;
+        private IDraggableCardItemView _view;
         private CardItemData _cardItemData;
         private ISelectionController _selectionController;
         private bool _isDragStart;
@@ -16,7 +16,7 @@ namespace Scripts
         private Action<bool, int> _onCardSelected;
         private CardHolderType _parentType;
         
-        public void Initialize(ICardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator)
+        public void Initialize(IDraggableCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator)
         {
             _view = cardItemView;
             _cardItemData = cardItemData;
@@ -141,9 +141,9 @@ namespace Scripts
         }
     }
 
-    public interface ICardItemController
+    public interface IDraggableCardItemController
     {
-        void Initialize(ICardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
+        void Initialize(IDraggableCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
         void SetColor(Color color);
         void ResetPosition();
     }
