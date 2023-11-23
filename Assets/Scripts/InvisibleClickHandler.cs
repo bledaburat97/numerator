@@ -12,7 +12,6 @@ namespace Scripts
             _deselectAction = deselectAction;
         }
         
-        
         public void OnPointerClick(PointerEventData eventData)
         {
             Debug.Log("InvisibleClick");
