@@ -49,6 +49,11 @@ namespace Scripts
 
         public void OnDragStart(int cardIndex)
         {
+            TryResetCardIndexOnBoard(cardIndex);
+        }
+
+        private void TryResetCardIndexOnBoard(int cardIndex)
+        {
             if (_boardHolderToCardIndexMapping.ContainsValue(cardIndex))
             {
                 ICardHolderController cardHolderController = 
@@ -65,6 +70,10 @@ namespace Scripts
             if (_probableCardHolderIndex != -1)
             {
                 _activeCardIndex = cardIndex;
+                foreach (KeyValuePair<ICardHolderController, int> pair in _boardHolderToCardIndexMapping)
+                {
+                    pair.Key.SetHighlightStatus(false);
+                }
                 _boardHolderToCardIndexMapping.ElementAt(_probableCardHolderIndex).Key.SetHighlightStatus(true);
             }
             else
@@ -96,6 +105,7 @@ namespace Scripts
             {
                 ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
                 int targetCardIndex = _boardAreaManager.SetWildCardOnBoard(_probableCardHolderIndex);
+                TryResetCardIndexOnBoard(targetCardIndex);
                 _boardHolderToCardIndexMapping[cardHolderController] = targetCardIndex;
                 cardHolderController.SetHighlightStatus(false);
                 return new LockedCardInfo()

@@ -25,7 +25,7 @@ namespace Scripts
             _initialCardAreaIndexToCardIndexesMapping = new Dictionary<int, List<int>>();
             _initialCardAreaToNumOfWild = new Dictionary<int, int>();
             _cardHolderModelCreator = cardHolderModelCreator;
-            _numOfWildCard = 1;
+            _numOfWildCard = 3;
             AddInitialCardAreaViews(levelTracker.GetLevelData().NumOfCards);
             _selectionController = new SelectionController(levelTracker.GetLevelData().NumOfCards);
             IInvisibleClickHandler invisibleClickHandler = _initialCardAreaViews[0].GetInvisibleClickHandler();
@@ -116,14 +116,14 @@ namespace Scripts
                 CreateCardItem(cardItemData);
             }
 
-            if (numOfWildCard > 0)
+            for(int i = 0; i < numOfWildCard; i++)
             {
                 int wildHolderIndex = _initialCardAreaIndexToCardIndexesMapping[_currentInitialCardAreaIndex][^1];
                 CreateCardItem(new CardItemData()
                 {
                     parent = _cardHolderControllerList[wildHolderIndex].GetView().GetRectTransform(),
                     tempParent = _initialCardAreaViews[_currentInitialCardAreaIndex].GetTempRectTransform(),
-                    cardIndex = wildHolderIndex,
+                    cardIndex = wildHolderIndex + i,
                     onCardSelected = null,
                     cardItemType = CardItemType.Wild
                 });
