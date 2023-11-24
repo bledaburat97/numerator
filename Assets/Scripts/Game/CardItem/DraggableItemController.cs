@@ -37,6 +37,16 @@ namespace Scripts
             //SetAdditionalInfoButtonsStatus(true);
         }
 
+        public IDraggableCardItemView GetView()
+        {
+            return _view;
+        }
+
+        public void SetSize(Vector2 size)
+        {
+            _view.SetSize(size);
+        }
+
         private void SetOnCardSelected(Action<bool, int> action)
         {
             _onCardSelected += action;
@@ -146,5 +156,6 @@ namespace Scripts
         void Initialize(IDraggableCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
         void SetColor(Color color);
         void ResetPosition();
+        IDraggableCardItemView GetView();
     }
 }

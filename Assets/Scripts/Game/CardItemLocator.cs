@@ -89,6 +89,23 @@ namespace Scripts
             }
             return null;
         }
+        
+        public LockedCardInfo OnWildDragComplete(int wildCardIndex)
+        {
+            if (_activeCardIndex == wildCardIndex)
+            {
+                ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
+                int targetCardIndex = _boardAreaManager.SetWildCardOnBoard(_probableCardHolderIndex);
+                _boardHolderToCardIndexMapping[cardHolderController] = targetCardIndex;
+                cardHolderController.SetHighlightStatus(false);
+                return new LockedCardInfo()
+                {
+                    parent = cardHolderController.GetView().GetRectTransform(),
+                    targetCardIndex = targetCardIndex
+                };
+            }
+            return null;
+        }
 
         private int GetClosestCardHolderIndex(Vector2 cardItemPosition)
         {
@@ -123,6 +140,13 @@ namespace Scripts
         void OnDragStart(int cardIndex);
         void OnDragContinue(Vector2 pos, int cardIndex);
         RectTransform OnDragComplete(int cardIndex);
+        LockedCardInfo OnWildDragComplete(int wildCardIndex);
         void ResetBoard();
+    }
+
+    public class LockedCardInfo
+    {
+        public RectTransform parent;
+        public int targetCardIndex;
     }
 }

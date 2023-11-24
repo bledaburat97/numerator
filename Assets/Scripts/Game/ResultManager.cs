@@ -33,6 +33,11 @@ namespace Scripts
             return cardList.Take(numOfBoardHolders).ToList();
         }
 
+        public int GetTargetCardAtIndex(int index)
+        {
+            return _targetCardList[index];
+        }
+
         public void CheckFinalCardList(List<int> finalCardList)
         {
             if (finalCardList.Count != _targetCardList.Count)
@@ -125,6 +130,7 @@ namespace Scripts
     public interface IResultManager
     {
         void Initialize(ILevelTracker levelTracker);
+        int GetTargetCardAtIndex(int index);
         void CheckFinalCardList(List<int> finalCardList);
         event EventHandler<ResultBlockModel> ResultBlockAddition;
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;

@@ -17,7 +17,13 @@ namespace Scripts
         public void SetNumberOfCard(int index, int numberOfCard)
         {
             _numbersList[index] = numberOfCard;
-            
+        }
+
+        public int SetWildCardOnBoard(int index)
+        {
+            int targetNumber = _resultManager.GetTargetCardAtIndex(index);
+            _numbersList[index] = targetNumber;
+            return targetNumber - 1;
         }
 
         private void CheckFinalNumbers(object sender, EventArgs args)
@@ -42,5 +48,6 @@ namespace Scripts
     public interface IBoardAreaManager
     {
         void SetNumberOfCard(int index, int numberOfCard);
+        int SetWildCardOnBoard(int index);
     }
 }
