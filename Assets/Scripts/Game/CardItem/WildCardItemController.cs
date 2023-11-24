@@ -48,12 +48,12 @@ namespace Scripts
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_view.GetParent(), data.position,
                 null, out Vector2 localPosition);
             _view.SetAnchoredPosition(localPosition);
-            _onDragContinue(data.position, _cardItemData.cardIndex);
+            _onDragContinue(data.position, _cardItemData.cardItemIndex);
         }
 
         private void OnPointerUp(PointerEventData data)
         {
-            LockedCardInfo lockedCardInfo = _onDragComplete(_cardItemData.cardIndex);
+            LockedCardInfo lockedCardInfo = _onDragComplete(_cardItemData.cardItemIndex);
             
             if (lockedCardInfo != null)
             {

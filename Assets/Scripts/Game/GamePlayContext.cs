@@ -9,8 +9,7 @@ namespace Scripts
         [SerializeField] private CardItemInfoPopupView cardItemInfoPopupView;
         [SerializeField] private ResultAreaView resultAreaView;
         [SerializeField] private LevelTracker levelTracker;
-        [SerializeField] private InitialCardAreaView firstInitialCardAreaView;
-        [SerializeField] private InitialCardAreaView secondInitialCardAreaView;
+        [SerializeField] private InitialCardAreaView initialCardAreaView;
         [SerializeField] private GamePopupCreator gamePopupCreator;
         [SerializeField] private FadePanelView fadePanelView;
         [SerializeField] private TMP_Text levelIdText;
@@ -115,7 +114,7 @@ namespace Scripts
         private void CreateInitialCardArea()
         {
             _initialCardAreaController = new InitialCardAreaController();
-            _initialCardAreaController.Initialize(firstInitialCardAreaView, secondInitialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator, _resetButtonController);
+            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator, _resetButtonController);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

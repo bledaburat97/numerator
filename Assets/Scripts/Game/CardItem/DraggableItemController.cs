@@ -25,9 +25,8 @@ namespace Scripts
             _selectionController = selectionController;
             _selectionController.SetOnDeselectCards(DeselectCard);
             _parentType = CardHolderType.Initial;
-            int cardNumber = cardItemData.cardIndex + 1;
             
-            _view.Init(cardNumber);
+            _view.Init(cardItemData.cardNumber);
             _view.InitPosition();
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);
@@ -77,7 +76,7 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
-                _onDragStart(_cardItemData.cardIndex);
+                _onDragStart(_cardItemData.cardItemIndex);
                 _view.SetParent(_cardItemData.tempParent);
                 _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
             }
@@ -86,7 +85,7 @@ namespace Scripts
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_view.GetParent(), data.position,
                 null, out Vector2 localPosition);
             _view.SetAnchoredPosition(localPosition);
-            _onDragContinue(data.position, _cardItemData.cardIndex);
+            _onDragContinue(data.position, _cardItemData.cardItemIndex);
         }
 
         public void ResetPosition()
@@ -104,14 +103,14 @@ namespace Scripts
             {
                 if (!_isAlreadySelected && _isSelectable)
                 {
-                    _selectionController.SetSelectionState(_cardItemData.cardIndex, true);
+                    _selectionController.SetSelectionState(_cardItemData.cardItemIndex, true);
                     SetFrameStatus(true);
-                    _onCardSelected.Invoke(true, _cardItemData.cardIndex);
+                    _onCardSelected.Invoke(true, _cardItemData.cardItemIndex);
                 }
             }
             else
             {
-                RectTransform cardHolderTransform = _onDragComplete(_cardItemData.cardIndex);
+                RectTransform cardHolderTransform = _onDragComplete(_cardItemData.cardItemIndex);
                 RectTransform parentTransform;
                 if (cardHolderTransform != null)
                 {
@@ -135,7 +134,7 @@ namespace Scripts
         {
             if (_isSelectable)
             {
-                _isAlreadySelected = _selectionController.GetSelectionState(_cardItemData.cardIndex);
+                _isAlreadySelected = _selectionController.GetSelectionState(_cardItemData.cardItemIndex);
                 _selectionController.DeselectAll();
             }
             
@@ -145,7 +144,7 @@ namespace Scripts
         private void DeselectCard()
         {
             SetFrameStatus(false);
-            _onCardSelected(false, _cardItemData.cardIndex);
+            _onCardSelected(false, _cardItemData.cardItemIndex);
         }
 
         private void SetFrameStatus(bool status)

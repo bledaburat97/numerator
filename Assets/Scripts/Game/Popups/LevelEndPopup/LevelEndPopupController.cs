@@ -34,7 +34,7 @@ namespace Scripts
             Vector2[] starsPosition = new Vector2[numOfStars];
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
                 ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
-            starsPosition = starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size);
+            starsPosition = starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size, 0);
             
             for (int i = 0; i < numOfStars; i++)
             {

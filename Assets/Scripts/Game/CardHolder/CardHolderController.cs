@@ -88,5 +88,6 @@ namespace Scripts
         public Vector3 localPosition;
         public Vector2 size;
         public List<Vector2> possibleHolderIndicatorLocalPositionList;
+        public CardItemType cardItemType;
     }
 }

@@ -31,7 +31,7 @@ namespace Scripts
             Vector2 boundarySize = _view.GetBoundaryRectTransform().sizeDelta;
             Vector2 progressBarSize = _view.GetRectTransform().sizeDelta;
             float spacing = progressBarSize.x / _maxNumOfTries - boundarySize.x;
-            boundaryLocalPositionList = boundaryLocalPositionList.GetLocalPositionList(_maxNumOfTries - 1, spacing, boundarySize);
+            boundaryLocalPositionList = boundaryLocalPositionList.GetLocalPositionList(_maxNumOfTries - 1, spacing, boundarySize, 0);
 
             BoundaryControllerFactory boundaryControllerFactory = new BoundaryControllerFactory();
             foreach (Vector2 boundaryLocalPos in boundaryLocalPositionList)

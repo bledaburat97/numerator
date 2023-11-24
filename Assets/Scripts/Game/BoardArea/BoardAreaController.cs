@@ -28,7 +28,7 @@ namespace Scripts
         {
             List<ICardHolderController> boardCardHolderControllerList = new List<ICardHolderController>();
             CardHolderControllerFactory cardHolderControllerFactory = new CardHolderControllerFactory();
-            foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board, 0, _levelData.NumOfBoardHolders))
+            foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
                 ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardCardHolderView = _view.CreateCardHolderView();

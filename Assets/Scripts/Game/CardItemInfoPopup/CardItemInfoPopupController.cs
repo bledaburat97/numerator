@@ -68,7 +68,7 @@ namespace Scripts
         private void CreateCardHolderIndicatorButtons()
         {
             CardHolderIndicatorButtonControllerFactory cardHolderIndicatorButtonControllerFactory = new CardHolderIndicatorButtonControllerFactory();
-            foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board, 0, _levelData.NumOfBoardHolders))
+            foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
                 CardHolderIndicatorButtonModel cardHolderIndicatorButtonModel = new CardHolderIndicatorButtonModel()
                 {
