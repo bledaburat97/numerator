@@ -13,17 +13,19 @@ namespace Scripts
         private List<IWildCardItemController> _wildCardItemControllerList = new List<IWildCardItemController>();
         private ICardItemLocator _cardItemLocator;
         private Dictionary<int, List<int>> _initialCardAreaIndexToCardIndexesMapping;
+        private Dictionary<int, int> _initialCardAreaToNumOfWild;
         private int _currentInitialCardAreaIndex;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private List<IInitialCardAreaView> _initialCardAreaViews;
-        private bool _wildCardExistence = false;
+        private int _numOfWildCard = 0;
         public void Initialize(IInitialCardAreaView firstInitialCardAreaView, IInitialCardAreaView secondInitialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController)
         {
             _initialCardAreaViews = new List<IInitialCardAreaView>()
                 { firstInitialCardAreaView, secondInitialCardAreaView };
             _initialCardAreaIndexToCardIndexesMapping = new Dictionary<int, List<int>>();
+            _initialCardAreaToNumOfWild = new Dictionary<int, int>();
             _cardHolderModelCreator = cardHolderModelCreator;
-            _wildCardExistence = true;
+            _numOfWildCard = 1;
             AddInitialCardAreaViews(levelTracker.GetLevelData().NumOfCards);
             _selectionController = new SelectionController(levelTracker.GetLevelData().NumOfCards);
             IInvisibleClickHandler invisibleClickHandler = _initialCardAreaViews[0].GetInvisibleClickHandler();
@@ -46,22 +48,23 @@ namespace Scripts
 
         private void AddInitialCardAreaViews(int numOfCards)
         {
-            int numOfWildCardPlace = _wildCardExistence ? 1 : 0;
+            int numOfWildCardPlace = _numOfWildCard > 0 ? 1 : 0;
             if (numOfCards + numOfWildCardPlace < 6)
             {
                 _initialCardAreaIndexToCardIndexesMapping.Add(0, Enumerable.Range(0, numOfCards + numOfWildCardPlace).ToList());
-                //hold wild card existence.
-                _cardHolderModelCreator.AddInitialCardHolderModelList(numOfCards, _wildCardExistence);
+                _initialCardAreaToNumOfWild.Add(0, _numOfWildCard);
+                _cardHolderModelCreator.AddInitialCardHolderModelList(numOfCards, _numOfWildCard > 0);
             }
             
             else if (numOfCards < 10)
             {
                 int numOfCardsOfSecondArea = numOfCards / 2;
                 _initialCardAreaIndexToCardIndexesMapping.Add(0, Enumerable.Range(0, numOfCards - numOfCardsOfSecondArea).ToList());
+                _initialCardAreaToNumOfWild.Add(0, 0);
                 _cardHolderModelCreator.AddInitialCardHolderModelList(numOfCards - numOfCardsOfSecondArea, false);
                 _initialCardAreaIndexToCardIndexesMapping.Add(1, Enumerable.Range(numOfCards - numOfCardsOfSecondArea, numOfCardsOfSecondArea + numOfWildCardPlace).ToList());
-                //hold wild card existence.
-                _cardHolderModelCreator.AddInitialCardHolderModelList(numOfCardsOfSecondArea, _wildCardExistence);
+                _initialCardAreaToNumOfWild.Add(1, _numOfWildCard);
+                _cardHolderModelCreator.AddInitialCardHolderModelList(numOfCardsOfSecondArea, _numOfWildCard > 0);
             }
         }
 
@@ -72,7 +75,7 @@ namespace Scripts
                 _currentInitialCardAreaIndex = pair.Key;
                 _initialCardAreaViews[_currentInitialCardAreaIndex].Init(new CardHolderFactory(), new DraggableCardItemViewFactory(), new WildCardItemViewFactory());
                 CreateCardHolders();
-                CreateCardItemsData(onCardSelected);
+                CreateCardItemsData(onCardSelected, _initialCardAreaToNumOfWild[pair.Key]);
             }
         }
         
@@ -90,14 +93,14 @@ namespace Scripts
             }
         }
         
-        private void CreateCardItemsData(Action<bool, int> onCardSelected)
+        private void CreateCardItemsData(Action<bool, int> onCardSelected, int numOfWildCard)
         {
             if (_cardHolderControllerList.Count < _initialCardAreaIndexToCardIndexesMapping[_currentInitialCardAreaIndex].Count)
             {
                 Debug.LogError("There are not card holder controller for specified indexes.");
                 return;
             }
-            int numOfWildCardPlace = _wildCardExistence ? 1 : 0;
+            int numOfWildCardPlace = numOfWildCard > 0 ? 1 : 0;
             
             for (int i = 0; i < _initialCardAreaIndexToCardIndexesMapping[_currentInitialCardAreaIndex].Count - numOfWildCardPlace; i++)
             {
@@ -113,7 +116,7 @@ namespace Scripts
                 CreateCardItem(cardItemData);
             }
 
-            if (numOfWildCardPlace == 1)
+            if (numOfWildCard > 0)
             {
                 int wildHolderIndex = _initialCardAreaIndexToCardIndexesMapping[_currentInitialCardAreaIndex][^1];
                 CreateCardItem(new CardItemData()
@@ -134,7 +137,7 @@ namespace Scripts
                 WildCardItemControllerFactory wildCardItemControllerFactory = new WildCardItemControllerFactory();
                 IWildCardItemView wildCardItemView = _initialCardAreaViews[_currentInitialCardAreaIndex].CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
-                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, GetLockedCardController);
+                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController);
                 _wildCardItemControllerList.Add(wildCardItemController);
             }
             else
@@ -147,9 +150,18 @@ namespace Scripts
             }
         }
 
-        private IDraggableCardItemController GetLockedCardController(int cardIndex)
+        private void SetLockedCardController(LockedCardInfo lockedCardInfo)
         {
-            return _cardItemControllerList[cardIndex];
+            IDraggableCardItemController draggableCardItemController = _cardItemControllerList[lockedCardInfo.targetCardIndex];
+            draggableCardItemController.GetView().SetParent(lockedCardInfo.parent);
+            draggableCardItemController.GetView().InitPosition();
+            draggableCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
+            draggableCardItemController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[ProbabilityType.Certain]);
+            draggableCardItemController.DisableSelectability();
+            draggableCardItemController.GetView().SetLockImageStatus(true);
+            
+            ICardHolderController cardHolderController = _cardHolderControllerList[lockedCardInfo.targetCardIndex];
+            cardHolderController.EnableOnlyOneHolderIndicator(lockedCardInfo.boardCardHolderIndex);
         }
 
         private void OnProbabilityChanged(object sender, ProbabilityChangedEventArgs args)

@@ -15,11 +15,13 @@ namespace Scripts
         private Func<int, RectTransform> _onDragComplete;
         private Action<bool, int> _onCardSelected;
         private CardHolderType _parentType;
+        private bool _isSelectable;
         
         public void Initialize(IDraggableCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator)
         {
             _view = cardItemView;
             _cardItemData = cardItemData;
+            _isSelectable = true;
             _selectionController = selectionController;
             _selectionController.SetOnDeselectCards(DeselectCard);
             _parentType = CardHolderType.Initial;
@@ -34,12 +36,16 @@ namespace Scripts
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);
             SetOnCardSelected(_cardItemData.onCardSelected);
-            //SetAdditionalInfoButtonsStatus(true);
         }
 
         public IDraggableCardItemView GetView()
         {
             return _view;
+        }
+
+        public void DisableSelectability()
+        {
+            _isSelectable = false;
         }
 
         public void SetSize(Vector2 size)
@@ -74,7 +80,6 @@ namespace Scripts
                 _onDragStart(_cardItemData.cardIndex);
                 _view.SetParent(_cardItemData.tempParent);
                 _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
-                //SetAdditionalInfoButtonsStatus(false);
             }
 
             _isDragStart = true;
@@ -97,7 +102,7 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
-                if (!_isAlreadySelected)
+                if (!_isAlreadySelected && _isSelectable)
                 {
                     _selectionController.SetSelectionState(_cardItemData.cardIndex, true);
                     SetFrameStatus(true);
@@ -128,8 +133,11 @@ namespace Scripts
 
         private void OnPointerDown(PointerEventData data)
         {
-            _isAlreadySelected = _selectionController.GetSelectionState(_cardItemData.cardIndex);
-            _selectionController.DeselectAll();
+            if (_isSelectable)
+            {
+                _isAlreadySelected = _selectionController.GetSelectionState(_cardItemData.cardIndex);
+                _selectionController.DeselectAll();
+            }
             
             _isDragStart = false;
         }
@@ -157,5 +165,6 @@ namespace Scripts
         void SetColor(Color color);
         void ResetPosition();
         IDraggableCardItemView GetView();
+        void DisableSelectability();
     }
 }

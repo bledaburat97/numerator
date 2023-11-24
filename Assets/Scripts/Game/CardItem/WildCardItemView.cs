@@ -10,6 +10,11 @@ namespace Scripts
         private Action<PointerEventData> _onPointerDown;
         private Action<PointerEventData> _onPointerUp;
         
+        public void Destroy()
+        {
+            Destroy(gameObject);
+        }
+        
         public void SetParent(RectTransform parentTransform)
         {
             rectTransform.SetParent(parentTransform);
@@ -58,6 +63,7 @@ namespace Scripts
 
     public interface IWildCardItemView : IBaseCardItemView
     {
+        void Destroy();
         void SetParent(RectTransform parentTransform);
         RectTransform GetParent();
         void SetAnchoredPosition(Vector2 localPosition);

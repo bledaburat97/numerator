@@ -58,6 +58,14 @@ namespace Scripts
             }
         }
 
+        public void EnableOnlyOneHolderIndicator(int holderIndicatorIndex)
+        {
+            for (int i = 0; i < _possibleHolderIndicatorControllerList.Count; i++)
+            {
+                _possibleHolderIndicatorControllerList[i].SetStatus(i == holderIndicatorIndex);
+            }
+        }
+
         public void SetHighlightStatus(bool status)
         {
             _view.SetHighlightStatus(status);
@@ -71,6 +79,7 @@ namespace Scripts
         int GetIndex();
         void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);
         void SetHighlightStatus(bool status);
+        void EnableOnlyOneHolderIndicator(int holderIndicatorIndex);
     }
     
     public class CardHolderModel

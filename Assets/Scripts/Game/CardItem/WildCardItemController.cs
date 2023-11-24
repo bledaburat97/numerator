@@ -12,9 +12,9 @@ namespace Scripts
         private Action<Vector2, int> _onDragContinue;
         private Func<int, LockedCardInfo> _onDragComplete;
         private Func<int, int, RectTransform> _afterDragComplete;
-        private Func<int, IDraggableCardItemController> _getLockedCard;
+        private Action<LockedCardInfo> _setLockedCard;
         
-        public void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Func<int, IDraggableCardItemController> getLockedCard)
+        public void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> setLockedCard)
         {
             _view = view;
             _cardItemData = data;
@@ -23,7 +23,7 @@ namespace Scripts
             _view.SetOnPointerUp(OnPointerUp);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnWildDragComplete);
-            SetGetLockedCard(getLockedCard);
+            SetGetLockedCard(setLockedCard);
         }
 
         private void SetOnDragContinue(Action<Vector2, int> action)
@@ -36,9 +36,9 @@ namespace Scripts
             _onDragComplete += func;
         }
 
-        private void SetGetLockedCard(Func<int, IDraggableCardItemController> func)
+        private void SetGetLockedCard(Action<LockedCardInfo> func)
         {
-            _getLockedCard = func;
+            _setLockedCard = func;
         }
 
         private void OnDrag(PointerEventData data)
@@ -57,21 +57,21 @@ namespace Scripts
             
             if (lockedCardInfo != null)
             {
-               IDraggableCardItemController draggableCardItemController = _getLockedCard.Invoke(lockedCardInfo.targetCardIndex);
-               draggableCardItemController.GetView().SetParent(lockedCardInfo.parent);
-               draggableCardItemController.GetView().InitPosition();
-               draggableCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
+               _setLockedCard.Invoke(lockedCardInfo);
+               _view.Destroy();
             }
-
-            _view.SetParent(_cardItemData.parent);
-            _view.InitPosition();
-            _view.SetSize(_cardItemData.parent.sizeDelta);
+            else
+            {
+                _view.SetParent(_cardItemData.parent);
+                _view.InitPosition();
+                _view.SetSize(_cardItemData.parent.sizeDelta);
+            }
         }
 
     }
 
     public interface IWildCardItemController
     {
-        void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Func<int, IDraggableCardItemController> getLockedCard);
+        void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> getLockedCard);
     }
 }

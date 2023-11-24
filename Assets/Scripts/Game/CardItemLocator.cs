@@ -101,7 +101,8 @@ namespace Scripts
                 return new LockedCardInfo()
                 {
                     parent = cardHolderController.GetView().GetRectTransform(),
-                    targetCardIndex = targetCardIndex
+                    targetCardIndex = targetCardIndex,
+                    boardCardHolderIndex = _probableCardHolderIndex
                 };
             }
             return null;
@@ -148,5 +149,6 @@ namespace Scripts
     {
         public RectTransform parent;
         public int targetCardIndex;
+        public int boardCardHolderIndex;
     }
 }
