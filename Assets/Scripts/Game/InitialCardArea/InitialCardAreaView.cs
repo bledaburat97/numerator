@@ -5,20 +5,20 @@ namespace Scripts
     public class InitialCardAreaView : MonoBehaviour, IInitialCardAreaView
     {
         [SerializeField] private CardHolderView cardHolderPrefab;
-        [SerializeField] private DraggableCardItemView draggableCardItemPrefab;
+        [SerializeField] private NormalCardItemView _normalCardItemPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
         [SerializeField] private InvisibleClickHandler invisibleClickHandler;
         [SerializeField] private WildCardItemView wildCardItemPrefab;
         
-        private DraggableCardItemViewFactory _draggableCardItemViewFactory;
+        private NormalCardItemViewFactory _normalCardItemViewFactory;
         private CardHolderFactory _cardHolderFactory;
         private WildCardItemViewFactory _wildCardItemViewFactory;
         
-        public void Init(CardHolderFactory cardHolderFactory, DraggableCardItemViewFactory draggableCardItemViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
+        public void Init(CardHolderFactory cardHolderFactory, NormalCardItemViewFactory normalCardItemViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
         {
             transform.localScale = Vector3.one;
             _cardHolderFactory = cardHolderFactory;
-            _draggableCardItemViewFactory = draggableCardItemViewFactory;
+            _normalCardItemViewFactory = normalCardItemViewFactory;
             _wildCardItemViewFactory = wildCardItemViewFactory;
         }
 
@@ -32,9 +32,9 @@ namespace Scripts
             return _cardHolderFactory.Spawn(transform, cardHolderPrefab);
         }
 
-        public IDraggableCardItemView CreateCardItemView(Transform parent)
+        public INormalCardItemView CreateCardItemView(Transform parent)
         {
-            return _draggableCardItemViewFactory.Spawn(parent, draggableCardItemPrefab);
+            return _normalCardItemViewFactory.Spawn(parent, _normalCardItemPrefab);
         }
 
         public RectTransform GetTempRectTransform()
@@ -50,9 +50,9 @@ namespace Scripts
     
     public interface IInitialCardAreaView
     {
-        void Init(CardHolderFactory cardHolderFactory, DraggableCardItemViewFactory draggableCardItemViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
+        void Init(CardHolderFactory cardHolderFactory, NormalCardItemViewFactory normalCardItemViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
         ICardHolderView CreateCardHolderView();
-        IDraggableCardItemView CreateCardItemView(Transform parent);
+        INormalCardItemView CreateCardItemView(Transform parent);
         IWildCardItemView CreateWildCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();

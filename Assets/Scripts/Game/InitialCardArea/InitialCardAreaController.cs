@@ -9,8 +9,7 @@ namespace Scripts
         private ISelectionController _selectionController;
         private List<ICardHolderController> _normalCardHolderControllerList = new List<ICardHolderController>();
         private ICardHolderController _wildCardHolderController = null;
-        private List<IDraggableCardItemController> _cardItemControllerList = new List<IDraggableCardItemController>();
-        private List<IWildCardItemController> _wildCardItemControllerList = new List<IWildCardItemController>();
+        private List<INormalCardItemController> _normalCardItemControllerList = new List<INormalCardItemController>();
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private IInitialCardAreaView _initialCardAreaView;
@@ -34,7 +33,7 @@ namespace Scripts
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
             _cardItemLocator.ResetBoard();
-            foreach (IDraggableCardItemController cardItemController in _cardItemControllerList)
+            foreach (INormalCardItemController cardItemController in _normalCardItemControllerList)
             {
                 cardItemController.ResetPosition();
             }
@@ -42,7 +41,7 @@ namespace Scripts
 
         private void InitInitialCardAreaViews(Action<bool, int> onCardSelected, int numOfWildCards)
         {
-            _initialCardAreaView.Init(new CardHolderFactory(), new DraggableCardItemViewFactory(), new WildCardItemViewFactory());
+            _initialCardAreaView.Init(new CardHolderFactory(), new NormalCardItemViewFactory(), new WildCardItemViewFactory());
             CreateCardHolders();
             CreateCardItemsData(onCardSelected, numOfWildCards);
         }
@@ -99,27 +98,26 @@ namespace Scripts
                 IWildCardItemView wildCardItemView = _initialCardAreaView.CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
                 wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder);
-                _wildCardItemControllerList.Add(wildCardItemController);
             }
             else
             {
-                DraggableCardItemControllerFactory draggableCardItemControllerFactory = new DraggableCardItemControllerFactory();
-                IDraggableCardItemView cardItemView = _initialCardAreaView.CreateCardItemView(cardItemData.parent);
-                IDraggableCardItemController cardItemController = draggableCardItemControllerFactory.Spawn();
-                cardItemController.Initialize(cardItemView, cardItemData, _selectionController, _cardItemLocator);
-                _cardItemControllerList.Add(cardItemController);
+                NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
+                INormalCardItemView normalCardItemView = _initialCardAreaView.CreateCardItemView(cardItemData.parent);
+                INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator);
+                _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
 
         private void SetLockedCardController(LockedCardInfo lockedCardInfo)
         {
-            IDraggableCardItemController draggableCardItemController = _cardItemControllerList[lockedCardInfo.targetCardIndex];
-            draggableCardItemController.GetView().SetParent(lockedCardInfo.parent);
-            draggableCardItemController.GetView().InitPosition();
-            draggableCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
-            draggableCardItemController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[ProbabilityType.Certain]);
-            draggableCardItemController.DisableSelectability();
-            draggableCardItemController.GetView().SetLockImageStatus(true);
+            INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
+            normalCardItemController.GetView().SetParent(lockedCardInfo.parent);
+            normalCardItemController.GetView().InitPosition();
+            normalCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
+            normalCardItemController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[ProbabilityType.Certain]);
+            normalCardItemController.DisableSelectability();
+            normalCardItemController.GetView().SetLockImageStatus(true);
             
             ICardHolderController cardHolderController = _normalCardHolderControllerList[lockedCardInfo.targetCardIndex];
             cardHolderController.EnableOnlyOneHolderIndicator(lockedCardInfo.boardCardHolderIndex);
@@ -127,7 +125,7 @@ namespace Scripts
 
         private void OnProbabilityChanged(object sender, ProbabilityChangedEventArgs args)
         {
-            _cardItemControllerList[args.cardIndex].SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[args.probabilityType]);
+            _normalCardItemControllerList[args.cardIndex].SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[args.probabilityType]);
         }
 
         private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)

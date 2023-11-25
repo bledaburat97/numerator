@@ -959,7 +959,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cardHolderPrefab: {fileID: 5807579108651850580, guid: 836b2deab55315a4da13c965777eef4d, type: 3}
-  draggableCardItemPrefab: {fileID: 8613591124439939394, guid: eef86066a137aa64a93db3892ebd31ab, type: 3}
+  _normalCardItemPrefab: {fileID: 8613591124439939394, guid: eef86066a137aa64a93db3892ebd31ab, type: 3}
   tempParentRectTransform: {fileID: 872332907}
   invisibleClickHandler: {fileID: 1942907004}
   wildCardItemPrefab: {fileID: -5603641286038599345, guid: 1322d50ce0e5dac429d25595ea32eac1, type: 3}

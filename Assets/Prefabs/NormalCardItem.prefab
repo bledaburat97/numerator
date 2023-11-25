@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8613591124439939394}
   - component: {fileID: 8917381596642948652}
   m_Layer: 0
-  m_Name: DraggableCardItem
+  m_Name: NormalCardItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

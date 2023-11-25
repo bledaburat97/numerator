@@ -1,39 +1,20 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace Scripts
 {
     public class DraggableCardItemView : BaseCardItemView, IDraggableCardItemView, IDragHandler, IPointerDownHandler, IPointerUpHandler
     {
-        [SerializeField] private Image lockImage;
-        private Action<PointerEventData> _onDrag;
-        private Action<PointerEventData> _onPointerDown;
-        private Action<PointerEventData> _onPointerUp;
-
-        public override void Init(int cardNumber)
-        {
-            base.Init(cardNumber);
-            SetLockImageStatus(false);
-        }
-
-        public void SetColor(Color color)
-        {
-            innerBGImage.color = color;
-            outerBGImage.color = color;
-        }
-
-        public void SetLockImageStatus(bool status)
-        {
-            lockImage.gameObject.SetActive(status);
-        }
+        protected Action<PointerEventData> _onDrag;
+        protected Action<PointerEventData> _onPointerDown;
+        protected Action<PointerEventData> _onPointerUp;
         
         public void SetParent(RectTransform parentTransform)
         {
             rectTransform.SetParent(parentTransform);
         }
-
+        
         public RectTransform GetParent()
         {
             return rectTransform.parent.GetComponent<RectTransform>();
@@ -77,8 +58,6 @@ namespace Scripts
 
     public interface IDraggableCardItemView : IBaseCardItemView
     {
-        void SetColor(Color color);
-        void SetLockImageStatus(bool status);
         void SetParent(RectTransform parentTransform);
         RectTransform GetParent();
         void SetAnchoredPosition(Vector2 localPosition);

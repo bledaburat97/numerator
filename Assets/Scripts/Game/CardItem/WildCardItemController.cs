@@ -4,12 +4,9 @@ using UnityEngine.EventSystems;
 
 namespace Scripts
 {
-    public class WildCardItemController : IWildCardItemController
+    public class WildCardItemController : DraggableCardItemController, IWildCardItemController
     {
         private IWildCardItemView _view;
-        private CardItemData _cardItemData;
-        private Action<int> _onDragStart;
-        private Action<Vector2, int> _onDragContinue;
         private Func<int, LockedCardInfo> _onDragComplete;
         private Func<int, int, RectTransform> _afterDragComplete;
         private Action<LockedCardInfo> _setLockedCard;
@@ -31,11 +28,6 @@ namespace Scripts
             SetGetLockedCard(setLockedCard);
             _slideCardHolders += slideCardHolders;
             _backSlideCardHolders += backSlideCardHolders;
-        }
-
-        private void SetOnDragContinue(Action<Vector2, int> action)
-        {
-            _onDragContinue += action;
         }
 
         private void SetOnDragComplete(Func<int, LockedCardInfo> func)
@@ -85,7 +77,6 @@ namespace Scripts
         private void OnPointerDown(PointerEventData data)
         {
             _isDragStart = false;
-
         }
 
     }
