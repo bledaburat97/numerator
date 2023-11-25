@@ -98,7 +98,7 @@ namespace Scripts
                 WildCardItemControllerFactory wildCardItemControllerFactory = new WildCardItemControllerFactory();
                 IWildCardItemView wildCardItemView = _initialCardAreaView.CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
-                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController);
+                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder);
                 _wildCardItemControllerList.Add(wildCardItemController);
             }
             else
@@ -133,6 +133,26 @@ namespace Scripts
         private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
         {
             _normalCardHolderControllerList[args.cardIndex].SetHolderIndicatorListStatus(args.holderIndicatorIndexList);
+        }
+
+        private void SlideNormalCardHolders()
+        {
+            _wildCardHolderController.GetView().SetStatus(false);
+            List<Vector2> newLocalPositions = _cardHolderModelCreator.GetLocalPositionsOfFirstLineWhenWildRemoved();
+            for (int i = 0; i < newLocalPositions.Count; i++)
+            {
+                _normalCardHolderControllerList[i].SetLocalPosition(newLocalPositions[i]);
+            }
+        }
+
+        private void BackSlideNormalCardHolder()
+        {
+            _wildCardHolderController.GetView().SetStatus(true);
+            List<Vector2> newLocalPositions = _cardHolderModelCreator.GetLocalPositionsOfFirstLine();
+            for (int i = 1; i < newLocalPositions.Count; i++)
+            {
+                _normalCardHolderControllerList[i-1].SetLocalPosition(newLocalPositions[i]);
+            }
         }
     }
     

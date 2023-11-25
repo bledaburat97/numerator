@@ -9,10 +9,21 @@ namespace Scripts
         private Action<PointerEventData> _onDrag;
         private Action<PointerEventData> _onPointerDown;
         private Action<PointerEventData> _onPointerUp;
-        
+        private Vector3 _localPositionGap = Vector2.zero;
         public void Destroy()
         {
             Destroy(gameObject);
+        }
+
+        public void SetLocalPositionGap(int cardItemIndex)
+        {
+            _localPositionGap += new Vector3(-3.5f, -2f, 0f) * cardItemIndex;
+        }
+        
+        public override void InitPosition()
+        {
+            rectTransform.localScale = Vector3.one;
+            transform.localPosition = Vector3.zero + _localPositionGap;
         }
         
         public void SetParent(RectTransform parentTransform)
@@ -70,5 +81,6 @@ namespace Scripts
         void SetOnDrag(Action<PointerEventData> onDrag);
         void SetOnPointerDown(Action<PointerEventData> onPointerDown);
         void SetOnPointerUp(Action<PointerEventData> onPointerUp);
+        void SetLocalPositionGap(int cardItemIndex);
     }
 }

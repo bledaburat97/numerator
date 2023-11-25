@@ -70,6 +70,11 @@ namespace Scripts
         {
             _view.SetHighlightStatus(status);
         }
+
+        public void SetLocalPosition(Vector2 localXPos)
+        {
+            _view.SetLocalPosition(localXPos);
+        }
     }
     
     public interface ICardHolderController
@@ -80,6 +85,7 @@ namespace Scripts
         void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);
         void SetHighlightStatus(bool status);
         void EnableOnlyOneHolderIndicator(int holderIndicatorIndex);
+        void SetLocalPosition(Vector2 localXPos);
     }
     
     public class CardHolderModel

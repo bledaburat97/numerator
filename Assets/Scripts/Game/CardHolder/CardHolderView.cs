@@ -14,9 +14,15 @@ namespace Scripts
         public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory)
         {
             transform.localScale = Vector3.one;
+            SetLocalPosition(model.localPosition);
             transform.localPosition = model.localPosition;
             rectTransform.sizeDelta = model.size;
             _possibleHolderIndicatorViewFactory = possibleHolderIndicatorViewFactory;
+        }
+
+        public void SetLocalPosition(Vector2 localPosition)
+        {
+            transform.localPosition = localPosition;
         }
         
         public IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView()
@@ -43,6 +49,11 @@ namespace Scripts
         {
             highlightImage.gameObject.SetActive(status);
         }
+
+        public void SetStatus(bool status)
+        {
+            rectTransform.gameObject.SetActive(status);
+        }
     }
 
     public interface ICardHolderView
@@ -53,5 +64,7 @@ namespace Scripts
         RectTransform GetRectTransform();
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
         void SetHighlightStatus(bool status);
+        void SetLocalPosition(Vector2 localPosition);
+        void SetStatus(bool status);
     }
 }
