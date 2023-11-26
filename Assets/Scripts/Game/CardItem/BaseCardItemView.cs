@@ -25,7 +25,7 @@ namespace Scripts
             transform.localPosition = Vector3.zero;
         }
 
-        public virtual void SetSize(Vector2 size)
+        public void SetSize(Vector2 size)
         {
             rectTransform.sizeDelta = size;
         }
@@ -35,7 +35,7 @@ namespace Scripts
             cardNumberText.text = number.ToString();
         }
 
-        public virtual void SetFrameStatus(bool status)
+        public void SetFrameStatus(bool status)
         {
             cardFrame.gameObject.SetActive(status);
         }

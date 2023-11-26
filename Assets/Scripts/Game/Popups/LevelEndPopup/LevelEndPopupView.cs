@@ -10,7 +10,8 @@ namespace Scripts
         [SerializeField] private ReturnMenuButtonView returnMenuButtonView;
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
-
+        [SerializeField] private CircleProgressBarView circleProgressBarView;
+        
         private StarImageViewFactory _starImageViewFactory;
         public void Init(StarImageViewFactory starImageViewFactory)
         {
@@ -38,6 +39,11 @@ namespace Scripts
         {
             return _starImageViewFactory.Spawn(starHolder, starImagePrefab);
         }
+
+        public ICircleProgressBarView CreateCircleProgressBar()
+        {
+            return circleProgressBarView;
+        }
     }
     
     public interface ILevelEndPopupView
@@ -47,5 +53,6 @@ namespace Scripts
         IPlayButtonView GetPlayButtonView();
         IReturnMenuButtonView GetReturnMenuButtonView();
         IStarImageView CreateStarImage();
+        ICircleProgressBarView CreateCircleProgressBar();
     }
 }

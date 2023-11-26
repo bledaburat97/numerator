@@ -47,7 +47,7 @@ namespace Scripts
             if (numOfCards < 6)
             {
                 _localPositionsOfFirstLine = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards, spacing, cardHolderSize, firstLineYPos);
-                _localPositionsOfFirstLineWithoutWild = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards - 1, spacing, cardHolderSize, firstLineYPos);
+                _localPositionsOfFirstLineWithoutWild = _localPositionsOfFirstLineWithoutWild.GetLocalPositionList(numOfCards - 1, spacing, cardHolderSize, firstLineYPos);
             }
             else if (numOfCards < 11)
             {

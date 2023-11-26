@@ -14,6 +14,11 @@ namespace Scripts
             transform.localPosition = localPosition;
         }
 
+        public void Destroy()
+        {
+            Destroy(gameObject);
+        }
+
         public void SetSize(Vector2 size)
         {
             rectTransform.sizeDelta = size;
@@ -23,7 +28,16 @@ namespace Scripts
         {
             star.gameObject.SetActive(status);
         }
-        
+
+        public RectTransform GetRectTransform()
+        {
+            return rectTransform;
+        }
+
+        public void SetParent(RectTransform parent)
+        {
+            rectTransform.SetParent(parent);
+        }
     }
 
     public interface IStarImageView
@@ -31,5 +45,8 @@ namespace Scripts
         void Init(Vector2 localPosition);
         void SetStarStatus(bool status);
         void SetSize(Vector2 size);
+        RectTransform GetRectTransform();
+        void SetParent(RectTransform parent);
+        void Destroy();
     }
 }

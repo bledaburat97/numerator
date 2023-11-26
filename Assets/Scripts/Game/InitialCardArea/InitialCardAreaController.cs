@@ -13,14 +13,16 @@ namespace Scripts
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private IInitialCardAreaView _initialCardAreaView;
+        private ILevelTracker _levelTracker;
         public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController)
         {
             _initialCardAreaView = initialCardAreaView;
             _cardHolderModelCreator = cardHolderModelCreator;
-            int numOfWildCards = 3;
-            int numOfNormalCards = levelTracker.GetLevelData().NumOfCards;
+            _levelTracker = levelTracker;
+            int numOfWildCards = _levelTracker.GetWildCardCount();
+            int numOfNormalCards = _levelTracker.GetLevelData().NumOfCards;
             _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfWildCards > 0);
-            _selectionController = new SelectionController(levelTracker.GetLevelData().NumOfCards);
+            _selectionController = new SelectionController(numOfNormalCards);
             IInvisibleClickHandler invisibleClickHandler = _initialCardAreaView.GetInvisibleClickHandler();
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
@@ -111,6 +113,7 @@ namespace Scripts
 
         private void SetLockedCardController(LockedCardInfo lockedCardInfo)
         {
+            _levelTracker.DecreaseWildCardCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
             normalCardItemController.GetView().SetParent(lockedCardInfo.parent);
             normalCardItemController.GetView().InitPosition();
