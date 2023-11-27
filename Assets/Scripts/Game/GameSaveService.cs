@@ -10,18 +10,21 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private IResultManager _resultManager;
         private IInitialCardAreaController _initialCardAreaController;
+        private ILevelManager _levelManager;
 
         public void Initialize(ILevelTracker levelTracker)
         {
             _levelTracker = levelTracker;
             _resultManager = new ResultManager();
             _initialCardAreaController = new InitialCardAreaController();
+            _levelManager = new LevelManager();
         }
         
-        public void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController)
+        public void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager)
         {
             _resultManager = resultManager;
             _initialCardAreaController = initialCardAreaController;
+            _levelManager = levelManager;
         }
         
         public LevelSaveData GetSavedLevel()
@@ -45,7 +48,8 @@ namespace Scripts
                 TargetCards = _resultManager.GetTargetCards(),
                 ProbabilityTypes = _initialCardAreaController.GetProbabilityTypes(),
                 ActiveHolderIndicatorIndexesList = _initialCardAreaController.GetActiveHolderIndicatorIndexesList(),
-                LockedCardIndexes = _initialCardAreaController.GetLockedCardIndexes()
+                LockedCardIndexes = _initialCardAreaController.GetLockedCardIndexes(),
+                RemainingGuessCount = _levelManager.GetRemainingGuessCount()
             };
             
             string data = JsonConvert.SerializeObject(levelSaveData);
@@ -60,7 +64,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save();
-        void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController);
+        void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager);
     }
 
     public class LevelSaveData
@@ -71,6 +75,7 @@ namespace Scripts
         public List<ProbabilityType> ProbabilityTypes;
         public List<List<int>> ActiveHolderIndicatorIndexesList;
         public List<int> LockedCardIndexes;
+        public int RemainingGuessCount;
     }
     
 }

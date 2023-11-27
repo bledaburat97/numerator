@@ -13,17 +13,16 @@ namespace Scripts
         private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
         private ILevelManager _levelManager;
         private int _activeStarCount;
+        private List<int> _indexesContainsStar = new List<int>();
         
-        public void Initialize(IStarProgressBarView view, ILevelTracker levelTracker, ILevelManager levelManager)
+        public void Initialize(IStarProgressBarView view, ILevelTracker levelTracker)
         {
             _view = view;
             _view.Init(new BoundaryViewFactory());
             _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
             _boundaryControllerList = new List<IBoundaryController>();
-            _levelManager = levelManager;
             CreateBoundaries();
             CreateStars();
-            _levelManager.DecreaseProgressBar += DecreaseProgressBar;
         }
 
         private void CreateBoundaries()
@@ -46,30 +45,52 @@ namespace Scripts
                 _boundaryControllerList.Add(boundaryController);
             }
         }
+        
+        private void SetIndexesContainsStar()
+        {
+            _indexesContainsStar.Add(0);
+            _indexesContainsStar.Add((_maxNumOfTries - 2) / 4);
+            _indexesContainsStar.Add((_maxNumOfTries - 2) / 2);
+        }
+
+        public List<int> GetIndexesContainsStar()
+        {
+            return _indexesContainsStar;
+        }
 
         private void CreateStars()
         {
-            List<int> boundaryIndexesContainsStar = _levelManager.GetIndexesContainsStar();
-            for (int i = 0; i < boundaryIndexesContainsStar.Count; i++)
+            SetIndexesContainsStar();
+            for (int i = 0; i < _indexesContainsStar.Count; i++)
             {
-                _boundaryControllerList[boundaryIndexesContainsStar[i]].AddStarImage(_localPositionOfStar);
+                _boundaryControllerList[_indexesContainsStar[i]].AddStarImage(_localPositionOfStar);
             }
         }
 
-        private void DecreaseProgressBar(object sender, DecreaseProgressBarEventArgs args)
+        public void DecreaseProgressBar(List<int> indexesOfDeletedStars, float targetPercentage, Action levelFailedAction, float animationDuration)
         {
             Action onStartAction = null;
-            if (args.indexOfDeletedStar != -1)
+
+            foreach (int indexOfDeletedStar in indexesOfDeletedStars)
             {
-                onStartAction += _boundaryControllerList[args.indexOfDeletedStar].RemoveStar;
+                if (indexOfDeletedStar != -1)
+                {
+                    onStartAction += _boundaryControllerList[indexOfDeletedStar].RemoveStar;
+                }
             }
-            _view.SetProgress(args.targetPercentage, 1f, args.levelFailedAction, onStartAction);
+
+            _view.SetProgress(targetPercentage, animationDuration, levelFailedAction, onStartAction);
         }
         
     }
 
     public interface IStarProgressBarController
     {
-        void Initialize(IStarProgressBarView view, ILevelTracker levelTracker, ILevelManager levelManager);
+        void Initialize(IStarProgressBarView view, ILevelTracker levelTracker);
+
+        void DecreaseProgressBar(List<int> indexesOfDeletedStars, float targetPercentage, Action levelFailedAction,
+            float animationDuration);
+
+        List<int> GetIndexesContainsStar();
     }
 }

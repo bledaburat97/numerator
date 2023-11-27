@@ -58,10 +58,16 @@ namespace Scripts
                 ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView cardHolderView = _initialCardAreaView.CreateCardHolderView();
                 cardHolderController.Initialize(cardHolderView, cardHolderModel);
-                cardHolderController.SetHolderIndicatorListStatus(_levelTracker.GetLevelInfo().levelSaveData.ActiveHolderIndicatorIndexesList[index]);
-                if(cardHolderModel.cardItemType == CardItemType.Normal) _normalCardHolderControllerList.Add(cardHolderController);
-                else if(cardHolderModel.cardItemType == CardItemType.Wild) _wildCardHolderController = cardHolderController;
-                index++;
+                if (cardHolderModel.cardItemType == CardItemType.Normal)
+                {
+                    cardHolderController.SetHolderIndicatorListStatus(_levelTracker.GetLevelInfo().levelSaveData.ActiveHolderIndicatorIndexesList[index]);
+                    _normalCardHolderControllerList.Add(cardHolderController);
+                    index++;
+                }
+                else if (cardHolderModel.cardItemType == CardItemType.Wild)
+                {
+                    _wildCardHolderController = cardHolderController;
+                }
             }
         }
         

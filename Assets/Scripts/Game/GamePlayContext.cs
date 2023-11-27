@@ -44,23 +44,19 @@ namespace Scripts
             _cardHolderModelCreator = new CardHolderModelCreator();
             _cardHolderModelCreator.Initialize();
             _resultManager = new ResultManager();
+            CreateResultArea();
             _resultManager.Initialize(levelTracker);
             SetLevelId();
             CreateSettingsButton();
             CreateCheckButton();
             CreateResetButton();
-            CreateLevelManager();
             CreateStarProgressBar();
+            CreateLevelManager();
             CreateBoardArea();
-            CreateResultArea();
             CreateCardItemInfoPopup();
             CreateInitialCardArea();
             CreateGamePopupCreator();
-            _gameSaveService.Set(_resultManager, _initialCardAreaController);
-            foreach (List<int> triedCards in levelTracker.GetLevelInfo().levelSaveData.TriedCardsList)
-            {
-                _resultManager.CheckFinalCards(triedCards);
-            }
+            _gameSaveService.Set(_resultManager, _initialCardAreaController, _levelManager);
         }
         
         private void OnApplicationQuit()
@@ -94,13 +90,13 @@ namespace Scripts
         private void CreateLevelManager()
         {
             _levelManager = new LevelManager();
-            _levelManager.Initialize(levelTracker, _resultManager, _gameSaveService);
+            _levelManager.Initialize(levelTracker, _resultManager, _gameSaveService, _starProgressBarController);
         }
 
         private void CreateStarProgressBar()
         {
             _starProgressBarController = new StarProgressBarController();
-            _starProgressBarController.Initialize(starProgressBarView, levelTracker, _levelManager);
+            _starProgressBarController.Initialize(starProgressBarView, levelTracker);
         }
         
         private void CreateBoardArea()

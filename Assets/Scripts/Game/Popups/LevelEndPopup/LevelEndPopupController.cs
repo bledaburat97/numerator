@@ -19,7 +19,7 @@ namespace Scripts
             CreateReturnMenuButton();
             CreateCircleProgressBarController();
             CreateInitialStars();
-            CreateStars(args.starCount);
+            if(args.isLevelCompleted) CreateStars(args.starCount);
             _levelTracker.AddStar(args.starCount);
         }
         

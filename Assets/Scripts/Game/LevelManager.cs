@@ -8,31 +8,37 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private int _maxNumOfTries;
         private int _remainingGuessCount;
-        private List<int> _indexesContainsStar = new List<int>();
         private IGameSaveService _gameSaveService;
+        private int _numOfStars;
+        private IStarProgressBarController _starProgressBarController;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
-        public event EventHandler<DecreaseProgressBarEventArgs> DecreaseProgressBar;
         
-        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService)
+        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController)
         {
             _levelTracker = levelTracker;
             _gameSaveService = gameSaveService;
             _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
-            _remainingGuessCount = _maxNumOfTries;
-            SetIndexesContainsStar();
+            _numOfStars = 3;
+            _starProgressBarController = starProgressBarController;
+            UpdateStarProgressBar(_maxNumOfTries, _levelTracker.GetLevelInfo().levelSaveData.RemainingGuessCount, 0f);
             resultManager.NumberGuessed += CheckGameIsOver;
         }
-        
-        private void SetIndexesContainsStar()
-        {
-            _indexesContainsStar.Add(0);
-            _indexesContainsStar.Add((_maxNumOfTries - 2) / 4);
-            _indexesContainsStar.Add((_maxNumOfTries - 2) / 2);
-        }
 
-        public List<int> GetIndexesContainsStar()
+        private void UpdateStarProgressBar(int previousRemainingGuessCount, int currentRemainingGuessCount, float animationDuration)
         {
-            return _indexesContainsStar;
+            List<int> indexesOfDeletedStars = new List<int>();
+            List<int> indexesContainsStar = _starProgressBarController.GetIndexesContainsStar();
+            for (int i = previousRemainingGuessCount - 1; i >= currentRemainingGuessCount; i--)
+            {
+                if (indexesContainsStar.Contains(i))
+                {
+                    indexesOfDeletedStars.Add(i);
+                    _numOfStars--;
+                }
+            }
+
+            _remainingGuessCount = currentRemainingGuessCount;
+            _starProgressBarController.DecreaseProgressBar(indexesOfDeletedStars, (float) _remainingGuessCount / _maxNumOfTries, _remainingGuessCount == 0 ? LevelFailed : null, animationDuration);
         }
 
         private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
@@ -45,26 +51,13 @@ namespace Scripts
                 {
                     isLevelCompleted = true,
                     levelTracker = _levelTracker,
-                    starCount = _indexesContainsStar.Count
+                    starCount = _numOfStars
                 });
             }
 
             else
             {
-                _remainingGuessCount -= 1;
-                int indexOfDeletedStar = -1;
-                if (_indexesContainsStar.Contains(_remainingGuessCount))
-                {
-                    indexOfDeletedStar = _remainingGuessCount;
-                    _indexesContainsStar.Remove(_remainingGuessCount);
-                }
-                DecreaseProgressBar?.Invoke(this, new DecreaseProgressBarEventArgs()
-                {
-                    indexOfDeletedStar = indexOfDeletedStar,
-                    targetPercentage = (float) _remainingGuessCount / _maxNumOfTries,
-                    levelFailedAction = _remainingGuessCount == 0 ? LevelFailed : null
-                });
-                
+                UpdateStarProgressBar(_remainingGuessCount, _remainingGuessCount - 1, 1f);
             }
         }
 
@@ -74,8 +67,13 @@ namespace Scripts
             {
                 isLevelCompleted = false,
                 levelTracker = _levelTracker,
-                starCount = _indexesContainsStar.Count
+                starCount = 0
             });
+        }
+
+        public int GetRemainingGuessCount()
+        {
+            return _remainingGuessCount;
         }
     }
     
@@ -86,18 +84,10 @@ namespace Scripts
         public int starCount;
     }
     
-    public class DecreaseProgressBarEventArgs : EventArgs
-    {
-        public int indexOfDeletedStar;
-        public float targetPercentage;
-        public Action levelFailedAction;
-    }
-    
     public interface ILevelManager
     {
-        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService);
-        List<int> GetIndexesContainsStar();
+        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController);
         event EventHandler<LevelEndEventArgs> LevelEnd;
-        event EventHandler<DecreaseProgressBarEventArgs> DecreaseProgressBar;
+        int GetRemainingGuessCount();
     }
 }

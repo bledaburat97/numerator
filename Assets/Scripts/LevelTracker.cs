@@ -64,6 +64,7 @@ namespace Scripts
             }
 
             levelSaveData.LockedCardIndexes = new List<int>();
+            levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
 
             _levelInfo = new LevelInfo()
             {

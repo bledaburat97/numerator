@@ -18,6 +18,16 @@ namespace Scripts
         {
             _levelTracker = levelTracker;
             _targetCards = _levelTracker.GetLevelInfo().levelSaveData.TargetCards;
+            _triedCardsList = _levelTracker.GetLevelInfo().levelSaveData.TriedCardsList;
+            foreach (List<int> triedCards in _triedCardsList)
+            {
+                GetNumOfPositions(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
+                ResultBlockAddition?.Invoke(this, new ResultBlockModel()
+                {
+                    finalNumbers = triedCards,
+                    resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
+                });
+            }
         }
 
         public int GetTargetCardAtIndex(int index)
@@ -25,19 +35,10 @@ namespace Scripts
             return _targetCards[index];
         }
 
-        public void CheckFinalCards(List<int> finalCards)
+        private void GetNumOfPositions(List<int> finalCards, out int numOfCorrectPos, out int numOfWrongPos)
         {
-            if (finalCards.Count != _targetCards.Count)
-            {
-                Debug.LogError("Final number size and target number size are not equal.");
-                return;
-            }
-            
-            //TODO: check _triedCardList contains finalCardList
-            _triedCardsList.Add(finalCards);
-            
-            int numOfCorrectPos = 0;
-            int numOfWrongPos = 0;
+            numOfCorrectPos = 0;
+            numOfWrongPos = 0;
             
             for (int i = 0; i < finalCards.Count; i++)
             {
@@ -50,6 +51,19 @@ namespace Scripts
                     }
                 }
             }
+        }
+
+        public void CheckFinalCards(List<int> finalCards)
+        {
+            if (finalCards.Count != _targetCards.Count)
+            {
+                Debug.LogError("Final number size and target number size are not equal.");
+                return;
+            }
+            
+            //TODO: check _triedCardList contains finalCardList
+            _triedCardsList.Add(finalCards);
+            GetNumOfPositions(finalCards, out int numOfCorrectPos, out int numOfWrongPos);
             DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);
         }
 
