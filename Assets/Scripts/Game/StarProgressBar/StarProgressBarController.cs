@@ -12,12 +12,13 @@ namespace Scripts
         private List<IBoundaryController> _boundaryControllerList;
         private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
         private ILevelManager _levelManager;
+        private int _activeStarCount;
         
         public void Initialize(IStarProgressBarView view, ILevelTracker levelTracker, ILevelManager levelManager)
         {
             _view = view;
             _view.Init(new BoundaryViewFactory());
-            _maxNumOfTries = levelTracker.GetLevelData().MaxNumOfTries;
+            _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
             _boundaryControllerList = new List<IBoundaryController>();
             _levelManager = levelManager;
             CreateBoundaries();
@@ -64,6 +65,7 @@ namespace Scripts
             }
             _view.SetProgress(args.targetPercentage, 1f, args.levelFailedAction, onStartAction);
         }
+        
     }
 
     public interface IStarProgressBarController

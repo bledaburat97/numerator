@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace Scripts
@@ -33,11 +34,13 @@ namespace Scripts
         private IResetButtonController _resetButtonController;
         private IStarProgressBarController _starProgressBarController;
         private ILevelManager _levelManager;
-
+        private IGameSaveService _gameSaveService;
         void Start()
         {
             _cardItemLocator = new CardItemLocator(canvas);
-            levelTracker.Initialize();
+            _gameSaveService = new GameSaveService();
+            _gameSaveService.Initialize(levelTracker);
+            levelTracker.Initialize(_gameSaveService);
             _cardHolderModelCreator = new CardHolderModelCreator();
             _cardHolderModelCreator.Initialize();
             _resultManager = new ResultManager();
@@ -53,6 +56,16 @@ namespace Scripts
             CreateCardItemInfoPopup();
             CreateInitialCardArea();
             CreateGamePopupCreator();
+            _gameSaveService.Set(_resultManager, _initialCardAreaController);
+            foreach (List<int> triedCards in levelTracker.GetLevelInfo().levelSaveData.TriedCardsList)
+            {
+                _resultManager.CheckFinalCards(triedCards);
+            }
+        }
+        
+        private void OnApplicationQuit()
+        {
+            _gameSaveService.Save();
         }
 
         private void SetLevelId()
@@ -81,7 +94,7 @@ namespace Scripts
         private void CreateLevelManager()
         {
             _levelManager = new LevelManager();
-            _levelManager.Initialize(levelTracker, _resultManager);
+            _levelManager.Initialize(levelTracker, _resultManager, _gameSaveService);
         }
 
         private void CreateStarProgressBar()
@@ -126,7 +139,7 @@ namespace Scripts
         {
             _fadePanelController = new FadePanelController();
             _fadePanelController.Initialize(fadePanelView);
-            gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController);
+            gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService);
         }
 
     }

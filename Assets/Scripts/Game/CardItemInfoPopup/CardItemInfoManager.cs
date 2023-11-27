@@ -11,8 +11,8 @@ namespace Scripts
         public event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
         public void Initialize(ILevelTracker levelTracker)
         {
-            _numOfBoardCardHolders = levelTracker.GetLevelData().NumOfBoardHolders;
-            for (int i = 0; i < levelTracker.GetLevelData().NumOfCards; i++)
+            _numOfBoardCardHolders = levelTracker.GetLevelInfo().levelData.NumOfBoardHolders;
+            for (int i = 0; i < levelTracker.GetLevelInfo().levelData.NumOfCards; i++)
             {
                 CardItemInfo cardItemInfo = new CardItemInfo()
                 {

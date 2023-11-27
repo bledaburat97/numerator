@@ -6,13 +6,13 @@ namespace Scripts
     {
         private ISettingsPopupView _view;
 
-        public void Initialize(ISettingsPopupView view, Action onCloseAction)
+        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction)
         {
             _view = view;
             _view.Init();
             CreateCloseButton(onCloseAction);
             CreatePlayButton();
-            CreateReturnMenuButton();
+            CreateReturnMenuButton(saveGameAction);
         }
         
         private void CreateCloseButton(Action onCloseAction)
@@ -34,15 +34,15 @@ namespace Scripts
             playButtonController.Initialize(_view.GetPlayButtonView(), "RETRY");
         }
 
-        private void CreateReturnMenuButton()
+        private void CreateReturnMenuButton(Action saveGameAction)
         {
             IReturnMenuButtonController returnMenuButtonController = new ReturnMenuButtonController();
-            returnMenuButtonController.Initialize(_view.GetReturnMenuButtonView());
+            returnMenuButtonController.Initialize(_view.GetReturnMenuButtonView(), saveGameAction);
         }
     }
 
     public interface ISettingsPopupController
     {
-        void Initialize(ISettingsPopupView view, Action onCloseAction);
+        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction);
     }
 }

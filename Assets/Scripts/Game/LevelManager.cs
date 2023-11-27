@@ -9,14 +9,15 @@ namespace Scripts
         private int _maxNumOfTries;
         private int _remainingGuessCount;
         private List<int> _indexesContainsStar = new List<int>();
-        
+        private IGameSaveService _gameSaveService;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
         public event EventHandler<DecreaseProgressBarEventArgs> DecreaseProgressBar;
         
-        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager)
+        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService)
         {
             _levelTracker = levelTracker;
-            _maxNumOfTries = levelTracker.GetLevelData().MaxNumOfTries;
+            _gameSaveService = gameSaveService;
+            _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
             _remainingGuessCount = _maxNumOfTries;
             SetIndexesContainsStar();
             resultManager.NumberGuessed += CheckGameIsOver;
@@ -36,6 +37,7 @@ namespace Scripts
 
         private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
         {
+            _gameSaveService.DeleteSave();
             if (args.isGuessRight)
             {
                 _levelTracker.IncrementLevelId();
@@ -93,7 +95,7 @@ namespace Scripts
     
     public interface ILevelManager
     {
-        void Initialize(ILevelTracker levelTracker, IResultManager resultManager);
+        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService);
         List<int> GetIndexesContainsStar();
         event EventHandler<LevelEndEventArgs> LevelEnd;
         event EventHandler<DecreaseProgressBarEventArgs> DecreaseProgressBar;

@@ -10,6 +10,7 @@ namespace Scripts
         private int _index;
         private CardHolderModel _model;
         private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
+        private List<int> _activeHolderIndicatorIndexes = new List<int>();
         public void Initialize(ICardHolderView cardHolderView, CardHolderModel model)
         {
             _view = cardHolderView;
@@ -49,20 +50,13 @@ namespace Scripts
 
         public void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList)
         {
+            _activeHolderIndicatorIndexes = activeHolderIndicatorIndexList;
             for (int i = 0; i < _possibleHolderIndicatorControllerList.Count; i++)
             {
                 bool status;
                 if (activeHolderIndicatorIndexList.Contains(i)) status = true;
                 else status = false;
                 _possibleHolderIndicatorControllerList[i].SetStatus(status);
-            }
-        }
-
-        public void EnableOnlyOneHolderIndicator(int holderIndicatorIndex)
-        {
-            for (int i = 0; i < _possibleHolderIndicatorControllerList.Count; i++)
-            {
-                _possibleHolderIndicatorControllerList[i].SetStatus(i == holderIndicatorIndex);
             }
         }
 
@@ -75,6 +69,11 @@ namespace Scripts
         {
             _view.SetLocalPosition(localXPos);
         }
+
+        public List<int> GetActiveHolderIndicatorIndexes()
+        {
+            return _activeHolderIndicatorIndexes;
+        }
     }
     
     public interface ICardHolderController
@@ -84,8 +83,8 @@ namespace Scripts
         int GetIndex();
         void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);
         void SetHighlightStatus(bool status);
-        void EnableOnlyOneHolderIndicator(int holderIndicatorIndex);
         void SetLocalPosition(Vector2 localXPos);
+        List<int> GetActiveHolderIndicatorIndexes();
     }
     
     public class CardHolderModel

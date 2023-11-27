@@ -13,6 +13,8 @@ namespace Scripts
         private Func<int, RectTransform> _onDragComplete;
         private Action<bool, int> _onCardSelected;
         private bool _isSelectable;
+        private ProbabilityType _probabilityType;
+        private bool _isLocked;
         
         public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator)
         {
@@ -27,10 +29,13 @@ namespace Scripts
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
+            _isLocked = cardItemData.isLocked;
+            _view.SetLockImageStatus(_isLocked);
             SetOnDragStart(cardItemLocator.OnDragStart);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);
             SetOnCardSelected(_cardItemData.onCardSelected);
+            SetProbabilityType(_cardItemData.initialProbabilityType);
         }
 
         public INormalCardItemView GetView()
@@ -138,18 +143,38 @@ namespace Scripts
             _view.SetFrameStatus(status);
         }
 
-        public void SetColor(Color color)
+        public void SetProbabilityType(ProbabilityType probabilityType)
         {
-            _view.SetColor(color);
+            _probabilityType = probabilityType;
+            _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityType]);
+        }
+
+        public ProbabilityType GetProbabilityType()
+        {
+            return _probabilityType;
+        }
+
+        public void SetLocked()
+        {
+            _isLocked = true;
+            _view.SetLockImageStatus(_isLocked);
+        }
+
+        public bool IsLocked()
+        {
+            return _isLocked;
         }
     }
 
     public interface INormalCardItemController
     {
         void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
-        void SetColor(Color color);
         void ResetPosition();
         INormalCardItemView GetView();
         void DisableSelectability();
+        void SetProbabilityType(ProbabilityType probabilityType);
+        ProbabilityType GetProbabilityType();
+        void SetLocked();
+        bool IsLocked();
     }
 }

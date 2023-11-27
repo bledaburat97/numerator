@@ -10,7 +10,6 @@ namespace Scripts
         private IBoardAreaManager _boardAreaManager;
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
-        private LevelData _levelData;
         
         public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController)
         {
@@ -19,8 +18,7 @@ namespace Scripts
             _boardAreaManager = new BoardAreaManager(levelTracker, resultManager, checkButtonController);
             _cardItemLocator = cardItemLocator;
             _cardHolderModelCreator = cardHolderModelCreator;
-            _levelData = levelTracker.GetLevelData();
-            _cardHolderModelCreator.AddBoardCardHolderModelList(_levelData.NumOfBoardHolders);
+            _cardHolderModelCreator.AddBoardCardHolderModelList(levelTracker.GetLevelInfo().levelData.NumOfBoardHolders);
             CreateBoardCardHolders();
         }
         

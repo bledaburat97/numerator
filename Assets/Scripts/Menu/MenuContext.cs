@@ -7,9 +7,13 @@ namespace Scripts.Menu
     {
         [SerializeField] private PlayButtonView playButton;
         [SerializeField] private LevelTracker levelTracker;
+        private IGameSaveService _gameSaveService;
+
         void Start()
         {
-            levelTracker.Initialize();
+            _gameSaveService = new GameSaveService();
+            _gameSaveService.Initialize(levelTracker);
+            levelTracker.Initialize(_gameSaveService);
             CreatePlayButton();
         }
 

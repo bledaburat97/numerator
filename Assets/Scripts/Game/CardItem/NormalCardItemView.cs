@@ -7,12 +7,6 @@ namespace Scripts
     {
         [SerializeField] private Image lockImage;
 
-        public override void Init(int cardNumber)
-        {
-            base.Init(cardNumber);
-            SetLockImageStatus(false);
-        }
-
         public void SetColor(Color color)
         {
             innerBGImage.color = color;

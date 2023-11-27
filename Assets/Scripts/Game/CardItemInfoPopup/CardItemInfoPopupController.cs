@@ -20,7 +20,7 @@ namespace Scripts
             _view = view;
             _cardItemInfoManager = cardItemInfoManager;
             CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory = new CardHolderIndicatorButtonViewFactory();
-            _levelData = levelTracker.GetLevelData();
+            _levelData = levelTracker.GetLevelInfo().levelData;
             _cardHolderModelCreator = cardHolderModelCreator;
             _view.Init(cardHolderIndicatorButtonViewFactory);
             _cardHolderIndicatorButtonControllers = new List<ICardHolderIndicatorButtonController>();

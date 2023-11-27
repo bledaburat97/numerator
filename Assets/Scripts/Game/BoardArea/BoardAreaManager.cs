@@ -9,7 +9,7 @@ namespace Scripts
         private IResultManager _resultManager;
         public BoardAreaManager(ILevelTracker levelTracker, IResultManager resultManager, ICheckButtonController checkButtonController)
         {
-            _numbersList = new int[levelTracker.GetLevelData().NumOfBoardHolders];
+            _numbersList = new int[levelTracker.GetLevelInfo().levelData.NumOfBoardHolders];
             _resultManager = resultManager;
             checkButtonController.CheckFinalNumbers += CheckFinalNumbers;
         }
@@ -30,7 +30,7 @@ namespace Scripts
         {
             if (CheckAllNumbersPlaced())
             {
-                _resultManager.CheckFinalCardList(_numbersList.ToList());
+                _resultManager.CheckFinalCards(_numbersList.ToList());
             }
         }
 

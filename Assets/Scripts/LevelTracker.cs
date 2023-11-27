@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-
+using Random = System.Random;
 namespace Scripts
 {
     public class LevelTracker : MonoBehaviour, ILevelTracker
@@ -9,16 +10,79 @@ namespace Scripts
         private int _levelId;
         private int _starCount;
         private int _wildCardCount;
+        private LevelInfo _levelInfo;
         
-        public void Initialize()
+        public void Initialize(IGameSaveService gameSaveService)
         {
-            SetLevelId(1);
-            _levelId = PlayerPrefs.GetInt("level_id", 1);
-            PlayerPrefs.SetInt("level_id", _levelId);
             _levelDataList = LevelDataGetter.GetLevelDataFromJson();
+            LevelSaveData levelSaveData = gameSaveService.GetSavedLevel();
+            _levelInfo = new LevelInfo();
+            if (levelSaveData == null)
+            {
+                _levelId = PlayerPrefs.GetInt("level_id", 1);
+                CreateDefaultLevelInfo(_levelDataList.Find(level => level.LevelId == _levelId));
+            }
+            else
+            {
+                _levelId = levelSaveData.LevelId;
+                _levelInfo.levelSaveData = levelSaveData;
+                _levelInfo.levelData = GetLevelDataOfLevelId(_levelId);
+            }
+            PlayerPrefs.SetInt("level_id", _levelId);
+            
             //PlayerPrefs.SetInt("star_count", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
+        }
+        
+        public LevelInfo GetLevelInfo()
+        {
+            return _levelInfo;
+        }
+
+        private void CreateDefaultLevelInfo(LevelData levelData)
+        {
+            LevelSaveData levelSaveData = new LevelSaveData();
+            levelSaveData.LevelId = levelData.LevelId;
+            levelSaveData.TriedCardsList = new List<List<int>>();
+            levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
+            levelSaveData.ProbabilityTypes = new List<ProbabilityType>();
+            for (int i = 0; i < levelData.NumOfCards; i++)
+            {
+                levelSaveData.ProbabilityTypes.Add(ProbabilityType.Probable);
+            }
+
+            levelSaveData.ActiveHolderIndicatorIndexesList = new List<List<int>>();
+            for (int i = 0; i < levelData.NumOfCards; i++)
+            {
+                List<int> holderIndexes = new List<int>();
+                for (int j = 0; j < levelData.NumOfBoardHolders; j++)
+                {
+                    holderIndexes.Add(j);
+                }
+                levelSaveData.ActiveHolderIndicatorIndexesList.Add(holderIndexes);
+            }
+
+            levelSaveData.LockedCardIndexes = new List<int>();
+
+            _levelInfo = new LevelInfo()
+            {
+                levelSaveData = levelSaveData,
+                levelData = levelData
+            };
+        }
+        
+        private List<int> CreateTargetCards(int numOfCards, int numOfBoardHolders)
+        {
+            List<int> cards = Enumerable.Range(1, numOfCards).ToList();
+            Random random = new Random();
+            for (int i = numOfCards - 1; i > 0; i--)
+            {
+                int j = random.Next(0, i + 1);
+                (cards[i], cards[j]) = (cards[j], cards[i]);
+            }
+
+            return cards.Take(numOfBoardHolders).ToList();
         }
 
         public int GetLevelId()
@@ -26,9 +90,9 @@ namespace Scripts
             return _levelId;
         }
 
-        public LevelData GetLevelData()
+        private LevelData GetLevelDataOfLevelId(int levelId)
         {
-            return _levelDataList.Find(level => level.LevelId == _levelId);
+            return _levelDataList.Find(level => level.LevelId == levelId);
         }
 
         public void SetLevelId(int levelId)
@@ -70,8 +134,8 @@ namespace Scripts
 
     public interface ILevelTracker
     {
-        void Initialize();
-        LevelData GetLevelData();
+        void Initialize(IGameSaveService gameSaveService);
+        LevelInfo GetLevelInfo();
         int GetLevelId();
         void SetLevelId(int levelId);
         void IncrementLevelId();
@@ -87,6 +151,11 @@ namespace Scripts
         public int NumOfBoardHolders;
         public int NumOfCards;
         public int MaxNumOfTries;
-        //public List<int> TargetNumbers; //TODO: set by random.
+    }
+
+    public class LevelInfo
+    {
+        public LevelSaveData levelSaveData;
+        public LevelData levelData;
     }
 }

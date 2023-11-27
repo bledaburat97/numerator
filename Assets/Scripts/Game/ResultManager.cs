@@ -8,7 +8,8 @@ namespace Scripts
 {
     public class ResultManager : IResultManager
     {
-        private List<int> _targetCardList = new List<int>();
+        private List<int> _targetCards = new List<int>();
+        private List<List<int>> _triedCardsList = new List<List<int>>();
         private ILevelTracker _levelTracker;
         public event EventHandler<ResultBlockModel> ResultBlockAddition;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
@@ -16,56 +17,45 @@ namespace Scripts
         public void Initialize(ILevelTracker levelTracker)
         {
             _levelTracker = levelTracker;
-            _targetCardList = GetTargetCardList(_levelTracker.GetLevelData().NumOfCards,
-                _levelTracker.GetLevelData().NumOfBoardHolders);
-        }
-        
-        private List<int> GetTargetCardList(int numOfCards, int numOfBoardHolders)
-        {
-            List<int> cardList = Enumerable.Range(1, numOfCards).ToList();
-            Random random = new Random();
-            for (int i = numOfCards - 1; i > 0; i--)
-            {
-                int j = random.Next(0, i + 1);
-                (cardList[i], cardList[j]) = (cardList[j], cardList[i]);
-            }
-
-            return cardList.Take(numOfBoardHolders).ToList();
+            _targetCards = _levelTracker.GetLevelInfo().levelSaveData.TargetCards;
         }
 
         public int GetTargetCardAtIndex(int index)
         {
-            return _targetCardList[index];
+            return _targetCards[index];
         }
 
-        public void CheckFinalCardList(List<int> finalCardList)
+        public void CheckFinalCards(List<int> finalCards)
         {
-            if (finalCardList.Count != _targetCardList.Count)
+            if (finalCards.Count != _targetCards.Count)
             {
                 Debug.LogError("Final number size and target number size are not equal.");
                 return;
             }
             
+            //TODO: check _triedCardList contains finalCardList
+            _triedCardsList.Add(finalCards);
+            
             int numOfCorrectPos = 0;
             int numOfWrongPos = 0;
             
-            for (int i = 0; i < finalCardList.Count; i++)
+            for (int i = 0; i < finalCards.Count; i++)
             {
-                for (int j = 0; j < _targetCardList.Count; j++)
+                for (int j = 0; j < _targetCards.Count; j++)
                 {
-                    if (finalCardList[i] == _targetCardList[j])
+                    if (finalCards[i] == _targetCards[j])
                     {
                         if (i == j) numOfCorrectPos++;
                         else numOfWrongPos++;
                     }
                 }
             }
-            DetermineAction(finalCardList, numOfCorrectPos, numOfWrongPos);
+            DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);
         }
 
-        private void DetermineAction(List<int> finalCardList, int numOfCorrectPos, int numOfWrongPos)
+        private void DetermineAction(List<int> finalCards, int numOfCorrectPos, int numOfWrongPos)
         {
-            if (numOfCorrectPos == _levelTracker.GetLevelData().NumOfBoardHolders)
+            if (numOfCorrectPos == _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders)
             {
                 NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
                 {
@@ -76,7 +66,7 @@ namespace Scripts
             {
                 ResultBlockAddition?.Invoke(this, new ResultBlockModel()
                 {
-                    finalNumbers = finalCardList,
+                    finalNumbers = finalCards,
                     resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
                 });
                 NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
@@ -107,7 +97,7 @@ namespace Scripts
                 });
             }
 
-            int numOfNonExistentCards = _levelTracker.GetLevelData().NumOfBoardHolders - numOfCorrectPos - numOfWrongPos;
+            int numOfNonExistentCards = _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders - numOfCorrectPos - numOfWrongPos;
             
             if (numOfNonExistentCards > 0)
             {
@@ -120,6 +110,16 @@ namespace Scripts
 
             return resultModels;
         }
+        
+        public List<List<int>> GetTriedCardsList()
+        {
+            return _triedCardsList;
+        }
+
+        public List<int> GetTargetCards()
+        {
+            return _targetCards;
+        }
     }
     
     public class NumberGuessedEventArgs : EventArgs
@@ -131,8 +131,10 @@ namespace Scripts
     {
         void Initialize(ILevelTracker levelTracker);
         int GetTargetCardAtIndex(int index);
-        void CheckFinalCardList(List<int> finalCardList);
+        void CheckFinalCards(List<int> finalCards);
         event EventHandler<ResultBlockModel> ResultBlockAddition;
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;
+        List<List<int>> GetTriedCardsList();
+        List<int> GetTargetCards();
     }
 }
