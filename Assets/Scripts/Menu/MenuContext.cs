@@ -8,8 +8,8 @@ namespace Scripts.Menu
         [SerializeField] private PlayButtonView playButton;
         [SerializeField] private LevelTracker levelTracker;
         private IGameSaveService _gameSaveService;
-        [SerializeField] private TextIconAdjustment starHolder;
-        [SerializeField] private TextIconAdjustment wildHolder;
+        [SerializeField] private TextHolderAdjustment starHolder;
+        [SerializeField] private TextHolderAdjustment wildHolder;
 
         void Start()
         {
