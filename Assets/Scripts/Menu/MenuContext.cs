@@ -1,4 +1,4 @@
-﻿using System;
+﻿using TMPro;
 using UnityEngine;
 
 namespace Scripts.Menu
@@ -8,6 +8,8 @@ namespace Scripts.Menu
         [SerializeField] private PlayButtonView playButton;
         [SerializeField] private LevelTracker levelTracker;
         private IGameSaveService _gameSaveService;
+        [SerializeField] private TextIconAdjustment starHolder;
+        [SerializeField] private TextIconAdjustment wildHolder;
 
         void Start()
         {
@@ -15,6 +17,10 @@ namespace Scripts.Menu
             _gameSaveService.Initialize(levelTracker);
             levelTracker.Initialize(_gameSaveService);
             CreatePlayButton();
+            starHolder.SetText(levelTracker.GetStarCount().ToString());
+            wildHolder.SetText(levelTracker.GetWildCardCount().ToString());
+            starHolder.SetPosition();
+            wildHolder.SetPosition();
         }
 
         private void CreatePlayButton()
