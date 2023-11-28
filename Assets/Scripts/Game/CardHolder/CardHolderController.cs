@@ -74,6 +74,11 @@ namespace Scripts
         {
             return _activeHolderIndicatorIndexes;
         }
+
+        public void SetText(string cardNumber)
+        {
+            _view.SetText(cardNumber);
+        }
     }
     
     public interface ICardHolderController
@@ -85,6 +90,7 @@ namespace Scripts
         void SetHighlightStatus(bool status);
         void SetLocalPosition(Vector2 localXPos);
         List<int> GetActiveHolderIndicatorIndexes();
+        void SetText(string cardNumber);
     }
     
     public class CardHolderModel

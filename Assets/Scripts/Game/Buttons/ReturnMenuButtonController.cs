@@ -18,7 +18,7 @@ namespace Scripts
 
         private void OnReturnMenuButtonClick(Action saveGameAction)
         {
-            saveGameAction!.Invoke();
+            saveGameAction?.Invoke();
             SceneManager.LoadScene("Menu");
         }
     }

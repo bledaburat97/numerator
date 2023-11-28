@@ -88,6 +88,7 @@ namespace Scripts
             
             for (int i = 0; i < _normalCardHolderControllerList.Count ; i++)
             {
+                _normalCardHolderControllerList[i].SetText((i+1).ToString());
                 CardItemData cardItemData = new CardItemData()
                 {
                     parent = _normalCardHolderControllerList[i].GetView().GetRectTransform(),
