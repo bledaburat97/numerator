@@ -26,7 +26,7 @@ namespace Scripts
         private void CreatePlayButton()
         {
             IPlayButtonController playButtonController = new PlayButtonController();
-            playButtonController.Initialize(_view.GetPlayButtonView(), "Level " + _levelTracker.GetLevelId());
+            playButtonController.Initialize(_view.GetPlayButtonView(), "Level " + _levelTracker.GetLevelId(), null);
         }
 
         private void CreateReturnMenuButton()

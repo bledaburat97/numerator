@@ -4,12 +4,12 @@ namespace Scripts
 {
     public class SettingsButtonController : ISettingsButtonController
     {
-        private ISettingsButtonView _view;
+        private IBaseButtonView _view;
         public event EventHandler OpenSettings;
-        public void Initialize(ISettingsButtonView view)
+        public void Initialize(IBaseButtonView view)
         {
             _view = view;
-            _view.Init(new SettingsButtonModel(){OnClick = OnClickSettings});
+            _view.Init(new BaseButtonModel(){OnClick = OnClickSettings});
         }
 
         private void OnClickSettings()
@@ -20,12 +20,7 @@ namespace Scripts
 
     public interface ISettingsButtonController
     {
-        void Initialize(ISettingsButtonView view);
+        void Initialize(IBaseButtonView view);
         event EventHandler OpenSettings;
-    }
-
-    public class SettingsButtonModel
-    {
-        public Action OnClick;
     }
 }

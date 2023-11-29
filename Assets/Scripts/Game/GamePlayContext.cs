@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 namespace Scripts
@@ -14,9 +13,9 @@ namespace Scripts
         [SerializeField] private GamePopupCreator gamePopupCreator;
         [SerializeField] private FadePanelView fadePanelView;
         [SerializeField] private TMP_Text levelIdText;
-        [SerializeField] private SettingsButtonView settingsButtonView;
-        [SerializeField] private CheckButtonView checkButtonView;
-        [SerializeField] private ResetButtonView resetButtonView;
+        [SerializeField] private BaseButtonView settingsButtonView;
+        [SerializeField] private BaseButtonView checkButtonView;
+        [SerializeField] private BaseButtonView resetButtonView;
         [SerializeField] private StarProgressBarView starProgressBarView;
         [SerializeField] private Canvas canvas;
         

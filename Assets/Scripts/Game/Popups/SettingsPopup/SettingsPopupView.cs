@@ -4,26 +4,26 @@ namespace Scripts
 {
     public class SettingsPopupView : MonoBehaviour, ISettingsPopupView
     {
-        [SerializeField] private PlayButtonView playButtonView;
-        [SerializeField] private ReturnMenuButtonView returnMenuButtonView;
-        [SerializeField] private CloseButtonView closeButtonView;
+        [SerializeField] private BaseButtonView playButtonView;
+        [SerializeField] private BaseButtonView returnMenuButtonView;
+        [SerializeField] private BaseButtonView closeButtonView;
         public void Init()
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
         }
         
-        public ICloseButtonView GetCloseButtonView()
+        public IBaseButtonView GetCloseButtonView()
         {
             return closeButtonView;
         }
         
-        public IPlayButtonView GetPlayButtonView()
+        public IBaseButtonView GetPlayButtonView()
         {
             return playButtonView;
         }
 
-        public IReturnMenuButtonView GetReturnMenuButtonView()
+        public IBaseButtonView GetReturnMenuButtonView()
         {
             return returnMenuButtonView;
         }
@@ -37,9 +37,9 @@ namespace Scripts
     public interface ISettingsPopupView
     {
         void Init();
-        ICloseButtonView GetCloseButtonView();
-        IPlayButtonView GetPlayButtonView();
-        IReturnMenuButtonView GetReturnMenuButtonView();
+        IBaseButtonView GetCloseButtonView();
+        IBaseButtonView GetPlayButtonView();
+        IBaseButtonView GetReturnMenuButtonView();
         void Close();
     }
 }

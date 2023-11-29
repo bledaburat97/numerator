@@ -1,11 +1,10 @@
-﻿using TMPro;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Scripts.Menu
 {
     public class MenuContext : MonoBehaviour
     {
-        [SerializeField] private PlayButtonView playButton;
+        [SerializeField] private BaseButtonView playButton;
         [SerializeField] private LevelTracker levelTracker;
         private IGameSaveService _gameSaveService;
         [SerializeField] private TextHolderAdjustment starHolder;
@@ -26,7 +25,8 @@ namespace Scripts.Menu
         private void CreatePlayButton()
         {
             IPlayButtonController playButtonController = new PlayButtonController();
-            playButtonController.Initialize(playButton, "Level " + levelTracker.GetLevelId());
+            string playButtonText = _gameSaveService.HasSavedGame() ? "Continue" : "Level " + levelTracker.GetLevelId();
+            playButtonController.Initialize(playButton, playButtonText, null);
         }
     }
 }

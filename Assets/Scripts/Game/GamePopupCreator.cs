@@ -14,6 +14,7 @@ namespace Scripts
         private SettingsPopupViewFactory _settingsPopupViewFactory;
         private IFadePanelController _fadePanelController;
         private Action _saveGameAction = null;
+        private Action _deleteSaveAction = null;
         public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
@@ -24,6 +25,7 @@ namespace Scripts
             levelManager.LevelEnd += CreateLevelEndPopup;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
             _saveGameAction += gameSaveService.Save;
+            _deleteSaveAction += gameSaveService.DeleteSave;
         }
         
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
@@ -40,7 +42,7 @@ namespace Scripts
             _fadePanelController.SetFadeImageStatus(true);
             ISettingsPopupController settingsPopupController = _settingsPopupControllerFactory.Spawn();
             ISettingsPopupView settingsPopupView = _settingsPopupViewFactory.Spawn(transform, settingsPopupPrefab);
-            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction);
+            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction);
         }
 
         private void OnClosePopup()

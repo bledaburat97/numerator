@@ -29,9 +29,14 @@ namespace Scripts
         
         public LevelSaveData GetSavedLevel()
         {
-            if (!PlayerPrefs.HasKey(_saveGameKey)) return null;
+            if (!HasSavedGame()) return null;
             LevelSaveData levelSaveData = JsonConvert.DeserializeObject<LevelSaveData>(PlayerPrefs.GetString(_saveGameKey));
             return levelSaveData;
+        }
+
+        public bool HasSavedGame()
+        {
+            return PlayerPrefs.HasKey(_saveGameKey);
         }
 
         public void DeleteSave()
@@ -41,6 +46,7 @@ namespace Scripts
         
         public void Save()
         {
+            if (_resultManager.GetTriedCardsList().Count == 0) return; 
             LevelSaveData levelSaveData = new LevelSaveData()
             {
                 LevelId = _levelTracker.GetLevelId(),
@@ -65,6 +71,7 @@ namespace Scripts
         void DeleteSave();
         void Save();
         void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager);
+        bool HasSavedGame();
     }
 
     public class LevelSaveData

@@ -6,8 +6,8 @@ namespace Scripts
     public class LevelEndPopupView : MonoBehaviour, ILevelEndPopupView
     {
         [SerializeField] private TMP_Text title;
-        [SerializeField] private PlayButtonView playButtonView;
-        [SerializeField] private ReturnMenuButtonView returnMenuButtonView;
+        [SerializeField] private BaseButtonView playButtonView;
+        [SerializeField] private BaseButtonView returnMenuButtonView;
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
@@ -25,12 +25,12 @@ namespace Scripts
             title.SetText(text);
         }
 
-        public IPlayButtonView GetPlayButtonView()
+        public IBaseButtonView GetPlayButtonView()
         {
             return playButtonView;
         }
 
-        public IReturnMenuButtonView GetReturnMenuButtonView()
+        public IBaseButtonView GetReturnMenuButtonView()
         {
             return returnMenuButtonView;
         }
@@ -50,8 +50,8 @@ namespace Scripts
     {
         void Init(StarImageViewFactory starImageViewFactory);
         void SetTitle(string text);
-        IPlayButtonView GetPlayButtonView();
-        IReturnMenuButtonView GetReturnMenuButtonView();
+        IBaseButtonView GetPlayButtonView();
+        IBaseButtonView GetReturnMenuButtonView();
         IStarImageView CreateStarImage();
         ICircleProgressBarView CreateCircleProgressBar();
     }

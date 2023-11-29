@@ -1,30 +1,31 @@
-﻿using UnityEngine.SceneManagement;
+﻿using System;
+using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
     public class PlayButtonController : IPlayButtonController
     {
-        private IPlayButtonView _view;
-        
-        public void Initialize(IPlayButtonView view, string text)
+        private IBaseButtonView _view;
+        public void Initialize(IBaseButtonView view, string text, Action deleteSaveAction)
         {
             _view = view;
-            PlayButtonModel model = new PlayButtonModel()
+            BaseButtonModel model = new BaseButtonModel()
             {
                 text = text,
-                OnClick = OnPlayButtonClick
+                OnClick = () => OnPlayButtonClick(deleteSaveAction)
             };
             _view.Init(model);
         }
 
-        private void OnPlayButtonClick()
+        private void OnPlayButtonClick(Action deleteSaveAction)
         {
+            deleteSaveAction?.Invoke();
             SceneManager.LoadScene("Game");
         }
     }
 
     public interface IPlayButtonController
     {
-        void Initialize(IPlayButtonView view, string text);
+        void Initialize(IBaseButtonView view, string text, Action deleteSaveAction);
     }
 }

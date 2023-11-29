@@ -5,13 +5,14 @@ namespace Scripts
 {
     public class ReturnMenuButtonController : IReturnMenuButtonController
     {
-        private IReturnMenuButtonView _view;
-        public void Initialize(IReturnMenuButtonView view, Action saveGameAction = null)
+        private IBaseButtonView _view;
+        public void Initialize(IBaseButtonView view, Action saveGameAction = null)
         {
             _view = view;
-            ReturnMenuButtonModel model = new ReturnMenuButtonModel()
+            BaseButtonModel model = new BaseButtonModel()
             {
-                OnClick = () => OnReturnMenuButtonClick(saveGameAction)
+                OnClick = () => OnReturnMenuButtonClick(saveGameAction),
+                text = "Menu"
             };
             _view.Init(model);
         }
@@ -25,6 +26,6 @@ namespace Scripts
 
     public interface IReturnMenuButtonController
     {
-        void Initialize(IReturnMenuButtonView view, Action saveGameAction = null);
+        void Initialize(IBaseButtonView view, Action saveGameAction = null);
     }
 }

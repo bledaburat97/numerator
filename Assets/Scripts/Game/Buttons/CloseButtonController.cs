@@ -4,9 +4,9 @@ namespace Scripts
 {
     public class CloseButtonController : ICloseButtonController
     {
-        private ICloseButtonView _view;
+        private IBaseButtonView _view;
         
-        public void Initialize(ICloseButtonView view, CloseButtonModel model)
+        public void Initialize(IBaseButtonView view, BaseButtonModel model)
         {
             _view = view;
             _view.Init(model);
@@ -15,11 +15,6 @@ namespace Scripts
 
     public interface ICloseButtonController
     {
-        void Initialize(ICloseButtonView view, CloseButtonModel model);
-    }
-
-    public class CloseButtonModel
-    {
-        public Action OnClick;
+        void Initialize(IBaseButtonView view, BaseButtonModel model);
     }
 }
