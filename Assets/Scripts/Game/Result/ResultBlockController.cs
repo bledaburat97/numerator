@@ -19,7 +19,7 @@ namespace Scripts
 
         private void CreateResults()
         {
-            _view.SetResultHolderLocalPosition(_model.finalNumbers.Count, ConstantValues.RESULT_CARD_WIDTH);
+            _view.SetResultHolderLocalPosition();
             for (int i = 0; i < _model.resultModels.Count; i++)
             {
                 IResultView resultView = _view.CreateResult();
@@ -61,7 +61,7 @@ namespace Scripts
     
     public class ResultModel
     {
-        public Color color;
+        public CardPositionCorrectness cardPositionCorrectness;
         public int number;
     }
 }

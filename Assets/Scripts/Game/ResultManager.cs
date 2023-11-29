@@ -98,7 +98,7 @@ namespace Scripts
                 resultModels.Add(new ResultModel()
                 {
                     number = numOfCorrectPos,
-                    color = ConstantValues.GetCardPositionToColorMapping()[CardPositionCorrectness.Correct]
+                    cardPositionCorrectness = CardPositionCorrectness.Correct
                 });
             }
 
@@ -107,18 +107,7 @@ namespace Scripts
                 resultModels.Add(new ResultModel()
                 {
                     number = numOfWrongPos,
-                    color = ConstantValues.GetCardPositionToColorMapping()[CardPositionCorrectness.Wrong]
-                });
-            }
-
-            int numOfNonExistentCards = _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders - numOfCorrectPos - numOfWrongPos;
-            
-            if (numOfNonExistentCards > 0)
-            {
-                resultModels.Add(new ResultModel()
-                {
-                    number = numOfNonExistentCards,
-                    color = ConstantValues.GetCardPositionToColorMapping()[CardPositionCorrectness.NotExisted]
+                    cardPositionCorrectness = CardPositionCorrectness.Wrong
                 });
             }
 

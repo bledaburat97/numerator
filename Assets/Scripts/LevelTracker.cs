@@ -30,7 +30,6 @@ namespace Scripts
             }
             PlayerPrefs.SetInt("level_id", _levelId);
             
-            //PlayerPrefs.SetInt("star_count", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
         }

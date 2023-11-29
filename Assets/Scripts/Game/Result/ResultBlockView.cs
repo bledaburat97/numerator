@@ -10,7 +10,6 @@ namespace Scripts
         [SerializeField] private NonDraggableCardItemView nonDraggableCardItemPrefab;
         [SerializeField] private RectTransform cardsHolder;
         [SerializeField] private RectTransform resultsHolder;
-        [SerializeField] private HorizontalLayoutGroup horizontalLayoutGroupOfCardsHolder;
         [SerializeField] private float spacingBetweenCardsAndResult;
         private ResultViewFactory _resultViewFactory;
         private NonDraggableCardItemViewFactory _nonDraggableCardItemViewFactory;
@@ -34,12 +33,14 @@ namespace Scripts
             cardsHolder.localPosition = new Vector2(0f, 0f);
         }
 
-        public void SetResultHolderLocalPosition(int numOfCards, float horizontalSizeOfCards)
+        public void SetResultHolderLocalPosition()
         {
             resultsHolder.anchoredPosition = new Vector2(0f, 0.5f);
-            float sizeX = numOfCards * horizontalSizeOfCards +
-                          (numOfCards - 1) * horizontalLayoutGroupOfCardsHolder.spacing;
-            resultsHolder.localPosition = new Vector2(sizeX + spacingBetweenCardsAndResult, 0f);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(cardsHolder);
+            resultsHolder.localPosition = new Vector2(cardsHolder.rect.width + spacingBetweenCardsAndResult, 0f);
+            rectTransform.sizeDelta =
+                new Vector2( cardsHolder.rect.width + resultsHolder.sizeDelta.x + spacingBetweenCardsAndResult,
+                    rectTransform.sizeDelta.y);
         }
 
         public INonDraggableCardItemView CreateCardItem()
@@ -52,7 +53,7 @@ namespace Scripts
     {
         void Init(NonDraggableCardItemViewFactory nonDraggableCardItemViewFactory, ResultViewFactory resultViewFactory);
         IResultView CreateResult();
-        void SetResultHolderLocalPosition(int numOfCards, float horizontalSizeOfCards);
+        void SetResultHolderLocalPosition();
         void SetCardsHolderLocalPosition();
         INonDraggableCardItemView CreateCardItem();
     }
