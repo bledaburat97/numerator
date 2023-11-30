@@ -8,13 +8,13 @@ namespace Scripts
 {
     public class BaseButtonView : MonoBehaviour, IBaseButtonView, IPointerDownHandler, IPointerUpHandler
     {
-        [SerializeField] private TMP_Text text;
-        [SerializeField] private Button button;
-        [SerializeField] private Image outerBg;
-        [SerializeField] private Image shadow;
-        [SerializeField] private Image innerBg;
-        private Vector2 innerBgOffsetMin;
-        private Vector2 innerBgOffsetMax;
+        [SerializeField] protected TMP_Text text;
+        [SerializeField] protected Button button;
+        [SerializeField] protected Image outerBg;
+        [SerializeField] protected Image shadow;
+        [SerializeField] protected Image innerBg;
+        protected Vector2 innerBgOffsetMin;
+        protected Vector2 innerBgOffsetMax;
 
         public void Init(BaseButtonModel model)
         {
@@ -24,7 +24,7 @@ namespace Scripts
             innerBgOffsetMax = innerBg.rectTransform.offsetMax;
         }
 
-        private void SetOnClickAction(Action onClick)
+        protected void SetOnClickAction(Action onClick)
         {
             button.onClick.AddListener(() => onClick.Invoke());
         }

@@ -72,9 +72,9 @@ namespace Scripts
             {
                 CardHolderIndicatorButtonModel cardHolderIndicatorButtonModel = new CardHolderIndicatorButtonModel()
                 {
-                    Id = ConstantValues.HOLDER_ID_LIST[boardCardHolderModel.index],
+                    text = ConstantValues.HOLDER_ID_LIST[boardCardHolderModel.index],
                     localXPosition = boardCardHolderModel.localPosition.x, 
-                    onClickAction = () => OnCardHolderIndicatorButtonClicked(boardCardHolderModel.index)
+                    OnClick = () => OnCardHolderIndicatorButtonClicked(boardCardHolderModel.index)
                 };
                 ICardHolderIndicatorButtonController cardHolderIndicatorButtonController = cardHolderIndicatorButtonControllerFactory.Spawn();
                 ICardHolderIndicatorButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
@@ -120,11 +120,9 @@ namespace Scripts
         void SetCardItemInfoPopupStatus(bool status, int cardIndex);
     }
     
-    public class CardHolderIndicatorButtonModel
+    public class CardHolderIndicatorButtonModel : BaseButtonModel
     {
-        public string Id;
         public float localXPosition;
-        public Action onClickAction;
     }
 }
 
