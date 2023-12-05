@@ -28,7 +28,7 @@ namespace Scripts
         
         public IStarImageView CreateStarImage()
         {
-            return _starImageViewFactory.Spawn(image.transform, starImagePrefab);
+            return _starImageViewFactory.Spawn(rectTransform, starImagePrefab);
         }
 
         public IWildCardItemView CreateWildCardImage()

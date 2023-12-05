@@ -8,15 +8,20 @@ namespace Scripts
     public class CircleProgressBarController : ICircleProgressBarController
     {
         private ICircleProgressBarView _view;
+        private IGlowingCircleProgressBarView _glowingView;
         private int _currentStarCount;
-        private List<IStarImageView> _starImageViewList;
+        private List<IStarImageView> _starFrameViewList;
+        private List<IStarImageView> _glowingStarImageViewList;
         private IWildCardItemView _wildCardItemView;
         private static int NUM_OF_STARS_FOR_WILD = 6;
-        public void Initialize(ICircleProgressBarView view)
+        public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView)
         {
             _view = view;
+            _glowingView = glowingView;
             _view.Init(new StarImageViewFactory(), new WildCardItemViewFactory());
-            _starImageViewList = new List<IStarImageView>();
+            _glowingView.Init(new StarImageViewFactory());
+            _starFrameViewList = new List<IStarImageView>();
+            _glowingStarImageViewList = new List<IStarImageView>();
             CreateStarFrames();
             ResetCircleProgressBar();
         }
@@ -35,7 +40,8 @@ namespace Scripts
                 IStarImageView starImageView = _view.CreateStarImage();
                 starImageView.Init(new Vector3(x, y, 0f));
                 starImageView.SetSize(new Vector2(25f, 25f));
-                _starImageViewList.Add(starImageView);
+                starImageView.SetStarStatus(false);
+                _starFrameViewList.Add(starImageView);
             }
         }
         
@@ -43,9 +49,10 @@ namespace Scripts
         {
             _wildCardItemView = _view.CreateWildCardImage();
             _wildCardItemView.InitPosition();
-            foreach (IStarImageView starImageView in _starImageViewList)
+            
+            foreach (IStarImageView glowingStarImageView in _glowingStarImageViewList)
             {
-                starImageView.SetStarStatus(false);
+                glowingStarImageView.Destroy();
             }
             _view.GetProgressTween(0f, 0f, null).Play();
         }
@@ -56,7 +63,10 @@ namespace Scripts
             
             for (int i = 0; i < numOfInitialStars; i++)
             {
-                _starImageViewList[i].SetStarStatus(true);
+                IStarImageView glowingStarImageView = _glowingView.CreateStarImage();
+                glowingStarImageView.Init(_starFrameViewList[i].GetRectTransform().localPosition);
+                glowingStarImageView.SetSize(new Vector2(25f, 25f));
+                _glowingStarImageViewList.Add(glowingStarImageView);
             }
 
             if (numOfInitialStars >= 2)
@@ -78,21 +88,20 @@ namespace Scripts
                 if (newStarIndex >= newStars.Count) return;
                 
                 IStarImageView animatedStar = newStars[newStarIndex];
+                _glowingStarImageViewList.Add(animatedStar);
                 newStarIndex++;
                 _currentStarCount += 1;
-                
-                RectTransform parentTransform = _starImageViewList[(_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD].GetRectTransform();
-                animatedStar.SetParent(parentTransform);
+
+                RectTransform targetInCircle = _starFrameViewList[(_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD].GetRectTransform();
+                animatedStar.SetParent(_glowingView.GetRectTransform());
                 RectTransform animatedStarTransform = animatedStar.GetRectTransform();
-                float scaleRatio = parentTransform.sizeDelta.x / animatedStarTransform.sizeDelta.x;
+                float scaleRatio = targetInCircle.sizeDelta.x / animatedStarTransform.sizeDelta.x;
                 
-                Action onCompleteAction = animatedStar.Destroy;
-                onCompleteAction += () => _starImageViewList[(_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD].SetStarStatus(true);
-                onCompleteAction += _currentStarCount % NUM_OF_STARS_FOR_WILD == 0 ? () => ResetAnimation(AnimateStar) : AnimateStar;
+                Action onCompleteAction = _currentStarCount % NUM_OF_STARS_FOR_WILD == 0 ? () => ResetAnimation(AnimateStar) : AnimateStar;
                 
                 DOTween.Sequence().Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
-                    .Join(animatedStar.GetRectTransform().DOLocalMoveX(0f, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().horizontalPositionCurve))
-                    .Join(animatedStar.GetRectTransform().DOLocalMoveY(0f, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
+                    .Join(animatedStar.GetRectTransform().DOLocalMoveX(targetInCircle.localPosition.x, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().horizontalPositionCurve))
+                    .Join(animatedStar.GetRectTransform().DOLocalMoveY(targetInCircle.localPosition.y, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
                     .Join(_view.GetProgressTween((float)((_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD) / NUM_OF_STARS_FOR_WILD, 1f, onCompleteAction).Play());
             }
         }
@@ -109,7 +118,7 @@ namespace Scripts
 
     public interface ICircleProgressBarController
     {
-        void Initialize(ICircleProgressBarView view);
+        void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView);
         void CreateInitialStars(int numOfStars);
         void AddNewStars(List<IStarImageView> newStars);
     }

@@ -17,6 +17,7 @@ namespace Scripts
             _levelDataList = LevelDataGetter.GetLevelDataFromJson();
             LevelSaveData levelSaveData = gameSaveService.GetSavedLevel();
             _levelInfo = new LevelInfo();
+            PlayerPrefs.SetInt("level_id", 1);
             if (levelSaveData == null)
             {
                 _levelId = PlayerPrefs.GetInt("level_id", 1);
