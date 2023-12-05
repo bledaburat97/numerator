@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using UnityEngine;
 using Random = System.Random;
 namespace Scripts
@@ -7,32 +8,57 @@ namespace Scripts
     public class LevelTracker : MonoBehaviour, ILevelTracker
     {
         private List<LevelData> _levelDataList = new List<LevelData>();
-        private int _levelId;
+        private int _lastLevelId;
+        private int _selectedLevelId;
         private int _starCount;
         private int _wildCardCount;
         private LevelInfo _levelInfo;
+        private IGameSaveService _gameSaveService;
+        private List<int> _starCountOfCompletedLevels;
         
         public void Initialize(IGameSaveService gameSaveService)
         {
+            ClearPlayerPrefs();
+            _gameSaveService = gameSaveService;
             _levelDataList = LevelDataGetter.GetLevelDataFromJson();
-            LevelSaveData levelSaveData = gameSaveService.GetSavedLevel();
             _levelInfo = new LevelInfo();
-            PlayerPrefs.SetInt("level_id", 1);
-            if (levelSaveData == null)
+            _lastLevelId = PlayerPrefs.GetInt("last_level_id", 0);
+            _selectedLevelId = _lastLevelId;
+            SetSelectedLevelInfo(_selectedLevelId);
+            _starCount = PlayerPrefs.GetInt("star_count", 0);
+            _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
+            _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();
+        }
+
+        public void ClearPlayerPrefs()
+        {
+            PlayerPrefs.DeleteKey("last_level_id");
+            PlayerPrefs.DeleteKey("star_count");
+            PlayerPrefs.DeleteKey("wild_card_count");
+            PlayerPrefs.DeleteKey("star_count_of_levels");
+        }
+
+        public void SetSelectedLevelInfo(int levelId)
+        {
+            LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
+            _selectedLevelId = levelId;
+
+            if (levelSaveData != null)
             {
-                _levelId = PlayerPrefs.GetInt("level_id", 1);
-                CreateDefaultLevelInfo(_levelDataList.Find(level => level.LevelId == _levelId));
+                if (levelId == levelSaveData.LevelId)
+                {
+                    _levelInfo.levelSaveData = levelSaveData;
+                    _levelInfo.levelData = GetLevelDataOfLevelId(_selectedLevelId);
+                }
+                else
+                {
+                    _levelInfo = CreateDefaultLevelInfo(levelId);
+                }
             }
             else
             {
-                _levelId = levelSaveData.LevelId;
-                _levelInfo.levelSaveData = levelSaveData;
-                _levelInfo.levelData = GetLevelDataOfLevelId(_levelId);
+                _levelInfo = CreateDefaultLevelInfo(levelId);
             }
-            PlayerPrefs.SetInt("level_id", _levelId);
-            
-            _starCount = PlayerPrefs.GetInt("star_count", 0);
-            _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
         }
         
         public LevelInfo GetLevelInfo()
@@ -40,10 +66,11 @@ namespace Scripts
             return _levelInfo;
         }
 
-        private void CreateDefaultLevelInfo(LevelData levelData)
+        private LevelInfo CreateDefaultLevelInfo(int levelId)
         {
+            LevelData levelData = _levelDataList.Find(level => level.LevelId == levelId % 30);
             LevelSaveData levelSaveData = new LevelSaveData();
-            levelSaveData.LevelId = levelData.LevelId;
+            levelSaveData.LevelId = levelId;
             levelSaveData.TriedCardsList = new List<List<int>>();
             levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
             levelSaveData.ProbabilityTypes = new List<ProbabilityType>();
@@ -66,7 +93,7 @@ namespace Scripts
             levelSaveData.LockedCardIndexes = new List<int>();
             levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
 
-            _levelInfo = new LevelInfo()
+            return new LevelInfo()
             {
                 levelSaveData = levelSaveData,
                 levelData = levelData
@@ -88,24 +115,32 @@ namespace Scripts
 
         public int GetLevelId()
         {
-            return _levelId;
+            return _selectedLevelId;
         }
 
         private LevelData GetLevelDataOfLevelId(int levelId)
         {
-            return _levelDataList.Find(level => level.LevelId == levelId);
+            return _levelDataList.Find(level => level.LevelId == levelId % 30);
         }
 
-        public void SetLevelId(int levelId)
+        public void IncrementLevelId(int starCount)
         {
-            PlayerPrefs.SetInt("level_id", levelId);
-            _levelId = levelId;
-        }
-
-        public void IncrementLevelId()
-        {
-            PlayerPrefs.SetInt("level_id", _levelId + 1);
-            _levelId += 1;
+            if (_selectedLevelId == _lastLevelId)
+            {
+                _lastLevelId ++;
+                _starCountOfCompletedLevels.Add(starCount);
+            }
+            else
+            {
+                if (starCount > _starCountOfCompletedLevels[_selectedLevelId])
+                {
+                    _starCountOfCompletedLevels[_selectedLevelId] = starCount;
+                }
+            }
+            
+            PlayerPrefs.SetInt("last_level_id", _lastLevelId);
+            string data = JsonConvert.SerializeObject(_starCountOfCompletedLevels);
+            PlayerPrefs.SetString("star_count_of_levels", data);
         }
 
         public void AddStar(int addedStarCount)
@@ -138,8 +173,7 @@ namespace Scripts
         void Initialize(IGameSaveService gameSaveService);
         LevelInfo GetLevelInfo();
         int GetLevelId();
-        void SetLevelId(int levelId);
-        void IncrementLevelId();
+        void IncrementLevelId(int starCount);
         void AddStar(int addedStarCount);
         int GetStarCount();
         int GetWildCardCount();
@@ -152,6 +186,7 @@ namespace Scripts
         public int NumOfBoardHolders;
         public int NumOfCards;
         public int MaxNumOfTries;
+        public int NumOfGainedStars;
     }
 
     public class LevelInfo
@@ -159,4 +194,5 @@ namespace Scripts
         public LevelSaveData levelSaveData;
         public LevelData levelData;
     }
+    
 }

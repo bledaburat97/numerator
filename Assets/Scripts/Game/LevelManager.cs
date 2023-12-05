@@ -46,7 +46,7 @@ namespace Scripts
             _gameSaveService.DeleteSave();
             if (args.isGuessRight)
             {
-                _levelTracker.IncrementLevelId();
+                _levelTracker.IncrementLevelId(3);
                 LevelEnd?.Invoke(this, new LevelEndEventArgs()
                 {
                     isLevelCompleted = true,
