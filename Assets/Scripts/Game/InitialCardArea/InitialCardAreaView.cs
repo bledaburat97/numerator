@@ -9,6 +9,7 @@ namespace Scripts
         [SerializeField] private RectTransform tempParentRectTransform;
         [SerializeField] private InvisibleClickHandler invisibleClickHandler;
         [SerializeField] private WildCardItemView wildCardItemPrefab;
+        [SerializeField] private Camera cam;
         
         private NormalCardItemViewFactory _normalCardItemViewFactory;
         private CardHolderFactory _cardHolderFactory;
@@ -20,6 +21,11 @@ namespace Scripts
             _cardHolderFactory = cardHolderFactory;
             _normalCardItemViewFactory = normalCardItemViewFactory;
             _wildCardItemViewFactory = wildCardItemViewFactory;
+        }
+
+        public Camera GetCamera()
+        {
+            return cam;
         }
 
         public IInvisibleClickHandler GetInvisibleClickHandler()
@@ -56,5 +62,6 @@ namespace Scripts
         IWildCardItemView CreateWildCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();
+        Camera GetCamera();
     }
 }

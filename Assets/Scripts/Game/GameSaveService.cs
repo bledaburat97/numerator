@@ -29,6 +29,7 @@ namespace Scripts
         
         public LevelSaveData GetSavedLevel()
         {
+            DeleteSave();
             if (!HasSavedGame()) return null;
             LevelSaveData levelSaveData = JsonConvert.DeserializeObject<LevelSaveData>(PlayerPrefs.GetString(_saveGameKey));
             return levelSaveData;

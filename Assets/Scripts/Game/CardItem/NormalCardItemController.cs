@@ -15,10 +15,12 @@ namespace Scripts
         private bool _isSelectable;
         private ProbabilityType _probabilityType;
         private bool _isLocked;
+        private Camera _cam;
         
-        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator)
+        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam)
         {
             _view = cardItemView;
+            _cam = cam;
             _cardItemData = cardItemData;
             _isSelectable = true;
             _selectionController = selectionController;
@@ -79,7 +81,7 @@ namespace Scripts
 
             _isDragStart = true;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_view.GetParent(), data.position,
-                null, out Vector2 localPosition);
+                _cam, out Vector2 localPosition);
             _view.SetAnchoredPosition(localPosition);
             _onDragContinue(data.position, _cardItemData.cardItemIndex);
         }
@@ -168,7 +170,7 @@ namespace Scripts
 
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator);
+        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam);
         void ResetPosition();
         INormalCardItemView GetView();
         void DisableSelectability();

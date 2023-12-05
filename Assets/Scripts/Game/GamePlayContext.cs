@@ -12,6 +12,7 @@ namespace Scripts
         [SerializeField] private InitialCardAreaView initialCardAreaView;
         [SerializeField] private GamePopupCreator gamePopupCreator;
         [SerializeField] private FadePanelView fadePanelView;
+        [SerializeField] private FadePanelView nonGlowFadePanelView;
         [SerializeField] private TMP_Text levelIdText;
         [SerializeField] private BaseButtonView settingsButtonView;
         [SerializeField] private BaseButtonView checkButtonView;
@@ -56,6 +57,7 @@ namespace Scripts
             CreateInitialCardArea();
             CreateGamePopupCreator();
             _gameSaveService.Set(_resultManager, _initialCardAreaController, _levelManager);
+            //CreateFadeMaskService();
         }
         
         private void OnApplicationQuit()
@@ -133,9 +135,16 @@ namespace Scripts
         private void CreateGamePopupCreator()
         {
             _fadePanelController = new FadePanelController();
-            _fadePanelController.Initialize(fadePanelView);
+            _fadePanelController.Initialize(fadePanelView, nonGlowFadePanelView);
             gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService);
         }
 
+        /*
+        private void CreateFadeMaskService()
+        {
+            fadeMaskService.Initialize(_fadePanelController);
+            fadeMaskService.CreateMask();
+        }
+        */
     }
 }

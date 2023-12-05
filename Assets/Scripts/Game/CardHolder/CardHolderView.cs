@@ -11,11 +11,13 @@ namespace Scripts
         [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
         [SerializeField] private Image highlightImage;
         [SerializeField] private TMP_Text text;
+        private Camera _cam;
         
         private PossibleHolderIndicatorViewFactory _possibleHolderIndicatorViewFactory;
-        public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory)
+        public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory, Camera cam)
         {
             transform.localScale = Vector3.one;
+            _cam = cam;
             SetLocalPosition(model.localPosition);
             transform.localPosition = model.localPosition;
             rectTransform.sizeDelta = model.size;
@@ -40,7 +42,7 @@ namespace Scripts
 
         public Vector3 GetPosition()
         {
-            return transform.position;
+            return _cam.WorldToScreenPoint(transform.position);
         }
 
         public RectTransform GetRectTransform()
@@ -66,7 +68,7 @@ namespace Scripts
 
     public interface ICardHolderView
     {
-        void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory);
+        void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory, Camera cam);
         Vector3 GetPosition();
         Vector3 GetSize();
         RectTransform GetRectTransform();

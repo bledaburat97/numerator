@@ -13,10 +13,12 @@ namespace Scripts
         private Action _slideCardHolders;
         private Action _backSlideCardHolders;
         private bool _isDragStart;
+        private Camera _cam;
         
-        public void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> setLockedCard, Action slideCardHolders, Action backSlideCardHolders)
+        public void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> setLockedCard, Action slideCardHolders, Action backSlideCardHolders, Camera cam)
         {
             _view = view;
+            _cam = cam;
             _cardItemData = data;
             _view.SetLocalPositionGap(data.cardItemIndex);
             _view.InitPosition();
@@ -45,7 +47,7 @@ namespace Scripts
             _view.SetParent(_cardItemData.tempParent);
             _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_view.GetParent(), data.position,
-                null, out Vector2 localPosition);
+                _cam, out Vector2 localPosition);
             _view.SetAnchoredPosition(localPosition);
             _onDragContinue(data.position, _cardItemData.cardItemIndex);
             if (!_isDragStart && _cardItemData.cardItemIndex == 0)
@@ -83,6 +85,6 @@ namespace Scripts
 
     public interface IWildCardItemController
     {
-        void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> getLockedCard, Action slideCardHolders, Action backSlideCardHolders);
+        void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> getLockedCard, Action slideCardHolders, Action backSlideCardHolders, Camera cam);
     }
 }

@@ -30,7 +30,7 @@ namespace Scripts
             {
                 ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardCardHolderView = _view.CreateCardHolderView();
-                cardHolderController.Initialize(boardCardHolderView, boardCardHolderModel);
+                cardHolderController.Initialize(boardCardHolderView, boardCardHolderModel, _view.GetCamera());
                 boardCardHolderControllerList.Add(cardHolderController);
             }
             

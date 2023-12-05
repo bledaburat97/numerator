@@ -90,8 +90,9 @@ namespace Scripts
                 onCompleteAction += () => _starImageViewList[(_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD].SetStarStatus(true);
                 onCompleteAction += _currentStarCount % NUM_OF_STARS_FOR_WILD == 0 ? () => ResetAnimation(AnimateStar) : AnimateStar;
                 
-                DOTween.Sequence().Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 1f))
-                    .Join(animatedStar.GetRectTransform().DOLocalMove(Vector3.zero, 1f).SetEase(Ease.OutQuad))
+                DOTween.Sequence().Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
+                    .Join(animatedStar.GetRectTransform().DOLocalMoveX(0f, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().horizontalPositionCurve))
+                    .Join(animatedStar.GetRectTransform().DOLocalMoveY(0f, 1f).SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
                     .Join(_view.GetProgressTween((float)((_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD) / NUM_OF_STARS_FOR_WILD, 1f, onCompleteAction).Play());
             }
         }

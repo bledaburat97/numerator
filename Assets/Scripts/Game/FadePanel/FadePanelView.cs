@@ -10,10 +10,16 @@ namespace Scripts
         {
             fadeImage.gameObject.SetActive(status);
         }
+
+        public Image GetFadeImage()
+        {
+            return fadeImage;
+        }
     }
 
     public interface IFadePanelView
     {
         void SetFadeImageStatus(bool status);
+        Image GetFadeImage();
     }
 }

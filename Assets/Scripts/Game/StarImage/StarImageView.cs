@@ -8,6 +8,7 @@ namespace Scripts
     {
         [SerializeField] private Image star;
         [SerializeField] private RectTransform rectTransform;
+        [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
         public void Init(Vector2 localPosition)
         {
             transform.localScale = Vector3.one;
@@ -38,6 +39,11 @@ namespace Scripts
         {
             rectTransform.SetParent(parent);
         }
+
+        public CurvedAnimationPreset GetCurvedAnimationPreset()
+        {
+            return curvedAnimationPreset;
+        }
     }
 
     public interface IStarImageView
@@ -48,5 +54,6 @@ namespace Scripts
         RectTransform GetRectTransform();
         void SetParent(RectTransform parent);
         void Destroy();
+        CurvedAnimationPreset GetCurvedAnimationPreset();
     }
 }

@@ -11,12 +11,12 @@ namespace Scripts
         private CardHolderModel _model;
         private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
-        public void Initialize(ICardHolderView cardHolderView, CardHolderModel model)
+        public void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam)
         {
             _view = cardHolderView;
             _model = model;
             _index = model.index;
-            _view.Init(model, new PossibleHolderIndicatorViewFactory());
+            _view.Init(model, new PossibleHolderIndicatorViewFactory(), cam);
             CreatePossibleHolderIndicators();
         }
         
@@ -83,7 +83,7 @@ namespace Scripts
     
     public interface ICardHolderController
     {
-        void Initialize(ICardHolderView cardHolderView, CardHolderModel model);
+        void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam);
         ICardHolderView GetView();
         int GetIndex();
         void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);

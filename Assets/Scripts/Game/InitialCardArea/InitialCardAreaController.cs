@@ -57,7 +57,7 @@ namespace Scripts
             {
                 ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView cardHolderView = _initialCardAreaView.CreateCardHolderView();
-                cardHolderController.Initialize(cardHolderView, cardHolderModel);
+                cardHolderController.Initialize(cardHolderView, cardHolderModel, _initialCardAreaView.GetCamera());
                 if (cardHolderModel.cardItemType == CardItemType.Normal)
                 {
                     cardHolderController.SetHolderIndicatorListStatus(_levelTracker.GetLevelInfo().levelSaveData.ActiveHolderIndicatorIndexesList[index]);
@@ -111,14 +111,14 @@ namespace Scripts
                 WildCardItemControllerFactory wildCardItemControllerFactory = new WildCardItemControllerFactory();
                 IWildCardItemView wildCardItemView = _initialCardAreaView.CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
-                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder);
+                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder, _initialCardAreaView.GetCamera());
             }
             else
             {
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
                 INormalCardItemView normalCardItemView = _initialCardAreaView.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator);
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _initialCardAreaView.GetCamera());
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
