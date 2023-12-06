@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
@@ -31,8 +32,13 @@ namespace Scripts
         private void CreatePlayButton(Action deleteSaveAction)
         {
             IPlayButtonController playButtonController = new PlayButtonController();
-            
-            playButtonController.Initialize(_view.GetPlayButtonView(), "Retry", deleteSaveAction);
+            Action onClickAction = deleteSaveAction;
+            onClickAction += () => SceneManager.LoadScene("Game");
+            playButtonController.Initialize(_view.GetPlayButtonView(), new BaseButtonModel()
+            {
+                text = "Retry",
+                OnClick = onClickAction
+            });
         }
 
         private void CreateReturnMenuButton(Action saveGameAction)

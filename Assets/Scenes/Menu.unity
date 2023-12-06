@@ -949,6 +949,7 @@ MonoBehaviour:
   levelTracker: {fileID: 1298503001}
   starHolder: {fileID: 1903088409}
   wildHolder: {fileID: 1324122251}
+  levelSelectionTablePrefab: {fileID: 1880617388}
 --- !u!114 &1298503001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1442,6 +1443,7 @@ GameObject:
   - component: {fileID: 1880617385}
   - component: {fileID: 1880617387}
   - component: {fileID: 1880617386}
+  - component: {fileID: 1880617388}
   m_Layer: 5
   m_Name: LevelTable
   m_TagString: Untagged
@@ -1507,6 +1509,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1880617384}
   m_CullTransparentMesh: 1
+--- !u!114 &1880617388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1880617384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d20b7309193847a193ca3ed243a01eba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelButtonPrefab: {fileID: 371490860433157135, guid: 697180a6a86c21d46b453ada54100f46, type: 3}
 --- !u!1 &1903088404
 GameObject:
   m_ObjectHideFlags: 0

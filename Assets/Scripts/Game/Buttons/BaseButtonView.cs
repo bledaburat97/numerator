@@ -44,16 +44,30 @@ namespace Scripts
             innerBg.rectTransform.offsetMin = innerBgOffsetMin;
             innerBg.rectTransform.offsetMax = innerBgOffsetMax;
         }
+
+        public void SetText(string newText)
+        {
+            text.SetText(newText);
+        }
+
+        public void InitPosition(Vector2 localPos)
+        {
+            transform.localScale = Vector3.one;
+            transform.localPosition = localPos;
+        }
     }
     
     public interface IBaseButtonView
     {
         void Init(BaseButtonModel model);
+        void SetText(string newText);
+        void InitPosition(Vector2 localPos);
     }
 
     public class BaseButtonModel
     {
         public string text;
         public Action OnClick;
+        public Vector2 localPosition;
     }
 }

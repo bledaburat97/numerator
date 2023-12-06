@@ -6,16 +6,17 @@ namespace Scripts
     public class LevelEndPopupView : MonoBehaviour, ILevelEndPopupView
     {
         [SerializeField] private TMP_Text title;
-        [SerializeField] private BaseButtonView playButtonView;
-        [SerializeField] private BaseButtonView returnMenuButtonView;
+        [SerializeField] private BaseButtonView buttonPrefab;
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
         
         private StarImageViewFactory _starImageViewFactory;
-        public void Init(StarImageViewFactory starImageViewFactory)
+        private BaseButtonViewFactory _baseButtonViewFactory;
+        public void Init(StarImageViewFactory starImageViewFactory, BaseButtonViewFactory baseButtonViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
+            _baseButtonViewFactory = baseButtonViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
         }
@@ -25,14 +26,9 @@ namespace Scripts
             title.SetText(text);
         }
 
-        public IBaseButtonView GetPlayButtonView()
+        public IBaseButtonView GetButtonView()
         {
-            return playButtonView;
-        }
-
-        public IBaseButtonView GetReturnMenuButtonView()
-        {
-            return returnMenuButtonView;
+            return _baseButtonViewFactory.Spawn(transform, buttonPrefab);
         }
         
         public IStarImageView CreateStarImage()
@@ -48,10 +44,9 @@ namespace Scripts
     
     public interface ILevelEndPopupView
     {
-        void Init(StarImageViewFactory starImageViewFactory);
+        void Init(StarImageViewFactory starImageViewFactory, BaseButtonViewFactory baseButtonViewFactory);
         void SetTitle(string text);
-        IBaseButtonView GetPlayButtonView();
-        IBaseButtonView GetReturnMenuButtonView();
+        IBaseButtonView GetButtonView();
         IStarImageView CreateStarImage();
         ICircleProgressBarView CreateCircleProgressBar();
     }

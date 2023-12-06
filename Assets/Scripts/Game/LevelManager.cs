@@ -46,12 +46,16 @@ namespace Scripts
             _gameSaveService.DeleteSave();
             if (args.isGuessRight)
             {
-                _levelTracker.IncrementLevelId(3);
+                int oldStarCount = _levelTracker.GetLevelId() < _levelTracker.GetStarCountOfLevels().Count
+                    ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
+                    : 0;
+                _levelTracker.IncrementLevelId(_numOfStars);
                 LevelEnd?.Invoke(this, new LevelEndEventArgs()
                 {
                     isLevelCompleted = true,
                     levelTracker = _levelTracker,
-                    starCount = _numOfStars
+                    starCount = _numOfStars,
+                    oldStarCount = oldStarCount
                 });
             }
 
@@ -82,6 +86,7 @@ namespace Scripts
         public bool isLevelCompleted;
         public ILevelTracker levelTracker;
         public int starCount;
+        public int oldStarCount;
     }
     
     public interface ILevelManager

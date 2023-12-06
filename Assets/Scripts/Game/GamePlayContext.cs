@@ -41,6 +41,7 @@ namespace Scripts
             _gameSaveService = new GameSaveService();
             _gameSaveService.Initialize(levelTracker);
             levelTracker.Initialize(_gameSaveService);
+            levelTracker.SetLevelInfo();
             _cardHolderModelCreator = new CardHolderModelCreator();
             _cardHolderModelCreator.Initialize();
             _resultManager = new ResultManager();
@@ -57,6 +58,7 @@ namespace Scripts
             CreateInitialCardArea();
             CreateGamePopupCreator();
             _gameSaveService.Set(_resultManager, _initialCardAreaController, _levelManager);
+            _gameSaveService.DeleteSave();
             //CreateFadeMaskService();
         }
         
@@ -67,7 +69,7 @@ namespace Scripts
 
         private void SetLevelId()
         {
-            levelIdText.SetText("Level " + levelTracker.GetLevelId());
+            levelIdText.SetText("Level " + (levelTracker.GetLevelId() + 1));
         }
 
         private void CreateSettingsButton()

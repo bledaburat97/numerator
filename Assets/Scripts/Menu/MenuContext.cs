@@ -9,12 +9,15 @@ namespace Scripts.Menu
         private IGameSaveService _gameSaveService;
         [SerializeField] private TextHolderAdjustment starHolder;
         [SerializeField] private TextHolderAdjustment wildHolder;
-
+        [SerializeField] private LevelSelectionTableView levelSelectionTablePrefab;
+        private IActiveLevelIdController _activeLevelIdController;        
         void Start()
         {
             _gameSaveService = new GameSaveService();
             _gameSaveService.Initialize(levelTracker);
             levelTracker.Initialize(_gameSaveService);
+            CreateActiveLevelIdController();
+            CreateLevelTable();
             CreatePlayButton();
             starHolder.SetText(levelTracker.GetStarCount().ToString());
             wildHolder.SetText(levelTracker.GetWildCardCount().ToString());
@@ -22,11 +25,24 @@ namespace Scripts.Menu
             wildHolder.SetPosition();
         }
 
+        private void CreateActiveLevelIdController()
+        {
+            _activeLevelIdController = new ActiveLevelIdController();
+            _activeLevelIdController.Initialize(levelTracker, _gameSaveService);
+        }
+        
+        private void CreateLevelTable()
+        {
+            ILevelSelectionTableController levelSelectionTableController = new LevelSelectionTableController();
+            levelSelectionTableController.Initialize(levelSelectionTablePrefab, _activeLevelIdController, levelTracker);
+        }
+
         private void CreatePlayButton()
         {
-            IPlayButtonController playButtonController = new PlayButtonController();
-            string playButtonText = _gameSaveService.HasSavedGame() ? "Continue" : "Level " + levelTracker.GetLevelId();
-            playButtonController.Initialize(playButton, playButtonText, null);
+            IMenuPlayButtonController playButtonController = new MenuPlayButtonController();
+            playButtonController.Initialize(playButton, _activeLevelIdController);
         }
+
+
     }
 }

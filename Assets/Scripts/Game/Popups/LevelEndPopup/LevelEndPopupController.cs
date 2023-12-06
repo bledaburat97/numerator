@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
@@ -15,28 +17,45 @@ namespace Scripts
             _view = view;
             _glowingView = glowingView;
             _levelTracker = args.levelTracker;
-            _view.Init(new StarImageViewFactory());
+            _view.Init(new StarImageViewFactory(), new BaseButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory());
             _view.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
-            CreatePlayButton();
-            CreateReturnMenuButton();
             CreateCircleProgressBarController();
             CreateInitialStars();
-            int oldStarCount = 1;
-            if(args.isLevelCompleted) CreateStars(args.starCount, oldStarCount);
-            _levelTracker.AddStar(args.starCount - oldStarCount);
+            if (args.isLevelCompleted)
+            {
+                int oldStarCount = args.oldStarCount > args.starCount ? args.starCount : args.oldStarCount;
+                CreateStars(args.starCount, oldStarCount);
+                _levelTracker.AddStar(args.starCount - oldStarCount);
+                CreatePlayButton(args.oldStarCount == 0);
+            }
+            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0);
+            
         }
         
-        private void CreatePlayButton()
+        private void CreatePlayButton(bool isNewGame)
         {
-            IPlayButtonController playButtonController = new PlayButtonController();
-            playButtonController.Initialize(_view.GetPlayButtonView(), "Level " + _levelTracker.GetLevelId(), null);
+            IBaseButtonView baseButtonView = _view.GetButtonView();
+            baseButtonView.Init(new BaseButtonModel()
+            {
+                text = isNewGame ? "Level " + (_levelTracker.GetLevelId() + 1) : "Menu",
+                OnClick = isNewGame ? () => SceneManager.LoadScene("Game") : () => SceneManager.LoadScene("Menu")
+            });
+            baseButtonView.InitPosition(new Vector2(0, -40f));
         }
 
-        private void CreateReturnMenuButton()
+        private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel)
         {
-            IReturnMenuButtonController returnMenuButtonController = new ReturnMenuButtonController();
-            returnMenuButtonController.Initialize(_view.GetReturnMenuButtonView());
+            IBaseButtonView baseButtonView = _view.GetButtonView();
+            Action onClick = null;
+            onClick += isLevelCompleted && isNewLevel ? () => _levelTracker.SetLevelId(_levelTracker.GetLevelId() - 1) : null;
+            onClick += () => SceneManager.LoadScene("Game");
+            baseButtonView.Init(new BaseButtonModel()
+            {
+                text = "Retry",
+                OnClick = onClick
+            });
+            baseButtonView.InitPosition(isLevelCompleted ? new Vector2(0, -130f) : new Vector2(0, -40f));
         }
 
         private void CreateCircleProgressBarController()
