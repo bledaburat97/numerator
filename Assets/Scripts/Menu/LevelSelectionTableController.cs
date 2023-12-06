@@ -11,10 +11,13 @@ namespace Scripts
         private int columnCount = 3;
         private Vector2[] _localPosListForButtons;
         private List<ILevelButtonView> _levelButtonList;
-        private int _lastSelectedButtonIndex;
+        private int _lastSelectedLevelId = -1;
         private int _firstLevelIdOfTable = 0;
         private IActiveLevelIdController _activeLevelIdController;
         private ILevelTracker _levelTracker;
+        private readonly int _maxNumOfPageNumber = 20;
+        private IDirectionButtonView _backwardButtonView;
+        private IDirectionButtonView _forwardButtonView;
         public void Initialize(ILevelSelectionTableView view, IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker)
         {
             _view = view;
@@ -22,16 +25,21 @@ namespace Scripts
             _levelTracker = levelTracker;
             _localPosListForButtons = new Vector2[rowCount * columnCount];
             SetLocalPosListForButtons();
-            _view.Init(new LevelButtonViewFactory());
+            _view.Init(new LevelButtonViewFactory(), new DirectionButtonViewFactory());
             _levelButtonList = new List<ILevelButtonView>();
+            SetFirstLevelIdOfTable();
             CreateLevelButtons();
+            CreateDirectionButtons();
+        }
+
+        private void SetFirstLevelIdOfTable()
+        {
+            int activeLevelId = _activeLevelIdController.GetActiveLevelId();
+            _firstLevelIdOfTable = activeLevelId - activeLevelId % (rowCount * columnCount);
         }
 
         private void CreateLevelButtons()
         {
-            int activeLevelId = _activeLevelIdController.GetActiveLevelId();
-            
-            _firstLevelIdOfTable = activeLevelId - activeLevelId % (rowCount * columnCount);
             for (int i = 0; i < _localPosListForButtons.Length; i++)
             {
                 ILevelButtonView levelButtonView = _view.CreateLevelButtonView();
@@ -44,30 +52,62 @@ namespace Scripts
                     starCount = levelId < _levelTracker.GetStarCountOfLevels().Count ? _levelTracker.GetStarCountOfLevels()[levelId] : 0
                 });
                 if (_firstLevelIdOfTable + i <= _levelTracker.GetStarCountOfLevels().Count) levelButtonView.SetButtonActive();
-                if (_firstLevelIdOfTable + i == activeLevelId)
+                if (_firstLevelIdOfTable + i == _activeLevelIdController.GetActiveLevelId())
                 {
                     levelButtonView.Select(true);
-                    _lastSelectedButtonIndex = activeLevelId;
+                    _lastSelectedLevelId = _activeLevelIdController.GetActiveLevelId();
                 }
                 _levelButtonList.Add(levelButtonView);
             }
         }
 
-        private void OnClickForward()
+        private void CreateDirectionButtons()
         {
-            
+            _backwardButtonView = _view.CreateDirectionButton();
+            _backwardButtonView.Init(new DirectionButtonModel()
+            {
+                localPosition = new Vector2(-162f, 0),
+                onClick = OnClickDirectionButton,
+                direction = Direction.Backward
+            });
+
+            _forwardButtonView = _view.CreateDirectionButton();
+            _forwardButtonView.Init(new DirectionButtonModel()
+            {
+                localPosition = new Vector2(162f, 0),
+                onClick = OnClickDirectionButton,
+                direction = Direction.Forward
+            });
+            SetDirectionButtonsStatus();
         }
 
-        private void OnClickBackWard()
+        private void SetDirectionButtonsStatus()
         {
-            
+            _backwardButtonView.SetButtonStatus(_firstLevelIdOfTable > 0);
+            _forwardButtonView.SetButtonStatus(_firstLevelIdOfTable < (_maxNumOfPageNumber - 1) * rowCount * columnCount);
+        }
+
+        private void OnClickDirectionButton(Direction direction)
+        {
+            foreach (ILevelButtonView levelButtonView in _levelButtonList)
+            {
+                levelButtonView.Destroy();
+            }
+            _levelButtonList = new List<ILevelButtonView>();
+            if (direction == Direction.Forward) _firstLevelIdOfTable += rowCount * columnCount;
+            else if (direction == Direction.Backward) _firstLevelIdOfTable -= rowCount * columnCount;
+            CreateLevelButtons();
+            SetDirectionButtonsStatus();
         }
 
         private void OnClickLevel(int levelId)
         {
-            _levelButtonList[_lastSelectedButtonIndex].Select(false);
+            if (_lastSelectedLevelId >= _firstLevelIdOfTable && _lastSelectedLevelId < _firstLevelIdOfTable + rowCount * columnCount)
+            {
+                _levelButtonList[_lastSelectedLevelId - _firstLevelIdOfTable].Select(false);
+            }
             _levelButtonList[levelId - _firstLevelIdOfTable].Select(true);
-            _lastSelectedButtonIndex = levelId - _firstLevelIdOfTable;
+            _lastSelectedLevelId = levelId;
             _activeLevelIdController.UpdateActiveLevelId(levelId);
         }
 
@@ -78,7 +118,7 @@ namespace Scripts
             {
                 for (int i = 0; i < columnCount; i++)
                 {
-                    Vector2 localPos = new Vector2((i - (float)(columnCount - 1) / 2) * 100, (j - (float) (rowCount - 1)/2) * -70);
+                    Vector2 localPos = new Vector2((i - (float)(columnCount - 1) / 2) * 90, (j - (float) (rowCount - 1)/2) * -70);
                     _localPosListForButtons[index] = localPos;
                     index++;
                 }

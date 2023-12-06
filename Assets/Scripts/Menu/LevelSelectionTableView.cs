@@ -7,21 +7,31 @@ namespace Scripts
     {
         [SerializeField] private LevelButtonView levelButtonPrefab;
         private LevelButtonViewFactory _levelButtonViewFactory;
+        private DirectionButtonViewFactory _directionButtonViewFactory;
+        [SerializeField] private DirectionButtonView directionButtonPrefab;
         
-        public void Init(LevelButtonViewFactory levelButtonViewFactory)
+        public void Init(LevelButtonViewFactory levelButtonViewFactory, DirectionButtonViewFactory directionButtonViewFactory)
         {
             _levelButtonViewFactory = levelButtonViewFactory;
+            _directionButtonViewFactory = directionButtonViewFactory;
         }
 
         public ILevelButtonView CreateLevelButtonView()
         {
             return _levelButtonViewFactory.Spawn(transform, levelButtonPrefab);
         }
+
+        public IDirectionButtonView CreateDirectionButton()
+        {
+            return _directionButtonViewFactory.Spawn(transform, directionButtonPrefab);
+        }
+
     }
 
     public interface ILevelSelectionTableView
     {
-        void Init(LevelButtonViewFactory levelButtonViewFactory);
+        void Init(LevelButtonViewFactory levelButtonViewFactory, DirectionButtonViewFactory directionButtonViewFactory);
         ILevelButtonView CreateLevelButtonView();
+        IDirectionButtonView CreateDirectionButton();
     }
 }

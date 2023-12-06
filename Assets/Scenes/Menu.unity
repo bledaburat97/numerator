@@ -1469,7 +1469,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: -20}
-  m_SizeDelta: {x: 300, y: 380}
+  m_SizeDelta: {x: 280, y: 380}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1880617386
 MonoBehaviour:
@@ -1522,6 +1522,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelButtonPrefab: {fileID: 371490860433157135, guid: 697180a6a86c21d46b453ada54100f46, type: 3}
+  directionButtonPrefab: {fileID: 1673646518181781853, guid: 5003074683a20e4428d4f5829f11e6ff, type: 3}
 --- !u!1 &1903088404
 GameObject:
   m_ObjectHideFlags: 0
