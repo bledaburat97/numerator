@@ -25,6 +25,11 @@ namespace Scripts
         {
             return glowingCircleProgressBar;
         }
+
+        public GlowingEndGameAnimationModel GetNonGlowingAnimationModel()
+        {
+            return new GlowingEndGameAnimationModel();
+        }
     }
 
     public interface IGlowingLevelEndPopupView
@@ -32,5 +37,10 @@ namespace Scripts
         void Init(StarImageViewFactory starImageViewFactory);
         IStarImageView CreateStarImage();
         IGlowingCircleProgressBarView CreateGlowingCircleProgressBar();
+    }
+
+    public class GlowingEndGameAnimationModel
+    {
+        
     }
 }

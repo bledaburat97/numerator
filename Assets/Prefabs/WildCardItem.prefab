@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1445150972712788324}
   - component: {fileID: 8917381596642948652}
   - component: {fileID: -5603641286038599345}
+  - component: {fileID: 8550594557260668376}
   m_Layer: 0
   m_Name: WildCardItem
   m_TagString: Untagged
@@ -69,6 +70,19 @@ MonoBehaviour:
   shadowImage: {fileID: 5598195464458495719}
   cardFrame: {fileID: 4994893504704688496}
   questionMarkImage: {fileID: 8432350485068518011}
+  canvasGroup: {fileID: 8550594557260668376}
+--- !u!225 &8550594557260668376
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1614145412177302120}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &2477493052748394349
 GameObject:
   m_ObjectHideFlags: 0

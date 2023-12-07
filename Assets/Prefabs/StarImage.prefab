@@ -162,6 +162,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6486002996941193330}
   - component: {fileID: 9201243238752170526}
+  - component: {fileID: 7904672420835452814}
   m_Layer: 0
   m_Name: StarImage
   m_TagString: Untagged
@@ -207,6 +208,19 @@ MonoBehaviour:
   star: {fileID: 6486002998265864464}
   rectTransform: {fileID: 6486002996941193330}
   curvedAnimationPreset: {fileID: 11400000, guid: 35f0c7338da754296b7f0de190686df2, type: 2}
+  canvasGroup: {fileID: 7904672420835452814}
+--- !u!225 &7904672420835452814
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6486002996941193325}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &6486002998265864466
 GameObject:
   m_ObjectHideFlags: 0

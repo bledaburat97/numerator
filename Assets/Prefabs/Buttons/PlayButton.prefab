@@ -163,7 +163,8 @@ GameObject:
   - component: {fileID: 4141988893961824197}
   - component: {fileID: 6248074346979143821}
   - component: {fileID: 8909211082336687807}
-  - component: {fileID: 7496246486353124807}
+  - component: {fileID: 8788213063920046140}
+  - component: {fileID: 373467399380124672}
   m_Layer: 0
   m_Name: PlayButton
   m_TagString: Untagged
@@ -247,7 +248,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &7496246486353124807
+--- !u!225 &8788213063920046140
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4256993876634080457}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &373467399380124672
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -256,7 +269,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4256993876634080457}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32847b611c0240c7b6fc17b551784498, type: 3}
+  m_Script: {fileID: 11500000, guid: 27d791c120f74ba7a6440d6f8ef52062, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 1386947927589960688}
@@ -264,6 +277,7 @@ MonoBehaviour:
   outerBg: {fileID: 2006273530344497502}
   shadow: {fileID: 6973173998426153030}
   innerBg: {fileID: 9143913073293881887}
+  canvasGroup: {fileID: 8788213063920046140}
 --- !u!1 &4882659104382988680
 GameObject:
   m_ObjectHideFlags: 0

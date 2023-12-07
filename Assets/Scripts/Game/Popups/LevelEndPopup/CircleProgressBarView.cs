@@ -10,18 +10,13 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private StarImageView starImagePrefab;
         private StarImageViewFactory _starImageViewFactory;
-        [SerializeField] private RectTransform wildCardHolder;
-        [SerializeField] private RectTransform tempWildCardHolder;
         [SerializeField] private Image image;
         private Tween _currentTween;
         private float _currentPercentage;
-        [SerializeField] private WildCardItemView wildCardItemPrefab;
-        private WildCardItemViewFactory _wildCardItemViewFactory;
         
-        public void Init(StarImageViewFactory starImageViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
+        public void Init(StarImageViewFactory starImageViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
-            _wildCardItemViewFactory = wildCardItemViewFactory;
             _currentPercentage = 0f;
             image.fillAmount = _currentPercentage;
         }
@@ -29,11 +24,6 @@ namespace Scripts
         public IStarImageView CreateStarImage()
         {
             return _starImageViewFactory.Spawn(rectTransform, starImagePrefab);
-        }
-
-        public IWildCardItemView CreateWildCardImage()
-        {
-            return _wildCardItemViewFactory.Spawn(wildCardHolder, wildCardItemPrefab);
         }
 
         public RectTransform GetRectTransform()
@@ -53,19 +43,19 @@ namespace Scripts
                 });
         }
 
-        public RectTransform GetTempWildCardHolder()
+        public void SetProgress(float targetPercentage)
         {
-            return tempWildCardHolder;
+            image.fillAmount = targetPercentage;
+            _currentPercentage = targetPercentage;
         }
     }
 
     public interface ICircleProgressBarView
     {
-        void Init(StarImageViewFactory starImageViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
+        void Init(StarImageViewFactory starImageViewFactory);
         IStarImageView CreateStarImage();
         RectTransform GetRectTransform();
         Tween GetProgressTween(float targetPercentage, float duration, Action onComplete);
-        IWildCardItemView CreateWildCardImage();
-        RectTransform GetTempWildCardHolder();
+        void SetProgress(float targetPercentage);
     }
 }

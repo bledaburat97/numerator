@@ -1,4 +1,6 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using DG.Tweening;
+using TMPro;
 using UnityEngine;
 
 namespace Scripts
@@ -6,17 +8,21 @@ namespace Scripts
     public class LevelEndPopupView : MonoBehaviour, ILevelEndPopupView
     {
         [SerializeField] private TMP_Text title;
-        [SerializeField] private BaseButtonView buttonPrefab;
+        [SerializeField] private PlayButtonView playButtonPrefab;
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
         
         private StarImageViewFactory _starImageViewFactory;
-        private BaseButtonViewFactory _baseButtonViewFactory;
-        public void Init(StarImageViewFactory starImageViewFactory, BaseButtonViewFactory baseButtonViewFactory)
+        private PlayButtonViewFactory _playButtonViewFactory;
+
+        private IPlayButtonView _playButtonView;
+        private IPlayButtonView _retryButtonView;
+        
+        public void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
-            _baseButtonViewFactory = baseButtonViewFactory;
+            _playButtonViewFactory = playButtonViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
         }
@@ -24,11 +30,36 @@ namespace Scripts
         public void SetTitle(string text)
         {
             title.SetText(text);
+            title.alpha = 0f;
         }
 
-        public IBaseButtonView GetButtonView()
+        public void CreatePlayButton(BaseButtonModel model)
         {
-            return _baseButtonViewFactory.Spawn(transform, buttonPrefab);
+            _playButtonView = _playButtonViewFactory.Spawn(transform, playButtonPrefab);
+            _playButtonView.Init(model);
+            _playButtonView.InitPosition(model.localPosition);
+            _playButtonView.SetAlpha(0f);
+        }
+
+        public void CreateRetryButton(BaseButtonModel model)
+        {
+            _retryButtonView = _playButtonViewFactory.Spawn(transform, playButtonPrefab);
+            _retryButtonView.Init(model);
+            _retryButtonView.InitPosition(model.localPosition);
+            _retryButtonView.SetAlpha(0f);
+        }
+
+        public Sequence AnimateButtons()
+        {
+            Sequence playButtonSequence = _playButtonView != null ? DOTween.Sequence().Pause().Append(_playButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
+            Sequence retryButtonSequence = _retryButtonView != null ? DOTween.Sequence().Pause().Append(_retryButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
+
+            return DOTween.Sequence().Append(playButtonSequence.Play()).Join(retryButtonSequence.Play());
+        }
+
+        public TMP_Text GetTitle()
+        {
+            return title;
         }
         
         public IStarImageView CreateStarImage()
@@ -40,14 +71,27 @@ namespace Scripts
         {
             return circleProgressBarView;
         }
+        
+        public NonGlowingEndGameAnimationModel GetNonGlowingAnimationModel()
+        {
+            return new NonGlowingEndGameAnimationModel();
+        }
     }
     
     public interface ILevelEndPopupView
     {
-        void Init(StarImageViewFactory starImageViewFactory, BaseButtonViewFactory baseButtonViewFactory);
+        void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory);
         void SetTitle(string text);
-        IBaseButtonView GetButtonView();
         IStarImageView CreateStarImage();
         ICircleProgressBarView CreateCircleProgressBar();
+        void CreatePlayButton(BaseButtonModel model);
+        void CreateRetryButton(BaseButtonModel model);
+        TMP_Text GetTitle();
+        Sequence AnimateButtons();
+    }
+    
+    public class NonGlowingEndGameAnimationModel
+    {
+        public List<IStarImageView> starImageList;
     }
 }

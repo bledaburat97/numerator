@@ -4,7 +4,7 @@ namespace Scripts
 {
     public class SettingsPopupView : MonoBehaviour, ISettingsPopupView
     {
-        [SerializeField] private BaseButtonView playButtonView;
+        [SerializeField] private PlayButtonView playButtonView;
         [SerializeField] private BaseButtonView returnMenuButtonView;
         [SerializeField] private BaseButtonView closeButtonView;
         public void Init()
@@ -18,7 +18,7 @@ namespace Scripts
             return closeButtonView;
         }
         
-        public IBaseButtonView GetPlayButtonView()
+        public IPlayButtonView GetPlayButtonView()
         {
             return playButtonView;
         }
@@ -38,7 +38,7 @@ namespace Scripts
     {
         void Init();
         IBaseButtonView GetCloseButtonView();
-        IBaseButtonView GetPlayButtonView();
+        IPlayButtonView GetPlayButtonView();
         IBaseButtonView GetReturnMenuButtonView();
         void Close();
     }

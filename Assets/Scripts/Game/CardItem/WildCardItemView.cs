@@ -8,6 +8,8 @@ namespace Scripts
     {
         private Vector3 _localPositionGap = Vector2.zero;
         [SerializeField] private Image questionMarkImage;
+        [SerializeField] private CanvasGroup canvasGroup;
+        
         public void Destroy()
         {
             Destroy(gameObject);
@@ -23,31 +25,23 @@ namespace Scripts
             rectTransform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero + _localPositionGap;
         }
-        
-        public Tween MoveWildCard(RectTransform tempRectTransform)
+
+        public RectTransform GetRectTransform()
         {
-            transform.SetParent(tempRectTransform);
-            return DOTween.Sequence().Append(transform.DOScale(Vector3.one * 5/3f, 1.5f))
-                .Join(DOTween.Sequence().AppendInterval(0.5f).Append(transform.DOLocalMoveY(-190f, 1f)))
-                .AppendInterval(0.5f)
-                .Append(FadeOutAnimation(1f))
-                .OnComplete(() => Destroy(gameObject));
+            return rectTransform;
         }
 
-        private Tween FadeOutAnimation(float duration)
+        public CanvasGroup GetCanvasGroup()
         {
-            return DOTween.Sequence().Append(innerBGImage.DOFade(0f, duration))
-                .Join(outerBGImage.DOFade(0f, duration))
-                .Join(shadowImage.DOFade(0f, duration))
-                .Join(questionMarkImage.DOFade(0f, duration));
+            return canvasGroup;
         }
-        
     }
 
     public interface IWildCardItemView : IDraggableCardItemView
     {
         void Destroy();
         void SetLocalPositionGap(int cardItemIndex);
-        Tween MoveWildCard(RectTransform tempRectTransform);
+        RectTransform GetRectTransform();
+        CanvasGroup GetCanvasGroup();
     }
 }

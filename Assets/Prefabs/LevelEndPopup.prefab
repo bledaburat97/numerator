@@ -432,7 +432,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   title: {fileID: 6151590083809250889}
-  buttonPrefab: {fileID: 7496246486353124807, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
+  playButtonPrefab: {fileID: 373467399380124672, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
   starHolder: {fileID: 6468005931279169564}
   starImagePrefab: {fileID: 9201243238752170526, guid: 942eaa5968ed2f34db94179d1166d0bd, type: 3}
   circleProgressBarView: {fileID: 6012431575725785940}

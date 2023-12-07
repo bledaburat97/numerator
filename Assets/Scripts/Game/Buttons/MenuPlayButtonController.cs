@@ -5,11 +5,11 @@ namespace Scripts
 {
     public class MenuPlayButtonController : IMenuPlayButtonController
     {
-        private IBaseButtonView _view;
+        private IPlayButtonView _view;
         private ILevelTracker _levelTracker;
         private IGameSaveService _gameSaveService;
         
-        public void Initialize(IBaseButtonView view, IActiveLevelIdController activeLevelIdController)
+        public void Initialize(IPlayButtonView view, IActiveLevelIdController activeLevelIdController)
         {
             _view = view;
             activeLevelIdController.LevelSelectionChanged += OnTextChange;
@@ -44,6 +44,6 @@ namespace Scripts
 
     public interface IMenuPlayButtonController
     {
-        void Initialize(IBaseButtonView view, IActiveLevelIdController activeLevelIdController);
+        void Initialize(IPlayButtonView view, IActiveLevelIdController activeLevelIdController);
     }
 }

@@ -9,6 +9,8 @@ namespace Scripts
         [SerializeField] private Image star;
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
+        [SerializeField] private CanvasGroup canvasGroup;
+        
         public void Init(Vector2 localPosition)
         {
             transform.localScale = Vector3.one;
@@ -44,6 +46,16 @@ namespace Scripts
         {
             return curvedAnimationPreset;
         }
+
+        public void SetAlpha(float alpha)
+        {
+            canvasGroup.alpha = alpha;
+        }
+
+        public CanvasGroup GetCanvasGroup()
+        {
+            return canvasGroup;
+        }
     }
 
     public interface IStarImageView
@@ -55,5 +67,7 @@ namespace Scripts
         void SetParent(RectTransform parent);
         void Destroy();
         CurvedAnimationPreset GetCurvedAnimationPreset();
+        void SetAlpha(float alpha);
+        CanvasGroup GetCanvasGroup();
     }
 }

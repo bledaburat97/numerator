@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,14 +12,18 @@ namespace Scripts
         private IGlowingLevelEndPopupView _glowingView;
         private ILevelTracker _levelTracker;
         private ICircleProgressBarController _circleProgressBarController;
+        private List<IStarImageView> _nonGlowingStars;
+        private List<IStarImageView> _glowingStars;
         
         public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args)
         {
             _view = view;
             _glowingView = glowingView;
             _levelTracker = args.levelTracker;
-            _view.Init(new StarImageViewFactory(), new BaseButtonViewFactory());
+            _view.Init(new StarImageViewFactory(), new PlayButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory());
+            _nonGlowingStars = new List<IStarImageView>();
+            _glowingStars = new List<IStarImageView>();
             _view.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreateCircleProgressBarController();
             CreateInitialStars();
@@ -30,34 +35,41 @@ namespace Scripts
                 CreatePlayButton(args.oldStarCount == 0);
             }
             if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0);
-            
+            Animation();
+        }
+
+        private void Animation()
+        {
+            DOTween.Sequence()
+                .AppendCallback(FadingNonGlowingStarsIn)
+                .AppendInterval(_nonGlowingStars.Count * 0.3f)
+                .AppendCallback(FadingGlowingStarsIn)
+                .AppendInterval(_glowingStars.Count * 0.3f)
+                .Append(_view.GetTitle().DOFade(1f, 0.4f))
+                .AppendInterval(0.3f)
+                .AppendCallback(() => _circleProgressBarController.AddNewStars(_glowingStars))
+                .AppendInterval(0.6f)
+                .Append(_view.AnimateButtons());
+        }
+
+        private void FadingNonGlowingStarsIn()
+        {
+            for (int i = 0; i < _nonGlowingStars.Count; i++)
+            {
+                _nonGlowingStars[i].GetCanvasGroup().DOFade(1f, 0.3f)
+                    .SetDelay(i * 0.3f); //.OnComplete(i == _nonGlowingStars.Count - 1 ? FadingGlowingStarsIn : null);
+            }
         }
         
-        private void CreatePlayButton(bool isNewGame)
+        private void FadingGlowingStarsIn()
         {
-            IBaseButtonView baseButtonView = _view.GetButtonView();
-            baseButtonView.Init(new BaseButtonModel()
+            for (int i = 0; i < _glowingStars.Count; i++)
             {
-                text = isNewGame ? "Level " + (_levelTracker.GetLevelId() + 1) : "Menu",
-                OnClick = isNewGame ? () => SceneManager.LoadScene("Game") : () => SceneManager.LoadScene("Menu")
-            });
-            baseButtonView.InitPosition(new Vector2(0, -40f));
+                _glowingStars[i].GetCanvasGroup().DOFade(1f, 0.3f)
+                    .SetDelay(i * 0.3f);
+            }
         }
-
-        private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel)
-        {
-            IBaseButtonView baseButtonView = _view.GetButtonView();
-            Action onClick = null;
-            onClick += isLevelCompleted && isNewLevel ? () => _levelTracker.SetLevelId(_levelTracker.GetLevelId() - 1) : null;
-            onClick += () => SceneManager.LoadScene("Game");
-            baseButtonView.Init(new BaseButtonModel()
-            {
-                text = "Retry",
-                OnClick = onClick
-            });
-            baseButtonView.InitPosition(isLevelCompleted ? new Vector2(0, -130f) : new Vector2(0, -40f));
-        }
-
+        
         private void CreateCircleProgressBarController()
         {
             _circleProgressBarController = new CircleProgressBarController();
@@ -68,10 +80,9 @@ namespace Scripts
         {
             _circleProgressBarController.CreateInitialStars(_levelTracker.GetStarCount());
         }
-
+        
         private void CreateStars(int numOfStars, int numOfOldStars)
         {
-            List<IStarImageView> starImages = new List<IStarImageView>();
             Vector2[] starsPosition = new Vector2[numOfStars];
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
                 ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
@@ -82,6 +93,8 @@ namespace Scripts
                 IStarImageView starImageView = _view.CreateStarImage();
                 starImageView.Init(starsPosition[i]);
                 starImageView.SetSize(size);
+                starImageView.SetAlpha(0f);
+                _nonGlowingStars.Add(starImageView);
             }
             
             for (int i = numOfOldStars; i < numOfStars; i++)
@@ -89,10 +102,32 @@ namespace Scripts
                 IStarImageView glowingStarImageView = _glowingView.CreateStarImage();
                 glowingStarImageView.Init(starsPosition[i]);
                 glowingStarImageView.SetSize(size);
-                starImages.Add(glowingStarImageView);
+                glowingStarImageView.SetAlpha(0f);
+                _glowingStars.Add(glowingStarImageView);
             }
-            
-            _circleProgressBarController.AddNewStars(starImages);
+        }
+        
+        private void CreatePlayButton(bool isNewGame)
+        {
+            _view.CreatePlayButton(new BaseButtonModel()
+            {
+                localPosition = new Vector2(0, -40f),
+                text = isNewGame ? "Level " + (_levelTracker.GetLevelId() + 1) : "Menu",
+                OnClick = isNewGame ? () => SceneManager.LoadScene("Game") : () => SceneManager.LoadScene("Menu")
+            });
+        }
+
+        private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel)
+        {
+            Action onClick = null;
+            onClick += isLevelCompleted && isNewLevel ? () => _levelTracker.SetLevelId(_levelTracker.GetLevelId() - 1) : null;
+            onClick += () => SceneManager.LoadScene("Game");
+            _view.CreateRetryButton(new BaseButtonModel()
+            {
+                localPosition = isLevelCompleted ? new Vector2(0, -130f) : new Vector2(0, -40f),
+                text = "Retry",
+                OnClick = onClick
+            });
         }
         
     }

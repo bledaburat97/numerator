@@ -5,8 +5,8 @@ namespace Scripts
 {
     public class PlayButtonController : IPlayButtonController
     {
-        private IBaseButtonView _view;
-        public void Initialize(IBaseButtonView view, BaseButtonModel model)
+        private IPlayButtonView _view;
+        public void Initialize(IPlayButtonView view, BaseButtonModel model)
         {
             _view = view;
             _view.Init(model);
@@ -15,6 +15,6 @@ namespace Scripts
 
     public interface IPlayButtonController
     {
-        void Initialize(IBaseButtonView view, BaseButtonModel model);
+        void Initialize(IPlayButtonView view, BaseButtonModel model);
     }
 }

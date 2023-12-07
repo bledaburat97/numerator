@@ -4,7 +4,7 @@ namespace Scripts.Menu
 {
     public class MenuContext : MonoBehaviour
     {
-        [SerializeField] private BaseButtonView playButton;
+        [SerializeField] private PlayButtonView playButton;
         [SerializeField] private LevelTracker levelTracker;
         private IGameSaveService _gameSaveService;
         [SerializeField] private TextHolderAdjustment starHolder;
