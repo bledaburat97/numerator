@@ -12,8 +12,6 @@ namespace Scripts
         private IGlowingLevelEndPopupView _glowingView;
         private ILevelTracker _levelTracker;
         private ICircleProgressBarController _circleProgressBarController;
-        private List<IStarImageView> _nonGlowingStars;
-        private List<IStarImageView> _glowingStars;
         
         public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args)
         {
@@ -22,8 +20,6 @@ namespace Scripts
             _levelTracker = args.levelTracker;
             _view.Init(new StarImageViewFactory(), new PlayButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory());
-            _nonGlowingStars = new List<IStarImageView>();
-            _glowingStars = new List<IStarImageView>();
             _view.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreateCircleProgressBarController();
             CreateInitialStars();
@@ -40,34 +36,37 @@ namespace Scripts
 
         private void Animation()
         {
-            DOTween.Sequence()
-                .AppendCallback(FadingNonGlowingStarsIn)
-                .AppendInterval(_nonGlowingStars.Count * 0.3f)
-                .AppendCallback(FadingGlowingStarsIn)
-                .AppendInterval(_glowingStars.Count * 0.3f)
-                .Append(_view.GetTitle().DOFade(1f, 0.4f))
-                .AppendInterval(0.3f)
-                .AppendCallback(() => _circleProgressBarController.AddNewStars(_glowingStars))
-                .AppendInterval(0.6f)
-                .Append(_view.AnimateButtons());
-        }
+            EndGameAnimationModel model = _view.GetAnimationModel();
+            GlowingEndGameAnimationModel glowingModel = _glowingView.GetGlowingAnimationModel();
 
-        private void FadingNonGlowingStarsIn()
-        {
-            for (int i = 0; i < _nonGlowingStars.Count; i++)
+            Sequence animationSequence = DOTween.Sequence();
+
+            animationSequence.AppendInterval(0.5f);
+            
+            for (int i = 0; i < model.starImageViewList.Count; i++)
             {
-                _nonGlowingStars[i].GetCanvasGroup().DOFade(1f, 0.3f)
-                    .SetDelay(i * 0.3f); //.OnComplete(i == _nonGlowingStars.Count - 1 ? FadingGlowingStarsIn : null);
+                animationSequence.Append(model.starImageViewList[i].GetCanvasGroup().DOFade(1f, 0.5f));
             }
+            for (int i = 0; i < glowingModel.starImageViewList.Count; i++)
+            {
+                animationSequence.Append(glowingModel.starImageViewList[i].GetCanvasGroup().DOFade(1f, 0.3f));
+            }
+            
+            animationSequence
+                .AppendInterval(2f)
+                .Append(_view.GetTitle().DOFade(1f, 0.7f))
+                .AppendInterval(0.3f)
+                .AppendCallback(() => _circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
+                .AppendInterval(0.6f)
+                .Append(AnimateButtons(model));
         }
         
-        private void FadingGlowingStarsIn()
+        private Sequence AnimateButtons(EndGameAnimationModel model)
         {
-            for (int i = 0; i < _glowingStars.Count; i++)
-            {
-                _glowingStars[i].GetCanvasGroup().DOFade(1f, 0.3f)
-                    .SetDelay(i * 0.3f);
-            }
+            Sequence playButtonSequence = model.playButtonView != null ? DOTween.Sequence().Pause().Append(model.playButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
+            Sequence retryButtonSequence = model.retryButtonView != null ? DOTween.Sequence().Pause().Append(model.retryButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
+
+            return DOTween.Sequence().Append(playButtonSequence.Play()).Join(retryButtonSequence.Play());
         }
         
         private void CreateCircleProgressBarController()
@@ -90,20 +89,12 @@ namespace Scripts
             
             for (int i = 0; i < numOfOldStars; i++)
             {
-                IStarImageView starImageView = _view.CreateStarImage();
-                starImageView.Init(starsPosition[i]);
-                starImageView.SetSize(size);
-                starImageView.SetAlpha(0f);
-                _nonGlowingStars.Add(starImageView);
+                _view.CreateStarImage(starsPosition[i], size, 0f);
             }
             
             for (int i = numOfOldStars; i < numOfStars; i++)
             {
-                IStarImageView glowingStarImageView = _glowingView.CreateStarImage();
-                glowingStarImageView.Init(starsPosition[i]);
-                glowingStarImageView.SetSize(size);
-                glowingStarImageView.SetAlpha(0f);
-                _glowingStars.Add(glowingStarImageView);
+                _glowingView.CreateStarImage(starsPosition[i], size, 0f);
             }
         }
         

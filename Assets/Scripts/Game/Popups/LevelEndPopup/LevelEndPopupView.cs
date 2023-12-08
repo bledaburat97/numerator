@@ -18,6 +18,8 @@ namespace Scripts
 
         private IPlayButtonView _playButtonView;
         private IPlayButtonView _retryButtonView;
+
+        private List<IStarImageView> _starImageList;
         
         public void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory)
         {
@@ -25,6 +27,7 @@ namespace Scripts
             _playButtonViewFactory = playButtonViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
+            _starImageList = new List<IStarImageView>();
         }
 
         public void SetTitle(string text)
@@ -48,23 +51,19 @@ namespace Scripts
             _retryButtonView.InitPosition(model.localPosition);
             _retryButtonView.SetAlpha(0f);
         }
-
-        public Sequence AnimateButtons()
-        {
-            Sequence playButtonSequence = _playButtonView != null ? DOTween.Sequence().Pause().Append(_playButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
-            Sequence retryButtonSequence = _retryButtonView != null ? DOTween.Sequence().Pause().Append(_retryButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
-
-            return DOTween.Sequence().Append(playButtonSequence.Play()).Join(retryButtonSequence.Play());
-        }
-
+        
         public TMP_Text GetTitle()
         {
             return title;
         }
         
-        public IStarImageView CreateStarImage()
+        public void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha)
         {
-            return _starImageViewFactory.Spawn(starHolder, starImagePrefab);
+            IStarImageView starImageView = _starImageViewFactory.Spawn(starHolder, starImagePrefab);
+            starImageView.Init(localPosition);
+            starImageView.SetSize(size);
+            starImageView.SetAlpha(alpha);
+            _starImageList.Add(starImageView);
         }
 
         public ICircleProgressBarView CreateCircleProgressBar()
@@ -72,9 +71,14 @@ namespace Scripts
             return circleProgressBarView;
         }
         
-        public NonGlowingEndGameAnimationModel GetNonGlowingAnimationModel()
+        public EndGameAnimationModel GetAnimationModel()
         {
-            return new NonGlowingEndGameAnimationModel();
+            return new EndGameAnimationModel()
+            {
+                starImageViewList = _starImageList,
+                playButtonView = _playButtonView,
+                retryButtonView = _retryButtonView
+            };
         }
     }
     
@@ -82,16 +86,18 @@ namespace Scripts
     {
         void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory);
         void SetTitle(string text);
-        IStarImageView CreateStarImage();
+        void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha);
         ICircleProgressBarView CreateCircleProgressBar();
         void CreatePlayButton(BaseButtonModel model);
         void CreateRetryButton(BaseButtonModel model);
         TMP_Text GetTitle();
-        Sequence AnimateButtons();
+        EndGameAnimationModel GetAnimationModel();
     }
     
-    public class NonGlowingEndGameAnimationModel
+    public class EndGameAnimationModel
     {
-        public List<IStarImageView> starImageList;
+        public List<IStarImageView> starImageViewList;
+        public IPlayButtonView playButtonView;
+        public IPlayButtonView retryButtonView;
     }
 }

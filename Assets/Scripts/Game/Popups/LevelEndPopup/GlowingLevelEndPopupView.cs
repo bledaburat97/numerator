@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -9,16 +10,23 @@ namespace Scripts
         [SerializeField] private GlowingCircleProgressBarView glowingCircleProgressBar;
         private StarImageViewFactory _starImageViewFactory;
         
+        private List<IStarImageView> _glowingStarImageList;
+        
         public void Init(StarImageViewFactory starImageViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
+            _glowingStarImageList = new List<IStarImageView>();
         }
         
-        public IStarImageView CreateStarImage()
+        public void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha)
         {
-            return _starImageViewFactory.Spawn(starHolder, starImagePrefab);
+            IStarImageView starImageView = _starImageViewFactory.Spawn(starHolder, starImagePrefab);
+            starImageView.Init(localPosition);
+            starImageView.SetSize(size);
+            starImageView.SetAlpha(alpha);
+            _glowingStarImageList.Add(starImageView);
         }
         
         public IGlowingCircleProgressBarView CreateGlowingCircleProgressBar()
@@ -26,21 +34,25 @@ namespace Scripts
             return glowingCircleProgressBar;
         }
 
-        public GlowingEndGameAnimationModel GetNonGlowingAnimationModel()
+        public GlowingEndGameAnimationModel GetGlowingAnimationModel()
         {
-            return new GlowingEndGameAnimationModel();
+            return new GlowingEndGameAnimationModel()
+            {
+                starImageViewList = _glowingStarImageList
+            };
         }
     }
 
     public interface IGlowingLevelEndPopupView
     {
         void Init(StarImageViewFactory starImageViewFactory);
-        IStarImageView CreateStarImage();
+        void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha);
         IGlowingCircleProgressBarView CreateGlowingCircleProgressBar();
+        GlowingEndGameAnimationModel GetGlowingAnimationModel();
     }
 
     public class GlowingEndGameAnimationModel
     {
-        
+        public List<IStarImageView> starImageViewList;
     }
 }
