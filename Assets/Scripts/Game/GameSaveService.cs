@@ -47,7 +47,8 @@ namespace Scripts
         
         public void Save()
         {
-            if (_resultManager.GetTriedCardsList().Count == 0) return; 
+            if (_resultManager.GetTriedCardsList().Count == 0) return;
+            if (_levelManager.IsGameOver()) return;
             LevelSaveData levelSaveData = new LevelSaveData()
             {
                 LevelId = _levelTracker.GetLevelId(),

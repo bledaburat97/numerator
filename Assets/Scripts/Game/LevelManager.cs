@@ -12,6 +12,7 @@ namespace Scripts
         private int _numOfStars;
         private IStarProgressBarController _starProgressBarController;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
+        private bool _isGameOver;
         
         public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController)
         {
@@ -22,6 +23,7 @@ namespace Scripts
             _starProgressBarController = starProgressBarController;
             UpdateStarProgressBar(_maxNumOfTries, _levelTracker.GetLevelInfo().levelSaveData.RemainingGuessCount, 0f);
             resultManager.NumberGuessed += CheckGameIsOver;
+            _isGameOver = false;
         }
 
         private void UpdateStarProgressBar(int previousRemainingGuessCount, int currentRemainingGuessCount, float animationDuration)
@@ -43,9 +45,10 @@ namespace Scripts
 
         private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
         {
-            _gameSaveService.DeleteSave();
             if (args.isGuessRight)
             {
+                _gameSaveService.DeleteSave();
+                _isGameOver = true;
                 int oldStarCount = _levelTracker.GetLevelId() < _levelTracker.GetStarCountOfLevels().Count
                     ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
                     : 0;
@@ -67,6 +70,8 @@ namespace Scripts
 
         private void LevelFailed()
         {
+            _gameSaveService.DeleteSave();
+            _isGameOver = true;
             LevelEnd?.Invoke(this, new LevelEndEventArgs()
             {
                 isLevelCompleted = false,
@@ -78,6 +83,11 @@ namespace Scripts
         public int GetRemainingGuessCount()
         {
             return _remainingGuessCount;
+        }
+
+        public bool IsGameOver()
+        {
+            return _isGameOver;
         }
     }
     
@@ -94,5 +104,6 @@ namespace Scripts
         void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController);
         event EventHandler<LevelEndEventArgs> LevelEnd;
         int GetRemainingGuessCount();
+        bool IsGameOver();
     }
 }

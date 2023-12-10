@@ -107,6 +107,11 @@ namespace Scripts
                 (cards[i], cards[j]) = (cards[j], cards[i]);
             }
 
+            for (int i = 0; i < numOfBoardHolders; i++)
+            {
+                Debug.Log(cards[i]);
+            }
+            
             return cards.Take(numOfBoardHolders).ToList();
         }
 

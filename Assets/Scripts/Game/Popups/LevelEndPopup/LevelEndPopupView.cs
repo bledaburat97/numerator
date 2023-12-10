@@ -61,9 +61,9 @@ namespace Scripts
         {
             for (int i = 0; i < localPositions.Count; i++)
             {
-                ParticleSystem particleSystem = Instantiate(particleSystemPrefab, starHolder);
-                particleSystem.transform.localPosition = localPositions[i];
-                _particleList.Add(particleSystem);
+                ParticleSystem particle = Instantiate(particleSystemPrefab, starHolder);
+                particle.transform.localPosition = localPositions[i];
+                _particleList.Add(particle);
             }
         }
 
