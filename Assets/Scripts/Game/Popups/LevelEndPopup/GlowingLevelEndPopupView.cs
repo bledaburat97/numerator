@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace Scripts
@@ -8,6 +9,8 @@ namespace Scripts
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private GlowingCircleProgressBarView glowingCircleProgressBar;
+        [SerializeField] private TMP_Text title;
+
         private StarImageViewFactory _starImageViewFactory;
         
         private List<IStarImageView> _glowingStarImageList;
@@ -41,6 +44,17 @@ namespace Scripts
                 starImageViewList = _glowingStarImageList
             };
         }
+        
+        public void SetTitle(string text)
+        {
+            title.SetText(text);
+            title.alpha = 0f;
+        }
+        
+        public TMP_Text GetTitle()
+        {
+            return title;
+        }
     }
 
     public interface IGlowingLevelEndPopupView
@@ -49,6 +63,9 @@ namespace Scripts
         void CreateStarImage(Vector2 localPosition, Vector2 size);
         IGlowingCircleProgressBarView CreateGlowingCircleProgressBar();
         GlowingEndGameAnimationModel GetGlowingAnimationModel();
+        void SetTitle(string text);
+        TMP_Text GetTitle();
+
     }
 
     public class GlowingEndGameAnimationModel

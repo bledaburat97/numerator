@@ -101,7 +101,12 @@ namespace Scripts
                     return;
                 }
                 
-                IStarImageView animatedStar = newStars[newStarIndex];
+                IStarImageView animatedStar = _glowingView.CreateStarImage();
+                animatedStar.SetParent(newStars[newStarIndex].GetRectTransform());
+                animatedStar.SetLocalPosition(Vector2.zero);
+                animatedStar.SetLocalScale(Vector3.one);
+                animatedStar.SetSize(new Vector2(70f, 70f));
+                
                 _glowingStarImageViewList.Add(animatedStar);
                 newStarIndex++;
                 _currentStarCount += 1;

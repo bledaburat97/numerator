@@ -21,7 +21,7 @@ namespace Scripts
             _levelTracker = args.levelTracker;
             _view.Init(new StarImageViewFactory(), new PlayButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory());
-            _view.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
+            _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreateCircleProgressBarController();
             CreateInitialStars();
             if (args.isLevelCompleted)
@@ -42,10 +42,10 @@ namespace Scripts
 
             Sequence animationSequence = DOTween.Sequence();
 
-            animationSequence.AppendInterval(0.5f)
+            animationSequence.AppendInterval(0.6f)
             .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
-            .AppendInterval(2f)
-            .Append(_view.GetTitle().DOFade(1f, 0.7f))
+            .AppendInterval(1f)
+            .Append(_glowingView.GetTitle().DOFade(1f, 0.7f))
             .AppendInterval(0.3f)
             .AppendCallback(() => _circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
             .AppendInterval(0.6f)
@@ -55,15 +55,13 @@ namespace Scripts
         private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews)
         {
             Sequence starCreationAnimation = DOTween.Sequence();
-            for (int i = 0; i < starImageViews.Count + glowingStarImageViews.Count; i++)
+            for (int i = 0; i < glowingStarImageViews.Count; i++)
             {
-                IStarImageView starImageView = i < starImageViews.Count
-                    ? starImageViews[i]
-                    : glowingStarImageViews[i - starImageViews.Count];
+                IStarImageView starImageView = glowingStarImageViews[i];
                 int index = i;
                 float delay = .1f + 0.5f * i;
                 starCreationAnimation.Pause().Append(starImageView.GetRectTransform().transform.DOScale(1f, 0.5f))
-                    .InsertCallback(delay,() => _view.ActivateParticle(index));
+                    .InsertCallback(delay,() => _view.ActivateParticle(index + starImageViews.Count));
             }
 
             return starCreationAnimation;
@@ -112,7 +110,7 @@ namespace Scripts
         {
             _view.CreatePlayButton(new BaseButtonModel()
             {
-                localPosition = new Vector2(0, -40f),
+                localPosition = new Vector2(0, -170f),
                 text = isNewGame ? "Level " + (_levelTracker.GetLevelId() + 1) : "Menu",
                 OnClick = isNewGame ? () => SceneManager.LoadScene("Game") : () => SceneManager.LoadScene("Menu")
             });
@@ -125,7 +123,7 @@ namespace Scripts
             onClick += () => SceneManager.LoadScene("Game");
             _view.CreateRetryButton(new BaseButtonModel()
             {
-                localPosition = isLevelCompleted ? new Vector2(0, -130f) : new Vector2(0, -40f),
+                localPosition = isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f),
                 text = "Retry",
                 OnClick = onClick
             });

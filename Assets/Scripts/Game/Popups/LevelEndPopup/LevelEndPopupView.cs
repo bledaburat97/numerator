@@ -7,7 +7,6 @@ namespace Scripts
 {
     public class LevelEndPopupView : MonoBehaviour, ILevelEndPopupView
     {
-        [SerializeField] private TMP_Text title;
         [SerializeField] private PlayButtonView playButtonPrefab;
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
@@ -33,12 +32,6 @@ namespace Scripts
             _particleList = new List<ParticleSystem>();
         }
 
-        public void SetTitle(string text)
-        {
-            title.SetText(text);
-            title.alpha = 0f;
-        }
-
         public void CreatePlayButton(BaseButtonModel model)
         {
             _playButtonView = _playButtonViewFactory.Spawn(transform, playButtonPrefab);
@@ -55,16 +48,11 @@ namespace Scripts
             _retryButtonView.SetAlpha(0f);
         }
         
-        public TMP_Text GetTitle()
-        {
-            return title;
-        }
-        
         public void CreateStarImage(Vector2 localPosition, Vector2 size)
         {
             IStarImageView starImageView = _starImageViewFactory.Spawn(starHolder, starImagePrefab);
             starImageView.SetLocalPosition(localPosition);
-            starImageView.SetLocalScale(Vector2.zero);
+            starImageView.SetLocalScale(Vector3.one);
             starImageView.SetSize(size);
             _starImageList.Add(starImageView);
         }
@@ -104,12 +92,10 @@ namespace Scripts
     public interface ILevelEndPopupView
     {
         void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory);
-        void SetTitle(string text);
         void CreateStarImage(Vector2 localPosition, Vector2 size);
         ICircleProgressBarView CreateCircleProgressBar();
         void CreatePlayButton(BaseButtonModel model);
         void CreateRetryButton(BaseButtonModel model);
-        TMP_Text GetTitle();
         EndGameAnimationModel GetAnimationModel();
         void CreateParticles(List<Vector2> localPositions);
         void ActivateParticle(int index);
