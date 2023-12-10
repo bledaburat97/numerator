@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -41,24 +42,31 @@ namespace Scripts
 
             Sequence animationSequence = DOTween.Sequence();
 
-            animationSequence.AppendInterval(0.5f);
-            
-            for (int i = 0; i < model.starImageViewList.Count; i++)
+            animationSequence.AppendInterval(0.5f)
+            .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
+            .AppendInterval(2f)
+            .Append(_view.GetTitle().DOFade(1f, 0.7f))
+            .AppendInterval(0.3f)
+            .AppendCallback(() => _circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
+            .AppendInterval(0.6f)
+            .Append(AnimateButtons(model));
+        }
+
+        private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews)
+        {
+            Sequence starCreationAnimation = DOTween.Sequence();
+            for (int i = 0; i < starImageViews.Count + glowingStarImageViews.Count; i++)
             {
-                animationSequence.Append(model.starImageViewList[i].GetCanvasGroup().DOFade(1f, 0.5f));
+                IStarImageView starImageView = i < starImageViews.Count
+                    ? starImageViews[i]
+                    : glowingStarImageViews[i - starImageViews.Count];
+                int index = i;
+                float delay = .1f + 0.5f * i;
+                starCreationAnimation.Pause().Append(starImageView.GetRectTransform().transform.DOScale(1f, 0.5f))
+                    .InsertCallback(delay,() => _view.ActivateParticle(index));
             }
-            for (int i = 0; i < glowingModel.starImageViewList.Count; i++)
-            {
-                animationSequence.Append(glowingModel.starImageViewList[i].GetCanvasGroup().DOFade(1f, 0.3f));
-            }
-            
-            animationSequence
-                .AppendInterval(2f)
-                .Append(_view.GetTitle().DOFade(1f, 0.7f))
-                .AppendInterval(0.3f)
-                .AppendCallback(() => _circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
-                .AppendInterval(0.6f)
-                .Append(AnimateButtons(model));
+
+            return starCreationAnimation;
         }
         
         private Sequence AnimateButtons(EndGameAnimationModel model)
@@ -89,13 +97,15 @@ namespace Scripts
             
             for (int i = 0; i < numOfOldStars; i++)
             {
-                _view.CreateStarImage(starsPosition[i], size, 0f);
+                _view.CreateStarImage(starsPosition[i], size);
             }
             
             for (int i = numOfOldStars; i < numOfStars; i++)
             {
-                _glowingView.CreateStarImage(starsPosition[i], size, 0f);
+                _glowingView.CreateStarImage(starsPosition[i], size);
             }
+
+            _view.CreateParticles(starsPosition.ToList());
         }
         
         private void CreatePlayButton(bool isNewGame)

@@ -20,12 +20,12 @@ namespace Scripts
             _glowingStarImageList = new List<IStarImageView>();
         }
         
-        public void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha)
+        public void CreateStarImage(Vector2 localPosition, Vector2 size)
         {
             IStarImageView starImageView = _starImageViewFactory.Spawn(starHolder, starImagePrefab);
-            starImageView.Init(localPosition);
+            starImageView.SetLocalPosition(localPosition);
             starImageView.SetSize(size);
-            starImageView.SetAlpha(alpha);
+            starImageView.SetLocalScale(Vector2.zero);
             _glowingStarImageList.Add(starImageView);
         }
         
@@ -46,7 +46,7 @@ namespace Scripts
     public interface IGlowingLevelEndPopupView
     {
         void Init(StarImageViewFactory starImageViewFactory);
-        void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha);
+        void CreateStarImage(Vector2 localPosition, Vector2 size);
         IGlowingCircleProgressBarView CreateGlowingCircleProgressBar();
         GlowingEndGameAnimationModel GetGlowingAnimationModel();
     }

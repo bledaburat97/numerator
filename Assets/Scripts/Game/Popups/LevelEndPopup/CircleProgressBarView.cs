@@ -13,6 +13,7 @@ namespace Scripts
         [SerializeField] private Image image;
         private Tween _currentTween;
         private float _currentPercentage;
+        [SerializeField] private ParticleSystem particle;
         
         public void Init(StarImageViewFactory starImageViewFactory)
         {
@@ -31,7 +32,7 @@ namespace Scripts
             return rectTransform;
         }
         
-        public Tween GetProgressTween(float targetPercentage, float duration, Action onComplete)
+        public Tween GetProgressTween(float targetPercentage, float duration)
         {
              return DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
                 .Pause().SetEase(Ease.OutQuad)
@@ -39,7 +40,6 @@ namespace Scripts
                 .OnComplete(() =>
                 {
                     _currentPercentage = targetPercentage;
-                    onComplete?.Invoke();
                 });
         }
 
@@ -48,6 +48,12 @@ namespace Scripts
             image.fillAmount = targetPercentage;
             _currentPercentage = targetPercentage;
         }
+        
+        public void ActivateWildParticle()
+        {
+            particle.gameObject.SetActive(true);
+            particle.Play();
+        }
     }
 
     public interface ICircleProgressBarView
@@ -55,7 +61,8 @@ namespace Scripts
         void Init(StarImageViewFactory starImageViewFactory);
         IStarImageView CreateStarImage();
         RectTransform GetRectTransform();
-        Tween GetProgressTween(float targetPercentage, float duration, Action onComplete);
+        Tween GetProgressTween(float targetPercentage, float duration);
         void SetProgress(float targetPercentage);
+        void ActivateWildParticle();
     }
 }

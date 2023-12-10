@@ -12,6 +12,7 @@ namespace Scripts
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
+        [SerializeField] private ParticleSystem particleSystemPrefab;
         
         private StarImageViewFactory _starImageViewFactory;
         private PlayButtonViewFactory _playButtonViewFactory;
@@ -20,6 +21,7 @@ namespace Scripts
         private IPlayButtonView _retryButtonView;
 
         private List<IStarImageView> _starImageList;
+        private List<ParticleSystem> _particleList;
         
         public void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory)
         {
@@ -28,6 +30,7 @@ namespace Scripts
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
             _starImageList = new List<IStarImageView>();
+            _particleList = new List<ParticleSystem>();
         }
 
         public void SetTitle(string text)
@@ -57,13 +60,23 @@ namespace Scripts
             return title;
         }
         
-        public void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha)
+        public void CreateStarImage(Vector2 localPosition, Vector2 size)
         {
             IStarImageView starImageView = _starImageViewFactory.Spawn(starHolder, starImagePrefab);
-            starImageView.Init(localPosition);
+            starImageView.SetLocalPosition(localPosition);
+            starImageView.SetLocalScale(Vector2.zero);
             starImageView.SetSize(size);
-            starImageView.SetAlpha(alpha);
             _starImageList.Add(starImageView);
+        }
+
+        public void CreateParticles(List<Vector2> localPositions)
+        {
+            for (int i = 0; i < localPositions.Count; i++)
+            {
+                ParticleSystem particleSystem = Instantiate(particleSystemPrefab, starHolder);
+                particleSystem.transform.localPosition = localPositions[i];
+                _particleList.Add(particleSystem);
+            }
         }
 
         public ICircleProgressBarView CreateCircleProgressBar()
@@ -80,18 +93,26 @@ namespace Scripts
                 retryButtonView = _retryButtonView
             };
         }
+        
+        public void ActivateParticle(int index)
+        {
+            _particleList[index].gameObject.SetActive(true);
+            _particleList[index].Play();
+        }
     }
     
     public interface ILevelEndPopupView
     {
         void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory);
         void SetTitle(string text);
-        void CreateStarImage(Vector2 localPosition, Vector2 size, float alpha);
+        void CreateStarImage(Vector2 localPosition, Vector2 size);
         ICircleProgressBarView CreateCircleProgressBar();
         void CreatePlayButton(BaseButtonModel model);
         void CreateRetryButton(BaseButtonModel model);
         TMP_Text GetTitle();
         EndGameAnimationModel GetAnimationModel();
+        void CreateParticles(List<Vector2> localPositions);
+        void ActivateParticle(int index);
     }
     
     public class EndGameAnimationModel

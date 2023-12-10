@@ -1,5 +1,4 @@
-﻿using System.Drawing;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
@@ -9,12 +8,15 @@ namespace Scripts
         [SerializeField] private Image star;
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
-        [SerializeField] private CanvasGroup canvasGroup;
         
-        public void Init(Vector2 localPosition)
+        public void SetLocalPosition(Vector2 localPosition)
         {
-            transform.localScale = Vector3.one;
             transform.localPosition = localPosition;
+        }
+
+        public void SetLocalScale(Vector3 localScale)
+        {
+            transform.localScale = localScale;
         }
 
         public void Destroy()
@@ -46,28 +48,17 @@ namespace Scripts
         {
             return curvedAnimationPreset;
         }
-
-        public void SetAlpha(float alpha)
-        {
-            canvasGroup.alpha = alpha;
-        }
-
-        public CanvasGroup GetCanvasGroup()
-        {
-            return canvasGroup;
-        }
     }
 
     public interface IStarImageView
     {
-        void Init(Vector2 localPosition);
+        void SetLocalPosition(Vector2 localPosition);
+        void SetLocalScale(Vector3 localScale);
         void SetStarStatus(bool status);
         void SetSize(Vector2 size);
         RectTransform GetRectTransform();
         void SetParent(RectTransform parent);
         void Destroy();
         CurvedAnimationPreset GetCurvedAnimationPreset();
-        void SetAlpha(float alpha);
-        CanvasGroup GetCanvasGroup();
     }
 }

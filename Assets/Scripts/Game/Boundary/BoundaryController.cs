@@ -18,7 +18,8 @@ namespace Scripts
         public void AddStarImage(Vector2 starLocalPosition)
         {
             _starImageView = _view.CreateStarImage();
-            _starImageView.Init(starLocalPosition);
+            _starImageView.SetLocalPosition(starLocalPosition);
+            _starImageView.SetLocalScale(Vector3.one);
         }
 
         public void RemoveStar()
