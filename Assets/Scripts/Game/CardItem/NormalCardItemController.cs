@@ -142,7 +142,7 @@ namespace Scripts
 
         private void SetFrameStatus(bool status)
         {
-            _view.SetFrameStatus(status);
+            _view.SetSelectionStatus(status);
         }
 
         public void SetProbabilityType(ProbabilityType probabilityType)

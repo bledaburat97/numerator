@@ -4,17 +4,15 @@ namespace Factory
 {
     public class BaseObjectFactory<TItem, ITItem> where TItem:Object,ITItem
     {
-        private TItem _prefabObject;
         public ITItem Spawn(Transform parent, TItem prefabObject)
         {
-            _prefabObject = prefabObject;
-            ITItem obj = Create(parent);
+            ITItem obj = Create(parent, prefabObject);
             return obj;
         }
 
-        private ITItem Create(Transform parent)
+        private ITItem Create(Transform parent, TItem prefabObject)
         {
-            return Object.Instantiate(_prefabObject, parent, true);
+            return Object.Instantiate(prefabObject, parent, true);
         }
     }
 }
