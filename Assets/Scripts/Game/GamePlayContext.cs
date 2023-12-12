@@ -126,7 +126,7 @@ namespace Scripts
         private void CreateInitialCardArea()
         {
             _initialCardAreaController = new InitialCardAreaController();
-            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator, _resetButtonController);
+            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

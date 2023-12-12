@@ -41,6 +41,16 @@ namespace Scripts
         {
             _onDeSelectCards += action;
         }
+
+        public int GetSelectedCardIndex()
+        {
+            for (int i = 0; i < _selectionStates.Count; i++)
+            {
+                if (_selectionStates[i]) return i;
+            }
+
+            return -1;
+        }
     }
     
     public interface ISelectionController
@@ -49,6 +59,7 @@ namespace Scripts
         bool GetSelectionState(int index);
         void DeselectAll();
         void SetOnDeselectCards(Action action);
+        int GetSelectedCardIndex();
     }
     
 }

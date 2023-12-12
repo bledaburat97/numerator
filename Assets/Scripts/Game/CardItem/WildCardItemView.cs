@@ -19,11 +19,10 @@ namespace Scripts
         {
             _localPositionGap += new Vector3(-3.5f, -2f, 0f) * cardItemIndex;
         }
-        
-        public override void InitPosition()
+
+        public override void SetLocalPosition(Vector3 localPosition, float duration)
         {
-            rectTransform.localScale = Vector3.one;
-            transform.localPosition = Vector3.zero + _localPositionGap;
+            DOTween.Sequence().Append(rectTransform.DOLocalMove(localPosition + _localPositionGap, duration)).SetEase(Ease.OutQuad);
         }
 
         public RectTransform GetRectTransform()

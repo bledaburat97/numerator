@@ -60,7 +60,8 @@ namespace Scripts
         private void CreateNewWildCard()
         {
             _wildCardItemView = _glowingView.CreateWildCardImage();
-            _wildCardItemView.InitPosition();
+            _wildCardItemView.InitLocalScale();
+            _wildCardItemView.SetLocalPosition(Vector3.zero, 0f);
         }
 
         public void CreateInitialStars(int numOfStars)

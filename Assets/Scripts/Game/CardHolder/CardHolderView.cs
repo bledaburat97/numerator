@@ -1,10 +1,12 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class CardHolderView : MonoBehaviour, ICardHolderView
+    public class CardHolderView : MonoBehaviour, ICardHolderView, IPointerClickHandler
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private RectTransform possibleHolderIndicatorHolderTransform;
@@ -12,6 +14,7 @@ namespace Scripts
         [SerializeField] private Image highlightImage;
         [SerializeField] private TMP_Text text;
         private Camera _cam;
+        private Action _onClick;
         
         private PossibleHolderIndicatorViewFactory _possibleHolderIndicatorViewFactory;
         public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory, Camera cam)
@@ -25,6 +28,11 @@ namespace Scripts
             SetText("");
         }
 
+        public void SetOnClick(Action onClick)
+        {
+            _onClick = onClick;
+        }
+        
         public void SetText(string cardNumber)
         {
             text.SetText(cardNumber);
@@ -64,6 +72,11 @@ namespace Scripts
         {
             rectTransform.gameObject.SetActive(status);
         }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            _onClick.Invoke();
+        }
     }
 
     public interface ICardHolderView
@@ -77,5 +90,6 @@ namespace Scripts
         void SetLocalPosition(Vector2 localPosition);
         void SetStatus(bool status);
         void SetText(string cardNumber);
+        void SetOnClick(Action onClick);
     }
 }

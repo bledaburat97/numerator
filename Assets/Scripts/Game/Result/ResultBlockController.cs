@@ -35,7 +35,8 @@ namespace Scripts
                 INonDraggableCardItemView cardItemView = _view.CreateCardItem();
                 cardItemView.Init(_model.finalNumbers[i]);
                 cardItemView.SetSize(new Vector2(ConstantValues.RESULT_CARD_WIDTH, ConstantValues.RESULT_CARD_HEIGHT));
-                cardItemView.InitPosition();
+                cardItemView.InitLocalScale();
+                cardItemView.SetLocalPosition(Vector3.zero, 0f);
                 cardItemView.MultiplyPixelsPerUnit();
             }
         }

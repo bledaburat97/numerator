@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using DG.Tweening;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,10 +20,14 @@ namespace Scripts
             SetFrameStatus(false);
         }
 
-        public virtual void InitPosition()
+        public virtual void SetLocalPosition(Vector3 localPosition, float duration)
+        {
+            DOTween.Sequence().Append(rectTransform.DOLocalMove(localPosition, duration)).SetEase(Ease.OutQuad);
+        }
+
+        public void InitLocalScale()
         {
             rectTransform.localScale = Vector3.one;
-            transform.localPosition = Vector3.zero;
         }
 
         public void SetSize(Vector2 size)
@@ -44,8 +49,9 @@ namespace Scripts
     public interface IBaseCardItemView
     {
         void Init(int cardNumber);
-        void InitPosition();
+        void InitLocalScale();
         void SetSize(Vector2 size);
         void SetFrameStatus(bool status);
+        void SetLocalPosition(Vector3 localPosition, float duration);
     }
 }

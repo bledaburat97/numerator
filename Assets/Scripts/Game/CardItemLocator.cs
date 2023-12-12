@@ -98,6 +98,14 @@ namespace Scripts
             }
             return null;
         }
+
+        public RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex)
+        {
+            ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(boardHolderIndex);
+            _boardAreaManager.SetNumberOfCard(boardHolderIndex, cardIndex + 1);
+            _boardHolderToCardIndexMapping[cardHolderController] = cardIndex;
+            return cardHolderController.GetView().GetRectTransform();
+        }
         
         public LockedCardInfo OnWildDragComplete(int wildCardIndex)
         {
@@ -153,6 +161,7 @@ namespace Scripts
         RectTransform OnDragComplete(int cardIndex);
         LockedCardInfo OnWildDragComplete(int wildCardIndex);
         void ResetBoard();
+        RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex);
     }
 
     public class LockedCardInfo

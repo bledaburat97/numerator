@@ -11,6 +11,7 @@ namespace Scripts
         private bool _isAlreadySelected;
         private Action<int> _onDragStart;
         private Func<int, RectTransform> _onDragComplete;
+        private Func<int, int, RectTransform> _onPlaceByClick;
         private Action<bool, int> _onCardSelected;
         private bool _isSelectable;
         private ProbabilityType _probabilityType;
@@ -27,7 +28,8 @@ namespace Scripts
             _selectionController.SetOnDeselectCards(DeselectCard);
             
             _view.Init(cardItemData.cardNumber);
-            _view.InitPosition();
+            _view.InitLocalScale();
+            _view.SetLocalPosition(Vector3.zero, 0f);
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
@@ -36,6 +38,7 @@ namespace Scripts
             SetOnDragStart(cardItemLocator.OnDragStart);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);
+            SetOnPlaceByClick(cardItemLocator.PlaceCardByClick);
             SetOnCardSelected(_cardItemData.onCardSelected);
             SetProbabilityType(_cardItemData.initialProbabilityType);
         }
@@ -70,6 +73,11 @@ namespace Scripts
             _onDragComplete += func;
         }
 
+        private void SetOnPlaceByClick(Func<int, int, RectTransform> func)
+        {
+            _onPlaceByClick += func;
+        }
+
         private void OnDrag(PointerEventData data)
         {
             if (!_isDragStart)
@@ -90,7 +98,8 @@ namespace Scripts
         {
             RectTransform parentTransform = _cardItemData.parent;
             _view.SetParent(parentTransform);
-            _view.InitPosition();
+            _view.InitLocalScale();
+            _view.SetLocalPosition(Vector3.zero, 0.3f);
             _view.SetSize(parentTransform.sizeDelta);
         }
         
@@ -118,9 +127,20 @@ namespace Scripts
                     parentTransform = _cardItemData.parent;
                 }
                 _view.SetParent(parentTransform);
-                _view.InitPosition();
+                _view.InitLocalScale();
+                _view.SetLocalPosition(Vector3.zero, 0.3f);
                 _view.SetSize(parentTransform.sizeDelta);
             }
+        }
+
+        public void MoveCardByClick(int boardCardHolderIndex)
+        {
+            _onDragStart.Invoke(_cardItemData.cardItemIndex);
+            RectTransform cardHolderTransform = _onPlaceByClick(_cardItemData.cardItemIndex, boardCardHolderIndex);
+            _view.SetParent(cardHolderTransform);
+            _view.InitLocalScale();
+            _view.SetLocalPosition(Vector3.zero, 0.3f);
+            _view.SetSize(cardHolderTransform.sizeDelta);
         }
 
         private void OnPointerDown(PointerEventData data)
@@ -178,5 +198,6 @@ namespace Scripts
         ProbabilityType GetProbabilityType();
         void SetLocked();
         bool IsLocked();
+        void MoveCardByClick(int boardCardHolderIndex);
     }
 }

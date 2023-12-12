@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Scripts
@@ -11,12 +12,14 @@ namespace Scripts
         private CardHolderModel _model;
         private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
+
         public void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam)
         {
             _view = cardHolderView;
             _model = model;
             _index = model.index;
             _view.Init(model, new PossibleHolderIndicatorViewFactory(), cam);
+            _view.SetOnClick(model.onClickAction);
             CreatePossibleHolderIndicators();
         }
         
@@ -100,5 +103,6 @@ namespace Scripts
         public Vector2 size;
         public List<Vector2> possibleHolderIndicatorLocalPositionList;
         public CardItemType cardItemType;
+        public Action onClickAction;
     }
 }

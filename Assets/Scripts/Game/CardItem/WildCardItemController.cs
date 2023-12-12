@@ -21,7 +21,8 @@ namespace Scripts
             _cam = cam;
             _cardItemData = data;
             _view.SetLocalPositionGap(data.cardItemIndex);
-            _view.InitPosition();
+            _view.InitLocalScale();
+            _view.SetLocalPosition(Vector3.zero, 0f);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
             _view.SetOnPointerDown(OnPointerDown);
@@ -71,7 +72,8 @@ namespace Scripts
             {
                 if (_cardItemData.cardItemIndex == 0) _backSlideCardHolders.Invoke();
                 _view.SetParent(_cardItemData.parent);
-                _view.InitPosition();
+                _view.InitLocalScale();
+                _view.SetLocalPosition(Vector3.zero, 0.3f);
                 _view.SetSize(_cardItemData.parent.sizeDelta);
             }
         }

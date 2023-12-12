@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Scripts
 {
@@ -8,7 +9,8 @@ namespace Scripts
         private IBoardAreaManager _boardAreaManager;
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
-        
+        public event EventHandler<int> boardCardHolderClicked; 
+
         public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController)
         {
             _view = view;
@@ -28,6 +30,8 @@ namespace Scripts
             {
                 ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardCardHolderView = _view.CreateCardHolderView();
+                boardCardHolderModel.onClickAction =
+                    () => boardCardHolderClicked?.Invoke(this, boardCardHolderModel.index);
                 cardHolderController.Initialize(boardCardHolderView, boardCardHolderModel, _view.GetCamera());
                 boardCardHolderControllerList.Add(cardHolderController);
             }
@@ -40,5 +44,7 @@ namespace Scripts
     public interface IBoardAreaController
     {
         void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController);
+        event EventHandler<int> boardCardHolderClicked;
+
     }
 }

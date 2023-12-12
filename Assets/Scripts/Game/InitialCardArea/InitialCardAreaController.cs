@@ -15,7 +15,7 @@ namespace Scripts
         private IInitialCardAreaView _initialCardAreaView;
         private ILevelTracker _levelTracker;
         private IGameSaveService _gameSaveService;
-        public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController)
+        public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController)
         {
             _initialCardAreaView = initialCardAreaView;
             _cardHolderModelCreator = cardHolderModelCreator;
@@ -31,6 +31,14 @@ namespace Scripts
             cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
             cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
             resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
+            boardAreaController.boardCardHolderClicked += MoveSelectedCard;
+        }
+
+        private void MoveSelectedCard(object sender, int boardCardHolderIndex)
+        {
+            int selectedCardIndex = _selectionController.GetSelectedCardIndex();
+            if (selectedCardIndex == -1) return;
+            _normalCardItemControllerList[selectedCardIndex].MoveCardByClick(boardCardHolderIndex);
         }
 
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
@@ -128,7 +136,8 @@ namespace Scripts
             _levelTracker.DecreaseWildCardCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
             normalCardItemController.GetView().SetParent(lockedCardInfo.parent);
-            normalCardItemController.GetView().InitPosition();
+            normalCardItemController.GetView().InitLocalScale();
+            normalCardItemController.GetView().SetLocalPosition(Vector3.zero, 0f);
             normalCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
             normalCardItemController.SetProbabilityType(ProbabilityType.Certain);
             normalCardItemController.DisableSelectability();
@@ -208,7 +217,7 @@ namespace Scripts
     {
         void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator,
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
-            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController);
+            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController);
 
         List<ProbabilityType> GetProbabilityTypes();
         List<List<int>> GetActiveHolderIndicatorIndexesList();
