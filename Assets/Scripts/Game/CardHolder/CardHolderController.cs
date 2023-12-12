@@ -104,5 +104,6 @@ namespace Scripts
         public List<Vector2> possibleHolderIndicatorLocalPositionList;
         public CardItemType cardItemType;
         public Action onClickAction;
+        public CardHolderType cardHolderType;
     }
 }

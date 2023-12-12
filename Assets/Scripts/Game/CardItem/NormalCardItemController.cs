@@ -35,6 +35,7 @@ namespace Scripts
             _view.SetOnPointerUp(OnPointerUp);
             _isLocked = cardItemData.isLocked;
             _view.SetLockImageStatus(_isLocked);
+            _view.SetSize(cardItemData.parent.sizeDelta);
             SetOnDragStart(cardItemLocator.OnDragStart);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);

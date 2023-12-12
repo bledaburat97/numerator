@@ -29,6 +29,7 @@ namespace Scripts
                     index = i,
                     localPosition = localPositions[i],
                     size = cardHolderSize,
+                    cardHolderType = CardHolderType.Board
                 });
             }
         }
@@ -42,8 +43,8 @@ namespace Scripts
             float spacing = ConstantValues.SPACING_BETWEEN_INITIAL_CARDS;
             Vector2 cardHolderSize = new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT);
 
-            float firstLineYPos = cardHolderSize.y / 2 + ConstantValues.POSSIBLE_HOLDER_INDICATOR_HEIGHT / 2 + 5f;
-            float secondLineYPos = -cardHolderSize.y / 2 - 5f;
+            float firstLineYPos = cardHolderSize.y / 2 + ConstantValues.POSSIBLE_HOLDER_INDICATOR_HEIGHT + 6f;
+            float secondLineYPos = -cardHolderSize.y / 2 - 1f;
             if (numOfCards < 6)
             {
                 _localPositionsOfFirstLine = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards, spacing, cardHolderSize, firstLineYPos);
@@ -77,7 +78,8 @@ namespace Scripts
                     localPosition = localPositions[i],
                     size = cardHolderSize,
                     possibleHolderIndicatorLocalPositionList = wildCardExistence && i == 0 ? new List<Vector2>() : possibleIndicatorLocalPositionList,
-                    cardItemType = wildCardExistence && i == 0 ? CardItemType.Wild : CardItemType.Normal
+                    cardItemType = wildCardExistence && i == 0 ? CardItemType.Wild : CardItemType.Normal,
+                    cardHolderType = CardHolderType.Initial
                 });
             }
         }

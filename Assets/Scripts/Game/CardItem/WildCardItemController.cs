@@ -26,6 +26,7 @@ namespace Scripts
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
             _view.SetOnPointerDown(OnPointerDown);
+            _view.SetSize(data.parent.sizeDelta);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnWildDragComplete);
             SetGetLockedCard(setLockedCard);

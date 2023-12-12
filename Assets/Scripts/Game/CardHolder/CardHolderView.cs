@@ -13,6 +13,7 @@ namespace Scripts
         [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
         [SerializeField] private Image highlightImage;
         [SerializeField] private TMP_Text text;
+        [SerializeField] private Image frame;
         private Camera _cam;
         private Action _onClick;
         
@@ -25,6 +26,15 @@ namespace Scripts
             transform.localPosition = model.localPosition;
             rectTransform.sizeDelta = model.size;
             _possibleHolderIndicatorViewFactory = possibleHolderIndicatorViewFactory;
+            if (model.cardHolderType == CardHolderType.Board)
+            {
+                frame.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
+            }
+            else if (model.cardHolderType == CardHolderType.Initial)
+            {
+                frame.color = ConstantValues.INITIAL_CARD_HOLDER_COLOR;
+                text.color = ConstantValues.INITIAL_CARD_HOLDER_COLOR;
+            }
             SetText("");
         }
 
