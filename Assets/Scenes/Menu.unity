@@ -610,8 +610,8 @@ RectTransform:
   - {fileID: 2125317888}
   - {fileID: 441587101}
   - {fileID: 1718037622}
-  - {fileID: 1445150972105194457}
   - {fileID: 1880617385}
+  - {fileID: 1445150972105194457}
   m_Father: {fileID: 1298502999}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1541,7 +1541,7 @@ RectTransform:
   m_Children:
   - {fileID: 1622065386}
   m_Father: {fileID: 1157773104}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1598,7 +1598,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d20b7309193847a193ca3ed243a01eba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelButtonPrefab: {fileID: 371490860433157135, guid: 697180a6a86c21d46b453ada54100f46, type: 3}
+  levelButtonPrefab: {fileID: 988604287935057, guid: cf8b7f7fdc925904c871fa6bea2324fe, type: 3}
   directionButtonPrefab: {fileID: 1673646518181781853, guid: 5003074683a20e4428d4f5829f11e6ff, type: 3}
   pineTree: {fileID: 1622065386}
 --- !u!1 &1903088404
@@ -1913,7 +1913,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4141988893961824197, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_RootOrder
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4141988893961824197, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1937,7 +1937,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4141988893961824197, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 70
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 4141988893961824197, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_LocalPosition.x

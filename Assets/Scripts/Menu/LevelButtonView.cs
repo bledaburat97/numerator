@@ -1,14 +1,17 @@
 ﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class LevelButtonView : BaseButtonView, ILevelButtonView
+    public class LevelButtonView : MonoBehaviour, ILevelButtonView
     {
-        [SerializeField] private Image lockImage;
+        [SerializeField] private TMP_Text text;
+        [SerializeField] private Button button;
+        [SerializeField] protected Image innerBg;
         [SerializeField] private StarImageView[] starImageViews = new StarImageView[3];
-
+        [SerializeField] private RectTransform starHolder;
         private LevelButtonModel _model;
         
         public void Init(LevelButtonModel model)
@@ -16,12 +19,9 @@ namespace Scripts
             _model = model;
             transform.localPosition = new Vector3(model.localPosition.x, model.localPosition.y, transform.localPosition.z);
             transform.localScale = Vector3.one;
-            lockImage.gameObject.SetActive(true);
-            text.gameObject.SetActive(false);
+            starHolder.gameObject.SetActive(false);
+            text.SetText((_model.levelId + 1).ToString());
             button.enabled = false;
-            innerBgOffsetMin = innerBg.rectTransform.offsetMin;
-            innerBgOffsetMax = innerBg.rectTransform.offsetMax;
-            innerBg.color = Color.gray;
             for (int i = 0; i < starImageViews.Length; i++)
             {
                 starImageViews[i].SetStarStatus(i < _model.starCount);
@@ -31,11 +31,9 @@ namespace Scripts
         public void SetButtonActive()
         {
             button.enabled = true;
-            text.gameObject.SetActive(true);
-            lockImage.gameObject.SetActive(false);
-            text.SetText((_model.levelId + 1).ToString());
+            starHolder.gameObject.SetActive(true);
             SetOnSelectAction(_model.onSelect);
-            innerBg.color = Color.blue;
+            innerBg.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
         }
         
         private void SetOnSelectAction(Action<int> onSelect)
@@ -46,7 +44,7 @@ namespace Scripts
         public void Select(bool status)
         {
             if (status) innerBg.color = Color.magenta;
-            else innerBg.color = Color.blue;
+            else innerBg.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
         }
         
         public void Destroy()
@@ -56,7 +54,7 @@ namespace Scripts
 
     }
 
-    public interface ILevelButtonView : IBaseButtonView
+    public interface ILevelButtonView
     {
         void Init(LevelButtonModel model);
         void SetButtonActive();
