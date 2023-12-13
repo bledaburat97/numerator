@@ -329,8 +329,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4292337907
+  m_fontColor: {r: 0.9529412, g: 0.8784314, b: 0.84313726, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -704,8 +704,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   text: {fileID: 7120401360137728755}
   button: {fileID: 742023855188991932}
-  outerBg: {fileID: 7653979305033263197}
-  shadow: {fileID: 1236909122699356485}
   innerBg: {fileID: 1083791889338628892}
   starImageViews:
   - {fileID: 7997092282441946957}
