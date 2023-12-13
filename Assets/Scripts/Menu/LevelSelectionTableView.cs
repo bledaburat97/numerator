@@ -1,4 +1,5 @@
 ﻿using Menu;
+using Microsoft.Unity.VisualStudio.Editor;
 using UnityEngine;
 
 namespace Scripts
@@ -9,6 +10,7 @@ namespace Scripts
         private LevelButtonViewFactory _levelButtonViewFactory;
         private DirectionButtonViewFactory _directionButtonViewFactory;
         [SerializeField] private DirectionButtonView directionButtonPrefab;
+        [SerializeField] private RectTransform pineTree;
         
         public void Init(LevelButtonViewFactory levelButtonViewFactory, DirectionButtonViewFactory directionButtonViewFactory)
         {
@@ -18,7 +20,7 @@ namespace Scripts
 
         public ILevelButtonView CreateLevelButtonView()
         {
-            return _levelButtonViewFactory.Spawn(transform, levelButtonPrefab);
+            return _levelButtonViewFactory.Spawn(pineTree, levelButtonPrefab);
         }
 
         public IDirectionButtonView CreateDirectionButton()

@@ -113,6 +113,26 @@ namespace Scripts
 
         private void SetLocalPosListForButtons()
         {
+            _localPosListForButtons = new[]
+            {
+                new Vector2(-134, -140), 
+                new Vector2(-50, -150),
+                new Vector2(50, -150),
+                new Vector2(134, -140),
+                new Vector2(120, -66),
+                new Vector2(40, -73),
+                new Vector2(-40, -73),
+                new Vector2(-120, -66),
+                new Vector2(-85, 25),
+                new Vector2(-10, -8),
+                new Vector2(93, 10),
+                new Vector2(30, 60),
+                new Vector2(-53, 120),
+                new Vector2(53, 130),
+                new Vector2(0, 201)
+            };
+            
+            /*
             int index = 0;
             for (int j = 0; j < rowCount; j++)
             {
@@ -123,6 +143,7 @@ namespace Scripts
                     index++;
                 }
             }
+            */
         }
         
     }
