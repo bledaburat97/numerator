@@ -23,6 +23,7 @@ namespace Scripts
         public static float SIZE_OF_STARS_ON_LEVEL_SUCCESS = 70f;
         public static Color BOARD_CARD_HOLDER_COLOR = HexToColor("#D65865");
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
+        public static Color SELECTED_LEVEL_BUTTON_COLOR = HexToColor("#5F6DA6");
         
         public static Dictionary<ProbabilityType, Color> GetProbabilityTypeToColorMapping()
         {

@@ -20,14 +20,14 @@ namespace Scripts
             _initialCardAreaView = initialCardAreaView;
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
-            int numOfWildCards = _levelTracker.GetWildCardCount();
+            int numOfTotalWildCards = _levelTracker.GetWildCardCount();
             int numOfNormalCards = _levelTracker.GetLevelInfo().levelData.NumOfCards;
-            _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfWildCards > 0);
+            _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfTotalWildCards > 0);
             _selectionController = new SelectionController(numOfNormalCards);
             IInvisibleClickHandler invisibleClickHandler = _initialCardAreaView.GetInvisibleClickHandler();
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
-            InitInitialCardAreaView(onCardSelected, numOfWildCards);
+            InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
             cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
             cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
             resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
@@ -39,6 +39,7 @@ namespace Scripts
             int selectedCardIndex = _selectionController.GetSelectedCardIndex();
             if (selectedCardIndex == -1) return;
             _normalCardItemControllerList[selectedCardIndex].MoveCardByClick(boardCardHolderIndex);
+            _selectionController.DeselectAll();
         }
 
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
@@ -50,11 +51,11 @@ namespace Scripts
             }
         }
 
-        private void InitInitialCardAreaView(Action<bool, int> onCardSelected, int numOfWildCards)
+        private void InitInitialCardAreaView(Action<bool, int> onCardSelected, int numOfTotalWildCard)
         {
             _initialCardAreaView.Init(new CardHolderFactory(), new NormalCardItemViewFactory(), new WildCardItemViewFactory());
             CreateCardHolders();
-            CreateCardItemsData(onCardSelected, numOfWildCards);
+            CreateCardItemsData(onCardSelected, numOfTotalWildCard);
         }
         
         private void CreateCardHolders()
@@ -79,8 +80,10 @@ namespace Scripts
             }
         }
         
-        private void CreateCardItemsData(Action<bool, int> onCardSelected, int numOfWildCard)
+        private void CreateCardItemsData(Action<bool, int> onCardSelected, int numOfTotalWildCard)
         {
+            int numOfBoardCardHolder = _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders;
+            int numOfWildCard = numOfTotalWildCard > numOfBoardCardHolder ? numOfBoardCardHolder : numOfTotalWildCard;
             for (int j = 0; j < numOfWildCard; j++)
             {
                 CardItemData cardItemData = new CardItemData()

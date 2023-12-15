@@ -45,7 +45,7 @@ namespace Scripts
             animationSequence.AppendInterval(0.6f)
             .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
             .AppendInterval(1f)
-            .Append(_glowingView.GetTitle().DOFade(1f, 0.7f))
+            .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
             .AppendInterval(0.3f)
             .AppendCallback(() => _circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
             .AppendInterval(0.6f)

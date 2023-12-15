@@ -43,7 +43,7 @@ namespace Scripts
         
         public void Select(bool status)
         {
-            if (status) innerBg.color = Color.magenta;
+            if (status) innerBg.color = ConstantValues.SELECTED_LEVEL_BUTTON_COLOR;
             else innerBg.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
         }
         

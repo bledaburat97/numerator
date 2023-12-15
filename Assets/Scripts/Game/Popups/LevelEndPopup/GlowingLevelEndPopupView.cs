@@ -48,12 +48,12 @@ namespace Scripts
         public void SetTitle(string text)
         {
             title.SetText(text);
-            title.alpha = 0f;
+            title.transform.localScale = Vector3.zero;
         }
         
-        public TMP_Text GetTitle()
+        public RectTransform GetTitle()
         {
-            return title;
+            return title.rectTransform;
         }
     }
 
@@ -64,7 +64,7 @@ namespace Scripts
         IGlowingCircleProgressBarView CreateGlowingCircleProgressBar();
         GlowingEndGameAnimationModel GetGlowingAnimationModel();
         void SetTitle(string text);
-        TMP_Text GetTitle();
+        RectTransform GetTitle();
 
     }
 
