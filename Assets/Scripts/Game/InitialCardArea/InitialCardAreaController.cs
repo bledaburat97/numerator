@@ -7,8 +7,8 @@ namespace Scripts
     public class InitialCardAreaController : IInitialCardAreaController
     {
         private ISelectionController _selectionController;
-        private List<ICardHolderController> _normalCardHolderControllerList = new List<ICardHolderController>();
-        private ICardHolderController _wildCardHolderController = null;
+        private List<IInitialCardHolderController> _normalCardHolderControllerList = new List<IInitialCardHolderController>();
+        private IBaseCardHolderController _wildCardHolderController = null;
         private List<INormalCardItemController> _normalCardItemControllerList = new List<INormalCardItemController>();
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
@@ -31,7 +31,6 @@ namespace Scripts
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
-            cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
             resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
         }
@@ -62,22 +61,23 @@ namespace Scripts
         
         private void CreateCardHolders()
         {
-            CardHolderControllerFactory cardHolderControllerFactory = new CardHolderControllerFactory();
+            InitialCardHolderControllerFactory normalCardHolderControllerFactory = new InitialCardHolderControllerFactory();
+            BaseCardHolderControllerFactory wildCardHolderControllerFactory = new BaseCardHolderControllerFactory();
             int index = 0;
             foreach (CardHolderModel cardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial))
             {
-                ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView cardHolderView = _initialCardAreaView.CreateCardHolderView();
-                cardHolderController.Initialize(cardHolderView, cardHolderModel, _initialCardAreaView.GetCamera());
                 if (cardHolderModel.cardItemType == CardItemType.Normal)
                 {
-                    cardHolderController.SetHolderIndicatorListStatus(_levelTracker.GetLevelInfo().levelSaveData.ActiveHolderIndicatorIndexesList[index]);
+                    IInitialCardHolderController cardHolderController = normalCardHolderControllerFactory.Spawn();
+                    cardHolderController.Initialize(cardHolderView, cardHolderModel, _initialCardAreaView.GetCamera(), _cardItemInfoManager);
                     _normalCardHolderControllerList.Add(cardHolderController);
                     index++;
                 }
                 else if (cardHolderModel.cardItemType == CardItemType.Wild)
                 {
-                    _wildCardHolderController = cardHolderController;
+                    _wildCardHolderController = wildCardHolderControllerFactory.Spawn();
+                    _wildCardHolderController.Initialize(cardHolderView, cardHolderModel, _initialCardAreaView.GetCamera());
                 }
             }
         }
@@ -143,14 +143,6 @@ namespace Scripts
             normalCardItemController.GetView().SetLocalPosition(Vector3.zero, 0f);
             normalCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
             _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardCardHolderIndex);
-            
-            ICardHolderController cardHolderController = _normalCardHolderControllerList[lockedCardInfo.targetCardIndex];
-            cardHolderController.SetHolderIndicatorListStatus(new List<int>(){lockedCardInfo.boardCardHolderIndex});
-        }
-
-        private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
-        {
-            _normalCardHolderControllerList[args.cardIndex].SetHolderIndicatorListStatus(args.holderIndicatorIndexList);
         }
 
         private void SlideNormalCardHolders()
@@ -172,17 +164,6 @@ namespace Scripts
                 _normalCardHolderControllerList[i-1].SetLocalPosition(newLocalPositions[i]);
             }
         }
-
-        public List<List<int>> GetActiveHolderIndicatorIndexesList()
-        {
-            List<List<int>> activeHolderIndicatorIndexesList = new List<List<int>>();
-            foreach (ICardHolderController cardHolderController in _normalCardHolderControllerList)
-            {
-                activeHolderIndicatorIndexesList.Add(cardHolderController.GetActiveHolderIndicatorIndexes());
-            }
-
-            return activeHolderIndicatorIndexesList;
-        }
     }
     
     public interface IInitialCardAreaController
@@ -191,7 +172,6 @@ namespace Scripts
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
             ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController);
 
-        List<List<int>> GetActiveHolderIndicatorIndexesList();
     }
     
     public class CardItemData
@@ -202,8 +182,6 @@ namespace Scripts
         public Action<bool, int> onCardSelected;
         public CardItemType cardItemType;
         public int cardNumber;
-        public ProbabilityType initialProbabilityType; //delete it
-        public bool isLocked; //delete it.
     }
 
     public enum CardItemType

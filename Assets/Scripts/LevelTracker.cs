@@ -70,20 +70,7 @@ namespace Scripts
             levelSaveData.LevelId = levelId;
             levelSaveData.TriedCardsList = new List<List<int>>();
             levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
-
-            levelSaveData.ActiveHolderIndicatorIndexesList = new List<List<int>>();
-            for (int i = 0; i < levelData.NumOfCards; i++)
-            {
-                List<int> holderIndexes = new List<int>();
-                for (int j = 0; j < levelData.NumOfBoardHolders; j++)
-                {
-                    holderIndexes.Add(j);
-                }
-                levelSaveData.ActiveHolderIndicatorIndexesList.Add(holderIndexes);
-            }
-
             levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
-
             levelSaveData.CardItemInfoList = new List<CardItemInfo>();
             for (int i = 0; i < levelData.NumOfCards; i++)
             {

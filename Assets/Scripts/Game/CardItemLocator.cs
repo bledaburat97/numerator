@@ -6,7 +6,7 @@ namespace Scripts
 {
     public class CardItemLocator : ICardItemLocator
     {
-        private Dictionary<ICardHolderController, int> _boardHolderToCardIndexMapping = new Dictionary<ICardHolderController, int>();
+        private Dictionary<IBoardCardHolderController, int> _boardHolderToCardIndexMapping = new Dictionary<IBoardCardHolderController, int>();
         private int _activeCardIndex;
         private int _probableCardHolderIndex;
         private IBoardAreaManager _boardAreaManager;
@@ -16,9 +16,9 @@ namespace Scripts
             _canvas = canvas;
         }
         
-        public void OnBoardCreated(List<ICardHolderController> boardCardHolderControllerList, IBoardAreaManager boardAreaManager)
+        public void OnBoardCreated(List<IBoardCardHolderController> boardCardHolderControllerList, IBoardAreaManager boardAreaManager)
         {
-            foreach (ICardHolderController boardHolderController in boardCardHolderControllerList)
+            foreach (IBoardCardHolderController boardHolderController in boardCardHolderControllerList)
             {
                 _boardHolderToCardIndexMapping.Add(boardHolderController, -1);
             }
@@ -30,14 +30,14 @@ namespace Scripts
 
         public void ResetBoard()
         {
-            List<ICardHolderController> tempCardHolderControllerList = new List<ICardHolderController>();
+            List<IBoardCardHolderController> tempCardHolderControllerList = new List<IBoardCardHolderController>();
             
-            foreach (KeyValuePair<ICardHolderController, int> pair in _boardHolderToCardIndexMapping)
+            foreach (KeyValuePair<IBoardCardHolderController, int> pair in _boardHolderToCardIndexMapping)
             {
                 tempCardHolderControllerList.Add(pair.Key);
             }
 
-            foreach (ICardHolderController tempCardHolderController in tempCardHolderControllerList)
+            foreach (IBoardCardHolderController tempCardHolderController in tempCardHolderControllerList)
             {
                 _boardAreaManager.SetNumberOfCard(tempCardHolderController.GetIndex(), 0);
                 _boardHolderToCardIndexMapping[tempCardHolderController] = -1;
@@ -56,7 +56,7 @@ namespace Scripts
         {
             if (_boardHolderToCardIndexMapping.ContainsValue(cardIndex))
             {
-                ICardHolderController cardHolderController = 
+                IBoardCardHolderController cardHolderController = 
                     _boardHolderToCardIndexMapping.FirstOrDefault(x => x.Value == cardIndex).Key;
                 _boardAreaManager.SetNumberOfCard(cardHolderController.GetIndex(), 0);
                 _boardHolderToCardIndexMapping[cardHolderController] = -1;
@@ -70,7 +70,7 @@ namespace Scripts
             if (_probableCardHolderIndex != -1)
             {
                 _activeCardIndex = cardIndex;
-                foreach (KeyValuePair<ICardHolderController, int> pair in _boardHolderToCardIndexMapping)
+                foreach (KeyValuePair<IBoardCardHolderController, int> pair in _boardHolderToCardIndexMapping)
                 {
                     pair.Key.SetHighlightStatus(false);
                 }
@@ -78,7 +78,7 @@ namespace Scripts
             }
             else
             {
-                foreach (KeyValuePair<ICardHolderController, int> pair in _boardHolderToCardIndexMapping)
+                foreach (KeyValuePair<IBoardCardHolderController, int> pair in _boardHolderToCardIndexMapping)
                 {
                     pair.Key.SetHighlightStatus(false);
                 }
@@ -90,7 +90,7 @@ namespace Scripts
         {
             if (_activeCardIndex == cardIndex)
             {
-                ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
+                IBoardCardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
                 _boardAreaManager.SetNumberOfCard(_probableCardHolderIndex, cardIndex + 1);
                 _boardHolderToCardIndexMapping[cardHolderController] = cardIndex;
                 cardHolderController.SetHighlightStatus(false);
@@ -101,7 +101,7 @@ namespace Scripts
 
         public RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex)
         {
-            ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(boardHolderIndex);
+            IBoardCardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(boardHolderIndex);
             _boardAreaManager.SetNumberOfCard(boardHolderIndex, cardIndex + 1);
             _boardHolderToCardIndexMapping[cardHolderController] = cardIndex;
             return cardHolderController.GetView().GetRectTransform();
@@ -111,7 +111,7 @@ namespace Scripts
         {
             if (_activeCardIndex == wildCardIndex)
             {
-                ICardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
+                IBoardCardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
                 int targetCardIndex = _boardAreaManager.SetWildCardOnBoard(_probableCardHolderIndex);
                 TryResetCardIndexOnBoard(targetCardIndex);
                 _boardHolderToCardIndexMapping[cardHolderController] = targetCardIndex;
@@ -130,7 +130,7 @@ namespace Scripts
         {
             for (int i = 0; i < _boardHolderToCardIndexMapping.Count; i++)
             {
-                ICardHolderController holderController = _boardHolderToCardIndexMapping.Keys.ElementAt(i);
+                IBoardCardHolderController holderController = _boardHolderToCardIndexMapping.Keys.ElementAt(i);
                 if (_boardHolderToCardIndexMapping[holderController] != -1)
                 {
                     continue;
@@ -155,7 +155,7 @@ namespace Scripts
 
     public interface ICardItemLocator
     {
-        void OnBoardCreated(List<ICardHolderController> boardCardHolderControllerList, IBoardAreaManager boardAreaManager);
+        void OnBoardCreated(List<IBoardCardHolderController> boardCardHolderControllerList, IBoardAreaManager boardAreaManager);
         void OnDragStart(int cardIndex);
         void OnDragContinue(Vector2 pos, int cardIndex);
         RectTransform OnDragComplete(int cardIndex);

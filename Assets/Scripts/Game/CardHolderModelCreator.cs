@@ -74,7 +74,7 @@ namespace Scripts
             {
                 _initialCardHolderModelList.Add(new CardHolderModel()
                 {
-                    index = i,
+                    index = wildCardExistence ? i - 1 : i,
                     localPosition = localPositions[i],
                     size = cardHolderSize,
                     possibleHolderIndicatorLocalPositionList = wildCardExistence && i == 0 ? new List<Vector2>() : possibleIndicatorLocalPositionList,

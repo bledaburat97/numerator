@@ -57,7 +57,6 @@ namespace Scripts
                 LevelId = _levelTracker.GetLevelId(),
                 TriedCardsList = _resultManager.GetTriedCardsList(),
                 TargetCards = _resultManager.GetTargetCards(),
-                ActiveHolderIndicatorIndexesList = _initialCardAreaController.GetActiveHolderIndicatorIndexesList(),
                 RemainingGuessCount = _levelManager.GetRemainingGuessCount(),
                 CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList()
             };
@@ -84,7 +83,6 @@ namespace Scripts
         public List<List<int>> TriedCardsList;
         public List<int> TargetCards;
         public List<CardItemInfo> CardItemInfoList;
-        public List<List<int>> ActiveHolderIndicatorIndexesList;
         public int RemainingGuessCount;
     }
     

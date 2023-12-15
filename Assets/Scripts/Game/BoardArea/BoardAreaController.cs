@@ -24,11 +24,11 @@ namespace Scripts
         
         private void CreateBoardCardHolders()
         {
-            List<ICardHolderController> boardCardHolderControllerList = new List<ICardHolderController>();
-            CardHolderControllerFactory cardHolderControllerFactory = new CardHolderControllerFactory();
+            List<IBoardCardHolderController> boardCardHolderControllerList = new List<IBoardCardHolderController>();
+            BoardCardHolderControllerFactory cardHolderControllerFactory = new BoardCardHolderControllerFactory();
             foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
-                ICardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
+                IBoardCardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardCardHolderView = _view.CreateCardHolderView();
                 boardCardHolderModel.onClickAction =
                     () => boardCardHolderClicked?.Invoke(this, boardCardHolderModel.index);

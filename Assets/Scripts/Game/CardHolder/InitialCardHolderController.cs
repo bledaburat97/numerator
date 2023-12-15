@@ -1,26 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Scripts
 {
-    public class CardHolderController : ICardHolderController
+    public class InitialCardHolderController : BaseCardHolderController, IInitialCardHolderController
     {
-        private bool _isAvailable;
-        private ICardHolderView _view;
-        private int _index;
-        private CardHolderModel _model;
         private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
 
-        public void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam)
+        public void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam, ICardItemInfoManager cardItemInfoManager)
         {
             _view = cardHolderView;
             _model = model;
-            _index = model.index;
             _view.Init(model, new PossibleHolderIndicatorViewFactory(), cam);
-            _view.SetOnClick(model.onClickAction);
             CreatePossibleHolderIndicators();
+            CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[model.index];
+            SetHolderIndicatorListStatus(cardItemInfo.possibleCardHolderIndicatorIndexes);
+            cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
+        }
+        
+        private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
+        {
+            if (_model.index == args.cardIndex)
+            {
+                SetHolderIndicatorListStatus(args.holderIndicatorIndexList);
+            }
         }
         
         private void CreatePossibleHolderIndicators()
@@ -40,18 +44,8 @@ namespace Scripts
                 _possibleHolderIndicatorControllerList.Add(holderIndicatorController);
             }
         }
-
-        public int GetIndex()
-        {
-            return _index;
-        }
-
-        public ICardHolderView GetView()
-        {
-            return _view;
-        }
-
-        public void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList)
+    
+        private void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList)
         {
             _activeHolderIndicatorIndexes = activeHolderIndicatorIndexList;
             for (int i = 0; i < _possibleHolderIndicatorControllerList.Count; i++)
@@ -62,17 +56,12 @@ namespace Scripts
                 _possibleHolderIndicatorControllerList[i].SetStatus(status);
             }
         }
-
-        public void SetHighlightStatus(bool status)
-        {
-            _view.SetHighlightStatus(status);
-        }
-
+    
         public void SetLocalPosition(Vector2 localXPos)
         {
             _view.SetLocalPosition(localXPos);
         }
-
+    
         public List<int> GetActiveHolderIndicatorIndexes()
         {
             return _activeHolderIndicatorIndexes;
@@ -83,27 +72,14 @@ namespace Scripts
             _view.SetText(cardNumber);
         }
     }
-    
-    public interface ICardHolderController
+
+    public interface IInitialCardHolderController : IBaseCardHolderController
     {
-        void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam);
-        ICardHolderView GetView();
-        int GetIndex();
-        void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList);
-        void SetHighlightStatus(bool status);
+        void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam,
+            ICardItemInfoManager cardItemInfoManager);
         void SetLocalPosition(Vector2 localXPos);
         List<int> GetActiveHolderIndicatorIndexes();
         void SetText(string cardNumber);
     }
     
-    public class CardHolderModel
-    {
-        public int index;
-        public Vector3 localPosition;
-        public Vector2 size;
-        public List<Vector2> possibleHolderIndicatorLocalPositionList;
-        public CardItemType cardItemType;
-        public Action onClickAction;
-        public CardHolderType cardHolderType;
-    }
 }
