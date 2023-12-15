@@ -14,16 +14,13 @@ namespace Scripts
         private Func<int, int, RectTransform> _onPlaceByClick;
         private Action<bool, int> _onCardSelected;
         private bool _isSelectable;
-        private ProbabilityType _probabilityType;
-        private bool _isLocked;
         private Camera _cam;
         
-        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam)
+        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager)
         {
             _view = cardItemView;
             _cam = cam;
             _cardItemData = cardItemData;
-            _isSelectable = true;
             _selectionController = selectionController;
             _selectionController.SetOnDeselectCards(DeselectCard);
             
@@ -33,25 +30,30 @@ namespace Scripts
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
-            _isLocked = cardItemData.isLocked;
-            _view.SetLockImageStatus(_isLocked);
             _view.SetSize(cardItemData.parent.sizeDelta);
             SetOnDragStart(cardItemLocator.OnDragStart);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);
             SetOnPlaceByClick(cardItemLocator.PlaceCardByClick);
             SetOnCardSelected(_cardItemData.onCardSelected);
-            SetProbabilityType(_cardItemData.initialProbabilityType);
+            CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[_cardItemData.cardItemIndex];
+            SetColor(cardItemInfo.probabilityType);
+            SetLockStatus(cardItemInfo.isLocked);
+            cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
         }
-
+        
+        private void OnProbabilityChanged(object sender, ProbabilityChangedEventArgs args)
+        {
+            if (_cardItemData.cardItemIndex == args.cardIndex)
+            {
+                SetColor(args.probabilityType);
+                SetLockStatus(args.isLocked);
+            }
+        }
+        
         public INormalCardItemView GetView()
         {
             return _view;
-        }
-
-        public void DisableSelectability()
-        {
-            _isSelectable = false;
         }
 
         public void SetSize(Vector2 size)
@@ -166,39 +168,24 @@ namespace Scripts
             _view.SetSelectionStatus(status);
         }
 
-        public void SetProbabilityType(ProbabilityType probabilityType)
+        private void SetColor(ProbabilityType probabilityType)
         {
-            _probabilityType = probabilityType;
             _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityType]);
         }
 
-        public ProbabilityType GetProbabilityType()
+        private void SetLockStatus(bool isLocked)
         {
-            return _probabilityType;
+            _view.SetLockImageStatus(isLocked);
+            _isSelectable = !isLocked;
         }
-
-        public void SetLocked()
-        {
-            _isLocked = true;
-            _view.SetLockImageStatus(_isLocked);
-        }
-
-        public bool IsLocked()
-        {
-            return _isLocked;
-        }
+        
     }
 
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam);
+        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager);
         void ResetPosition();
         INormalCardItemView GetView();
-        void DisableSelectability();
-        void SetProbabilityType(ProbabilityType probabilityType);
-        ProbabilityType GetProbabilityType();
-        void SetLocked();
-        bool IsLocked();
         void MoveCardByClick(int boardCardHolderIndex);
     }
 }

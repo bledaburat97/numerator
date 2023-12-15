@@ -11,6 +11,7 @@ namespace Scripts
         private IResultManager _resultManager;
         private IInitialCardAreaController _initialCardAreaController;
         private ILevelManager _levelManager;
+        private ICardItemInfoManager _cardItemInfoManager;
 
         public void Initialize(ILevelTracker levelTracker)
         {
@@ -18,13 +19,15 @@ namespace Scripts
             _resultManager = new ResultManager();
             _initialCardAreaController = new InitialCardAreaController();
             _levelManager = new LevelManager();
+            _cardItemInfoManager = new CardItemInfoManager();
         }
         
-        public void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager)
+        public void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager)
         {
             _resultManager = resultManager;
             _initialCardAreaController = initialCardAreaController;
             _levelManager = levelManager;
+            _cardItemInfoManager = cardItemInfoManager;
         }
         
         public LevelSaveData GetSavedLevel()
@@ -54,10 +57,9 @@ namespace Scripts
                 LevelId = _levelTracker.GetLevelId(),
                 TriedCardsList = _resultManager.GetTriedCardsList(),
                 TargetCards = _resultManager.GetTargetCards(),
-                ProbabilityTypes = _initialCardAreaController.GetProbabilityTypes(),
                 ActiveHolderIndicatorIndexesList = _initialCardAreaController.GetActiveHolderIndicatorIndexesList(),
-                LockedCardIndexes = _initialCardAreaController.GetLockedCardIndexes(),
-                RemainingGuessCount = _levelManager.GetRemainingGuessCount()
+                RemainingGuessCount = _levelManager.GetRemainingGuessCount(),
+                CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList()
             };
             
             string data = JsonConvert.SerializeObject(levelSaveData);
@@ -72,7 +74,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save();
-        void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager);
+        void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager);
         bool HasSavedGame();
     }
 
@@ -81,9 +83,8 @@ namespace Scripts
         public int LevelId;
         public List<List<int>> TriedCardsList;
         public List<int> TargetCards;
-        public List<ProbabilityType> ProbabilityTypes;
+        public List<CardItemInfo> CardItemInfoList;
         public List<List<int>> ActiveHolderIndicatorIndexesList;
-        public List<int> LockedCardIndexes;
         public int RemainingGuessCount;
     }
     

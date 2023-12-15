@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Scripts
 {
@@ -37,7 +35,7 @@ namespace Scripts
                 _view.SetStatus(true);
                 _activeCardIndex = cardIndex;
                 ResetCardItemInfoPopup();
-                CardItemInfo cardItemInfo = _cardItemInfoManager.GetCardItemInfo(cardIndex);
+                CardItemInfo cardItemInfo = _cardItemInfoManager.GetCardItemInfoList()[cardIndex];
                 for (int i = 0; i < cardItemInfo.possibleCardHolderIndicatorIndexes.Count; i++)
                 {
                     _cardHolderIndicatorButtonControllers[cardItemInfo.possibleCardHolderIndicatorIndexes[i]].SetStatus(true);

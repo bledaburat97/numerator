@@ -70,11 +70,6 @@ namespace Scripts
             levelSaveData.LevelId = levelId;
             levelSaveData.TriedCardsList = new List<List<int>>();
             levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
-            levelSaveData.ProbabilityTypes = new List<ProbabilityType>();
-            for (int i = 0; i < levelData.NumOfCards; i++)
-            {
-                levelSaveData.ProbabilityTypes.Add(ProbabilityType.Probable);
-            }
 
             levelSaveData.ActiveHolderIndicatorIndexesList = new List<List<int>>();
             for (int i = 0; i < levelData.NumOfCards; i++)
@@ -87,14 +82,36 @@ namespace Scripts
                 levelSaveData.ActiveHolderIndicatorIndexesList.Add(holderIndexes);
             }
 
-            levelSaveData.LockedCardIndexes = new List<int>();
             levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
+
+            levelSaveData.CardItemInfoList = new List<CardItemInfo>();
+            for (int i = 0; i < levelData.NumOfCards; i++)
+            {
+                CardItemInfo cardItemInfo = new CardItemInfo()
+                {
+                    possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes(levelData.NumOfBoardHolders),
+                    probabilityType = ProbabilityType.Probable,
+                    isLocked = false
+                };
+                levelSaveData.CardItemInfoList.Add(cardItemInfo);
+            }
 
             return new LevelInfo()
             {
                 levelSaveData = levelSaveData,
                 levelData = levelData
             };
+        }
+        
+        private List<int> GetAllPossibleCardHolderIndicatorIndexes(int numOfBoardCardHolders)
+        {
+            List<int> possibleCardHolderIndexes = new List<int>();
+            for (int i = 0; i < numOfBoardCardHolders; i++)
+            {
+                possibleCardHolderIndexes.Add(i);
+            }
+
+            return possibleCardHolderIndexes;
         }
         
         private List<int> CreateTargetCards(int numOfCards, int numOfBoardHolders)

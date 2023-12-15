@@ -57,7 +57,7 @@ namespace Scripts
             CreateCardItemInfoPopup();
             CreateInitialCardArea();
             CreateGamePopupCreator();
-            _gameSaveService.Set(_resultManager, _initialCardAreaController, _levelManager);
+            _gameSaveService.Set(_resultManager, _initialCardAreaController, _levelManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
             //CreateFadeMaskService();
         }
@@ -118,7 +118,7 @@ namespace Scripts
         {
             _cardItemInfoManager = new CardItemInfoManager();
             _cardItemInfoManager.Initialize(levelTracker);
-
+            
             _cardItemInfoPopupController = new CardItemInfoPopupController();
             _cardItemInfoPopupController.Initialize(cardItemInfoPopupView, _cardItemInfoManager, levelTracker, _cardHolderModelCreator);
         }

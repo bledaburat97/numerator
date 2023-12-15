@@ -15,11 +15,14 @@ namespace Scripts
         private IInitialCardAreaView _initialCardAreaView;
         private ILevelTracker _levelTracker;
         private IGameSaveService _gameSaveService;
+        private ICardItemInfoManager _cardItemInfoManager;
+        
         public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController)
         {
             _initialCardAreaView = initialCardAreaView;
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
+            _cardItemInfoManager = cardItemInfoManager;
             int numOfTotalWildCards = _levelTracker.GetWildCardCount();
             int numOfNormalCards = _levelTracker.GetLevelInfo().levelData.NumOfCards;
             _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfTotalWildCards > 0);
@@ -28,7 +31,6 @@ namespace Scripts
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
-            cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
             cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
             resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
@@ -108,8 +110,6 @@ namespace Scripts
                     onCardSelected = onCardSelected,
                     cardItemType = CardItemType.Normal,
                     cardNumber = i + 1,
-                    initialProbabilityType = _levelTracker.GetLevelInfo().levelSaveData.ProbabilityTypes[i],
-                    isLocked = _levelTracker.GetLevelInfo().levelSaveData.LockedCardIndexes.Contains(i)
                 };
                 CreateCardItem(cardItemData);
             }
@@ -129,7 +129,7 @@ namespace Scripts
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
                 INormalCardItemView normalCardItemView = _initialCardAreaView.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _initialCardAreaView.GetCamera());
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _initialCardAreaView.GetCamera(), _cardItemInfoManager);
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
@@ -142,17 +142,10 @@ namespace Scripts
             normalCardItemController.GetView().InitLocalScale();
             normalCardItemController.GetView().SetLocalPosition(Vector3.zero, 0f);
             normalCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
-            normalCardItemController.SetProbabilityType(ProbabilityType.Certain);
-            normalCardItemController.DisableSelectability();
-            normalCardItemController.SetLocked();
+            _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardCardHolderIndex);
             
             ICardHolderController cardHolderController = _normalCardHolderControllerList[lockedCardInfo.targetCardIndex];
             cardHolderController.SetHolderIndicatorListStatus(new List<int>(){lockedCardInfo.boardCardHolderIndex});
-        }
-
-        private void OnProbabilityChanged(object sender, ProbabilityChangedEventArgs args)
-        {
-            _normalCardItemControllerList[args.cardIndex].SetProbabilityType(args.probabilityType);
         }
 
         private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
@@ -180,17 +173,6 @@ namespace Scripts
             }
         }
 
-        public List<ProbabilityType> GetProbabilityTypes()
-        {
-            List<ProbabilityType> probabilityTypes = new List<ProbabilityType>();
-            foreach (INormalCardItemController cardItemController in _normalCardItemControllerList)
-            {
-                probabilityTypes.Add(cardItemController.GetProbabilityType());
-            }
-
-            return probabilityTypes;
-        }
-
         public List<List<int>> GetActiveHolderIndicatorIndexesList()
         {
             List<List<int>> activeHolderIndicatorIndexesList = new List<List<int>>();
@@ -201,19 +183,6 @@ namespace Scripts
 
             return activeHolderIndicatorIndexesList;
         }
-
-        public List<int> GetLockedCardIndexes()
-        {
-            List<int> lockedCardIndexes = new List<int>();
-            for(int i = 0; i < _normalCardItemControllerList.Count; i++)
-            {
-                if (_normalCardItemControllerList[i].IsLocked())
-                {
-                    lockedCardIndexes.Add(i);
-                }
-            }
-            return lockedCardIndexes;
-        }
     }
     
     public interface IInitialCardAreaController
@@ -222,9 +191,7 @@ namespace Scripts
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
             ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController);
 
-        List<ProbabilityType> GetProbabilityTypes();
         List<List<int>> GetActiveHolderIndicatorIndexesList();
-        List<int> GetLockedCardIndexes();
     }
     
     public class CardItemData
@@ -235,8 +202,8 @@ namespace Scripts
         public Action<bool, int> onCardSelected;
         public CardItemType cardItemType;
         public int cardNumber;
-        public ProbabilityType initialProbabilityType;
-        public bool isLocked;
+        public ProbabilityType initialProbabilityType; //delete it
+        public bool isLocked; //delete it.
     }
 
     public enum CardItemType
