@@ -13,12 +13,13 @@ namespace Scripts
         private IGlowingLevelEndPopupView _glowingView;
         private ILevelTracker _levelTracker;
         private ICircleProgressBarController _circleProgressBarController;
-        
-        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args)
+        private IFadePanelController _fadePanelController;
+        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController)
         {
             _view = view;
             _glowingView = glowingView;
             _levelTracker = args.levelTracker;
+            _fadePanelController = fadePanelController;
             _view.Init(new StarImageViewFactory(), new PlayButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
@@ -42,7 +43,9 @@ namespace Scripts
 
             Sequence animationSequence = DOTween.Sequence();
 
-            animationSequence.AppendInterval(0.6f)
+            animationSequence.AppendInterval(0.4f)
+                .Append(_fadePanelController.GetFadeImage().DOFade(0.95f, 0.5f))
+                .AppendInterval(0.3f)
             .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
             .AppendInterval(1f)
             .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
@@ -133,6 +136,6 @@ namespace Scripts
 
     public interface ILevelEndPopupController
     {
-        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args);
+        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController);
     }
 }

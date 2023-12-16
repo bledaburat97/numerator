@@ -133,6 +133,7 @@ namespace Scripts
                 .Append(_view.GetProgressTween(1f, 0.5f))
                 .AppendCallback(_view.ActivateWildParticle)
                 .AppendInterval(1f)
+                //.AppendCallback(_view.DeactivateWildParticle)
                 .AppendCallback(ResetCircleProgressBar)
                 .OnComplete(onComplete.Invoke);
         }

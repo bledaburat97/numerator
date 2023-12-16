@@ -22,6 +22,11 @@ namespace Scripts
             _nonGlowView.SetFadeImageStatus(status);
         }
 
+        public Image GetFadeImage()
+        {
+            return _view.GetFadeImage();
+        }
+
         public void SetMaskedFadeImageStatus(bool status)
         {
             _maskedFadeView.SetFadeImageStatus(status);
@@ -31,6 +36,11 @@ namespace Scripts
         {
             return _nonGlowView.GetFadeImage();
         }
+
+        public void SetFadeImageAlpha(float alpha)
+        {
+            _view.SetAlpha(alpha);
+        }
     }
 
     public interface IFadePanelController
@@ -39,5 +49,7 @@ namespace Scripts
         void SetFadeImageStatus(bool status);
         void SetMaskedFadeImageStatus(bool status);
         Image GetMaskedFadePanelImage();
+        Image GetFadeImage();
+        void SetFadeImageAlpha(float alpha);
     }
 }

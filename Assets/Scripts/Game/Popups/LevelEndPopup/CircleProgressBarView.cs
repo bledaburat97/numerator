@@ -54,6 +54,11 @@ namespace Scripts
             particle.gameObject.SetActive(true);
             particle.Play();
         }
+
+        public void DeactivateWildParticle()
+        {
+            particle.Stop();
+        }
     }
 
     public interface ICircleProgressBarView
@@ -64,5 +69,6 @@ namespace Scripts
         Tween GetProgressTween(float targetPercentage, float duration);
         void SetProgress(float targetPercentage);
         void ActivateWildParticle();
+        void DeactivateWildParticle();
     }
 }

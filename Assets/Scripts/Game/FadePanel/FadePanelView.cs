@@ -15,11 +15,19 @@ namespace Scripts
         {
             return fadeImage;
         }
+
+        public void SetAlpha(float alpha)
+        {
+            Color color = fadeImage.color;
+            color.a = alpha;
+            fadeImage.color = color;
+        }
     }
 
     public interface IFadePanelView
     {
         void SetFadeImageStatus(bool status);
         Image GetFadeImage();
+        void SetAlpha(float alpha);
     }
 }

@@ -34,11 +34,12 @@ namespace Scripts
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
         {
             _fadePanelController.SetFadeImageStatus(true);
+            _fadePanelController.SetFadeImageAlpha(0f);
             glowSystem.SetActive(true);
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args);
+            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)
