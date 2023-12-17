@@ -12,7 +12,8 @@ namespace Scripts
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
         [SerializeField] private ParticleSystem particleSystemPrefab;
-        
+        [SerializeField] private ParticleSystem wildParticle;
+
         private StarImageViewFactory _starImageViewFactory;
         private PlayButtonViewFactory _playButtonViewFactory;
 
@@ -87,6 +88,12 @@ namespace Scripts
             _particleList[index].gameObject.SetActive(true);
             _particleList[index].Play();
         }
+        
+        public void ActivateWildParticle()
+        {
+            wildParticle.gameObject.SetActive(true);
+            wildParticle.Play();
+        }
     }
     
     public interface ILevelEndPopupView
@@ -99,6 +106,7 @@ namespace Scripts
         EndGameAnimationModel GetAnimationModel();
         void CreateParticles(List<Vector2> localPositions);
         void ActivateParticle(int index);
+        void ActivateWildParticle();
     }
     
     public class EndGameAnimationModel

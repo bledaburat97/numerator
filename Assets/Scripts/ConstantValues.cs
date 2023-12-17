@@ -24,6 +24,7 @@ namespace Scripts
         public static Color BOARD_CARD_HOLDER_COLOR = HexToColor("#D65865");
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
         public static Color SELECTED_LEVEL_BUTTON_COLOR = HexToColor("#5F6DA6");
+        public static int NUM_OF_STARS_FOR_WILD = 6;
         
         public static Dictionary<ProbabilityType, Color> GetProbabilityTypeToColorMapping()
         {

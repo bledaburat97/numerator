@@ -7,16 +7,11 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private StarImageView starImagePrefab;
         private StarImageViewFactory _starImageViewFactory;
-        [SerializeField] private RectTransform wildCardHolder;
-        [SerializeField] private RectTransform tempWildCardHolder;
         [SerializeField] private RectTransform starHolder;
-        [SerializeField] private WildCardItemView wildCardItemPrefab;
-        private WildCardItemViewFactory _wildCardItemViewFactory;
         
-        public void Init(StarImageViewFactory starImageViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
+        public void Init(StarImageViewFactory starImageViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
-            _wildCardItemViewFactory = wildCardItemViewFactory;
         }
         
         public IStarImageView CreateStarImage()
@@ -29,23 +24,14 @@ namespace Scripts
             return rectTransform;
         }
         
-        public IWildCardItemView CreateWildCardImage()
-        {
-            return _wildCardItemViewFactory.Spawn(wildCardHolder, wildCardItemPrefab);
-        }
+
         
-        public RectTransform GetTempWildCardHolder()
-        {
-            return tempWildCardHolder;
-        }
     }
 
     public interface IGlowingCircleProgressBarView
     {
-        void Init(StarImageViewFactory starImageViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
+        void Init(StarImageViewFactory starImageViewFactory);
         IStarImageView CreateStarImage();
         RectTransform GetRectTransform();
-        IWildCardItemView CreateWildCardImage();
-        RectTransform GetTempWildCardHolder();
     }
 }

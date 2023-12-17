@@ -14,6 +14,8 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private ICircleProgressBarController _circleProgressBarController;
         private IFadePanelController _fadePanelController;
+        private IWildCardItemView _wildCardItemView;
+
         public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController)
         {
             _view = view;
@@ -21,10 +23,9 @@ namespace Scripts
             _levelTracker = args.levelTracker;
             _fadePanelController = fadePanelController;
             _view.Init(new StarImageViewFactory(), new PlayButtonViewFactory());
-            _glowingView.Init(new StarImageViewFactory());
+            _glowingView.Init(new StarImageViewFactory(), new WildCardItemViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreateCircleProgressBarController();
-            CreateInitialStars();
             if (args.isLevelCompleted)
             {
                 int oldStarCount = args.oldStarCount > args.starCount ? args.starCount : args.oldStarCount;
@@ -50,9 +51,30 @@ namespace Scripts
             .AppendInterval(1f)
             .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
             .AppendInterval(0.3f)
-            .AppendCallback(() => _circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
-            .AppendInterval(0.6f)
+            .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
+            .AppendInterval(0.2f)
+                .Append(TryCreateWildCard())
+                .AppendCallback(() => _circleProgressBarController.CreateInitialStars())
             .Append(AnimateButtons(model));
+        }
+
+        private Sequence TryCreateWildCard()
+        {
+            if ( _circleProgressBarController.GetCurrentStarCount() < ConstantValues.NUM_OF_STARS_FOR_WILD)
+            {
+                return DOTween.Sequence();
+            }
+            
+            _wildCardItemView = _glowingView.CreateWildCardImage();
+            _wildCardItemView.SetLocalScale(Vector3.zero);
+            _wildCardItemView.SetLocalPosition(Vector3.zero, 0f);
+
+            return DOTween.Sequence().Append(DOTween.Sequence().AppendInterval(0.5f).Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5 / 3f, 1.5f)))
+                .Join(DOTween.Sequence().AppendInterval(1f)
+                    .Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)))
+                .Join(DOTween.Sequence().AppendCallback(_view.ActivateWildParticle))
+                .AppendInterval(0.5f)
+                .OnComplete(_wildCardItemView.Destroy);
         }
 
         private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews)
@@ -81,12 +103,8 @@ namespace Scripts
         private void CreateCircleProgressBarController()
         {
             _circleProgressBarController = new CircleProgressBarController();
-            _circleProgressBarController.Initialize(_view.CreateCircleProgressBar(), _glowingView.CreateGlowingCircleProgressBar());
-        }
-
-        private void CreateInitialStars()
-        {
-            _circleProgressBarController.CreateInitialStars(_levelTracker.GetStarCount());
+            _circleProgressBarController.Initialize(_view.CreateCircleProgressBar(), _glowingView.CreateGlowingCircleProgressBar(), _levelTracker);
+            _circleProgressBarController.CreateInitialStars();
         }
         
         private void CreateStars(int numOfStars, int numOfOldStars)

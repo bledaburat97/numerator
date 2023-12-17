@@ -1,5 +1,4 @@
-﻿using System;
-using DG.Tweening;
+﻿using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,7 +12,6 @@ namespace Scripts
         [SerializeField] private Image image;
         private Tween _currentTween;
         private float _currentPercentage;
-        [SerializeField] private ParticleSystem particle;
         
         public void Init(StarImageViewFactory starImageViewFactory)
         {
@@ -48,17 +46,6 @@ namespace Scripts
             image.fillAmount = targetPercentage;
             _currentPercentage = targetPercentage;
         }
-        
-        public void ActivateWildParticle()
-        {
-            particle.gameObject.SetActive(true);
-            particle.Play();
-        }
-
-        public void DeactivateWildParticle()
-        {
-            particle.Stop();
-        }
     }
 
     public interface ICircleProgressBarView
@@ -68,7 +55,5 @@ namespace Scripts
         RectTransform GetRectTransform();
         Tween GetProgressTween(float targetPercentage, float duration);
         void SetProgress(float targetPercentage);
-        void ActivateWildParticle();
-        void DeactivateWildParticle();
     }
 }

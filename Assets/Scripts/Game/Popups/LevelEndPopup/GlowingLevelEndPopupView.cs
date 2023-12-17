@@ -10,17 +10,22 @@ namespace Scripts
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private GlowingCircleProgressBarView glowingCircleProgressBar;
         [SerializeField] private TMP_Text title;
-
+        [SerializeField] private RectTransform wildCardHolder;
+        [SerializeField] private WildCardItemView wildCardItemPrefab;
+        private WildCardItemViewFactory _wildCardItemViewFactory;
+        
         private StarImageViewFactory _starImageViewFactory;
         
         private List<IStarImageView> _glowingStarImageList;
         
-        public void Init(StarImageViewFactory starImageViewFactory)
+        public void Init(StarImageViewFactory starImageViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
             _glowingStarImageList = new List<IStarImageView>();
+            _wildCardItemViewFactory = wildCardItemViewFactory;
+
         }
         
         public void CreateStarImage(Vector2 localPosition, Vector2 size)
@@ -55,17 +60,22 @@ namespace Scripts
         {
             return title.rectTransform;
         }
+        
+        public IWildCardItemView CreateWildCardImage()
+        {
+            return _wildCardItemViewFactory.Spawn(wildCardHolder, wildCardItemPrefab);
+        }
     }
 
     public interface IGlowingLevelEndPopupView
     {
-        void Init(StarImageViewFactory starImageViewFactory);
+        void Init(StarImageViewFactory starImageViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
         void CreateStarImage(Vector2 localPosition, Vector2 size);
         IGlowingCircleProgressBarView CreateGlowingCircleProgressBar();
         GlowingEndGameAnimationModel GetGlowingAnimationModel();
         void SetTitle(string text);
         RectTransform GetTitle();
-
+        IWildCardItemView CreateWildCardImage();
     }
 
     public class GlowingEndGameAnimationModel

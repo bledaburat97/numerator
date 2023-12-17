@@ -12,28 +12,26 @@ namespace Scripts
         private int _currentStarCount;
         private List<IStarImageView> _starFrameViewList;
         private List<IStarImageView> _glowingStarImageViewList;
-        private IWildCardItemView _wildCardItemView;
-        private static int NUM_OF_STARS_FOR_WILD = 6;
         
-        public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView)
+        
+        public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker)
         {
             _view = view;
             _glowingView = glowingView;
             _view.Init(new StarImageViewFactory());
-            _glowingView.Init(new StarImageViewFactory(), new WildCardItemViewFactory());
+            _glowingView.Init(new StarImageViewFactory());
             _starFrameViewList = new List<IStarImageView>();
             _glowingStarImageViewList = new List<IStarImageView>();
+            _currentStarCount = levelTracker.GetStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
             CreateStarFrames();
-            ResetCircleProgressBar();
-            CreateNewWildCard();
         }
         
         private void CreateStarFrames()
         {
-            for (int i = 0; i < NUM_OF_STARS_FOR_WILD; i++)
+            for (int i = 0; i < ConstantValues.NUM_OF_STARS_FOR_WILD; i++)
             {
                 float startingAngle = 90f;
-                float angle = startingAngle - i * (360f / NUM_OF_STARS_FOR_WILD);
+                float angle = startingAngle - i * (360f / ConstantValues.NUM_OF_STARS_FOR_WILD);
                 float radians = Mathf.Deg2Rad * angle;
                 float radius = _view.GetRectTransform().sizeDelta.x / 2 - 1;
                 float x = radius * Mathf.Cos(radians);
@@ -47,28 +45,22 @@ namespace Scripts
                 _starFrameViewList.Add(starImageView);
             }
         }
-        
-        private void ResetCircleProgressBar()
+
+        public int GetCurrentStarCount()
         {
+            return _currentStarCount;
+        }
+
+        public void CreateInitialStars()
+        {
+            _currentStarCount = _currentStarCount % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            
             foreach (IStarImageView glowingStarImageView in _glowingStarImageViewList)
             {
                 glowingStarImageView.Destroy();
             }
-            _view.SetProgress(0f);
-        }
-
-        private void CreateNewWildCard()
-        {
-            _wildCardItemView = _glowingView.CreateWildCardImage();
-            _wildCardItemView.InitLocalScale();
-            _wildCardItemView.SetLocalPosition(Vector3.zero, 0f);
-        }
-
-        public void CreateInitialStars(int numOfStars)
-        {
-            int numOfInitialStars = numOfStars % NUM_OF_STARS_FOR_WILD;
             
-            for (int i = 0; i < numOfInitialStars; i++)
+            for (int i = 0; i < _currentStarCount; i++)
             {
                 IStarImageView glowingStarImageView = _glowingView.CreateStarImage();
                 glowingStarImageView.SetLocalPosition(_starFrameViewList[i].GetRectTransform().localPosition);
@@ -77,85 +69,57 @@ namespace Scripts
                 _glowingStarImageViewList.Add(glowingStarImageView);
             }
 
-            if (numOfInitialStars >= 2)
+            if (_currentStarCount >= 2)
             {
-                _view.SetProgress((float)(numOfInitialStars - 1) / NUM_OF_STARS_FOR_WILD);
-            }
-
-            _currentStarCount = numOfInitialStars;
-        }
-
-        public void AddNewStars(List<IStarImageView> newStars)
-        {
-            int newStarIndex = 0;
-            AnimateStar();
-            
-            void AnimateStar()
-            {
-                if (newStarIndex >= newStars.Count)
-                {
-                    if (_currentStarCount >= NUM_OF_STARS_FOR_WILD)
-                    {
-                        MoveWildCard();
-                    }
-                    
-                    return;
-                }
-                
-                IStarImageView animatedStar = _glowingView.CreateStarImage();
-                animatedStar.SetParent(newStars[newStarIndex].GetRectTransform());
-                animatedStar.SetLocalPosition(Vector2.zero);
-                animatedStar.SetLocalScale(Vector3.one);
-                animatedStar.SetSize(new Vector2(70f, 70f));
-                
-                _glowingStarImageViewList.Add(animatedStar);
-                newStarIndex++;
-                _currentStarCount += 1;
-
-                RectTransform targetInCircle = _starFrameViewList[(_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD].GetRectTransform();
-                animatedStar.SetParent(_glowingView.GetRectTransform());
-                RectTransform animatedStarTransform = animatedStar.GetRectTransform();
-                float scaleRatio = targetInCircle.sizeDelta.x / animatedStarTransform.sizeDelta.x;
-                
-                Action onCompleteAction = _currentStarCount % NUM_OF_STARS_FOR_WILD == 0 ? () => ResetAnimation(AnimateStar) : AnimateStar;
-                
-                DOTween.Sequence().Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 0.5f).SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
-                    .Join(animatedStar.GetRectTransform().DOLocalMoveX(targetInCircle.localPosition.x, 0.5f).SetEase(animatedStar.GetCurvedAnimationPreset().horizontalPositionCurve))
-                    .Join(animatedStar.GetRectTransform().DOLocalMoveY(targetInCircle.localPosition.y, 0.5f).SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
-                    .Join(_view.GetProgressTween((float)((_currentStarCount - 1) % NUM_OF_STARS_FOR_WILD) / NUM_OF_STARS_FOR_WILD, 0.5f))
-                    .OnComplete(onCompleteAction.Invoke);
+                _view.SetProgress((float)(_currentStarCount - 1) / ConstantValues.NUM_OF_STARS_FOR_WILD);
             }
         }
 
-        private void ResetAnimation(Action onComplete)
+        public Sequence AddNewStars(List<IStarImageView> newStars)
         {
-            DOTween.Sequence()
-                .Append(_view.GetProgressTween(1f, 0.5f))
-                .AppendCallback(_view.ActivateWildParticle)
-                .AppendInterval(1f)
-                //.AppendCallback(_view.DeactivateWildParticle)
-                .AppendCallback(ResetCircleProgressBar)
-                .OnComplete(onComplete.Invoke);
+            return DOTween.Sequence()
+                .Append(GetNewStarAnimation(newStars.Count >= 1 ? newStars[0] : null))
+                    .Append(GetNewStarAnimation(newStars.Count >= 2 ? newStars[1] : null))
+                    .Append(GetNewStarAnimation(newStars.Count == 3 ? newStars[2] : null));
+        }
+
+        private Sequence GetNewStarAnimation(IStarImageView newStar)
+        {
+            if (newStar == null) return DOTween.Sequence();
+            IStarImageView animatedStar = _glowingView.CreateStarImage();
+            animatedStar.SetParent(newStar.GetRectTransform());
+            animatedStar.SetLocalPosition(Vector2.zero);
+            animatedStar.SetLocalScale(Vector3.one);
+            animatedStar.SetSize(new Vector2(70f, 70f));
+            _glowingStarImageViewList.Add(animatedStar);
+            _currentStarCount += 1;
+            RectTransform targetInCircle = _starFrameViewList[(_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD].GetRectTransform();
+            animatedStar.SetParent(_glowingView.GetRectTransform());
+            RectTransform animatedStarTransform = animatedStar.GetRectTransform();
+            float scaleRatio = targetInCircle.sizeDelta.x / animatedStarTransform.sizeDelta.x;
+
+            return DOTween.Sequence().Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 0.5f)
+                    .SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
+                .Join(animatedStar.GetRectTransform().DOLocalMoveX(targetInCircle.localPosition.x, 0.5f)
+                    .SetEase(animatedStar.GetCurvedAnimationPreset().horizontalPositionCurve))
+                .Join(animatedStar.GetRectTransform().DOLocalMoveY(targetInCircle.localPosition.y, 0.5f)
+                    .SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
+                .Join(_currentStarCount - 1 > ConstantValues.NUM_OF_STARS_FOR_WILD
+                    ? DOTween.Sequence()
+                    : _view.GetProgressTween(
+                        (float)((_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD) / ConstantValues.NUM_OF_STARS_FOR_WILD, 0.5f))
+                .Append(_currentStarCount == ConstantValues.NUM_OF_STARS_FOR_WILD
+                    ? _view.GetProgressTween(1f, 0.1f)
+                    : DOTween.Sequence());
         }
         
-        private void MoveWildCard()
-        {
-            _wildCardItemView.SetParent(_glowingView.GetTempWildCardHolder());
-            Action onComplete = _wildCardItemView.Destroy;
-            onComplete += CreateNewWildCard;
-            
-            DOTween.Sequence().Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5/3f, 1.5f))
-                .Join(DOTween.Sequence().AppendInterval(0.5f).Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)))
-                .AppendInterval(0.5f)
-                .Append(_wildCardItemView.GetCanvasGroup().DOFade(0f, 1f))
-                .OnComplete(onComplete.Invoke);
-        }
     }
 
     public interface ICircleProgressBarController
     {
-        void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView);
-        void CreateInitialStars(int numOfStars);
-        void AddNewStars(List<IStarImageView> newStars);
+        void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker);
+        void CreateInitialStars();
+        Sequence AddNewStars(List<IStarImageView> newStars);
+        int GetCurrentStarCount();
     }
 }

@@ -34,6 +34,11 @@ namespace Scripts
         {
             return canvasGroup;
         }
+
+        public void SetLocalScale(Vector3 localScale)
+        {
+            transform.localScale = localScale;
+        }
     }
 
     public interface IWildCardItemView : IDraggableCardItemView
@@ -42,5 +47,6 @@ namespace Scripts
         void SetLocalPositionGap(int cardItemIndex);
         RectTransform GetRectTransform();
         CanvasGroup GetCanvasGroup();
+        void SetLocalScale(Vector3 localScale);
     }
 }
