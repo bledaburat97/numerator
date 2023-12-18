@@ -46,6 +46,7 @@ namespace Scripts
 
             animationSequence.AppendInterval(0.4f)
                 .Append(_fadePanelController.GetFadeImage().DOFade(0.95f, 0.5f))
+                .AppendCallback(() => SetLocalScaleOfOldStars(model.starImageViewList))
                 .AppendInterval(0.2f)
                 .Append(_circleProgressBarController.MoveCircleProgressBar(0.8f))
                 .AppendInterval(0.1f)
@@ -56,6 +57,14 @@ namespace Scripts
                 .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
                 .AppendInterval(0.2f)
                 .Append(TryCreateWildCard(model));
+        }
+
+        private void SetLocalScaleOfOldStars(List<IStarImageView> oldStarImageViews)
+        {
+            foreach (IStarImageView starImage in oldStarImageViews)
+            {
+                starImage.SetLocalScale(Vector3.one);
+            }
         }
 
         private Sequence TryCreateWildCard(EndGameAnimationModel model)

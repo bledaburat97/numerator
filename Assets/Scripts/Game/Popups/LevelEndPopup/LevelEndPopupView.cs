@@ -64,7 +64,7 @@ namespace Scripts
         {
             IStarImageView starImageView = _starImageViewFactory.Spawn(starHolder, starImagePrefab);
             starImageView.SetLocalPosition(localPosition);
-            starImageView.SetLocalScale(Vector3.one);
+            starImageView.SetLocalScale(Vector3.zero);
             starImageView.SetSize(size);
             _starImageList.Add(starImageView);
         }

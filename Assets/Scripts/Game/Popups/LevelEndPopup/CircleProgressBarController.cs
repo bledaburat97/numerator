@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
@@ -73,6 +72,10 @@ namespace Scripts
             if (_currentStarCount >= 2)
             {
                 _view.SetProgress((float)(_currentStarCount - 1) / ConstantValues.NUM_OF_STARS_FOR_WILD);
+            }
+            else
+            {
+                _view.SetProgress(0f);
             }
         }
 
