@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 namespace Scripts
@@ -17,7 +18,7 @@ namespace Scripts
         private IGameSaveService _gameSaveService;
         private ICardItemInfoManager _cardItemInfoManager;
         
-        public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController)
+        public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager)
         {
             _initialCardAreaView = initialCardAreaView;
             _cardHolderModelCreator = cardHolderModelCreator;
@@ -33,6 +34,7 @@ namespace Scripts
             InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
             resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
+            resultManager.BackFlipCorrectCards += BackFlipCorrectCards;
         }
 
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)
@@ -164,13 +166,29 @@ namespace Scripts
                 _normalCardHolderControllerList[i-1].SetLocalPosition(newLocalPositions[i]);
             }
         }
+
+        private void BackFlipCorrectCards(object sender, BackFlipCorrectCardsEventArgs args)
+        {
+            int cardOrder = 0;
+            BackFlipCard();
+
+            void BackFlipCard()
+            {
+                int currentCardOrder = cardOrder;
+                Action onComplete = currentCardOrder == args.finalCardNumbers.Count - 1 ? args.onComplete : BackFlipCard;
+                int cardIndex = args.finalCardNumbers[currentCardOrder] - 1;
+                cardOrder++;
+                DOTween.Sequence().Append(_normalCardItemControllerList[cardIndex].BackFlipAnimation())
+                    .OnComplete(() => onComplete.Invoke());
+            }          
+        }
     }
     
     public interface IInitialCardAreaController
     {
         void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator,
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
-            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController);
+            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager);
 
     }
     

@@ -7,6 +7,7 @@ namespace Scripts
     {
         [SerializeField] private Image lockImage;
         [SerializeField] private Animator animator;
+        [SerializeField] private Image backImage;
         private const string IsSelected = "IsSelected";
 
         public void SetColor(Color color)
@@ -24,6 +25,27 @@ namespace Scripts
         {
             animator.SetBool(IsSelected, isSelected);
         }
+
+        public RectTransform GetRectTransform()
+        {
+            return rectTransform;
+        }
+
+        public void SetBackImageStatus(bool status)
+        {
+            backImage.gameObject.SetActive(status);
+        }
+
+        public void SetTextStatus(bool status)
+        {
+            cardNumberText.gameObject.SetActive(status);
+        }
+
+        public void SetNewAnchoredPositionOfRotatedImage()
+        {
+            innerBGImage.rectTransform.offsetMin = new Vector2(4.8f, 0f);
+            innerBGImage.rectTransform.offsetMax = new Vector2(4.8f, 0f);
+        }
     }
 
     public interface INormalCardItemView : IDraggableCardItemView
@@ -31,5 +53,9 @@ namespace Scripts
         void SetColor(Color color);
         void SetLockImageStatus(bool status);
         void SetSelectionStatus(bool isSelected);
+        RectTransform GetRectTransform();
+        void SetBackImageStatus(bool status);
+        void SetTextStatus(bool status);
+        void SetNewAnchoredPositionOfRotatedImage();
     }
 }

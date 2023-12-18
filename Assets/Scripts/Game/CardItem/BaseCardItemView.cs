@@ -20,9 +20,9 @@ namespace Scripts
             SetFrameStatus(false);
         }
 
-        public virtual void SetLocalPosition(Vector3 localPosition, float duration)
+        public virtual Sequence SetLocalPosition(Vector3 localPosition, float duration)
         {
-            DOTween.Sequence().Append(rectTransform.DOLocalMove(localPosition, duration)).SetEase(Ease.OutQuad);
+            return DOTween.Sequence().Append(rectTransform.DOLocalMove(localPosition, duration)).SetEase(Ease.OutQuad);
         }
 
         public void InitLocalScale()
@@ -52,6 +52,6 @@ namespace Scripts
         void InitLocalScale();
         void SetSize(Vector2 size);
         void SetFrameStatus(bool status);
-        void SetLocalPosition(Vector3 localPosition, float duration);
+        Sequence SetLocalPosition(Vector3 localPosition, float duration);
     }
 }

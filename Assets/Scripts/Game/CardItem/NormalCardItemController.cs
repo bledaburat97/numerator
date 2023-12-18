@@ -1,4 +1,5 @@
 ﻿using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 namespace Scripts
@@ -178,6 +179,20 @@ namespace Scripts
             _view.SetLockImageStatus(isLocked);
             _isSelectable = !isLocked;
         }
+
+        public Sequence BackFlipAnimation()
+        {
+            return DOTween.Sequence()
+                .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.5f))
+                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.3f))
+                .AppendCallback(() => SetColor(ProbabilityType.Certain))
+                .AppendCallback(() => _view.SetTextStatus(false))
+                .AppendCallback(() => _view.SetLockImageStatus(false))
+                .AppendCallback(() => _view.SetBackImageStatus(true))
+                .AppendCallback(() => _view.SetNewAnchoredPositionOfRotatedImage())
+                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.3f))
+                .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.2f).SetEase(Ease.OutBounce));
+        }
         
     }
 
@@ -187,5 +202,6 @@ namespace Scripts
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
+        Sequence BackFlipAnimation();
     }
 }

@@ -13,6 +13,7 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         public event EventHandler<ResultBlockModel> ResultBlockAddition;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
+        public event EventHandler<BackFlipCorrectCardsEventArgs> BackFlipCorrectCards;
         
         public void Initialize(ILevelTracker levelTracker)
         {
@@ -71,9 +72,13 @@ namespace Scripts
         {
             if (numOfCorrectPos == _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders)
             {
-                NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
+                BackFlipCorrectCards.Invoke(this, new BackFlipCorrectCardsEventArgs()
                 {
-                    isGuessRight = true,
+                    finalCardNumbers = finalCards,
+                    onComplete = () => NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
+                    {
+                        isGuessRight = true,
+                    })
                 });
             }
             else
@@ -129,6 +134,12 @@ namespace Scripts
     {
         public bool isGuessRight;
     }
+    
+    public class BackFlipCorrectCardsEventArgs : EventArgs
+    {
+        public List<int> finalCardNumbers;
+        public Action onComplete;
+    }
 
     public interface IResultManager
     {
@@ -139,5 +150,6 @@ namespace Scripts
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         List<List<int>> GetTriedCardsList();
         List<int> GetTargetCards();
+        event EventHandler<BackFlipCorrectCardsEventArgs> BackFlipCorrectCards;
     }
 }
