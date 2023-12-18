@@ -15,11 +15,17 @@ namespace Scripts
         {
             return canvasGroup;
         }
+        
+        public void Destroy()
+        {
+            Destroy(gameObject);
+        }
     }
 
     public interface IPlayButtonView : IBaseButtonView
     {
         void SetAlpha(float alpha);
         CanvasGroup GetCanvasGroup();
+        void Destroy();
     }
 }

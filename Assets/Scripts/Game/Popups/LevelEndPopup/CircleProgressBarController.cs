@@ -13,7 +13,6 @@ namespace Scripts
         private List<IStarImageView> _starFrameViewList;
         private List<IStarImageView> _glowingStarImageViewList;
         
-        
         public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker)
         {
             _view = view;
@@ -24,6 +23,8 @@ namespace Scripts
             _glowingStarImageViewList = new List<IStarImageView>();
             _currentStarCount = levelTracker.GetStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
             CreateStarFrames();
+            _view.SetLocalPosition(new Vector2(0,450f));
+            _glowingView.SetLocalPosition(new Vector2(0,450f));
         }
         
         private void CreateStarFrames()
@@ -83,28 +84,37 @@ namespace Scripts
                     .Append(GetNewStarAnimation(newStars.Count == 3 ? newStars[2] : null));
         }
 
+        public Sequence MoveCircleProgressBar(float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetRectTransform().DOLocalMoveY(250f, duration)).SetEase(Ease.InQuad)
+                .Join(_glowingView.GetRectTransform().DOLocalMoveY(250f, duration)).SetEase(Ease.InQuad);
+        }
+
         private Sequence GetNewStarAnimation(IStarImageView newStar)
         {
             if (newStar == null) return DOTween.Sequence();
             IStarImageView animatedStar = _glowingView.CreateStarImage();
+
+
             animatedStar.SetParent(newStar.GetRectTransform());
             animatedStar.SetLocalPosition(Vector2.zero);
-            animatedStar.SetLocalScale(Vector3.one);
             animatedStar.SetSize(new Vector2(70f, 70f));
             _glowingStarImageViewList.Add(animatedStar);
             _currentStarCount += 1;
             RectTransform targetInCircle = _starFrameViewList[(_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD].GetRectTransform();
-            animatedStar.SetParent(_glowingView.GetRectTransform());
             RectTransform animatedStarTransform = animatedStar.GetRectTransform();
             float scaleRatio = targetInCircle.sizeDelta.x / animatedStarTransform.sizeDelta.x;
 
-            return DOTween.Sequence().Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 0.5f)
+
+            return DOTween.Sequence().AppendCallback(() => animatedStar.SetLocalScale(Vector3.one))
+                .AppendCallback(() => animatedStar.SetParent(_glowingView.GetRectTransform()))
+                .Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 0.5f)
                     .SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
                 .Join(animatedStar.GetRectTransform().DOLocalMoveX(targetInCircle.localPosition.x, 0.5f)
                     .SetEase(animatedStar.GetCurvedAnimationPreset().horizontalPositionCurve))
                 .Join(animatedStar.GetRectTransform().DOLocalMoveY(targetInCircle.localPosition.y, 0.5f)
                     .SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
-                .Join(_currentStarCount - 1 > ConstantValues.NUM_OF_STARS_FOR_WILD
+                .Join(_currentStarCount > ConstantValues.NUM_OF_STARS_FOR_WILD
                     ? DOTween.Sequence()
                     : _view.GetProgressTween(
                         (float)((_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD) / ConstantValues.NUM_OF_STARS_FOR_WILD, 0.5f))
@@ -121,5 +131,6 @@ namespace Scripts
         void CreateInitialStars();
         Sequence AddNewStars(List<IStarImageView> newStars);
         int GetCurrentStarCount();
+        Sequence MoveCircleProgressBar(float duration);
     }
 }

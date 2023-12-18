@@ -46,35 +46,46 @@ namespace Scripts
 
             animationSequence.AppendInterval(0.4f)
                 .Append(_fadePanelController.GetFadeImage().DOFade(0.95f, 0.5f))
+                .AppendInterval(0.2f)
+                .Append(_circleProgressBarController.MoveCircleProgressBar(0.8f))
+                .AppendInterval(0.1f)
+                .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
+                .AppendInterval(0.5f)
+                .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
                 .AppendInterval(0.3f)
-            .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
-            .AppendInterval(1f)
-            .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
-            .AppendInterval(0.3f)
-            .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
-            .AppendInterval(0.2f)
-                .Append(TryCreateWildCard())
-                .AppendCallback(() => _circleProgressBarController.CreateInitialStars())
-            .Append(AnimateButtons(model));
+                .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
+                .AppendInterval(0.2f)
+                .Append(TryCreateWildCard(model));
         }
 
-        private Sequence TryCreateWildCard()
+        private Sequence TryCreateWildCard(EndGameAnimationModel model)
         {
             if ( _circleProgressBarController.GetCurrentStarCount() < ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
-                return DOTween.Sequence();
+                return DOTween.Sequence().Append(AnimateButtons(model));
             }
             
             _wildCardItemView = _glowingView.CreateWildCardImage();
             _wildCardItemView.SetLocalScale(Vector3.zero);
             _wildCardItemView.SetLocalPosition(Vector3.zero, 0f);
-
-            return DOTween.Sequence().Append(DOTween.Sequence().AppendInterval(0.5f).Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5 / 3f, 1.5f)))
+            Action onClickClaim = _wildCardItemView.Destroy;
+            onClickClaim += () => DOTween.Sequence().AppendInterval(0.2f)
+                .AppendCallback(() => _circleProgressBarController.CreateInitialStars())
+                .AppendCallback(() => _view.SetStarGroupStatus(true))
+                .AppendCallback(() => _glowingView.SetStarGroupStatus(true))
+                .Append(AnimateButtons(model));
+            
+            CreateClaimButton(onClickClaim);
+            return DOTween.Sequence()
+                .Append(DOTween.Sequence().AppendInterval(0.4f)
+                    .Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5 / 3f, 1.6f))).SetEase(Ease.OutQuad)
                 .Join(DOTween.Sequence().AppendInterval(1f)
                     .Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)))
                 .Join(DOTween.Sequence().AppendCallback(_view.ActivateWildParticle))
+                .Join(_view.GetStarGroup().DOFade(0f, 0.6f))
+                .Join(_glowingView.GetStarGroup().DOFade(0f, 0.6f))
                 .AppendInterval(0.5f)
-                .OnComplete(_wildCardItemView.Destroy);
+                .Append(_view.GetClaimButtonView().GetCanvasGroup().DOFade(1f, 0.3f));
         }
 
         private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews)
@@ -147,6 +158,16 @@ namespace Scripts
                 localPosition = isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f),
                 text = "Retry",
                 OnClick = onClick
+            });
+        }
+        
+        private void CreateClaimButton(Action onClickClaim)
+        {
+            _view.CreateClaimButton(new BaseButtonModel()
+            {
+                localPosition = new Vector2(0, -170f),
+                text = "Claim",
+                OnClick = onClickClaim
             });
         }
         

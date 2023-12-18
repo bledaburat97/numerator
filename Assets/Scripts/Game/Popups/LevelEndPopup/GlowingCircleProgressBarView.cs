@@ -24,8 +24,10 @@ namespace Scripts
             return rectTransform;
         }
         
-
-        
+        public void SetLocalPosition(Vector2 localPosition)
+        {
+            transform.localPosition = localPosition;
+        }
     }
 
     public interface IGlowingCircleProgressBarView
@@ -33,5 +35,6 @@ namespace Scripts
         void Init(StarImageViewFactory starImageViewFactory);
         IStarImageView CreateStarImage();
         RectTransform GetRectTransform();
+        void SetLocalPosition(Vector2 localPosition);
     }
 }

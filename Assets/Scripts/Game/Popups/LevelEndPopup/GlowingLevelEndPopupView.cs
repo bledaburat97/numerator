@@ -12,6 +12,7 @@ namespace Scripts
         [SerializeField] private TMP_Text title;
         [SerializeField] private RectTransform wildCardHolder;
         [SerializeField] private WildCardItemView wildCardItemPrefab;
+        [SerializeField] private CanvasGroup starGroup;
         private WildCardItemViewFactory _wildCardItemViewFactory;
         
         private StarImageViewFactory _starImageViewFactory;
@@ -65,6 +66,16 @@ namespace Scripts
         {
             return _wildCardItemViewFactory.Spawn(wildCardHolder, wildCardItemPrefab);
         }
+        
+        public void SetStarGroupStatus(bool status)
+        {
+            starGroup.alpha = status ? 1f : 0f;
+        }
+        
+        public CanvasGroup GetStarGroup()
+        {
+            return starGroup;
+        }
     }
 
     public interface IGlowingLevelEndPopupView
@@ -76,6 +87,8 @@ namespace Scripts
         void SetTitle(string text);
         RectTransform GetTitle();
         IWildCardItemView CreateWildCardImage();
+        void SetStarGroupStatus(bool status);
+        CanvasGroup GetStarGroup();
     }
 
     public class GlowingEndGameAnimationModel

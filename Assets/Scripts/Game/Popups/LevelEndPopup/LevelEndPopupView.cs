@@ -13,12 +13,14 @@ namespace Scripts
         [SerializeField] private CircleProgressBarView circleProgressBarView;
         [SerializeField] private ParticleSystem particleSystemPrefab;
         [SerializeField] private ParticleSystem wildParticle;
+        [SerializeField] private CanvasGroup starGroup;
 
         private StarImageViewFactory _starImageViewFactory;
         private PlayButtonViewFactory _playButtonViewFactory;
 
         private IPlayButtonView _playButtonView;
         private IPlayButtonView _retryButtonView;
+        private IPlayButtonView _claimButtonView;
 
         private List<IStarImageView> _starImageList;
         private List<ParticleSystem> _particleList;
@@ -47,6 +49,15 @@ namespace Scripts
             _retryButtonView.Init(model);
             _retryButtonView.InitPosition(model.localPosition);
             _retryButtonView.SetAlpha(0f);
+        }
+
+        public void CreateClaimButton(BaseButtonModel model)
+        {
+            _claimButtonView = _playButtonViewFactory.Spawn(transform, playButtonPrefab);
+            model.OnClick += () => _claimButtonView.Destroy();
+            _claimButtonView.Init(model);
+            _claimButtonView.InitPosition(model.localPosition);
+            _claimButtonView.SetAlpha(0f);
         }
         
         public void CreateStarImage(Vector2 localPosition, Vector2 size)
@@ -79,8 +90,13 @@ namespace Scripts
             {
                 starImageViewList = _starImageList,
                 playButtonView = _playButtonView,
-                retryButtonView = _retryButtonView
+                retryButtonView = _retryButtonView,
             };
+        }
+
+        public IPlayButtonView GetClaimButtonView()
+        {
+            return _claimButtonView;
         }
         
         public void ActivateParticle(int index)
@@ -93,6 +109,16 @@ namespace Scripts
         {
             wildParticle.gameObject.SetActive(true);
             wildParticle.Play();
+        }
+
+        public void SetStarGroupStatus(bool status)
+        {
+            starGroup.alpha = status ? 1f : 0f;
+        }
+
+        public CanvasGroup GetStarGroup()
+        {
+            return starGroup;
         }
     }
     
@@ -107,6 +133,10 @@ namespace Scripts
         void CreateParticles(List<Vector2> localPositions);
         void ActivateParticle(int index);
         void ActivateWildParticle();
+        void SetStarGroupStatus(bool status);
+        void CreateClaimButton(BaseButtonModel model);
+        IPlayButtonView GetClaimButtonView();
+        CanvasGroup GetStarGroup();
     }
     
     public class EndGameAnimationModel

@@ -46,6 +46,11 @@ namespace Scripts
             image.fillAmount = targetPercentage;
             _currentPercentage = targetPercentage;
         }
+
+        public void SetLocalPosition(Vector2 localPosition)
+        {
+            transform.localPosition = localPosition;
+        }
     }
 
     public interface ICircleProgressBarView
@@ -55,5 +60,6 @@ namespace Scripts
         RectTransform GetRectTransform();
         Tween GetProgressTween(float targetPercentage, float duration);
         void SetProgress(float targetPercentage);
+        void SetLocalPosition(Vector2 localPosition);
     }
 }
