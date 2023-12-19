@@ -123,13 +123,13 @@ namespace Scripts
                 new Vector2(40, -73),
                 new Vector2(-40, -73),
                 new Vector2(-120, -66),
-                new Vector2(-85, 25),
-                new Vector2(-10, -8),
-                new Vector2(93, 10),
-                new Vector2(30, 60),
-                new Vector2(-53, 120),
-                new Vector2(53, 130),
-                new Vector2(0, 201)
+                new Vector2(-80, 20),
+                new Vector2(0, 5),
+                new Vector2(80, 20),
+                new Vector2(20, 80),
+                new Vector2(-45, 140),
+                new Vector2(40, 155),
+                new Vector2(0, 228)
             };
             
             /*
