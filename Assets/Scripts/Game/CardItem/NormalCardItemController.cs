@@ -180,9 +180,10 @@ namespace Scripts
             _isSelectable = !isLocked;
         }
 
-        public Sequence BackFlipAnimation()
+        public Sequence BackFlipAnimation(float delayDuration)
         {
             return DOTween.Sequence()
+                .AppendInterval(delayDuration)
                 .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.5f))
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.3f))
                 .AppendCallback(() => SetColor(ProbabilityType.Certain))
@@ -202,6 +203,6 @@ namespace Scripts
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
-        Sequence BackFlipAnimation();
+        Sequence BackFlipAnimation(float delayDuration);
     }
 }

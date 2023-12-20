@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 
@@ -169,18 +170,22 @@ namespace Scripts
 
         private void BackFlipCorrectCards(object sender, BackFlipCorrectCardsEventArgs args)
         {
-            int cardOrder = 0;
-            BackFlipCard();
+            DOTween.Sequence()
+                .AppendCallback(() => 
+                {
+                    for (int i = 0; i < args.finalCardNumbers.Count; i++)
+                    {
+                        int cardIndex = args.finalCardNumbers[i] - 1;
+                        float delay = 0.7f * i;
 
-            void BackFlipCard()
-            {
-                int currentCardOrder = cardOrder;
-                Action onComplete = currentCardOrder == args.finalCardNumbers.Count - 1 ? args.onComplete : BackFlipCard;
-                int cardIndex = args.finalCardNumbers[currentCardOrder] - 1;
-                cardOrder++;
-                DOTween.Sequence().Append(_normalCardItemControllerList[cardIndex].BackFlipAnimation())
-                    .OnComplete(() => onComplete.Invoke());
-            }          
+                        if (cardIndex >= 0 && cardIndex < _normalCardItemControllerList.Count)
+                        {
+                            _normalCardItemControllerList[cardIndex].BackFlipAnimation(delay);
+                        }
+                    }
+                })
+                .AppendInterval(1.5f + 0.7f * (args.finalCardNumbers.Count - 1))
+                .AppendCallback(() => args.onComplete.Invoke());
         }
     }
     
