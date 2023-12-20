@@ -1,34 +1,33 @@
-﻿using System;
-using TMPro;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class ProbabilityButtonView : MonoBehaviour, IProbabilityButtonView
+    public class ProbabilityButtonView : BaseButtonView, IProbabilityButtonView
     {
-        [SerializeField] private Image image;
-        [SerializeField] private Button button;
-        [SerializeField] private Image frame;
+        [SerializeField] private Image point;
         public void Init(ProbabilityButtonModel model)
         {
             transform.localScale = Vector3.one;
+            innerBgOffsetMin = innerBg.rectTransform.offsetMin;
+            innerBgOffsetMax = innerBg.rectTransform.offsetMax;
             button.onClick.AddListener(() => model.onClickAction.Invoke());
             SetColorOfImage(ConstantValues.GetProbabilityTypeToColorMapping()[model.probabilityType]);
         }
         
         private void SetColorOfImage(Color color)
         {
-            image.color = color;
+            innerBg.color = color;
+            outerBg.color = color;
         }
         
         public void SetFrameStatus(bool status)
         {
-            frame.gameObject.SetActive(status);
+            point.gameObject.SetActive(status);
         }
     }
 
-    public interface IProbabilityButtonView
+    public interface IProbabilityButtonView : IBaseButtonView
     {
         void Init(ProbabilityButtonModel model);
         void SetFrameStatus(bool status);
