@@ -37,7 +37,7 @@ namespace Scripts
         public void SetLevelInfo()
         {
             List<LevelData> levelDataList = LevelDataGetter.GetLevelDataFromJson();
-            LevelData levelData = levelDataList.Find(level => level.LevelId == _levelId % 30);
+            LevelData levelData = levelDataList.Find(level => level.LevelId == _levelId % 15);
             _levelInfo = new LevelInfo();
             LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
 
