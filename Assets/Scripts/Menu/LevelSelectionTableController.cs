@@ -115,22 +115,37 @@ namespace Scripts
         {
             _localPosListForButtons = new[]
             {
-                new Vector2(-134, -140), 
-                new Vector2(-50, -150),
-                new Vector2(50, -150),
-                new Vector2(134, -140),
-                new Vector2(120, -66),
-                new Vector2(40, -73),
-                new Vector2(-40, -73),
-                new Vector2(-120, -66),
-                new Vector2(-70, 20),
-                new Vector2(5, 0),
-                new Vector2(80, 10),
-                new Vector2(30, 70),
-                new Vector2(-35, 130),
-                new Vector2(30, 155),
-                new Vector2(8, 228)
+                new Vector2(-130,-150), 
+                new Vector2(-50,-160),
+                new Vector2(30,-160),
+                new Vector2(110,-150),
+                new Vector2(105,-65),
+                new Vector2(30,-75),
+                new Vector2(-50,-75),
+                new Vector2(-125,-60),
+                new Vector2(-80,20),
+                new Vector2(-5,0),
+                new Vector2(75,10),
+                new Vector2(30,80),
+                new Vector2(-50,100),
+                new Vector2(10,155),
+                new Vector2(-10,228)
             };
+            
+            
+            
+            
+            
+            
+           
+           
+            
+            
+            
+            
+            
+            
+            
             
             /*
             int index = 0;

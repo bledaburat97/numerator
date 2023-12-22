@@ -22,8 +22,8 @@ namespace Scripts
             _glowingStarImageViewList = new List<IStarImageView>();
             _currentStarCount = levelTracker.GetStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
             CreateStarFrames();
-            _view.SetLocalPosition(new Vector2(0,450f));
-            _glowingView.SetLocalPosition(new Vector2(0,450f));
+            _view.SetLocalPosition(new Vector2(0,510f));
+            _glowingView.SetLocalPosition(new Vector2(0,510f));
         }
         
         private void CreateStarFrames()
