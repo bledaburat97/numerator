@@ -14,14 +14,19 @@ namespace Scripts
         private List<INormalCardItemController> _normalCardItemControllerList = new List<INormalCardItemController>();
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
-        private IInitialCardAreaView _initialCardAreaView;
+        private IInitialCardAreaView _view;
         private ILevelTracker _levelTracker;
         private IGameSaveService _gameSaveService;
         private ICardItemInfoManager _cardItemInfoManager;
-        
-        public void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager)
+
+        public InitialCardAreaController(IInitialCardAreaView view)
         {
-            _initialCardAreaView = initialCardAreaView;
+            _view = view;
+        }
+        
+        
+        public void Initialize(ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager)
+        {
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
             _cardItemInfoManager = cardItemInfoManager;
@@ -29,7 +34,7 @@ namespace Scripts
             int numOfNormalCards = _levelTracker.GetLevelInfo().levelData.NumOfCards;
             _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfTotalWildCards > 0);
             _selectionController = new SelectionController(numOfNormalCards);
-            IInvisibleClickHandler invisibleClickHandler = _initialCardAreaView.GetInvisibleClickHandler();
+            IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
@@ -57,7 +62,7 @@ namespace Scripts
 
         private void InitInitialCardAreaView(Action<bool, int> onCardSelected, int numOfTotalWildCard)
         {
-            _initialCardAreaView.Init(new CardHolderFactory(), new NormalCardItemViewFactory(), new WildCardItemViewFactory());
+            _view.Init(new CardHolderFactory(), new NormalCardItemViewFactory(), new WildCardItemViewFactory());
             CreateCardHolders();
             CreateCardItemsData(onCardSelected, numOfTotalWildCard);
         }
@@ -69,18 +74,18 @@ namespace Scripts
             int index = 0;
             foreach (CardHolderModel cardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial))
             {
-                ICardHolderView cardHolderView = _initialCardAreaView.CreateCardHolderView();
+                ICardHolderView cardHolderView = _view.CreateCardHolderView();
                 if (cardHolderModel.cardItemType == CardItemType.Normal)
                 {
                     IInitialCardHolderController cardHolderController = normalCardHolderControllerFactory.Spawn();
-                    cardHolderController.Initialize(cardHolderView, cardHolderModel, _initialCardAreaView.GetCamera(), _cardItemInfoManager);
+                    cardHolderController.Initialize(cardHolderView, cardHolderModel, _view.GetCamera(), _cardItemInfoManager);
                     _normalCardHolderControllerList.Add(cardHolderController);
                     index++;
                 }
                 else if (cardHolderModel.cardItemType == CardItemType.Wild)
                 {
                     _wildCardHolderController = wildCardHolderControllerFactory.Spawn();
-                    _wildCardHolderController.Initialize(cardHolderView, cardHolderModel, _initialCardAreaView.GetCamera());
+                    _wildCardHolderController.Initialize(cardHolderView, cardHolderModel, _view.GetCamera());
                 }
             }
         }
@@ -94,7 +99,7 @@ namespace Scripts
                 CardItemData cardItemData = new CardItemData()
                 {
                     parent = _wildCardHolderController.GetView().GetRectTransform(),
-                    tempParent = _initialCardAreaView.GetTempRectTransform(),
+                    tempParent = _view.GetTempRectTransform(),
                     cardItemIndex = j,
                     onCardSelected = onCardSelected,
                     cardItemType = CardItemType.Wild
@@ -108,7 +113,7 @@ namespace Scripts
                 CardItemData cardItemData = new CardItemData()
                 {
                     parent = _normalCardHolderControllerList[i].GetView().GetRectTransform(),
-                    tempParent = _initialCardAreaView.GetTempRectTransform(),
+                    tempParent = _view.GetTempRectTransform(),
                     cardItemIndex = i,
                     onCardSelected = onCardSelected,
                     cardItemType = CardItemType.Normal,
@@ -123,16 +128,16 @@ namespace Scripts
             if (cardItemData.cardItemType == CardItemType.Wild)
             {
                 WildCardItemControllerFactory wildCardItemControllerFactory = new WildCardItemControllerFactory();
-                IWildCardItemView wildCardItemView = _initialCardAreaView.CreateWildCardItemView(cardItemData.parent);
+                IWildCardItemView wildCardItemView = _view.CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
-                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder, _initialCardAreaView.GetCamera());
+                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder, _view.GetCamera());
             }
             else
             {
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
-                INormalCardItemView normalCardItemView = _initialCardAreaView.CreateCardItemView(cardItemData.parent);
+                INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _initialCardAreaView.GetCamera(), _cardItemInfoManager);
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager);
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
@@ -191,7 +196,7 @@ namespace Scripts
     
     public interface IInitialCardAreaController
     {
-        void Initialize(IInitialCardAreaView initialCardAreaView, ICardItemLocator cardItemLocator,
+        void Initialize(ICardItemLocator cardItemLocator,
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
             ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager);
 

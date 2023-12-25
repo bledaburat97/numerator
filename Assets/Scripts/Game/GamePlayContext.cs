@@ -1,65 +1,87 @@
-﻿using TMPro;
-using UnityEngine;
+﻿using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class GamePlayContext : MonoBehaviour
     {
-        [SerializeField] private BoardAreaView boardAreaView;
-        [SerializeField] private CardItemInfoPopupView cardItemInfoPopupView;
-        [SerializeField] private ResultAreaView resultAreaView;
-        [SerializeField] private LevelTracker levelTracker;
-        [SerializeField] private InitialCardAreaView initialCardAreaView;
-        [SerializeField] private GamePopupCreator gamePopupCreator;
-        [SerializeField] private FadePanelView fadePanelView;
-        [SerializeField] private FadePanelView nonGlowFadePanelView;
-        [SerializeField] private TMP_Text levelIdText;
-        [SerializeField] private BaseButtonView settingsButtonView;
-        [SerializeField] private BaseButtonView checkButtonView;
-        [SerializeField] private BaseButtonView resetButtonView;
-        [SerializeField] private StarProgressBarView starProgressBarView;
-        [SerializeField] private Canvas canvas;
+        [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private ILevelTracker _levelTracker;
+        [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
+        [Inject] private IResultAreaController _resultAreaController;
+        [Inject] private IResultManager _resultManager;
+        [Inject] private IGameUIView _gameUIView;
+        [Inject] private ISettingsButtonController _settingsButtonController;
+        [Inject] private ICheckButtonController _checkButtonController;
+        [Inject] private IResetButtonController _resetButtonController;
+        [Inject] private IStarProgressBarController _starProgressBarController;
+        [Inject] private ILevelManager _levelManager;
+        [Inject] private IBoardAreaController _boardAreaController;
+        [Inject] private ICardItemInfoManager _cardItemInfoManager;
+        [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
+        [Inject] private IInitialCardAreaController _initialCardAreaController;
+        [Inject] private IFadePanelController _fadePanelController;
+        [Inject] private IGamePopupCreator _gamePopupCreator;
+        [Inject] private ICardItemLocator _cardItemLocator;
         
-        private IBoardAreaController _boardAreaController;
-        private ICardItemInfoPopupController _cardItemInfoPopupController;
-        private IInitialCardAreaController _initialCardAreaController;
-        private ICardItemLocator _cardItemLocator;
-        private ICardItemInfoManager _cardItemInfoManager;
-        private IResultAreaController _resultAreaController;
-        private ICardHolderModelCreator _cardHolderModelCreator;
-        private IResultManager _resultManager;
-        private IFadePanelController _fadePanelController;
-        private ISettingsButtonController _settingsButtonController;
-        private ICheckButtonController _checkButtonController;
-        private IResetButtonController _resetButtonController;
-        private IStarProgressBarController _starProgressBarController;
-        private ILevelManager _levelManager;
-        private IGameSaveService _gameSaveService;
         void Start()
         {
-            _cardItemLocator = new CardItemLocator(canvas);
-            _gameSaveService = new GameSaveService();
-            _gameSaveService.Initialize(levelTracker);
-            levelTracker.Initialize(_gameSaveService);
-            levelTracker.SetLevelInfo();
-            _cardHolderModelCreator = new CardHolderModelCreator();
-            _cardHolderModelCreator.Initialize();
-            _resultManager = new ResultManager();
-            CreateResultArea();
-            _resultManager.Initialize(levelTracker);
+            _gameSaveService.Initialize(_levelTracker);
+            _levelTracker.Initialize(_gameSaveService);
+            _levelTracker.SetLevelInfo();
+            InitializeCardHolderModelCreator();
+            InitializeResultArea();
+            InitializeResultManager();
             SetLevelId();
-            CreateSettingsButton();
-            CreateCheckButton();
-            CreateResetButton();
-            CreateStarProgressBar();
-            CreateLevelManager();
-            CreateBoardArea();
-            CreateCardItemInfoPopup();
-            CreateInitialCardArea();
-            CreateGamePopupCreator();
-            _gameSaveService.Set(_resultManager, _initialCardAreaController, _levelManager, _cardItemInfoManager);
+            InitializeSettingsButton();
+            InitializeCheckButton();
+            InitializeResetButton();
+            InitializeStarProgressBar();
+            InitializeLevelManager();
+            InitializeBoardArea();
+            InitializeCardItemInfoManager();
+            InitializeCardItemInfoPopup();
+            InitializeInitialCardArea();
+            InitializeFadePanelController();
+            InitializeGamePopupCreator();
+            _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
             //CreateFadeMaskService();
+        }
+
+        private void InitializeCardHolderModelCreator()
+        {
+            _cardHolderModelCreator.Initialize();
+        }
+        
+        private void InitializeResultArea()
+        {
+            _resultAreaController.Initialize(_resultManager);
+        }
+
+        private void InitializeResultManager()
+        {
+            _resultManager.Initialize(_levelTracker);
+        }
+        
+        private void SetLevelId()
+        {
+            _gameUIView.SetLevelId(_levelTracker);
+        }
+
+        private void InitializeSettingsButton()
+        {
+            _settingsButtonController.Initialize();
+        }
+        
+        private void InitializeCheckButton()
+        {
+            _checkButtonController.Initialize();
+        }
+        
+        private void InitializeResetButton()
+        {
+            _resetButtonController.Initialize();
         }
         
         private void OnApplicationQuit()
@@ -67,66 +89,34 @@ namespace Scripts
             _gameSaveService.Save();
         }
 
-        private void SetLevelId()
+        private void InitializeStarProgressBar()
         {
-            levelIdText.SetText("Level " + (levelTracker.GetLevelId() + 1));
+            _starProgressBarController.Initialize(_levelTracker);
         }
 
-        private void CreateSettingsButton()
+        private void InitializeLevelManager()
         {
-            _settingsButtonController = new SettingsButtonController();
-            _settingsButtonController.Initialize(settingsButtonView);
+            _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _starProgressBarController);
         }
         
-        private void CreateCheckButton()
+        private void InitializeBoardArea()
         {
-            _checkButtonController = new CheckButtonController();
-            _checkButtonController.Initialize(checkButtonView);
-        }
-        
-        private void CreateResetButton()
-        {
-            _resetButtonController = new ResetButtonController();
-            _resetButtonController.Initialize(resetButtonView);
+            _boardAreaController.Initialize(_cardItemLocator, _resultManager, _levelTracker, _cardHolderModelCreator, _checkButtonController);
         }
 
-        private void CreateLevelManager()
+        private void InitializeCardItemInfoManager()
         {
-            _levelManager = new LevelManager();
-            _levelManager.Initialize(levelTracker, _resultManager, _gameSaveService, _starProgressBarController);
-        }
-
-        private void CreateStarProgressBar()
-        {
-            _starProgressBarController = new StarProgressBarController();
-            _starProgressBarController.Initialize(starProgressBarView, levelTracker);
+            _cardItemInfoManager.Initialize(_levelTracker);
         }
         
-        private void CreateBoardArea()
+        private void InitializeCardItemInfoPopup()
         {
-            _boardAreaController = new BoardAreaController();
-            _boardAreaController.Initialize(boardAreaView, _cardItemLocator, _resultManager, levelTracker, _cardHolderModelCreator, _checkButtonController);
+            _cardItemInfoPopupController.Initialize(_cardItemInfoManager, _levelTracker, _cardHolderModelCreator);
         }
         
-        private void CreateResultArea()
+        private void InitializeInitialCardArea()
         {
-            _resultAreaController = new ResultAreaController();
-            _resultAreaController.Initialize(resultAreaView, _resultManager);
-        }
-        
-        private void CreateCardItemInfoPopup()
-        {
-            _cardItemInfoManager = new CardItemInfoManager();
-            _cardItemInfoManager.Initialize(levelTracker);
-            
-            _cardItemInfoPopupController = new CardItemInfoPopupController();
-            _cardItemInfoPopupController.Initialize(cardItemInfoPopupView, _cardItemInfoManager, levelTracker, _cardHolderModelCreator);
-        }
-        
-        private void CreateInitialCardArea()
-        {
-            _initialCardAreaController = new InitialCardAreaController();
-            _initialCardAreaController.Initialize(initialCardAreaView, _cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager);
+            _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
@@ -134,11 +124,14 @@ namespace Scripts
             _cardItemInfoPopupController.SetCardItemInfoPopupStatus(status, cardIndex);
         }
 
-        private void CreateGamePopupCreator()
+        private void InitializeFadePanelController()
         {
-            _fadePanelController = new FadePanelController();
-            _fadePanelController.Initialize(fadePanelView, nonGlowFadePanelView);
-            gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService);
+            _fadePanelController.Initialize();
+        }
+
+        private void InitializeGamePopupCreator()
+        {
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService);
         }
 
         /*

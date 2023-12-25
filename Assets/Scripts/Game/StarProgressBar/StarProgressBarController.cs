@@ -14,10 +14,14 @@ namespace Scripts
         private ILevelManager _levelManager;
         private int _activeStarCount;
         private List<int> _indexesContainsStar = new List<int>();
-        
-        public void Initialize(IStarProgressBarView view, ILevelTracker levelTracker)
+
+        public StarProgressBarController(IStarProgressBarView view)
         {
             _view = view;
+        }
+        
+        public void Initialize(ILevelTracker levelTracker)
+        {
             _view.Init(new BoundaryViewFactory());
             _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
             _boundaryControllerList = new List<IBoundaryController>();
@@ -86,7 +90,7 @@ namespace Scripts
 
     public interface IStarProgressBarController
     {
-        void Initialize(IStarProgressBarView view, ILevelTracker levelTracker);
+        void Initialize(ILevelTracker levelTracker);
 
         void DecreaseProgressBar(List<int> indexesOfDeletedStars, float targetPercentage, Action levelFailedAction,
             float animationDuration);

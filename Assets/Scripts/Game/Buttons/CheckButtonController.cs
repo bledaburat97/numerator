@@ -6,10 +6,14 @@ namespace Scripts
     {
         private IBaseButtonView _view;
         public event EventHandler CheckFinalNumbers;
-        
-        public void Initialize(IBaseButtonView view)
+
+        public CheckButtonController(IBaseButtonView view)
         {
             _view = view;
+        }
+        
+        public void Initialize()
+        {
             _view.Init(new BaseButtonModel(){OnClick = OnClickCheckButton});
         }
 
@@ -21,7 +25,7 @@ namespace Scripts
 
     public interface ICheckButtonController
     {
-        void Initialize(IBaseButtonView view);
+        void Initialize();
         event EventHandler CheckFinalNumbers;
     }
 }

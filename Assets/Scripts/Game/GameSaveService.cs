@@ -17,15 +17,13 @@ namespace Scripts
         {
             _levelTracker = levelTracker;
             _resultManager = new ResultManager();
-            _initialCardAreaController = new InitialCardAreaController();
             _levelManager = new LevelManager();
             _cardItemInfoManager = new CardItemInfoManager();
         }
         
-        public void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager)
+        public void Set(IResultManager resultManager, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager)
         {
             _resultManager = resultManager;
-            _initialCardAreaController = initialCardAreaController;
             _levelManager = levelManager;
             _cardItemInfoManager = cardItemInfoManager;
         }
@@ -73,7 +71,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save();
-        void Set(IResultManager resultManager, IInitialCardAreaController initialCardAreaController, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager);
+        void Set(IResultManager resultManager, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager);
         bool HasSavedGame();
     }
 

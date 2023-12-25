@@ -9,11 +9,15 @@ namespace Scripts
         private IBoardAreaManager _boardAreaManager;
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
-        public event EventHandler<int> boardCardHolderClicked; 
+        public event EventHandler<int> boardCardHolderClicked;
 
-        public void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController)
+        public BoardAreaController(IBoardAreaView view)
         {
             _view = view;
+        }
+        
+        public void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController)
+        {
             _view.Init(new CardHolderFactory());
             _boardAreaManager = new BoardAreaManager(levelTracker, resultManager, checkButtonController);
             _cardItemLocator = cardItemLocator;
@@ -43,7 +47,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
-        void Initialize(IBoardAreaView view, ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController);
+        void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController);
         event EventHandler<int> boardCardHolderClicked;
 
     }

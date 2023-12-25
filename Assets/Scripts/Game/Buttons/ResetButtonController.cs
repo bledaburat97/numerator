@@ -6,10 +6,14 @@ namespace Scripts
     {
         private IBaseButtonView _view;
         public event EventHandler ResetNumbers;
-        
-        public void Initialize(IBaseButtonView view)
+
+        public ResetButtonController(IBaseButtonView view)
         {
             _view = view;
+        }
+        
+        public void Initialize()
+        {
             _view.Init(new BaseButtonModel(){OnClick = OnClickResetButton, text = "C"});
         }
 
@@ -21,7 +25,7 @@ namespace Scripts
 
     public interface IResetButtonController
     {
-        void Initialize(IBaseButtonView view);
+        void Initialize();
         event EventHandler ResetNumbers;
     }
 }

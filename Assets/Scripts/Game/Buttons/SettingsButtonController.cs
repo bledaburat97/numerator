@@ -6,9 +6,13 @@ namespace Scripts
     {
         private IBaseButtonView _view;
         public event EventHandler OpenSettings;
-        public void Initialize(IBaseButtonView view)
+
+        public SettingsButtonController(IBaseButtonView view)
         {
             _view = view;
+        }
+        public void Initialize()
+        {
             _view.Init(new BaseButtonModel(){OnClick = OnClickSettings});
         }
 
@@ -20,7 +24,7 @@ namespace Scripts
 
     public interface ISettingsButtonController
     {
-        void Initialize(IBaseButtonView view);
+        void Initialize();
         event EventHandler OpenSettings;
     }
 }

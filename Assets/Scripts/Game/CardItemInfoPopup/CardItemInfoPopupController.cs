@@ -13,9 +13,13 @@ namespace Scripts
             { ProbabilityType.Certain, ProbabilityType.Probable, ProbabilityType.NotExisted }; //TODO set somewhere else.
         private ICardHolderModelCreator _cardHolderModelCreator;
         private int _activeCardIndex;
-        public void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator)
+
+        public CardItemInfoPopupController(ICardItemInfoPopupView view)
         {
             _view = view;
+        }
+        public void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator)
+        {
             _cardItemInfoManager = cardItemInfoManager;
             CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory = new CardHolderIndicatorButtonViewFactory();
             _levelData = levelTracker.GetLevelInfo().levelData;
@@ -114,7 +118,7 @@ namespace Scripts
     
     public interface ICardItemInfoPopupController
     {
-        void Initialize(ICardItemInfoPopupView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator);
+        void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator);
         void SetCardItemInfoPopupStatus(bool status, int cardIndex);
     }
     

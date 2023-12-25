@@ -132,6 +132,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 44400224}
+  - component: {fileID: 44400225}
   m_Layer: 0
   m_Name: SceneCreator
   m_TagString: Untagged
@@ -151,11 +152,43 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1391204194}
+  - {fileID: 447050215}
   - {fileID: 1256676160}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &44400225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44400223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89715ad69b973a14899afa2c6730b30b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _scriptableObjectInstallers: []
+  _monoInstallers:
+  - {fileID: 447050214}
+  _installerPrefabs: []
+  _autoRun: 1
+  OnPreInstall:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPostInstall:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPreResolve:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPostResolve:
+    m_PersistentCalls:
+      m_Calls: []
+  _parentNewObjectsUnderSceneContext: 0
+  _contractNames: []
+  _parentContractNames: []
 --- !u!1 &104137510
 GameObject:
   m_ObjectHideFlags: 0
@@ -968,6 +1001,65 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 428892252}
   m_CullTransparentMesh: 1
+--- !u!1 &447050213
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 447050215}
+  - component: {fileID: 447050214}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &447050214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447050213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6af34c81950148298203c925f8c64a16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvas: {fileID: 2064828894}
+  boardAreaView: {fileID: 1177125430}
+  cardItemInfoPopupView: {fileID: 1675762318}
+  resultAreaView: {fileID: 1280983161}
+  levelTracker: {fileID: 1391204196}
+  initialCardAreaView: {fileID: 712370582}
+  gamePopupCreator: {fileID: 1714900004}
+  fadePanelView: {fileID: 1370009497}
+  nonGlowFadePanelView: {fileID: 1190057577}
+  gameUIView: {fileID: 2130972338}
+  settingsButtonView: {fileID: 625391244365729292}
+  checkButtonView: {fileID: 625391243355206880}
+  resetButtonView: {fileID: 625391242574818819}
+  starProgressBarView: {fileID: 2064214270}
+--- !u!4 &447050215
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 447050213}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1391204194}
+  m_Father: {fileID: 44400224}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &503385417
 GameObject:
   m_ObjectHideFlags: 0
@@ -2547,13 +2639,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1391204193}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2064828891}
-  m_Father: {fileID: 44400224}
+  m_Father: {fileID: 447050215}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1391204195
@@ -2568,20 +2660,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c8b024666f42f497d1508a80253f33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boardAreaView: {fileID: 1177125430}
-  cardItemInfoPopupView: {fileID: 1675762318}
-  resultAreaView: {fileID: 1280983161}
-  levelTracker: {fileID: 1391204196}
-  initialCardAreaView: {fileID: 712370582}
-  gamePopupCreator: {fileID: 1714900004}
-  fadePanelView: {fileID: 1370009497}
-  nonGlowFadePanelView: {fileID: 1190057577}
-  levelIdText: {fileID: 231112702}
-  settingsButtonView: {fileID: 625391244365729292}
-  checkButtonView: {fileID: 625391243355206880}
-  resetButtonView: {fileID: 625391242574818819}
-  starProgressBarView: {fileID: 2064214270}
-  canvas: {fileID: 2064828894}
 --- !u!114 &1391204196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4269,6 +4347,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2130972337}
+  - component: {fileID: 2130972338}
   m_Layer: 0
   m_Name: LevelIdHolder
   m_TagString: Untagged
@@ -4297,6 +4376,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 200, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2130972338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2130972336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e92a810be894922a11b45922f2e40dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelIdText: {fileID: 231112702}
 --- !u!114 &625391242574818819 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3769429813590999855, guid: 951b955a58f868d4091ef6cda2507f35, type: 3}

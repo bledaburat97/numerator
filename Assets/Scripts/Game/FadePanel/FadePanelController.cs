@@ -7,11 +7,15 @@ namespace Scripts
         private IFadePanelView _view;
         private IFadePanelView _nonGlowView;
         private IFadePanelView _maskedFadeView;
-        
-        public void Initialize(IFadePanelView view, IFadePanelView nonGlowView)
+
+        public FadePanelController(IFadePanelView view, IFadePanelView nonGlowView)
         {
             _view = view;
             _nonGlowView = nonGlowView;
+        }
+        
+        public void Initialize()
+        {
             _view.SetFadeImageStatus(false);
             _nonGlowView.SetFadeImageStatus(false);
         }
@@ -45,7 +49,7 @@ namespace Scripts
 
     public interface IFadePanelController
     {
-        void Initialize(IFadePanelView view, IFadePanelView maskedView);
+        void Initialize();
         void SetFadeImageStatus(bool status);
         void SetMaskedFadeImageStatus(bool status);
         Image GetMaskedFadePanelImage();

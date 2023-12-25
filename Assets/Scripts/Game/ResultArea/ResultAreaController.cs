@@ -7,9 +7,14 @@ namespace Scripts
         private IResultAreaView _view;
         private ResultBlockControllerFactory _resultBlockControllerFactory;
         private List<IResultBlockController> _resultBlockControllerList;
-        public void Initialize(IResultAreaView view, IResultManager resultManager)
+
+        public ResultAreaController(IResultAreaView view)
         {
             _view = view;
+        }
+        
+        public void Initialize(IResultManager resultManager)
+        {
             _view.Init(new ResultBlockViewFactory());
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockControllerList = new List<IResultBlockController>();
@@ -28,6 +33,6 @@ namespace Scripts
 
     public interface IResultAreaController
     {
-        void Initialize(IResultAreaView view, IResultManager resultManager);
+        void Initialize(IResultManager resultManager);
     }
 }

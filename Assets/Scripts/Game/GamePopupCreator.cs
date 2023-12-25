@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Scripts
 {
-    public class GamePopupCreator : MonoBehaviour
+    public class GamePopupCreator : MonoBehaviour, IGamePopupCreator
     {
         [SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -54,5 +54,11 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(false);
         }
+    }
+
+    public interface IGamePopupCreator
+    {
+        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
+            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService);
     }
 }
