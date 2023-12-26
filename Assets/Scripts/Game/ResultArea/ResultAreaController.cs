@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Scripts
+﻿namespace Scripts
 {
     public class ResultAreaController : IResultAreaController
     {
         private IResultAreaView _view;
         private ResultBlockControllerFactory _resultBlockControllerFactory;
-        private List<IResultBlockController> _resultBlockControllerList;
 
         public ResultAreaController(IResultAreaView view)
         {
@@ -17,7 +14,6 @@ namespace Scripts
         {
             _view.Init(new ResultBlockViewFactory());
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
-            _resultBlockControllerList = new List<IResultBlockController>();
             resultManager.ResultBlockAddition += AddResultBlock;
         }
         
@@ -27,7 +23,6 @@ namespace Scripts
             IResultBlockView resultBlockView = _view.CreateResultBlock();
             resultBlockController.Initialize(resultBlockView, resultBlockModel);
             _view.SetScrollPositionToBottom();
-            _resultBlockControllerList.Add(resultBlockController);
         }
     }
 

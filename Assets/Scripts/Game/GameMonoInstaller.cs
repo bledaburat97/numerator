@@ -9,12 +9,9 @@ namespace Scripts
         [SerializeField] private BoardAreaView boardAreaView;
         [SerializeField] private CardItemInfoPopupView cardItemInfoPopupView;
         [SerializeField] private ResultAreaView resultAreaView;
-        [SerializeField] private LevelTracker levelTracker;
         [SerializeField] private InitialCardAreaView initialCardAreaView;
-        [SerializeField] private GamePopupCreator gamePopupCreator;
         [SerializeField] private FadePanelView fadePanelView;
         [SerializeField] private FadePanelView nonGlowFadePanelView;
-        [SerializeField] private GameUIView gameUIView;
         [SerializeField] private BaseButtonView settingsButtonView;
         [SerializeField] private BaseButtonView checkButtonView;
         [SerializeField] private BaseButtonView resetButtonView;

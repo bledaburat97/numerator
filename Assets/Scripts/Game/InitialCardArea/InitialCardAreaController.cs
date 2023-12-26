@@ -40,7 +40,7 @@ namespace Scripts
             InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
             resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
-            resultManager.BackFlipCorrectCards += BackFlipCorrectCards;
+            resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
         }
 
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)

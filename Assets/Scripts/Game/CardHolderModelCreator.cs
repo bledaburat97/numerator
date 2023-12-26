@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace Scripts
@@ -16,13 +15,15 @@ namespace Scripts
             _initialCardHolderModelList = new List<CardHolderModel>();
         }
 
-        public void AddBoardCardHolderModelList(int numOfCardHolders)
+        public void AddBoardCardHolderModelList(int numOfBoardCardHolders)
         {
-            Vector2[] localPositions = new Vector2[numOfCardHolders];
+            Vector2[] localPositions = new Vector2[numOfBoardCardHolders];
             float spacing = ConstantValues.SPACING_BETWEEN_BOARD_CARDS;
             Vector2 cardHolderSize = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT);
-            localPositions = localPositions.GetLocalPositions(spacing, cardHolderSize, 0);
-            for (int i = 0; i < numOfCardHolders; i++)
+            float verticalLocalPos = 0f;
+            localPositions = localPositions.GetLocalPositions(spacing, cardHolderSize, verticalLocalPos);
+            
+            for (int i = 0; i < numOfBoardCardHolders; i++)
             {
                 _boardCardHolderModelList.Add(new CardHolderModel()
                 {
@@ -36,6 +37,9 @@ namespace Scripts
 
         public void AddInitialCardHolderModelList(int numOfNormalCards, bool wildCardExistence)
         {
+            const float maxNumOfCardInOneLine = 5;
+            const float maxNumOfCardsInTotal = 10;
+            
             int numOfCards = wildCardExistence ? numOfNormalCards + 1 : numOfNormalCards;
             _localPositionsOfFirstLine = new List<Vector2>();
             _localPositionsOfFirstLineWithoutWild = new List<Vector2>();
@@ -45,12 +49,13 @@ namespace Scripts
 
             float firstLineYPos = cardHolderSize.y / 2 + ConstantValues.POSSIBLE_HOLDER_INDICATOR_HEIGHT + 6f;
             float secondLineYPos = -cardHolderSize.y / 2 - 1f;
-            if (numOfCards < 6)
+            
+            if (numOfCards <= maxNumOfCardInOneLine)
             {
                 _localPositionsOfFirstLine = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards, spacing, cardHolderSize, firstLineYPos);
                 _localPositionsOfFirstLineWithoutWild = _localPositionsOfFirstLineWithoutWild.GetLocalPositionList(numOfCards - 1, spacing, cardHolderSize, firstLineYPos);
             }
-            else if (numOfCards < 11)
+            else if (numOfCards <= maxNumOfCardsInTotal)
             {
                 int numOfCardsAtSecondLine = numOfCards / 2;
                 _localPositionsOfFirstLine = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards - numOfCardsAtSecondLine, spacing, cardHolderSize, firstLineYPos);

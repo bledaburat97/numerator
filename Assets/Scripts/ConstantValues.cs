@@ -5,17 +5,21 @@ namespace Scripts
 {
     public static class ConstantValues
     {
-        public static float INITIAL_CARD_HOLDER_WIDTH = 52f;
-        public static float INITIAL_CARD_HOLDER_HEIGHT = 65f;
+        public static float SPACING_BETWEEN_BOARD_CARDS = 8f;
         public static float BOARD_CARD_HOLDER_WIDTH = 64f;
         public static float BOARD_CARD_HOLDER_HEIGHT = 80f;
+        
+        public static float SPACING_BETWEEN_INITIAL_CARDS = 10f;
+        public static float INITIAL_CARD_HOLDER_WIDTH = 52f;
+        public static float INITIAL_CARD_HOLDER_HEIGHT = 65f;
+        
+        
+
         public static float RESULT_CARD_WIDTH = 32f;
         public static float RESULT_CARD_HEIGHT = 40f;
         public static float POSSIBLE_HOLDER_INDICATOR_WIDTH = 10f;
         public static float POSSIBLE_HOLDER_INDICATOR_HEIGHT = 16f;
         public static List<string> HOLDER_ID_LIST = new List<string>(){ "A", "B", "C", "D",  "E" };
-        public static float SPACING_BETWEEN_BOARD_CARDS = 8f;
-        public static float SPACING_BETWEEN_INITIAL_CARDS = 10f;
         public static float SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS = 30f;
         public static float SIZE_OF_STARS_ON_LEVEL_SUCCESS = 70f;
         public static Color BOARD_CARD_HOLDER_COLOR = HexToColor("#D65865");

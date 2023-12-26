@@ -18,13 +18,12 @@ namespace Scripts
 
         public void SetScrollPositionToBottom()
         {
-            StartCoroutine(ForceScrollDown());
+            StartCoroutine(ScrollToBottomCoroutine());
         }
         
-        IEnumerator ForceScrollDown () {
-            // Wait for end of frame AND force update all canvases before setting to bottom.
+        IEnumerator ScrollToBottomCoroutine () {
             yield return new WaitForEndOfFrame ();
-            scrollRect.verticalNormalizedPosition = 0f; //local position increases by size of an added object.
+            scrollRect.verticalNormalizedPosition = 0f;
             Canvas.ForceUpdateCanvases ();
         }
 
@@ -43,7 +42,6 @@ namespace Scripts
     {
         void Init(ResultBlockViewFactory resultBlockViewFactory);
         IResultBlockView CreateResultBlock();
-        RectTransform GetRectTransform();
         void SetScrollPositionToBottom();
     }
 }
