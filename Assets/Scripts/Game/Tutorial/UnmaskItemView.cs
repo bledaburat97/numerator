@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class UnmaskImage : MonoBehaviour
+    public class UnmaskItemView : MonoBehaviour
     {
         [SerializeField] private Image image;
     }

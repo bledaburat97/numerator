@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Scripts
 {
     public class FadeMaskService : MonoBehaviour
     {
-        [SerializeField] private UnmaskImage unmaskImage;
+        [FormerlySerializedAs("unmaskImage")] [SerializeField] private UnmaskItemView unmaskItemView;
         [SerializeField] private MaskSystem maskSystemPrefab;
         private IMaskSystem _maskSystem;
         private IFadePanelController _fadePanelController;
