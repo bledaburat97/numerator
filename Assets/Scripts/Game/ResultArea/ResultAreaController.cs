@@ -3,7 +3,6 @@
     public class ResultAreaController : IResultAreaController
     {
         private IResultAreaView _view;
-        private ResultBlockControllerFactory _resultBlockControllerFactory;
 
         public ResultAreaController(IResultAreaView view)
         {
@@ -13,17 +12,17 @@
         public void Initialize(IResultManager resultManager)
         {
             _view.Init(new ResultBlockViewFactory());
-            _resultBlockControllerFactory = new ResultBlockControllerFactory();
-            resultManager.ResultBlockAddition += AddResultBlock;
+            resultManager.ResultBlockAddition += _view.AddResultBlock;
         }
-        
+        /*
         private void AddResultBlock(object sender, ResultBlockModel resultBlockModel)
         {
             IResultBlockController resultBlockController = _resultBlockControllerFactory.Spawn();
-            IResultBlockView resultBlockView = _view.CreateResultBlock();
+            IResultBlockView resultBlockView = _view.CreateResultBlockServerRpc();
             resultBlockController.Initialize(resultBlockView, resultBlockModel);
             _view.SetScrollPositionToBottom();
         }
+        */
     }
 
     public interface IResultAreaController

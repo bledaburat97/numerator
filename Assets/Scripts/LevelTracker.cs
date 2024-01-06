@@ -20,7 +20,7 @@ namespace Scripts
         {
             //ClearPlayerPrefs();
             _gameSaveService = gameSaveService;
-            _levelId = PlayerPrefs.GetInt("level_id", 0);
+            _levelId = 0;//PlayerPrefs.GetInt("level_id", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
             _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();

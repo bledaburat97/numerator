@@ -14,7 +14,7 @@ namespace Scripts
         [SerializeField] protected Image shadowImage;
         [SerializeField] protected Image cardFrame;
         
-        public virtual void Init(int cardNumber)
+        public void Init(int cardNumber)
         {
             SetCardNumberText(cardNumber);
             SetFrameStatus(false);
