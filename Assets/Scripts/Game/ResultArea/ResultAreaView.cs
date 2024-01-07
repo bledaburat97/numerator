@@ -14,11 +14,13 @@ namespace Scripts
         private ResultBlockViewFactory _resultBlockViewFactory;
         [SerializeField] private ScrollRect scrollRect;
         private ResultBlockControllerFactory _resultBlockControllerFactory;
+        private IGamePopupCreator _gamePopupCreator;
 
-        public void Init(ResultBlockViewFactory resultBlockViewFactory)
+        public void Init(ResultBlockViewFactory resultBlockViewFactory, IGamePopupCreator gamePopupCreator)
         {
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockViewFactory = resultBlockViewFactory;
+            _gamePopupCreator = gamePopupCreator;
         }
 
         public void SetScrollPositionToBottom()
@@ -75,11 +77,20 @@ namespace Scripts
                 resultModels = new List<ResultModel>(){new ResultModel(){cardPositionCorrectness = CardPositionCorrectness.Correct, number = 2}}});
             SetScrollPositionToBottom();
         }
+        
+        public override void OnNetworkSpawn()
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        }
+        
+        private void OnClientDisconnectCallback(ulong clientId) {
+            _gamePopupCreator.CreateDisconnectionPopup();
+        }
     }
 
     public interface IResultAreaView
     {
-        void Init(ResultBlockViewFactory resultBlockViewFactory);
+        void Init(ResultBlockViewFactory resultBlockViewFactory, IGamePopupCreator gamePopupCreator);
         void SetScrollPositionToBottom();
         void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
     }

@@ -21,6 +21,11 @@ namespace Scripts
             image.fillAmount = _currentPercentage;
         }
 
+        public void DisableStarProgressBar()
+        {
+            gameObject.SetActive(false);
+        }
+
         public RectTransform GetRectTransform()
         {
             return rectTransform;
@@ -57,5 +62,6 @@ namespace Scripts
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
         void SetProgress(float targetPercentage, float duration, Action onComplete, Action onStart);
+        void DisableStarProgressBar();
     }
 }

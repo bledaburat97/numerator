@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using DG.Tweening;
-using TMPro;
 using UnityEngine;
 
 namespace Scripts

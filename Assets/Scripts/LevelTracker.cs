@@ -7,8 +7,6 @@ namespace Scripts
 {
     public class LevelTracker : MonoBehaviour, ILevelTracker
     {
-        private List<LevelData> _levelDataList = new List<LevelData>();
-
         private int _starCount;
         private int _wildCardCount;
         private LevelInfo _levelInfo;

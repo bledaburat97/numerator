@@ -434,7 +434,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &162668283
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1006,7 +1006,7 @@ GameObject:
   - component: {fileID: 447050215}
   - component: {fileID: 447050214}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: GameMonoInstaller
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1559,7 +1559,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 817343651}
-    PlayerPrefab: {fileID: 7485619391887569346, guid: d7bea7cf9fcf784478820bdd2c904deb, type: 3}
+    PlayerPrefab: {fileID: 5682331528781921741, guid: 0db4690db7ea3fa43bf4aaf8e0eeaf72, type: 3}
     Prefabs:
       NetworkPrefabsLists: []
     TickRate: 30
@@ -3264,6 +3264,7 @@ GameObject:
   - component: {fileID: 1391204194}
   - component: {fileID: 1391204195}
   - component: {fileID: 1391204196}
+  - component: {fileID: 1391204197}
   m_Layer: 0
   m_Name: GamePlayContext
   m_TagString: Untagged
@@ -3309,6 +3310,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc1aceb87b19454c893a4eb4d0c6337e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1391204197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1391204193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d47a1f33da14873b2e3e5699882dc72, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1410333238
@@ -3865,6 +3878,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelEndPopupPrefab: {fileID: 4207349220545540178, guid: 076af13ad7796f345a7fd883835e9afb, type: 3}
   settingsPopupPrefab: {fileID: 4628369059448461370, guid: fa6a4ab1c02057a46913bc501673af0e, type: 3}
+  disconnectionPopupPrefab: {fileID: 3574926180861131745, guid: ce64fb251df716b44bf4150bf741eafe, type: 3}
   glowSystem: {fileID: 1256676159}
   glowingLevelEndPopup: {fileID: 170752869}
 --- !u!1 &1767515872

@@ -1,7 +1,4 @@
-﻿using System;
-using UnityEngine.SceneManagement;
-
-namespace Scripts
+﻿namespace Scripts
 {
     public class PlayButtonController : IPlayButtonController
     {

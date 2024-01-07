@@ -11,10 +11,16 @@ namespace Scripts
         {
             levelIdText.SetText("Level " + (levelTracker.GetLevelId() + 1));
         }
+
+        public void DisableLevelId()
+        {
+            levelIdText.gameObject.SetActive(false);
+        }
     }
 
     public interface IGameUIView
     {
         void SetLevelId(ILevelTracker levelTracker);
+        void DisableLevelId();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Scripts
@@ -7,11 +8,14 @@ namespace Scripts
     {
         [SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
+        [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         
         private LevelEndPopupControllerFactory _levelEndPopupControllerFactory;
         private LevelEndPopupViewFactory _levelEndPopupViewFactory;
         private SettingsPopupControllerFactory _settingsPopupControllerFactory;
         private SettingsPopupViewFactory _settingsPopupViewFactory;
+        private DisconnectionPopupControllerFactory _disconnectionPopupControllerFactory;
+        private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
         private IFadePanelController _fadePanelController;
         private Action _saveGameAction = null;
         private Action _deleteSaveAction = null;
@@ -24,9 +28,12 @@ namespace Scripts
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
+            _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
+            _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
             _fadePanelController = fadePanelController;
             levelManager.LevelEnd += CreateLevelEndPopup;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
+            //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
             _saveGameAction += gameSaveService.Save;
             _deleteSaveAction += gameSaveService.DeleteSave;
         }
@@ -54,11 +61,34 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(false);
         }
+
+        /*
+        private void OnOpponentDisconnection(ulong clientId)
+        {
+            
+            if (clientId == NetworkManager.ServerClientId)
+            {
+                CreateDisconnectionPopup();
+            }
+            
+        }
+        */
+
+        public void CreateDisconnectionPopup()
+        {
+            _fadePanelController.SetFadeImageStatus(true);
+            IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
+            IDisconnectionPopupView disconnectionPopupView =
+                _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
+            disconnectionPopupController.Initialize(disconnectionPopupView);
+        }
     }
 
     public interface IGamePopupCreator
     {
         void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
             ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService);
+
+        void CreateDisconnectionPopup();
     }
 }

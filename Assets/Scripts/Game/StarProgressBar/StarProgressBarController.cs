@@ -19,6 +19,11 @@ namespace Scripts
         {
             _view = view;
         }
+
+        public void DisableStarProgressBar()
+        {
+            _view.DisableStarProgressBar();
+        }
         
         public void Initialize(ILevelTracker levelTracker)
         {
@@ -96,5 +101,7 @@ namespace Scripts
             float animationDuration);
 
         List<int> GetIndexesContainsStar();
+
+        void DisableStarProgressBar();
     }
 }
