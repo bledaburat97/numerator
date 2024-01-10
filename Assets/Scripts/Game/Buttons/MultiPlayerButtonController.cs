@@ -24,7 +24,7 @@ namespace Scripts
         private void OnPlayButtonClick(IGameOptionTracker gameOptionTracker)
         {
             gameOptionTracker.SetGameOption(GameOption.MultiPlayer);
-            SceneManager.LoadScene("Game");
+            SceneManager.LoadScene("Lobby");
         }
     }
 

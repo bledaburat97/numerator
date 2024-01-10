@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -82,9 +83,13 @@ namespace Scripts
         {
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
         }
-        
-        private void OnClientDisconnectCallback(ulong clientId) {
-            _gamePopupCreator.CreateDisconnectionPopup();
+
+        private void OnClientDisconnectCallback(ulong clientId)
+        {
+            if (NetworkManager.Singleton.ConnectedClientsIds.Contains(clientId))
+            {
+                _gamePopupCreator.CreateDisconnectionPopup();
+            }
         }
     }
 
