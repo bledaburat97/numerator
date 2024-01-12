@@ -449,7 +449,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65fb2af50d854abd8595a50338f75849, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  homeButton: {fileID: 1558384395}
+  menuButton: {fileID: 1558384395}
   playerNameInputField: {fileID: 1480035093}
   createLobbyButton: {fileID: 2132866947}
   quickJoinButton: {fileID: 372395169}
@@ -3510,7 +3510,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1386947927589960688, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_text
-      value: Home
+      value: Menu
       objectReference: {fileID: 0}
     - target: {fileID: 2006273530344497502, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_Color.b
@@ -3610,7 +3610,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4256993876634080457, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_Name
-      value: HomeButton
+      value: MenuButton
       objectReference: {fileID: 0}
     - target: {fileID: 9143913073293881887, guid: c0c02d79b5c293047b39da8d995d9560, type: 3}
       propertyPath: m_Color.b

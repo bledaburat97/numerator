@@ -18,9 +18,14 @@ namespace Scripts
         private readonly int _maxNumOfPageNumber = 20;
         private IDirectionButtonView _backwardButtonView;
         private IDirectionButtonView _forwardButtonView;
-        public void Initialize(ILevelSelectionTableView view, IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker)
+
+        public LevelSelectionTableController(ILevelSelectionTableView view)
         {
             _view = view;
+        }
+        
+        public void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker)
+        {
             _activeLevelIdController = activeLevelIdController;
             _levelTracker = levelTracker;
             _localPosListForButtons = new Vector2[rowCount * columnCount];
@@ -131,40 +136,12 @@ namespace Scripts
                 new Vector2(10,155),
                 new Vector2(-10,228)
             };
-            
-            
-            
-            
-            
-            
-           
-           
-            
-            
-            
-            
-            
-            
-            
-            
-            /*
-            int index = 0;
-            for (int j = 0; j < rowCount; j++)
-            {
-                for (int i = 0; i < columnCount; i++)
-                {
-                    Vector2 localPos = new Vector2((i - (float)(columnCount - 1) / 2) * 90, (j - (float) (rowCount - 1)/2) * -70);
-                    _localPosListForButtons[index] = localPos;
-                    index++;
-                }
-            }
-            */
         }
         
     }
 
     public interface ILevelSelectionTableController
     {
-        void Initialize(ILevelSelectionTableView view, IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker);
+        void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker);
     }
 }

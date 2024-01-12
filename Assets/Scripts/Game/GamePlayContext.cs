@@ -7,7 +7,6 @@ namespace Scripts
     {
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private ILevelTracker _levelTracker;
-        [Inject] private IGameOptionTracker _gameOptionTracker;
         [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
         [Inject] private IResultAreaController _resultAreaController;
         [Inject] private IResultManager _resultManager;
@@ -30,7 +29,6 @@ namespace Scripts
             _gameSaveService.Initialize(_levelTracker);
             _levelTracker.Initialize(_gameSaveService);
             _levelTracker.SetLevelInfo();
-            _gameOptionTracker.Initialize();
             InitializeCardHolderModelCreator();
             InitializeResultArea();
             InitializeResultManager();
@@ -68,7 +66,7 @@ namespace Scripts
         
         private void SetLevelId()
         {
-            if (_gameOptionTracker.GetGameOption() == GameOption.SinglePlayer)
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
                 _gameUIView.SetLevelId(_levelTracker);
             }
@@ -100,7 +98,7 @@ namespace Scripts
 
         private void InitializeStarProgressBar()
         {
-            if (_gameOptionTracker.GetGameOption() == GameOption.SinglePlayer)
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
                 _starProgressBarController.Initialize(_levelTracker);
             }

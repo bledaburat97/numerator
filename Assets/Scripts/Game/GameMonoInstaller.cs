@@ -21,7 +21,6 @@ namespace Scripts
         {
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<IGameOptionTracker>().To<GameOptionTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ICardHolderModelCreator>().To<CardHolderModelCreator>().AsSingle();
             Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();

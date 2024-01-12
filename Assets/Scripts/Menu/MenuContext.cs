@@ -1,47 +1,50 @@
 ﻿using UnityEngine;
+using Zenject;
 
-namespace Scripts.Menu
+namespace Scripts
 {
     public class MenuContext : MonoBehaviour
     {
-        [SerializeField] private PlayButtonView playButton;
-        [SerializeField] private LevelTracker levelTracker;
-        private IGameSaveService _gameSaveService;
-        [SerializeField] private TextHolderAdjustment starHolder;
-        [SerializeField] private TextHolderAdjustment wildHolder;
-        [SerializeField] private LevelSelectionTableView levelSelectionTablePrefab;
-        private IActiveLevelIdController _activeLevelIdController;        
+        [Inject] private ILevelTracker _levelTracker;
+        [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private IActiveLevelIdController _activeLevelIdController;
+        [Inject] private ILevelSelectionTableController _levelSelectionTableController;
+        [Inject] private IMenuHeaderController _menuHeaderController;
+        [Inject] private ISinglePlayerButtonController _singlePlayerButtonController;
+        [Inject] private IMultiPlayerButtonController _multiPlayerButtonController;
+
         void Start()
         {
-            _gameSaveService = new GameSaveService();
-            _gameSaveService.Initialize(levelTracker);
-            levelTracker.Initialize(_gameSaveService);
+            _gameSaveService.Initialize(_levelTracker);
+            _levelTracker.Initialize(_gameSaveService);
             CreateActiveLevelIdController();
             CreateLevelTable();
-            CreatePlayButton();
-            starHolder.SetText(levelTracker.GetStarCount().ToString());
-            wildHolder.SetText(levelTracker.GetWildCardCount().ToString());
-            starHolder.SetPosition();
-            wildHolder.SetPosition();
+            CreateButtons();
+            CreateMenuHeader();
         }
 
         private void CreateActiveLevelIdController()
         {
-            _activeLevelIdController = new ActiveLevelIdController();
-            _activeLevelIdController.Initialize(levelTracker, _gameSaveService);
+            _activeLevelIdController.Initialize(_levelTracker, _gameSaveService);
         }
         
         private void CreateLevelTable()
         {
-            ILevelSelectionTableController levelSelectionTableController = new LevelSelectionTableController();
-            levelSelectionTableController.Initialize(levelSelectionTablePrefab, _activeLevelIdController, levelTracker);
+            _levelSelectionTableController.Initialize(_activeLevelIdController, _levelTracker);
         }
 
-        private void CreatePlayButton()
+        private void CreateButtons()
         {
-            IMenuPlayButtonController playButtonController = new MenuPlayButtonController();
-            playButtonController.Initialize(playButton, _activeLevelIdController);
+            _singlePlayerButtonController.Initialize(_activeLevelIdController, _levelTracker);
+            _multiPlayerButtonController.Initialize(_levelTracker);
         }
+        
+        private void CreateMenuHeader()
+        {
+            _menuHeaderController.Initialize(_levelTracker);
+        }
+
+
 
 
     }

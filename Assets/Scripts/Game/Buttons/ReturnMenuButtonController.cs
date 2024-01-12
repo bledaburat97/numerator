@@ -21,7 +21,10 @@ namespace Scripts
         private void OnReturnMenuButtonClick(Action saveGameAction)
         {
             saveGameAction?.Invoke();
-            NetworkManager.Singleton.Shutdown();
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
             SceneManager.LoadScene("Menu");
         }
     }

@@ -3,34 +3,33 @@ using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Random = System.Random;
 
 namespace Scripts
 {
     public class MultiplayerManager : NetworkBehaviour
     {
-        public static MultiplayerManager Instance { get; private set; }
-        public const int MAX_NUM_OF_USERS = 2;
         private string _playerName;
+        private NetworkList<PlayerData> _playerDataNetworkList;
 
+        public static MultiplayerManager Instance { get; private set; }
+
+        public const int MAX_NUM_OF_USERS = 2;
+        private const string PLAYER_NAME_KEY = "player_name_multiplayer";
         public event EventHandler OnTryingToJoinGame;
         public event EventHandler OnFailedToJoinGame;
         public event EventHandler OnPlayerDataNetworkListChanged;
         
-        private NetworkList<PlayerData> _playerDataNetworkList;
-        
         private void Awake()
         {
             Instance = this;
-            _playerName =
-                PlayerPrefs.GetString("player_name_multiplayer", "Player" + UnityEngine.Random.Range(100, 1000));
+            _playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY, "Player" + UnityEngine.Random.Range(100, 1000));
             DontDestroyOnLoad(gameObject);
             
             _playerDataNetworkList = new NetworkList<PlayerData>();
             _playerDataNetworkList.OnListChanged += OnListChanged;
         }
 
-        private void OnListChanged(NetworkListEvent<PlayerData> changeevent)
+        private void OnListChanged(NetworkListEvent<PlayerData> changeEvent)
         {
             OnPlayerDataNetworkListChanged?.Invoke(this, EventArgs.Empty);
         }

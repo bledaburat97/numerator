@@ -13,15 +13,27 @@ namespace Scripts
         private IGameSaveService _gameSaveService;
         private List<int> _starCountOfCompletedLevels;
         private int _levelId;
+        private GameOption _gameOption;
         
         public void Initialize(IGameSaveService gameSaveService)
         {
-            //ClearPlayerPrefs();
+            _gameOption = (GameOption)PlayerPrefs.GetInt("game_option", 0);
             _gameSaveService = gameSaveService;
-            _levelId = 0;//PlayerPrefs.GetInt("level_id", 0);
+            _levelId = PlayerPrefs.GetInt("level_id", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
             _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();
+        }
+
+        public void SetGameOption(GameOption gameOption)
+        {
+            PlayerPrefs.SetInt("game_option", (int)gameOption);
+            _gameOption = gameOption;
+        }
+
+        public GameOption GetGameOption()
+        {
+            return _gameOption;
         }
 
         public void ClearPlayerPrefs()
@@ -190,6 +202,8 @@ namespace Scripts
         void SetLevelInfo();
         List<int> GetStarCountOfLevels();
         void SetLevelId(int levelId);
+        void SetGameOption(GameOption gameOption);
+        GameOption GetGameOption();
     }
 
     public class LevelData
@@ -205,6 +219,12 @@ namespace Scripts
     {
         public LevelSaveData levelSaveData;
         public LevelData levelData;
+    }
+    
+    public enum GameOption
+    {
+        SinglePlayer = 0,
+        MultiPlayer = 1
     }
     
 }

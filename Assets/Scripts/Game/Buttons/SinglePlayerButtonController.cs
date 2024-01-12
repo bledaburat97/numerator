@@ -1,41 +1,54 @@
-﻿using UnityEngine.SceneManagement;
+﻿using System;
+using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
     public class SinglePlayerButtonController : ISinglePlayerButtonController
     {
         private IPlayButtonView _view;
-        
+        private ILevelTracker _levelTracker;
+
         public SinglePlayerButtonController(IPlayButtonView view)
         {
             _view = view;
         }
-
-        public void Initialize(IGameOptionTracker gameOptionTracker)
+        
+        public void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker)
         {
+            _levelTracker = levelTracker;
+            activeLevelIdController.LevelSelectionChanged += OnTextChange;
             BaseButtonModel model = new BaseButtonModel()
             {
-                text = "Single Player",
-                OnClick = () => OnPlayButtonClick(gameOptionTracker)
+                text = GetText(activeLevelIdController.GetActiveLevelId(), activeLevelIdController.IsNewGame()),
+                OnClick = () => OnPlayButtonClick()
             };
             _view.Init(model);
         }
-        
-        private void OnPlayButtonClick(IGameOptionTracker gameOptionTracker)
+
+        private void OnPlayButtonClick()
         {
-            gameOptionTracker.SetGameOption(GameOption.SinglePlayer);
-            SceneManager.LoadScene("Menu");
+            _levelTracker.SetGameOption(GameOption.SinglePlayer);
+            SceneManager.LoadScene("Game");
+        }
+
+        private void OnTextChange(object sender, ActiveLevelChangedEventArgs args)
+        {
+            _view.SetText(GetText(args.activeLevelId, args.isNewGame));
+        }
+
+        private string GetText(int activeLevelId, bool isNewLevel)
+        {
+            if (!isNewLevel)
+            {
+                return "Continue";
+            }
+
+            return "Level " + (activeLevelId + 1);
         }
     }
 
     public interface ISinglePlayerButtonController
     {
-        void Initialize(IGameOptionTracker gameOptionTracker);
-    }
-
-    public enum GameOption
-    {
-        SinglePlayer = 0,
-        MultiPlayer = 1
+        void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker);
     }
 }

@@ -6,7 +6,7 @@ namespace Scripts
 {
     public class LobbyUIView : MonoBehaviour, ILobbyUIView
     {
-        [SerializeField] private PlayButtonView homeButton;
+        [SerializeField] private PlayButtonView menuButton;
         [SerializeField] private TMP_InputField playerNameInputField;
         [SerializeField] private PlayButtonView createLobbyButton;
         [SerializeField] private PlayButtonView quickJoinButton;
@@ -33,9 +33,9 @@ namespace Scripts
             return codeInputField.text;
         }
 
-        public void SetHomeButton(BaseButtonModel model)
+        public void SetMenuButton(BaseButtonModel model)
         {
-            homeButton.Init(model);
+            menuButton.Init(model);
         }
 
         public void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged)
@@ -52,6 +52,6 @@ namespace Scripts
         void SetJoinByCodeButton(BaseButtonModel model);
         string GetCodeInputField();
         void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged);
-        void SetHomeButton(BaseButtonModel model);
+        void SetMenuButton(BaseButtonModel model);
     }
 }

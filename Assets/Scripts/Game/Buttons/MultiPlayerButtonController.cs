@@ -5,31 +5,33 @@ namespace Scripts
     public class MultiPlayerButtonController : IMultiPlayerButtonController
     {
         private IPlayButtonView _view;
+        private ILevelTracker _levelTracker;
         
         public MultiPlayerButtonController(IPlayButtonView view)
         {
             _view = view;
         }
 
-        public void Initialize(IGameOptionTracker gameOptionTracker)
+        public void Initialize(ILevelTracker levelTracker)
         {
+            _levelTracker = levelTracker;
             BaseButtonModel model = new BaseButtonModel()
             {
                 text = "Multiplayer",
-                OnClick = () => OnPlayButtonClick(gameOptionTracker)
+                OnClick = OnPlayButtonClick
             };
             _view.Init(model);
         }
         
-        private void OnPlayButtonClick(IGameOptionTracker gameOptionTracker)
+        private void OnPlayButtonClick()
         {
-            gameOptionTracker.SetGameOption(GameOption.MultiPlayer);
+            _levelTracker.SetGameOption(GameOption.MultiPlayer);
             SceneManager.LoadScene("Lobby");
         }
     }
 
     public interface IMultiPlayerButtonController
     {
-        void Initialize(IGameOptionTracker gameOptionTracker);
+        void Initialize(ILevelTracker gameOptionTracker);
     }
 }

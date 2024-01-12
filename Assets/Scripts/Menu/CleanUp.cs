@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Scripts
 {
-    public class HomeCleanUp : MonoBehaviour
+    public class CleanUp : MonoBehaviour
     {
         private void Awake()
         {

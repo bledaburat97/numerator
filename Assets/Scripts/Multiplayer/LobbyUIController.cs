@@ -29,10 +29,10 @@ namespace Scripts
                 text = "Join By Code",
                 OnClick = OnJoinByCodeButtonClick
             });
-            _view.SetHomeButton(new BaseButtonModel()
+            _view.SetMenuButton(new BaseButtonModel()
             {
-                text = "Home",
-                OnClick = OnHomeButtonClick
+                text = "Menu",
+                OnClick = OnMenuButtonClick
             });
             _view.InitPlayerNameInputField(MultiplayerManager.Instance.GetPlayerName(), OnPlayerNameChanged);
         }
@@ -57,10 +57,10 @@ namespace Scripts
             MultiplayerManager.Instance.SetPlayerName(playerName);
         }
 
-        private void OnHomeButtonClick()
+        private void OnMenuButtonClick()
         {
             PlayerLobby.Instance.LeaveLobby();
-            SceneManager.LoadScene("Home");
+            SceneManager.LoadScene("Menu");
         }
     }
 
