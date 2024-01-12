@@ -5,24 +5,22 @@ namespace Scripts
 {
     public class LobbyContext : MonoBehaviour
     {
-        [Inject] private ICreateGameButtonController _createGameButtonController;
-        [Inject] private IJoinGameButtonController _joinGameButtonController;
         [Inject] private ILobbyPopupCreator _lobbyPopupCreator;
+        [Inject] private ILobbyUIController _lobbyUIController;
         void Start()
         {
-            CreatePlayButtons();
             InitializeLobbyPopupCreator();
+            CreateLobbyUIController();
         }
         
-        private void CreatePlayButtons()
-        {
-            _createGameButtonController.Initialize();
-            _joinGameButtonController.Initialize();
-        }
-
         private void InitializeLobbyPopupCreator()
         {
             _lobbyPopupCreator.Initialize();
+        }
+        
+        private void CreateLobbyUIController()
+        {
+            _lobbyUIController.Initialize(_lobbyPopupCreator);
         }
     }
 }

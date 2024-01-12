@@ -1,0 +1,57 @@
+﻿using System;
+using TMPro;
+using UnityEngine;
+
+namespace Scripts
+{
+    public class LobbyUIView : MonoBehaviour, ILobbyUIView
+    {
+        [SerializeField] private PlayButtonView homeButton;
+        [SerializeField] private TMP_InputField playerNameInputField;
+        [SerializeField] private PlayButtonView createLobbyButton;
+        [SerializeField] private PlayButtonView quickJoinButton;
+        [SerializeField] private PlayButtonView joinByCodeButton;
+        [SerializeField] private TMP_InputField codeInputField;
+
+        public void SetCreateLobbyButton(BaseButtonModel model)
+        {
+            createLobbyButton.Init(model);
+        }
+        
+        public void SetQuickJoinButton(BaseButtonModel model)
+        {
+            quickJoinButton.Init(model);
+        }
+        
+        public void SetJoinByCodeButton(BaseButtonModel model)
+        {
+            joinByCodeButton.Init(model);
+        }
+
+        public string GetCodeInputField()
+        {
+            return codeInputField.text;
+        }
+
+        public void SetHomeButton(BaseButtonModel model)
+        {
+            homeButton.Init(model);
+        }
+
+        public void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged)
+        {
+            playerNameInputField.text = playerName;
+            playerNameInputField.onValueChanged.AddListener(onPlayerNameChanged.Invoke);
+        }
+    }
+
+    public interface ILobbyUIView
+    {
+        void SetCreateLobbyButton(BaseButtonModel model);
+        void SetQuickJoinButton(BaseButtonModel model);
+        void SetJoinByCodeButton(BaseButtonModel model);
+        string GetCodeInputField();
+        void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged);
+        void SetHomeButton(BaseButtonModel model);
+    }
+}

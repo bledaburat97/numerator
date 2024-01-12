@@ -41,11 +41,6 @@ namespace Scripts
             title.SetText(text);
         }
 
-        public void Close()
-        {
-            Hide();
-        }
-
         private void OnDestroy()
         {
             MultiplayerManager.Instance.OnFailedToJoinGame -= OnFailedToJoinGame;
