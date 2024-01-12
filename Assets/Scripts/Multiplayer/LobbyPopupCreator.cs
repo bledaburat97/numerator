@@ -65,6 +65,11 @@ namespace Scripts
         private void OnDestroy()
         {
             MultiplayerManager.Instance.OnFailedToJoinGame -= OnFailedToJoinGame;
+            PlayerLobby.Instance.OnCreateLobbyStarted -= OnCreateLobbyStarted;
+            PlayerLobby.Instance.OnCreateLobbyFailed -= OnCreateLobbyFailed;
+            PlayerLobby.Instance.OnJoinStarted -= OnJoinStarted;
+            PlayerLobby.Instance.OnQuickJoinFailed -= OnQuickJoinFailed;
+            PlayerLobby.Instance.OnJoinFailed -= OnJoinFailed;
         }
     }
 

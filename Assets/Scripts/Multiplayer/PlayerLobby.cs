@@ -1,17 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Video;
 
 namespace Scripts
 {
     public class PlayerLobby : MonoBehaviour
     {
+        private const string KEY_RELAY_JOIN_CODE = "relay_join_code";
         public static PlayerLobby Instance;
 
         private Lobby _joinedLobby;
@@ -57,11 +63,52 @@ namespace Scripts
         private async void InitializeUnityAuthentication() {
             if (UnityServices.State != ServicesInitializationState.Initialized) {
                 InitializationOptions initializationOptions = new InitializationOptions();
-                initializationOptions.SetProfile(UnityEngine.Random.Range(0, 10000).ToString());
-
                 await UnityServices.InitializeAsync(initializationOptions);
 
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
+        }
+
+        private async Task<Allocation> AllocateRelay()
+        {
+            try
+            {
+                Allocation allocation =
+                    await RelayService.Instance.CreateAllocationAsync(MultiplayerManager.MAX_NUM_OF_USERS - 1);
+                return allocation;
+            }
+            catch (RelayServiceException e)
+            {
+                Debug.Log(e);
+                return default;
+            }
+        }
+
+        private async Task<string> GetRelayJoinCode(Allocation allocation)
+        {
+            try
+            {
+                string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+                return joinCode;
+            }
+            catch (RelayServiceException e)
+            {
+                Debug.Log(e);
+                return default;
+            }
+        }
+
+        private async Task<JoinAllocation> JoinRelay(string joinCode)
+        {
+            try
+            {
+                JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+                return joinAllocation;
+            }
+            catch (RelayServiceException e)
+            {
+                Debug.Log(e);
+                return default;
             }
         }
 
@@ -76,6 +123,18 @@ namespace Scripts
                     {
                         IsPrivate = isPrivate,
                     });
+                Allocation allocation = await AllocateRelay();
+                string relayJoinCode = await GetRelayJoinCode(allocation);
+                await LobbyService.Instance.UpdateLobbyAsync(_joinedLobby.Id, new UpdateLobbyOptions()
+                {
+                    Data = new Dictionary<string, DataObject>()
+                    {
+                        { KEY_RELAY_JOIN_CODE, new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode) }
+                    }
+                });
+                
+                
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
                 MultiplayerManager.Instance.StartHost();
                 NetworkManager.Singleton.SceneManager.LoadScene("WaitingScene", LoadSceneMode.Single);
             }
@@ -92,6 +151,9 @@ namespace Scripts
             try
             {
                 _joinedLobby = await LobbyService.Instance.QuickJoinLobbyAsync();
+                string relayJoinCode = _joinedLobby.Data[KEY_RELAY_JOIN_CODE].Value;
+                JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
                 MultiplayerManager.Instance.StartClient();
             }
             catch (LobbyServiceException e)
@@ -112,6 +174,10 @@ namespace Scripts
             try
             {
                 _joinedLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code);
+                string relayJoinCode = _joinedLobby.Data[KEY_RELAY_JOIN_CODE].Value;
+                JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+
                 MultiplayerManager.Instance.StartClient();
             }
             catch (LobbyServiceException e)
