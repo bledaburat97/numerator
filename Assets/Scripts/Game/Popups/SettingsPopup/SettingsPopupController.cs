@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
 namespace Scripts
@@ -6,10 +7,12 @@ namespace Scripts
     public class SettingsPopupController : ISettingsPopupController
     {
         private ISettingsPopupView _view;
+        private ILevelTracker _levelTracker;
 
-        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction)
+        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker)
         {
             _view = view;
+            _levelTracker = levelTracker;
             _view.Init();
             CreateCloseButton(onCloseAction);
             CreatePlayButton(deleteSaveAction);
@@ -31,9 +34,15 @@ namespace Scripts
         
         private void CreatePlayButton(Action deleteSaveAction)
         {
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                _view.DestroyRetryButton();
+                return;
+            }
             IPlayButtonController playButtonController = new PlayButtonController();
             Action onClickAction = deleteSaveAction;
-            onClickAction += () => SceneManager.LoadScene("Game");
+            onClickAction += () => NetworkManager.Singleton.StartHost();
+            onClickAction += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             playButtonController.Initialize(_view.GetPlayButtonView(), new BaseButtonModel()
             {
                 text = "Retry",
@@ -50,6 +59,6 @@ namespace Scripts
 
     public interface ISettingsPopupController
     {
-        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction);
+        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker);
     }
 }

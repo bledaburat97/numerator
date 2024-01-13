@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -52,17 +51,17 @@ namespace Scripts
             {
                 finalNumber += resultBlockModel.finalNumbers[i] * ((int) Math.Pow(10, i));
             }
-            AddResultBlockServerRpc(finalNumber);
+            AddResultBlockServerRpc(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
         }
 
         [ServerRpc (RequireOwnership = false)]
-        private void AddResultBlockServerRpc(int finalNumber)
+        private void AddResultBlockServerRpc(int finalNumber, int correctPosCount, int wrongPosCount)
         {
-            AddResultBlockClientRpc(finalNumber);
+            AddResultBlockClientRpc(finalNumber, correctPosCount, wrongPosCount);
         }
         
         [ClientRpc]
-        private void AddResultBlockClientRpc(int finalNumber)
+        private void AddResultBlockClientRpc(int finalNumber, int correctPosCount, int wrongPosCount)
         {
             IResultBlockController resultBlockController = _resultBlockControllerFactory.Spawn();
             IResultBlockView resultBlockView = CreateResultBlock();
@@ -73,9 +72,13 @@ namespace Scripts
                 finalNumbers.Add(a);
                 finalNumber /= 10;
             }
+
             resultBlockController.Initialize(resultBlockView, new ResultBlockModel()
-            {finalNumbers = finalNumbers, 
-                resultModels = new List<ResultModel>(){new ResultModel(){cardPositionCorrectness = CardPositionCorrectness.Correct, number = 2}}});
+            {
+                finalNumbers = finalNumbers,
+                correctPosCount = correctPosCount,
+                wrongPosCount = wrongPosCount
+            });
             SetScrollPositionToBottom();
         }
         
@@ -86,7 +89,8 @@ namespace Scripts
 
         private void OnClientDisconnectCallback(ulong clientId)
         {
-            if (NetworkManager.Singleton.ConnectedClientsIds.Contains(clientId))
+            //if (NetworkManager.Singleton.ConnectedClientsIds.Contains(clientId))
+            if (clientId == NetworkManager.ServerClientId)
             {
                 _gamePopupCreator.CreateDisconnectionPopup();
             }

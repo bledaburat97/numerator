@@ -20,11 +20,10 @@ namespace Scripts
         private void CreateResults()
         {
             _view.SetResultHolderLocalPosition();
-            for (int i = 0; i < _model.resultModels.Count; i++)
-            {
-                IResultView resultView = _view.CreateResult();
-                resultView.Init(_model.resultModels[i]);
-            }
+            IResultView correctPosResultView = _view.CreateResult();
+            correctPosResultView.Init(CardPositionCorrectness.Correct, _model.correctPosCount);
+            IResultView wrongPosResultView = _view.CreateResult();
+            wrongPosResultView.Init(CardPositionCorrectness.Wrong, _model.wrongPosCount);
         }
 
         private void CreateCardItems()
@@ -51,18 +50,12 @@ namespace Scripts
     {
         Correct,
         Wrong,
-        NotExisted
     }
 
     public class ResultBlockModel : EventArgs
     {
         public List<int> finalNumbers;
-        public List<ResultModel> resultModels;
-    }
-    
-    public class ResultModel
-    {
-        public CardPositionCorrectness cardPositionCorrectness;
-        public int number;
+        public int correctPosCount;
+        public int wrongPosCount;
     }
 }

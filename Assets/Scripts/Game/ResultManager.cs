@@ -24,7 +24,8 @@ namespace Scripts
                 ResultBlockAddition?.Invoke(this, new ResultBlockModel()
                 {
                     finalNumbers = triedCards,
-                    resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
+                    correctPosCount = numOfCorrectPos,
+                    wrongPosCount = numOfWrongPos
                 });
             }
         }
@@ -84,37 +85,14 @@ namespace Scripts
                 ResultBlockAddition?.Invoke(this, new ResultBlockModel()
                 {
                     finalNumbers = finalCards,
-                    resultModels = CreateResultModelList(numOfCorrectPos, numOfWrongPos)
+                    correctPosCount = numOfCorrectPos,
+                    wrongPosCount = numOfWrongPos
                 });
                 NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
                 {
                     isGuessRight = false,
                 });
             }
-        }
-
-        private List<ResultModel> CreateResultModelList(int numOfCorrectPos, int numOfWrongPos)
-        {
-            List<ResultModel> resultModels = new List<ResultModel>();
-            if (numOfCorrectPos > 0)
-            {
-                resultModels.Add(new ResultModel()
-                {
-                    number = numOfCorrectPos,
-                    cardPositionCorrectness = CardPositionCorrectness.Correct
-                });
-            }
-
-            if (numOfWrongPos > 0)
-            {
-                resultModels.Add(new ResultModel()
-                {
-                    number = numOfWrongPos,
-                    cardPositionCorrectness = CardPositionCorrectness.Wrong
-                });
-            }
-
-            return resultModels;
         }
         
         public List<List<int>> GetTriedCardsList()

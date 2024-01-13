@@ -13,6 +13,7 @@ namespace Scripts
         
         public void Initialize()
         {
+            _view.Init(UnsubscribeEvents);
             for (int i = 0; i < MultiplayerManager.MAX_NUM_OF_USERS; i++)
             {
                 _playerNameViewList[i] = null;
@@ -68,6 +69,12 @@ namespace Scripts
                 .GetPlayerDataFromPlayerIndex(playerIndex);
             PlayerLobby.Instance.KickPlayerFromLobby(playerData.playerId.ToString());
             MultiplayerManager.Instance.KickPlayer(playerData.clientId);
+        }
+
+        private void UnsubscribeEvents()
+        {
+            MultiplayerManager.Instance.OnPlayerDataNetworkListChanged -= OnPlayerDataNetworkListChanged;
+            UserReady.Instance.OnReadyChanged -= OnReadyChanged;
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
 namespace Scripts
@@ -28,7 +29,7 @@ namespace Scripts
         private void OnPlayButtonClick()
         {
             _levelTracker.SetGameOption(GameOption.SinglePlayer);
-            SceneManager.LoadScene("Game");
+            SceneManager.LoadScene("Lobby");
         }
 
         private void OnTextChange(object sender, ActiveLevelChangedEventArgs args)

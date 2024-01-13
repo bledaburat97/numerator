@@ -46,27 +46,44 @@ namespace Scripts
 
         public void SetLevelInfo()
         {
-            List<LevelData> levelDataList = LevelDataGetter.GetLevelDataFromJson();
-            LevelData levelData = levelDataList.Find(level => level.LevelId == _levelId % 15);
             _levelInfo = new LevelInfo();
-            LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
-
-            if (levelSaveData != null)
+            if (_gameOption == GameOption.SinglePlayer)
             {
-                if (_levelId == levelSaveData.LevelId)
+                List<LevelData> levelDataList = LevelDataGetter.GetLevelDataFromJson();
+                LevelData levelData = levelDataList.Find(level => level.LevelId == _levelId % 15);
+                
+                LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
+
+                if (levelSaveData != null)
                 {
-                    _levelInfo.levelSaveData = levelSaveData;
-                    _levelInfo.levelData = levelData;
+                    if (_levelId == levelSaveData.LevelId)
+                    {
+                        _levelInfo.levelSaveData = levelSaveData;
+                        _levelInfo.levelData = levelData;
+                    }
+                    else
+                    {
+                        _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
+                    }
                 }
                 else
                 {
                     _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
                 }
             }
+
             else
             {
-                _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
+                LevelData multiplayerLevelData = new LevelData()
+                {
+                    LevelId = -1,
+                    NumOfBoardHolders = 5,
+                    NumOfCards = 9,
+                    MaxNumOfTries = 1000,
+                };
+                _levelInfo = CreateDefaultLevelInfo(_levelId, multiplayerLevelData);
             }
+
         }
         
         public LevelInfo GetLevelInfo()

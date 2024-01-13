@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -6,6 +7,11 @@ namespace Scripts
     {
         [SerializeField] private PlayerNameView playerNamePrefab;
         private PlayerNameViewFactory _playerNameViewFactory;
+        private Action _onDestroyAction;
+        public void Init(Action onDestroyAction)
+        {
+            _onDestroyAction = onDestroyAction;
+        }
 
         public IPlayerNameView CreatePlayerNameView()
         {
@@ -13,10 +19,17 @@ namespace Scripts
             IPlayerNameView playerNameView = _playerNameViewFactory.Spawn(transform, playerNamePrefab);
             return playerNameView;
         }
+
+        private void OnDestroy()
+        {
+            Debug.Log("OnDestroyPlayerNameAreaView");
+            _onDestroyAction?.Invoke();
+        }
     }
 
     public interface IPlayerNameAreaView
     {
+        void Init(Action onDestroyAction);
         IPlayerNameView CreatePlayerNameView();
     }
 }

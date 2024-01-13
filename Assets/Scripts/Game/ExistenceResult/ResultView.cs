@@ -11,12 +11,12 @@ namespace Scripts
         [SerializeField] private Image plusImage;
         [SerializeField] private Image minusImage;
         
-        public void Init(ResultModel model)
+        public void Init(CardPositionCorrectness cardPositionCorrectness, int count)
         {
             transform.localScale = Vector3.one;
-            numberText.SetText(model.number.ToString());
-            if(model.cardPositionCorrectness == CardPositionCorrectness.Correct) plusImage.gameObject.SetActive(true);
-            else if(model.cardPositionCorrectness == CardPositionCorrectness.Wrong) minusImage.gameObject.SetActive(true);
+            numberText.SetText(count.ToString());
+            if(cardPositionCorrectness == CardPositionCorrectness.Correct) plusImage.gameObject.SetActive(true);
+            else if(cardPositionCorrectness == CardPositionCorrectness.Wrong) minusImage.gameObject.SetActive(true);
         }
 
         public Vector2 GetSize()
@@ -27,7 +27,7 @@ namespace Scripts
     
     public interface IResultView
     {
-        void Init(ResultModel model);
+        void Init(CardPositionCorrectness cardPositionCorrectness, int count);
         Vector2 GetSize();
     }
 }

@@ -17,12 +17,13 @@ namespace Scripts
         private DisconnectionPopupControllerFactory _disconnectionPopupControllerFactory;
         private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
         private IFadePanelController _fadePanelController;
+        private ILevelTracker _levelTracker;
         private Action _saveGameAction = null;
         private Action _deleteSaveAction = null;
         [SerializeField] private GameObject glowSystem;
         [SerializeField] private GlowingLevelEndPopupView glowingLevelEndPopup;
         
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -31,10 +32,11 @@ namespace Scripts
             _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
             _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
             _fadePanelController = fadePanelController;
+            _levelTracker = levelTracker;
             levelManager.LevelEnd += CreateLevelEndPopup;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
             //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
-            _saveGameAction += gameSaveService.Save;
+            _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? gameSaveService.Save : null;
             _deleteSaveAction += gameSaveService.DeleteSave;
         }
         
@@ -54,7 +56,7 @@ namespace Scripts
             _fadePanelController.SetFadeImageStatus(true);
             ISettingsPopupController settingsPopupController = _settingsPopupControllerFactory.Spawn();
             ISettingsPopupView settingsPopupView = _settingsPopupViewFactory.Spawn(transform, settingsPopupPrefab);
-            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction);
+            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction, _levelTracker);
         }
 
         private void OnClosePopup()
@@ -87,7 +89,7 @@ namespace Scripts
     public interface IGamePopupCreator
     {
         void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
-            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService);
+            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker);
 
         void CreateDisconnectionPopup();
     }

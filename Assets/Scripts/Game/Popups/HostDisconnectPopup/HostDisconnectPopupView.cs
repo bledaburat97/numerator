@@ -6,11 +6,11 @@ namespace Scripts
 {
     public class HostDisconnectPopupView : MonoBehaviour
     {
-        [SerializeField] private Button homeButton;
+        [SerializeField] private Button menuButton;
         public void Init()
         {
             Hide();
-            homeButton.onClick.AddListener(() => SceneManager.LoadScene("Home"));
+            menuButton.onClick.AddListener(() => SceneManager.LoadScene("Menu"));
         }
 
         public void Show()

@@ -7,7 +7,6 @@ namespace Scripts
         [Inject] private IGamePopupCreator _gamePopupCreator;
         private IResultAreaView _view;
         
-
         public ResultAreaController(IResultAreaView view)
         {
             _view = view;

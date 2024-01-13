@@ -28,6 +28,11 @@ namespace Scripts
             return returnMenuButtonView;
         }
 
+        public void DestroyRetryButton()
+        {
+            Destroy(playButtonView.gameObject);
+        }
+
         public void Close()
         {
             Destroy(gameObject);
@@ -40,6 +45,7 @@ namespace Scripts
         IBaseButtonView GetCloseButtonView();
         IPlayButtonView GetPlayButtonView();
         IBaseButtonView GetReturnMenuButtonView();
+        void DestroyRetryButton();
         void Close();
     }
 }

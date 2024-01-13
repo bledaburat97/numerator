@@ -26,7 +26,7 @@ namespace Scripts
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
         public static Color SELECTED_LEVEL_BUTTON_COLOR = HexToColor("#5F6DA6");
         public static int NUM_OF_STARS_FOR_WILD = 6;
-        
+
         public static Dictionary<ProbabilityType, Color> GetProbabilityTypeToColorMapping()
         {
             Dictionary<ProbabilityType, Color> probabilityTypeToColorMapping = new Dictionary<ProbabilityType, Color>();
@@ -35,16 +35,7 @@ namespace Scripts
             probabilityTypeToColorMapping.Add(ProbabilityType.NotExisted, HexToColor("#E03934"));
             return probabilityTypeToColorMapping;
         }
-        
-        public static Dictionary<CardPositionCorrectness, Color> GetCardPositionToColorMapping()
-        {
-            Dictionary<CardPositionCorrectness, Color> cardPositionToColorMapping = new Dictionary<CardPositionCorrectness, Color>();
-            cardPositionToColorMapping.Add(CardPositionCorrectness.Correct, HexToColor("#63DE71"));
-            cardPositionToColorMapping.Add(CardPositionCorrectness.Wrong, HexToColor("#FADD8C"));
-            cardPositionToColorMapping.Add(CardPositionCorrectness.NotExisted, HexToColor("#E03934"));
-            return cardPositionToColorMapping;
-        }
-        
+
         private static Color HexToColor(string hex)
         {
             Color color = Color.white; // Default color in case of invalid hex string

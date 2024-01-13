@@ -93,7 +93,7 @@ namespace Scripts
         
         private void OnApplicationQuit()
         {
-            _gameSaveService.Save();
+            if(_levelTracker.GetGameOption() == GameOption.SinglePlayer) _gameSaveService.Save();
         }
 
         private void InitializeStarProgressBar()
@@ -145,7 +145,7 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker);
         }
 
         /*
