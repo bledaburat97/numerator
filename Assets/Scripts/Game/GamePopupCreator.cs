@@ -67,6 +67,7 @@ namespace Scripts
         public override void OnNetworkSpawn()
         {
             _isGameEnd.OnValueChanged += CreateMultiplayerLevelLostPopup;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
         }
 
         private void CreateMultiplayerLevelLostPopup(bool previousValue, bool newValue)
@@ -133,8 +134,13 @@ namespace Scripts
             
         }
         */
+        
+        private void OnClientDisconnectCallback(ulong clientId)
+        {
+            CreateDisconnectionPopup();
+        }
 
-        public void CreateDisconnectionPopup()
+        private void CreateDisconnectionPopup()
         {
             _fadePanelController.SetFadeImageStatus(true);
             IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
@@ -148,7 +154,5 @@ namespace Scripts
     {
         void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
             ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady);
-
-        void CreateDisconnectionPopup();
     }
 }

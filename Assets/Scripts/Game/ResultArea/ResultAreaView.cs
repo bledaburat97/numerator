@@ -82,19 +82,6 @@ namespace Scripts
             SetScrollPositionToBottom();
         }
         
-        public override void OnNetworkSpawn()
-        {
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
-        }
-
-        private void OnClientDisconnectCallback(ulong clientId)
-        {
-            //if (NetworkManager.Singleton.ConnectedClientsIds.Contains(clientId))
-            if (clientId == NetworkManager.ServerClientId)
-            {
-                _gamePopupCreator.CreateDisconnectionPopup();
-            }
-        }
     }
 
     public interface IResultAreaView
