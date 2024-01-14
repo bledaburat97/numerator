@@ -13,10 +13,10 @@ namespace Scripts
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         public event EventHandler<BackFlipCorrectCardsEventArgs> CorrectCardsBackFlipped;
         
-        public void Initialize(ILevelTracker levelTracker)
+        public void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator)
         {
             _levelTracker = levelTracker;
-            _targetCards = _levelTracker.GetLevelInfo().levelSaveData.TargetCards;
+            _targetCards = targetNumberCreator.GetTargetCardsList();
             _triedCardsList = _levelTracker.GetLevelInfo().levelSaveData.TriedCardsList;
             foreach (List<int> triedCards in _triedCardsList)
             {
@@ -119,7 +119,7 @@ namespace Scripts
 
     public interface IResultManager
     {
-        void Initialize(ILevelTracker levelTracker);
+        void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator);
         int GetTargetCardAtIndex(int index);
         void CheckFinalCards(List<int> finalCards);
         event EventHandler<ResultBlockModel> ResultBlockAddition;

@@ -44,7 +44,7 @@ namespace Scripts
             PlayerPrefs.DeleteKey("star_count_of_levels");
         }
 
-        public void SetLevelInfo()
+        public void SetLevelInfo(ITargetNumberCreator targetNumberCreator)
         {
             _levelInfo = new LevelInfo();
             if (_gameOption == GameOption.SinglePlayer)
@@ -60,15 +60,18 @@ namespace Scripts
                     {
                         _levelInfo.levelSaveData = levelSaveData;
                         _levelInfo.levelData = levelData;
+                        targetNumberCreator.SetSavedTargetCardList(_levelInfo.levelSaveData.TargetCards);
                     }
                     else
                     {
                         _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
+                        targetNumberCreator.CreateTargetNumber(_levelInfo.levelData.NumOfCards, _levelInfo.levelData.NumOfBoardHolders);
                     }
                 }
                 else
                 {
                     _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
+                    targetNumberCreator.CreateTargetNumber(_levelInfo.levelData.NumOfCards, _levelInfo.levelData.NumOfBoardHolders);
                 }
             }
 
@@ -82,6 +85,8 @@ namespace Scripts
                     MaxNumOfTries = 1000,
                 };
                 _levelInfo = CreateDefaultLevelInfo(_levelId, multiplayerLevelData);
+                targetNumberCreator.CreateTargetNumber(_levelInfo.levelData.NumOfCards, _levelInfo.levelData.NumOfBoardHolders);
+
             }
 
         }
@@ -96,7 +101,7 @@ namespace Scripts
             LevelSaveData levelSaveData = new LevelSaveData();
             levelSaveData.LevelId = levelId;
             levelSaveData.TriedCardsList = new List<List<int>>();
-            levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
+            //levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
             levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
             levelSaveData.CardItemInfoList = new List<CardItemInfo>();
             for (int i = 0; i < levelData.NumOfCards; i++)
@@ -216,7 +221,7 @@ namespace Scripts
         int GetStarCount();
         int GetWildCardCount();
         void DecreaseWildCardCount();
-        void SetLevelInfo();
+        void SetLevelInfo(ITargetNumberCreator targetNumberCreator);
         List<int> GetStarCountOfLevels();
         void SetLevelId(int levelId);
         void SetGameOption(GameOption gameOption);

@@ -23,12 +23,14 @@ namespace Scripts
         [Inject] private IFadePanelController _fadePanelController;
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private ICardItemLocator _cardItemLocator;
+        [Inject] private ITargetNumberCreator _targetNumberCreator;
         
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
             _levelTracker.Initialize(_gameSaveService);
-            _levelTracker.SetLevelInfo();
+            _targetNumberCreator.Initialize();
+            _levelTracker.SetLevelInfo(_targetNumberCreator);
             InitializeCardHolderModelCreator();
             InitializeResultArea();
             InitializeResultManager();
@@ -61,7 +63,7 @@ namespace Scripts
 
         private void InitializeResultManager()
         {
-            _resultManager.Initialize(_levelTracker);
+            _resultManager.Initialize(_levelTracker, _targetNumberCreator);
         }
         
         private void SetLevelId()
