@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
-using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
-using Unity.Services.Relay;
-using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -46,7 +41,7 @@ namespace Scripts
 
         public void SetPlayerName(string playerName)
         {
-            PlayerPrefs.SetString("player_name_multiplayer", playerName);
+            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
             _playerName = playerName;
         }
 

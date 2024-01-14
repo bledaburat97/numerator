@@ -3729,6 +3729,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1714900003}
   - component: {fileID: 1714900004}
+  - component: {fileID: 1714900005}
   m_Layer: 0
   m_Name: GamePopupCreator
   m_TagString: Untagged
@@ -3767,11 +3768,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ed62185f27c4631a93c9f56fcc4993d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  multiplayerLevelEndPopupPrefab: {fileID: 5430632394534682159, guid: fb8590374c1a58544af60d7794c56ad9, type: 3}
   levelEndPopupPrefab: {fileID: 4207349220545540178, guid: 076af13ad7796f345a7fd883835e9afb, type: 3}
   settingsPopupPrefab: {fileID: 4628369059448461370, guid: fa6a4ab1c02057a46913bc501673af0e, type: 3}
   disconnectionPopupPrefab: {fileID: 3574926180861131745, guid: ce64fb251df716b44bf4150bf741eafe, type: 3}
   glowSystem: {fileID: 1256676159}
   glowingLevelEndPopup: {fileID: 170752869}
+--- !u!114 &1714900005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1714900002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 746379675
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &1767515872
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,15 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 namespace Scripts
 {
-    public class GamePopupCreator : MonoBehaviour, IGamePopupCreator
+    public class GamePopupCreator : NetworkBehaviour, IGamePopupCreator
     {
+        [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
-        
+
+        private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
+        private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
         private LevelEndPopupControllerFactory _levelEndPopupControllerFactory;
         private LevelEndPopupViewFactory _levelEndPopupViewFactory;
         private SettingsPopupControllerFactory _settingsPopupControllerFactory;
@@ -22,6 +26,10 @@ namespace Scripts
         private Action _deleteSaveAction = null;
         [SerializeField] private GameObject glowSystem;
         [SerializeField] private GlowingLevelEndPopupView glowingLevelEndPopup;
+
+        private Dictionary<ulong, bool> _playerSuccessDictionary;
+        private bool _isLocalGameEnd = false;
+        private NetworkVariable<bool> _isGameEnd = new NetworkVariable<bool>(false);
         
         public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker)
         {
@@ -31,13 +39,17 @@ namespace Scripts
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
             _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
             _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
+            _multiplayerLevelEndPopupControllerFactory = new MultiplayerLevelEndPopupControllerFactory();
+            _multiplayerLevelEndPopupViewFactory = new MultiplayerLevelEndPopupViewFactory();
             _fadePanelController = fadePanelController;
             _levelTracker = levelTracker;
             levelManager.LevelEnd += CreateLevelEndPopup;
+            levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
             //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? gameSaveService.Save : null;
             _deleteSaveAction += gameSaveService.DeleteSave;
+            _playerSuccessDictionary = new Dictionary<ulong, bool>();
         }
         
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
@@ -49,6 +61,51 @@ namespace Scripts
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
             levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController);
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            _isGameEnd.OnValueChanged += CreateMultiplayerLevelLostPopup;
+        }
+
+        private void CreateMultiplayerLevelLostPopup(bool previousValue, bool newValue)
+        {
+            if (!_isLocalGameEnd)
+            {
+                CreateMultiplayerLevelEnd(false);
+            }
+        }
+
+        private void OnMultiplayerLevelEnd(object sender, EventArgs args)
+        {
+            _isLocalGameEnd = true;
+            ChangeMultiplayerLevelEndStateServerRpc();
+            CreateMultiplayerLevelEnd(true);
+        }
+        
+        [ServerRpc (RequireOwnership = false)]
+        private void ChangeMultiplayerLevelEndStateServerRpc(ServerRpcParams serverRpcParams = default)
+        {
+            _playerSuccessDictionary[serverRpcParams.Receive.SenderClientId] = true;
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                if (_playerSuccessDictionary.ContainsKey(clientId) && _playerSuccessDictionary[clientId])
+                {
+                    _isGameEnd.Value = true;
+                    return;
+                }
+            }
+        }
+        
+        private void CreateMultiplayerLevelEnd(bool isSuccess)
+        {
+            _fadePanelController.SetFadeImageStatus(true);
+            _fadePanelController.SetFadeImageAlpha(0.8f);
+            IMultiplayerLevelEndPopupController multiplayerLevelEndPopupController =
+                _multiplayerLevelEndPopupControllerFactory.Spawn();
+            IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
+                _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
+            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)

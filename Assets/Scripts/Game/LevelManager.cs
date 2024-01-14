@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine.Video;
 
 namespace Scripts
 {
@@ -12,6 +13,7 @@ namespace Scripts
         private int _numOfStars;
         private IStarProgressBarController _starProgressBarController;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
+        public event EventHandler MultiplayerLevelEnd;
         private bool _isGameOver;
         
         public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController)
@@ -47,19 +49,27 @@ namespace Scripts
         {
             if (args.isGuessRight)
             {
-                _gameSaveService.DeleteSave();
-                _isGameOver = true;
-                int oldStarCount = _levelTracker.GetLevelId() < _levelTracker.GetStarCountOfLevels().Count
-                    ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
-                    : 0;
-                _levelTracker.IncrementLevelId(_numOfStars);
-                LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
                 {
-                    isLevelCompleted = true,
-                    levelTracker = _levelTracker,
-                    starCount = _numOfStars,
-                    oldStarCount = oldStarCount
-                });
+                    _gameSaveService.DeleteSave();
+                    _isGameOver = true;
+                    int oldStarCount = _levelTracker.GetLevelId() < _levelTracker.GetStarCountOfLevels().Count
+                        ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
+                        : 0;
+                    _levelTracker.IncrementLevelId(_numOfStars);
+                    LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                    {
+                        isLevelCompleted = true,
+                        levelTracker = _levelTracker,
+                        starCount = _numOfStars,
+                        oldStarCount = oldStarCount,
+                    });
+                }
+
+                if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+                {
+                    MultiplayerLevelEnd?.Invoke(sender, EventArgs.Empty);
+                }
             }
 
             else
@@ -105,5 +115,6 @@ namespace Scripts
         event EventHandler<LevelEndEventArgs> LevelEnd;
         int GetRemainingGuessCount();
         bool IsGameOver();
+        event EventHandler MultiplayerLevelEnd;
     }
 }
