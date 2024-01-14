@@ -24,6 +24,7 @@ namespace Scripts
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private ICardItemLocator _cardItemLocator;
         [Inject] private ITargetNumberCreator _targetNumberCreator;
+        [Inject] private IUserReady _userReady;
         
         void Start()
         {
@@ -31,6 +32,7 @@ namespace Scripts
             _levelTracker.Initialize(_gameSaveService);
             _targetNumberCreator.Initialize();
             _levelTracker.SetLevelInfo(_targetNumberCreator);
+            _userReady.Initialize();
             InitializeCardHolderModelCreator();
             InitializeResultArea();
             InitializeResultManager();
@@ -147,7 +149,7 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker, _userReady);
         }
 
         /*

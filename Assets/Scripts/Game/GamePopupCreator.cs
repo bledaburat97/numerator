@@ -30,8 +30,8 @@ namespace Scripts
         private Dictionary<ulong, bool> _playerSuccessDictionary;
         private bool _isLocalGameEnd = false;
         private NetworkVariable<bool> _isGameEnd = new NetworkVariable<bool>(false);
-        
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker)
+        private IUserReady _userReady;
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -43,6 +43,7 @@ namespace Scripts
             _multiplayerLevelEndPopupViewFactory = new MultiplayerLevelEndPopupViewFactory();
             _fadePanelController = fadePanelController;
             _levelTracker = levelTracker;
+            _userReady = userReady;
             levelManager.LevelEnd += CreateLevelEndPopup;
             levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
@@ -105,7 +106,7 @@ namespace Scripts
                 _multiplayerLevelEndPopupControllerFactory.Spawn();
             IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
                 _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
-            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess);
+            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, _userReady);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)
@@ -146,7 +147,7 @@ namespace Scripts
     public interface IGamePopupCreator
     {
         void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
-            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker);
+            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady);
 
         void CreateDisconnectionPopup();
     }

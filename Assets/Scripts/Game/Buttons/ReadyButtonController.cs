@@ -3,14 +3,15 @@
     public class ReadyButtonController : IReadyButtonController
     {
         private IPlayButtonView _view;
-
+        private IUserReady _userReady;
         public ReadyButtonController(IPlayButtonView view)
         {
             _view = view;
         }
 
-        public void Initialize()
+        public void Initialize(IUserReady userReady)
         {
+            _userReady = userReady;
             BaseButtonModel model = new BaseButtonModel()
             {
                 text = "Ready",
@@ -21,12 +22,12 @@
 
         private void OnReadyButtonClick()
         {
-            UserReady.Instance.SetPlayerReady();
+            _userReady.SetPlayerReady();
         }
     }
 
     public interface IReadyButtonController
     {
-        void Initialize();
+        void Initialize(IUserReady userReady);
     }
 }

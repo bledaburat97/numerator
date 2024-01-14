@@ -10,6 +10,7 @@ namespace Scripts
         [SerializeField] private PlayerNameAreaView playerNameArea;
         public override void InstallBindings()
         {
+            Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IReadyButtonController>().To<ReadyButtonController>().AsSingle()
                 .WithArguments(readyButton);
             Container.Bind<IWaitingSceneUIController>().To<WaitingSceneUIController>().AsSingle()

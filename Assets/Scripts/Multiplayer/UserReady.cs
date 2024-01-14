@@ -5,15 +5,13 @@ using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
-    public class UserReady : NetworkBehaviour
+    public class UserReady : NetworkBehaviour, IUserReady
     {
-        public static UserReady Instance { get; private set; }
         public event EventHandler OnReadyChanged;
 
         private Dictionary<ulong, bool> _playerReadyDictionary;
-        private void Awake()
+        public void Initialize()
         {
-            Instance = this;
             _playerReadyDictionary = new Dictionary<ulong, bool>();
         }
 
@@ -55,5 +53,13 @@ namespace Scripts
         {
             return _playerReadyDictionary.ContainsKey(clientId) && _playerReadyDictionary[clientId];
         }
+    }
+
+    public interface IUserReady
+    {
+        void Initialize();
+        void SetPlayerReady();
+        bool IsPlayerReady(ulong clientId);
+        event EventHandler OnReadyChanged;
     }
 }

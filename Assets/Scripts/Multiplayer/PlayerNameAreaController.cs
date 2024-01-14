@@ -6,20 +6,22 @@ namespace Scripts
     {
         private IPlayerNameView[] _playerNameViewList = new IPlayerNameView[MultiplayerManager.MAX_NUM_OF_USERS];
         private IPlayerNameAreaView _view;
+        private IUserReady _userReady;
         public PlayerNameAreaController(IPlayerNameAreaView view)
         {
             _view = view;
         }
         
-        public void Initialize()
+        public void Initialize(IUserReady userReady)
         {
+            _userReady = userReady;
             _view.Init(UnsubscribeEvents);
             for (int i = 0; i < MultiplayerManager.MAX_NUM_OF_USERS; i++)
             {
                 _playerNameViewList[i] = null;
             }
             MultiplayerManager.Instance.OnPlayerDataNetworkListChanged += OnPlayerDataNetworkListChanged;
-            UserReady.Instance.OnReadyChanged += OnReadyChanged;
+            _userReady.OnReadyChanged += OnReadyChanged;
             UpdatePlayers();
         }
 
@@ -47,7 +49,7 @@ namespace Scripts
                     }
 
                     PlayerData playerData = MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(playerIndex);
-                    _playerNameViewList[playerIndex].SetReadyStatus(UserReady.Instance.IsPlayerReady(playerData.clientId));
+                    _playerNameViewList[playerIndex].SetReadyStatus(_userReady.IsPlayerReady(playerData.clientId));
                     _playerNameViewList[playerIndex].SetPlayerName(playerData.playerName.ToString());
                 }
 
@@ -74,12 +76,12 @@ namespace Scripts
         private void UnsubscribeEvents()
         {
             MultiplayerManager.Instance.OnPlayerDataNetworkListChanged -= OnPlayerDataNetworkListChanged;
-            UserReady.Instance.OnReadyChanged -= OnReadyChanged;
+            _userReady.OnReadyChanged -= OnReadyChanged;
         }
     }
 
     public interface IPlayerNameAreaController
     {
-        void Initialize();
+        void Initialize(IUserReady userReady);
     }
 }
