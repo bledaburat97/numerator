@@ -20,6 +20,11 @@ namespace Scripts
             SetPlayerReadyServerRpc();
         }
 
+        public void SetPlayerUnready()
+        {
+            SetPlayerUnreadyServerRpc();
+        }
+
         [ServerRpc(RequireOwnership = false)]
         private void SetPlayerReadyServerRpc(ServerRpcParams serverRpcParams = default)
         {
@@ -48,6 +53,23 @@ namespace Scripts
             _playerReadyDictionary[clientId] = true;
             OnReadyChanged?.Invoke(this, EventArgs.Empty);
         }
+        
+        [ServerRpc(RequireOwnership = false)]
+        private void SetPlayerUnreadyServerRpc(ServerRpcParams serverRpcParams = default)
+        {
+            if (IsPlayerReady(serverRpcParams.Receive.SenderClientId))
+            {
+                SetPlayerUnreadyClientRpc(serverRpcParams.Receive.SenderClientId);
+                _playerReadyDictionary[serverRpcParams.Receive.SenderClientId] = false;
+            }
+        }
+        
+        [ClientRpc]
+        private void SetPlayerUnreadyClientRpc(ulong clientId)
+        {
+            _playerReadyDictionary[clientId] = false;
+            OnReadyChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         public bool IsPlayerReady(ulong clientId)
         {
@@ -59,6 +81,7 @@ namespace Scripts
     {
         void Initialize();
         void SetPlayerReady();
+        void SetPlayerUnready();
         bool IsPlayerReady(ulong clientId);
         event EventHandler OnReadyChanged;
     }

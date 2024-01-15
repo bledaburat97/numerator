@@ -1,4 +1,5 @@
-﻿using Unity.Netcode;
+﻿using System;
+using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
 namespace Scripts
@@ -7,14 +8,14 @@ namespace Scripts
     {
         private IMultiplayerLevelEndPopupView _view;
         private IUserReady _userReady;
-        public void Initialize(IMultiplayerLevelEndPopupView view, bool isSuccess, IUserReady userReady)
+        public void Initialize(IMultiplayerLevelEndPopupView view, bool isSuccess, IUserReady userReady, Action openWaitingOpponentPopup)
         {
             _view = view;
             _userReady = userReady;
             BaseButtonModel playAgainButtonModel = new BaseButtonModel()
             {
                 text = "Play Again",
-                OnClick = OnPlayAgainButtonClick
+                OnClick = () => OnPlayAgainButtonClick(openWaitingOpponentPopup)
             };
             BaseButtonModel menuButtonModel = new BaseButtonModel()
             {
@@ -22,12 +23,12 @@ namespace Scripts
                 OnClick = OnMenuButtonClick
             };
             _view.Init(isSuccess, playAgainButtonModel, menuButtonModel);
-            
         }
         
-        private void OnPlayAgainButtonClick()
+        private void OnPlayAgainButtonClick(Action openWaitingOpponentPopup)
         {
             _userReady.SetPlayerReady();
+            openWaitingOpponentPopup?.Invoke();
         }
         
         private void OnMenuButtonClick()
@@ -42,6 +43,6 @@ namespace Scripts
 
     public interface IMultiplayerLevelEndPopupController
     {
-        void Initialize(IMultiplayerLevelEndPopupView view, bool isSuccess, IUserReady userReady);
+        void Initialize(IMultiplayerLevelEndPopupView view, bool isSuccess, IUserReady userReady, Action openWaitingOpponentPopup);
     }
 }
