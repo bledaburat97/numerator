@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -16,9 +17,11 @@ namespace Scripts
         [SerializeField] private BaseButtonView checkButtonView;
         [SerializeField] private BaseButtonView resetButtonView;
         [SerializeField] private StarProgressBarView starProgressBarView;
-        
+        [SerializeField] private GameClockView gameClockView;
         public override void InstallBindings()
         {
+            Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
+            Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();

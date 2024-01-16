@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -25,6 +26,8 @@ namespace Scripts
         [Inject] private ICardItemLocator _cardItemLocator;
         [Inject] private ITargetNumberCreator _targetNumberCreator;
         [Inject] private IUserReady _userReady;
+        [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
+        [Inject] private IGameClockController _gameClockController;
         
         void Start()
         {
@@ -46,6 +49,8 @@ namespace Scripts
             InitializeCardItemInfoManager();
             InitializeCardItemInfoPopup();
             InitializeInitialCardArea();
+            RemoveGameClock();
+            InitializeTurnOrderDeterminer();
             InitializeFadePanelController();
             InitializeGamePopupCreator();
             _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
@@ -135,6 +140,16 @@ namespace Scripts
         private void InitializeInitialCardArea()
         {
             _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager);
+        }
+
+        private void RemoveGameClock()
+        {
+            _gameClockController.RemoveTimer();
+        }
+
+        private void InitializeTurnOrderDeterminer()
+        {
+            _turnOrderDeterminer.Initialize(_gameClockController, _resultManager);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
