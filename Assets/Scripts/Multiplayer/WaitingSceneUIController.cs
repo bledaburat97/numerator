@@ -1,4 +1,5 @@
 ﻿using Unity.Services.Lobbies.Models;
+using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
@@ -15,6 +16,17 @@ namespace Scripts
             Lobby lobby = PlayerLobby.Instance.GetLobby();
             _view.SetLobbyNameText(lobby.Name);
             _view.SetLobbyCodeText(lobby.LobbyCode);
+            _view.SetMenuButton(new BaseButtonModel()
+            {
+                text = "Menu",
+                OnClick = OnMenuButtonClick
+            });
+        }
+        
+        private void OnMenuButtonClick()
+        {
+            PlayerLobby.Instance.LeaveLobby();
+            SceneManager.LoadScene("Menu");
         }
     }
     

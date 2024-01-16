@@ -9,20 +9,22 @@ namespace Scripts
         public event EventHandler CheckFinalNumbers;
         public event EventHandler NotAbleToCheck;
         private ITurnOrderDeterminer _turnOrderDeterminer;
+        private ILevelTracker _levelTracker;
         public CheckButtonController(IBaseButtonView view)
         {
             _view = view;
         }
         
-        public void Initialize(ITurnOrderDeterminer turnOrderDeterminer)
+        public void Initialize(ITurnOrderDeterminer turnOrderDeterminer, ILevelTracker levelTracker)
         {
             _turnOrderDeterminer = turnOrderDeterminer;
+            _levelTracker = levelTracker;
             _view.Init(new BaseButtonModel(){OnClick = OnClickCheckButton});
         }
 
         private void OnClickCheckButton()
         {
-            if (_turnOrderDeterminer.IsLocalTurn())
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
             {
                 CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
             }
@@ -35,7 +37,7 @@ namespace Scripts
 
     public interface ICheckButtonController
     {
-        void Initialize(ITurnOrderDeterminer turnOrderDeterminer);
+        void Initialize(ITurnOrderDeterminer turnOrderDeterminer, ILevelTracker levelTracker);
         event EventHandler CheckFinalNumbers;
         event EventHandler NotAbleToCheck;
     }

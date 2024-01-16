@@ -92,7 +92,7 @@ namespace Scripts
         
         private void InitializeCheckButton()
         {
-            _checkButtonController.Initialize(_turnOrderDeterminer);
+            _checkButtonController.Initialize(_turnOrderDeterminer, _levelTracker);
         }
         
         private void InitializeResetButton()
@@ -102,7 +102,10 @@ namespace Scripts
         
         private void OnApplicationQuit()
         {
-            if(_levelTracker.GetGameOption() == GameOption.SinglePlayer) _gameSaveService.Save();
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                _gameSaveService.Save();
+            }
         }
 
         private void InitializeStarProgressBar()
@@ -149,7 +152,10 @@ namespace Scripts
 
         private void InitializeTurnOrderDeterminer()
         {
-            _turnOrderDeterminer.Initialize(_gameClockController, _resultManager);
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                _turnOrderDeterminer.Initialize(_gameClockController, _resultManager);
+            }
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

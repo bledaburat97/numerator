@@ -60,6 +60,10 @@ namespace Scripts
                         IPlayerNameView playerNameView = _playerNameViewList[playerIndex];
                         _playerNameViewList[playerIndex] = null;
                         playerNameView.Destroy();
+                        PlayerData playerData = MultiplayerManager.Instance
+                            .GetPlayerDataFromPlayerIndex(playerIndex);
+                        PlayerLobby.Instance.KickPlayerFromLobby(playerData.playerId.ToString());
+                        _userReady.SetPlayerUnready();
                     }
                 }
             }

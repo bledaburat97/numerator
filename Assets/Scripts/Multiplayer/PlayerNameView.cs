@@ -16,8 +16,17 @@ namespace Scripts
         {
             readyImage.gameObject.SetActive(false);
             rectTransform.localScale = Vector3.one;
-            kickButton.onClick.AddListener(() => onKickButtonClicked.Invoke(playerIndex));
-            kickButton.gameObject.SetActive(NetworkManager.Singleton.IsServer);
+
+            if (playerIndex == 0) //TODO: may check with host id instead of 0.
+            {
+                kickButton.gameObject.SetActive(false);
+            }
+            else
+            {
+                kickButton.onClick.AddListener(() => onKickButtonClicked.Invoke(playerIndex));
+                kickButton.gameObject.SetActive(NetworkManager.Singleton.IsServer);
+            }
+
         }
 
         public void SetPlayerName(string playerName)
