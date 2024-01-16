@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Game;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace Scripts
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         [SerializeField] private WaitingOpponentPopupView waitingOpponentPopupPrefab;
         [SerializeField] private NewGameOfferPopupView newGameOfferPopupPrefab;
+        [SerializeField] private MessagePopupView messagePopupPrefab;
         
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
@@ -26,6 +28,7 @@ namespace Scripts
         private WaitingOpponentPopupViewFactory _waitingOpponentPopupViewFactory;
         private NewGameOfferPopupControllerFactory _newGameOfferPopupControllerFactory;
         private NewGameOfferPopupViewFactory _newGameOfferPopupViewFactory;
+        private MessagePopupViewFactory _messagePopupViewFactory;
         
         private IFadePanelController _fadePanelController;
         private ILevelTracker _levelTracker;
@@ -45,7 +48,7 @@ namespace Scripts
         private Action _openWaitingOpponentPopup;
         private Action _closeWaitingOpponentPopup;
         public event EventHandler closeNewGameOfferPopup;
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ICheckButtonController checkButtonController, ITurnOrderDeterminer turnOrderDeterminer)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -59,6 +62,7 @@ namespace Scripts
             _waitingOpponentPopupViewFactory = new WaitingOpponentPopupViewFactory();
             _newGameOfferPopupControllerFactory = new NewGameOfferPopupControllerFactory();
             _newGameOfferPopupViewFactory = new NewGameOfferPopupViewFactory();
+            _messagePopupViewFactory = new MessagePopupViewFactory();
             
             _fadePanelController = fadePanelController;
             _levelTracker = levelTracker;
@@ -66,6 +70,8 @@ namespace Scripts
             levelManager.LevelEnd += CreateLevelEndPopup;
             levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
             settingsButtonController.OpenSettings += CreateSettingsPopup;
+            checkButtonController.NotAbleToCheck += CreateNotAbleToMovePopup;
+            turnOrderDeterminer.AbleToMove += CreateAbleToMovePopup;
             //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? gameSaveService.Save : null;
             _deleteSaveAction += gameSaveService.DeleteSave;
@@ -75,7 +81,19 @@ namespace Scripts
             _isLocalReady = false;
             _closeWaitingOpponentPopup += OnPlayerUnready;
         }
+
+        private void CreateNotAbleToMovePopup(object sender, EventArgs e)
+        {
+            IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+            messagePopupView.Init("Please wait for your turn.");
+        }
         
+        private void CreateAbleToMovePopup(object sender, EventArgs e)
+        {
+            IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+            messagePopupView.Init("It's your turn.");
+        }
+
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
         {
             _fadePanelController.SetFadeImageStatus(true);
@@ -235,7 +253,7 @@ namespace Scripts
     public interface IGamePopupCreator
     {
         void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
-            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady);
+            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ICheckButtonController checkButtonController, ITurnOrderDeterminer turnOrderDeterminer);
         event EventHandler closeNewGameOfferPopup;
         
     }

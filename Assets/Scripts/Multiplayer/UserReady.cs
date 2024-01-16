@@ -28,6 +28,11 @@ namespace Scripts
         [ServerRpc(RequireOwnership = false)]
         private void SetPlayerReadyServerRpc(ServerRpcParams serverRpcParams = default)
         {
+            if (NetworkManager.Singleton.ConnectedClientsIds.Count < MultiplayerManager.MAX_NUM_OF_USERS)
+            {
+                return;
+            }
+            
             SetPlayerReadyClientRpc(serverRpcParams.Receive.SenderClientId);
             _playerReadyDictionary[serverRpcParams.Receive.SenderClientId] = true;
             bool allClientsReady = true;

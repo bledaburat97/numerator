@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Scripts;
 using Unity.Netcode;
 
@@ -10,6 +9,7 @@ namespace Game
         private bool _isLocalTurn;
         private IGameClockController _gameClockController;
         private IResultManager _resultManager;
+        public event EventHandler AbleToMove;
 
         public void Initialize(IGameClockController gameClockController, IResultManager resultManager)
         {
@@ -29,12 +29,18 @@ namespace Game
                 _isLocalTurn = true;
                 _gameClockController.StartTimer(ChangeTurns);
                 _resultManager.ResultBlockAddition += OnGuessNumber;
+                AbleToMove?.Invoke(this, EventArgs.Empty);
             }
             else
             {
                 _isLocalTurn = false;
                 _resultManager.ResultBlockAddition -= OnGuessNumber;
             }
+        }
+
+        public bool IsLocalTurn()
+        {
+            return _isLocalTurn;
         }
 
         private void OnGuessNumber(object sender, ResultBlockModel model)
@@ -52,19 +58,6 @@ namespace Game
         private void ChangeTurnsServerRpc(ServerRpcParams serverRpcParams = default)
         {
             ChangeTurnsClientRpc();
-            /*
-            _playerActivenessDictionary[serverRpcParams.Receive.SenderClientId] = false;
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                if (_playerActivenessDictionary.ContainsKey(clientId) && !_playerActivenessDictionary[clientId]
-                    && serverRpcParams.Receive.SenderClientId != clientId)
-                {
-                    _playerActivenessDictionary[clientId] = true;
-                    _activeClientId.Value = clientId;
-                    return;
-                }
-            }
-            */
         }
 
         [ClientRpc]
@@ -77,5 +70,7 @@ namespace Game
     public interface ITurnOrderDeterminer
     {
         void Initialize(IGameClockController gameClockController, IResultManager resultManager);
+        bool IsLocalTurn();
+        event EventHandler AbleToMove;
     }
 }

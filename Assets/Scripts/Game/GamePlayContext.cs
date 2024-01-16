@@ -92,7 +92,7 @@ namespace Scripts
         
         private void InitializeCheckButton()
         {
-            _checkButtonController.Initialize();
+            _checkButtonController.Initialize(_turnOrderDeterminer);
         }
         
         private void InitializeResetButton()
@@ -164,7 +164,7 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker, _userReady);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker, _userReady, _checkButtonController, _turnOrderDeterminer);
         }
 
         /*

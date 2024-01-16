@@ -4251,6 +4251,7 @@ MonoBehaviour:
   disconnectionPopupPrefab: {fileID: 3574926180861131745, guid: ce64fb251df716b44bf4150bf741eafe, type: 3}
   waitingOpponentPopupPrefab: {fileID: 2977186154892670492, guid: eb1a2ddee7cc48e43840355924a7472d, type: 3}
   newGameOfferPopupPrefab: {fileID: 6949387656827963774, guid: 5b98aa26dd2bed8409f277b47f64d295, type: 3}
+  messagePopupPrefab: {fileID: 1794011495472088801, guid: b6a52420f49a4804ba861b8007091243, type: 3}
   glowSystem: {fileID: 1256676159}
   glowingLevelEndPopup: {fileID: 170752869}
 --- !u!114 &1714900005
