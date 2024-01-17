@@ -16,22 +16,22 @@ namespace Scripts
             _lobbyPopupCreator = lobbyPopupCreator;
             _view.SetCreateLobbyButton(new BaseButtonModel()
             {
-                text = "Create Lobby",
+                text = "CREATE LOBBY",
                 OnClick = OnCreateLobbyButtonClick
             });
             _view.SetQuickJoinButton(new BaseButtonModel()
             {
-                text = "Quick Join",
+                text = "QUICK JOIN",
                 OnClick = OnQuickJoinButtonClick
             });
-            _view.SetJoinByCodeButton(new BaseButtonModel()
+            _view.SetJoinWithCodeButton(new BaseButtonModel()
             {
-                text = "Join By Code",
-                OnClick = OnJoinByCodeButtonClick
+                text = "JOIN",
+                OnClick = OnJoinWithCodeButtonClick
             });
             _view.SetMenuButton(new BaseButtonModel()
             {
-                text = "Menu",
+                text = "MENU",
                 OnClick = OnMenuButtonClick
             });
             _view.InitPlayerNameInputField(MultiplayerManager.Instance.GetPlayerName(), OnPlayerNameChanged);
@@ -47,9 +47,9 @@ namespace Scripts
             PlayerLobby.Instance.QuickJoin();
         }
         
-        private void OnJoinByCodeButtonClick()
+        private void OnJoinWithCodeButtonClick()
         {
-            PlayerLobby.Instance.JoinByCode(_view.GetCodeInputField());
+            PlayerLobby.Instance.JoinWithCode(_view.GetCodeInputField());
         }
 
         private void OnPlayerNameChanged(string playerName)

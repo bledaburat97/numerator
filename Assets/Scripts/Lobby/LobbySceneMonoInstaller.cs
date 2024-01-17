@@ -3,7 +3,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class LobbyMonoInstaller : MonoInstaller
+    public class LobbySceneMonoInstaller : MonoInstaller
     {
         [SerializeField] private LobbyUIView lobbyUIView;
         public override void InstallBindings()

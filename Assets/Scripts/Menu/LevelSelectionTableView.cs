@@ -19,7 +19,7 @@ namespace Scripts
 
         public ILevelButtonView CreateLevelButtonView()
         {
-            return _levelButtonViewFactory.Spawn(pineTree, levelButtonPrefab);
+            return _levelButtonViewFactory.Spawn(transform, levelButtonPrefab);
         }
 
         public IDirectionButtonView CreateDirectionButton()

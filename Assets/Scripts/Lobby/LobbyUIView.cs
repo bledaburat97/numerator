@@ -10,7 +10,7 @@ namespace Scripts
         [SerializeField] private TMP_InputField playerNameInputField;
         [SerializeField] private PlayButtonView createLobbyButton;
         [SerializeField] private PlayButtonView quickJoinButton;
-        [SerializeField] private PlayButtonView joinByCodeButton;
+        [SerializeField] private PlayButtonView joinWithCodeButton;
         [SerializeField] private TMP_InputField codeInputField;
 
         public void SetCreateLobbyButton(BaseButtonModel model)
@@ -23,9 +23,9 @@ namespace Scripts
             quickJoinButton.Init(model);
         }
         
-        public void SetJoinByCodeButton(BaseButtonModel model)
+        public void SetJoinWithCodeButton(BaseButtonModel model)
         {
-            joinByCodeButton.Init(model);
+            joinWithCodeButton.Init(model);
         }
 
         public string GetCodeInputField()
@@ -49,7 +49,7 @@ namespace Scripts
     {
         void SetCreateLobbyButton(BaseButtonModel model);
         void SetQuickJoinButton(BaseButtonModel model);
-        void SetJoinByCodeButton(BaseButtonModel model);
+        void SetJoinWithCodeButton(BaseButtonModel model);
         string GetCodeInputField();
         void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged);
         void SetMenuButton(BaseButtonModel model);

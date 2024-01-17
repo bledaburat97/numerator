@@ -1,14 +1,15 @@
-﻿using UnityEngine;
+﻿using Menu;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
 {
-    public class MenuMonoInstaller: MonoInstaller
+    public class MenuSceneMonoInstaller: MonoInstaller
     {
-        [SerializeField] private PlayButtonView singlePlayerButton;
-        [SerializeField] private PlayButtonView multiPlayerButton;
         [SerializeField] private LevelSelectionTableView levelSelectionTable;
         [SerializeField] private MenuHeaderView menuHeader;
+        [SerializeField] private MenuUIView menuUI;
+        
         public override void InstallBindings()
         {
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
@@ -18,10 +19,8 @@ namespace Scripts
                 .WithArguments(levelSelectionTable);
             Container.Bind<IMenuHeaderController>().To<MenuHeaderController>().AsSingle()
                 .WithArguments(menuHeader);
-            Container.Bind<ISinglePlayerButtonController>().To<SinglePlayerButtonController>().AsSingle()
-                .WithArguments(singlePlayerButton);
-            Container.Bind<IMultiPlayerButtonController>().To<MultiPlayerButtonController>().AsSingle()
-                .WithArguments(multiPlayerButton);
+            Container.Bind<IMenuUIController>().To<MenuUIController>().AsSingle()
+                .WithArguments(menuUI);
         }
     }
 }

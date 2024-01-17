@@ -169,7 +169,7 @@ namespace Scripts
             return _joinedLobby;
         }
 
-        public async void JoinByCode(string code)
+        public async void JoinWithCode(string code)
         {
             OnJoinStarted?.Invoke(this, EventArgs.Empty);
             try

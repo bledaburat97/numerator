@@ -1,17 +1,17 @@
-﻿using UnityEngine;
+﻿using Menu;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
 {
-    public class MenuContext : MonoBehaviour
+    public class MenuSceneContext : MonoBehaviour
     {
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private IActiveLevelIdController _activeLevelIdController;
         [Inject] private ILevelSelectionTableController _levelSelectionTableController;
         [Inject] private IMenuHeaderController _menuHeaderController;
-        [Inject] private ISinglePlayerButtonController _singlePlayerButtonController;
-        [Inject] private IMultiPlayerButtonController _multiPlayerButtonController;
+        [Inject] private IMenuUIController _menuUIController;
 
         void Start()
         {
@@ -19,7 +19,7 @@ namespace Scripts
             _levelTracker.Initialize(_gameSaveService);
             CreateActiveLevelIdController();
             CreateLevelTable();
-            CreateButtons();
+            CreateMenuUI();
             CreateMenuHeader();
         }
 
@@ -33,19 +33,14 @@ namespace Scripts
             _levelSelectionTableController.Initialize(_activeLevelIdController, _levelTracker);
         }
 
-        private void CreateButtons()
+        private void CreateMenuUI()
         {
-            _singlePlayerButtonController.Initialize(_activeLevelIdController, _levelTracker);
-            _multiPlayerButtonController.Initialize(_levelTracker);
+            _menuUIController.Initialize(_activeLevelIdController, _levelTracker);
         }
         
         private void CreateMenuHeader()
         {
             _menuHeaderController.Initialize(_levelTracker);
         }
-
-
-
-
     }
 }

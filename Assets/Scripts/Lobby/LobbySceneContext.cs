@@ -5,7 +5,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class LobbyContext : MonoBehaviour
+    public class LobbySceneContext : MonoBehaviour
     {
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private ILobbyPopupCreator _lobbyPopupCreator;
