@@ -13,7 +13,6 @@ namespace Scripts
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         [SerializeField] private WaitingOpponentPopupView waitingOpponentPopupPrefab;
-        [SerializeField] private NewGameOfferPopupView newGameOfferPopupPrefab;
         [SerializeField] private MessagePopupView messagePopupPrefab;
         
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
@@ -26,8 +25,6 @@ namespace Scripts
         private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
         private WaitingOpponentPopupControllerFactory _waitingOpponentPopupControllerFactory;
         private WaitingOpponentPopupViewFactory _waitingOpponentPopupViewFactory;
-        private NewGameOfferPopupControllerFactory _newGameOfferPopupControllerFactory;
-        private NewGameOfferPopupViewFactory _newGameOfferPopupViewFactory;
         private MessagePopupViewFactory _messagePopupViewFactory;
         
         private IFadePanelController _fadePanelController;
@@ -47,7 +44,7 @@ namespace Scripts
 
         private Action _openWaitingOpponentPopup;
         private Action _closeWaitingOpponentPopup;
-        public event EventHandler closeNewGameOfferPopup;
+        private IMessagePopupView _newGameOfferPopup;
         public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ICheckButtonController checkButtonController, ITurnOrderDeterminer turnOrderDeterminer)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
@@ -60,8 +57,6 @@ namespace Scripts
             _multiplayerLevelEndPopupViewFactory = new MultiplayerLevelEndPopupViewFactory();
             _waitingOpponentPopupControllerFactory = new WaitingOpponentPopupControllerFactory();
             _waitingOpponentPopupViewFactory = new WaitingOpponentPopupViewFactory();
-            _newGameOfferPopupControllerFactory = new NewGameOfferPopupControllerFactory();
-            _newGameOfferPopupViewFactory = new NewGameOfferPopupViewFactory();
             _messagePopupViewFactory = new MessagePopupViewFactory();
             
             _fadePanelController = fadePanelController;
@@ -85,13 +80,15 @@ namespace Scripts
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)
         {
             IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            messagePopupView.Init("Please wait for your turn.");
+            messagePopupView.Init("Please wait for your turn.", 0f, new Vector2(0,300));
+            messagePopupView.Animate();
         }
         
         private void CreateAbleToMovePopup(object sender, EventArgs e)
         {
             IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            messagePopupView.Init("It's your turn.");
+            messagePopupView.Init("It's your turn.", 0f, new Vector2(0,300));
+            messagePopupView.Animate();
         }
 
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
@@ -126,10 +123,8 @@ namespace Scripts
         {
             if (!_isLocalReady && _isAnyReady.Value)
             {
-                INewGameOfferPopupController newGameOfferPopupController = _newGameOfferPopupControllerFactory.Spawn();
-                INewGameOfferPopupView newGameOfferPopupView =
-                    _newGameOfferPopupViewFactory.Spawn(transform, newGameOfferPopupPrefab);
-                newGameOfferPopupController.Initialize(newGameOfferPopupView, this);
+                _newGameOfferPopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+                _newGameOfferPopup.Init("Opponent offers a new game.", 1f, new Vector2(0,200));
             }
 
             if (!_isAnyReady.Value) CloseNewGameOfferPopup();
@@ -137,7 +132,8 @@ namespace Scripts
 
         private void CloseNewGameOfferPopup()
         {
-            closeNewGameOfferPopup?.Invoke(this, EventArgs.Empty);
+            _newGameOfferPopup?.Close();
+            _newGameOfferPopup = null;
         }
 
         private void CreateMultiplayerLevelLostPopup(bool previousValue, bool newValue)
@@ -222,18 +218,6 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(false);
         }
-
-        /*
-        private void OnOpponentDisconnection(ulong clientId)
-        {
-            
-            if (clientId == NetworkManager.ServerClientId)
-            {
-                CreateDisconnectionPopup();
-            }
-            
-        }
-        */
         
         private void OnClientDisconnectCallback(ulong clientId)
         {
@@ -254,7 +238,5 @@ namespace Scripts
     {
         void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
             ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ICheckButtonController checkButtonController, ITurnOrderDeterminer turnOrderDeterminer);
-        event EventHandler closeNewGameOfferPopup;
-        
     }
 }

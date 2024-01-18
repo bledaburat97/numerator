@@ -13,47 +13,52 @@ namespace Scripts
         {
             _view = view;
             _levelTracker = levelTracker;
-            _view.Init();
-            CreateCloseButton(onCloseAction);
-            CreatePlayButton(deleteSaveAction);
-            CreateReturnMenuButton(saveGameAction);
-        }
-        
-        private void CreateCloseButton(Action onCloseAction)
-        {
-            ICloseButtonController closeButtonController = new CloseButtonController();
-            closeButtonController.Initialize(_view.GetCloseButtonView(), new BaseButtonModel()
+            BaseButtonModel closeButtonModel = new BaseButtonModel()
             {
-                OnClick = () =>
-                {
-                    _view.Close();
-                    onCloseAction.Invoke();
-                }
-            });
-        }
-        
-        private void CreatePlayButton(Action deleteSaveAction)
-        {
+                OnClick = () => OnCloseButtonClick(onCloseAction)
+            };
+            
+            BaseButtonModel retryButtonModel = new BaseButtonModel()
+            {
+                text = "RETRY",
+                OnClick = () => OnRetryButtonClick(deleteSaveAction)
+            };
+
+            BaseButtonModel menuButtonModel = new BaseButtonModel()
+            {
+                text = "MENU",
+                OnClick = () => OnMenuButtonClick(saveGameAction)
+            };
+            
+            _view.Init(retryButtonModel, menuButtonModel, closeButtonModel);
+
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
                 _view.DestroyRetryButton();
-                return;
             }
-            IPlayButtonController playButtonController = new PlayButtonController();
-            Action onClickAction = deleteSaveAction;
-            onClickAction += () => NetworkManager.Singleton.StartHost();
-            onClickAction += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
-            playButtonController.Initialize(_view.GetPlayButtonView(), new BaseButtonModel()
-            {
-                text = "Retry",
-                OnClick = onClickAction
-            });
         }
 
-        private void CreateReturnMenuButton(Action saveGameAction)
+        private void OnCloseButtonClick(Action onCloseAction)
         {
-            IReturnMenuButtonController returnMenuButtonController = new ReturnMenuButtonController();
-            returnMenuButtonController.Initialize(_view.GetReturnMenuButtonView(), saveGameAction);
+            _view.Close();
+            onCloseAction.Invoke();
+        }
+
+        private void OnRetryButtonClick(Action deleteSaveAction)
+        {
+            deleteSaveAction.Invoke();
+            NetworkManager.Singleton.StartHost();
+            NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+        }
+        
+        private void OnMenuButtonClick(Action saveGameAction)
+        {
+            saveGameAction?.Invoke();
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+            SceneManager.LoadScene("Menu");
         }
     }
 

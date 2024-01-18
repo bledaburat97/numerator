@@ -12,7 +12,6 @@ namespace Scripts
         public event EventHandler<ResultBlockModel> ResultBlockAddition;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         public event EventHandler<BackFlipCorrectCardsEventArgs> CorrectCardsBackFlipped;
-        
         public void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator)
         {
             _levelTracker = levelTracker;
@@ -71,6 +70,12 @@ namespace Scripts
         {
             if (numOfCorrectPos == _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders)
             {
+                ResultBlockAddition?.Invoke(this, new ResultBlockModel()
+                {
+                    finalNumbers = finalCards,
+                    correctPosCount = numOfCorrectPos,
+                    wrongPosCount = numOfWrongPos
+                });
                 CorrectCardsBackFlipped.Invoke(this, new BackFlipCorrectCardsEventArgs()
                 {
                     finalCardNumbers = finalCards,

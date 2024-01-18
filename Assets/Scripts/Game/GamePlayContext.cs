@@ -49,7 +49,7 @@ namespace Scripts
             InitializeCardItemInfoManager();
             InitializeCardItemInfoPopup();
             InitializeInitialCardArea();
-            RemoveGameClock();
+            InitializeGameClock();
             InitializeTurnOrderDeterminer();
             InitializeFadePanelController();
             InitializeGamePopupCreator();
@@ -145,9 +145,9 @@ namespace Scripts
             _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager);
         }
 
-        private void RemoveGameClock()
+        private void InitializeGameClock()
         {
-            _gameClockController.RemoveTimer();
+            _gameClockController.Initialize(_resultManager);
         }
 
         private void InitializeTurnOrderDeterminer()

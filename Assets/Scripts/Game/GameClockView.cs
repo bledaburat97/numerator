@@ -1,4 +1,5 @@
 ﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +8,8 @@ namespace Scripts
     public class GameClockView : MonoBehaviour, IGameClockView
     {
         [SerializeField] private Image timerImage;
-        
+        [SerializeField] private TMP_Text timeText;
+            
         private bool _isTimerStarted = false;
         private float _gamePlayingTimer;
         private const float GAME_PLAYING_TIMER_MAX = 60f;
@@ -18,6 +20,7 @@ namespace Scripts
             if (_isTimerStarted)
             {
                 _gamePlayingTimer -= Time.deltaTime;
+                int remainingTime = (int)_gamePlayingTimer;
                 if (_gamePlayingTimer < 0f)
                 {
                     RemoveTimer();
@@ -25,6 +28,7 @@ namespace Scripts
                     _onTimerEnd.Invoke();
                 }
                 timerImage.fillAmount = _gamePlayingTimer / GAME_PLAYING_TIMER_MAX;
+                timeText.text = remainingTime.ToString();
             }
         }
 

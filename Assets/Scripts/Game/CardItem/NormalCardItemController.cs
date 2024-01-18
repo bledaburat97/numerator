@@ -184,15 +184,15 @@ namespace Scripts
         {
             return DOTween.Sequence()
                 .AppendInterval(delayDuration)
-                .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.5f))
-                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.3f))
+                .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
+                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.15f))
                 .AppendCallback(() => SetColor(ProbabilityType.Certain))
                 .AppendCallback(() => _view.SetTextStatus(false))
                 .AppendCallback(() => _view.SetLockImageStatus(false))
                 .AppendCallback(() => _view.SetBackImageStatus(true))
                 .AppendCallback(() => _view.SetNewAnchoredPositionOfRotatedImage())
-                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.3f))
-                .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.2f).SetEase(Ease.OutBounce));
+                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.15f))
+                .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce));
         }
         
     }

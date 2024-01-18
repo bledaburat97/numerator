@@ -12,8 +12,7 @@ namespace Scripts
         
         public void Init()
         {
-            ICloseButtonController closeButtonController = new CloseButtonController();
-            closeButtonController.Initialize(closeButtonView, new BaseButtonModel()
+            closeButtonView.Init(new BaseButtonModel()
             {
                 OnClick = Hide
             });

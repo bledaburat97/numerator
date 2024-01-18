@@ -4,33 +4,21 @@ namespace Scripts
 {
     public class SettingsPopupView : MonoBehaviour, ISettingsPopupView
     {
-        [SerializeField] private PlayButtonView playButtonView;
-        [SerializeField] private BaseButtonView returnMenuButtonView;
+        [SerializeField] private PlayButtonView retryButtonView;
+        [SerializeField] private PlayButtonView menuButtonView;
         [SerializeField] private BaseButtonView closeButtonView;
-        public void Init()
+        public void Init(BaseButtonModel retryButtonModel, BaseButtonModel menuButtonModel, BaseButtonModel closeButtonModel)
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-        }
-        
-        public IBaseButtonView GetCloseButtonView()
-        {
-            return closeButtonView;
-        }
-        
-        public IPlayButtonView GetPlayButtonView()
-        {
-            return playButtonView;
-        }
-
-        public IBaseButtonView GetReturnMenuButtonView()
-        {
-            return returnMenuButtonView;
+            retryButtonView.Init(retryButtonModel);
+            menuButtonView.Init(menuButtonModel);
+            closeButtonView.Init(closeButtonModel);
         }
 
         public void DestroyRetryButton()
         {
-            Destroy(playButtonView.gameObject);
+            Destroy(retryButtonView.gameObject);
         }
 
         public void Close()
@@ -41,10 +29,7 @@ namespace Scripts
 
     public interface ISettingsPopupView
     {
-        void Init();
-        IBaseButtonView GetCloseButtonView();
-        IPlayButtonView GetPlayButtonView();
-        IBaseButtonView GetReturnMenuButtonView();
+        void Init(BaseButtonModel retryButtonModel, BaseButtonModel menuButtonModel, BaseButtonModel closeButtonModel);
         void DestroyRetryButton();
         void Close();
     }

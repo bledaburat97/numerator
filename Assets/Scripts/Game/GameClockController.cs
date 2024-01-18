@@ -5,9 +5,21 @@ namespace Scripts
     public class GameClockController : IGameClockController
     {
         private IGameClockView _view;
+        private ILevelManager _levelManager;
         public GameClockController(IGameClockView view)
         {
             _view = view;
+        }
+
+        public void Initialize(IResultManager resultManager)
+        {
+            RemoveTimer();
+            resultManager.CorrectCardsBackFlipped += OnLevelEnd;
+        }
+
+        private void OnLevelEnd(object sender, EventArgs e)
+        {
+            RemoveTimer();
         }
 
         public void StartTimer(Action onTimerEnd)
@@ -25,5 +37,6 @@ namespace Scripts
     {
         void StartTimer(Action onTimerEnd);
         void RemoveTimer();
+        void Initialize(IResultManager resultManager);
     }
 }

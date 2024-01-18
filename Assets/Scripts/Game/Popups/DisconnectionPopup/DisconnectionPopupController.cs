@@ -1,4 +1,7 @@
-﻿namespace Scripts
+﻿using Unity.Netcode;
+using UnityEngine.SceneManagement;
+
+namespace Scripts
 {
     public class DisconnectionPopupController : IDisconnectionPopupController
     {
@@ -7,14 +10,21 @@
         public void Initialize(IDisconnectionPopupView view)
         {
             _view = view;
-            _view.Init();
-            CreateReturnMenuButton();
+            BaseButtonModel menuButtonModel = new BaseButtonModel()
+            {
+                text = "MENU",
+                OnClick = OnMenuButtonClick
+            };
+            _view.Init(menuButtonModel);
         }
         
-        private void CreateReturnMenuButton()
+        private void OnMenuButtonClick()
         {
-            IReturnMenuButtonController returnMenuButtonController = new ReturnMenuButtonController();
-            returnMenuButtonController.Initialize(_view.GetReturnMenuButtonView(), null);
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+            SceneManager.LoadScene("Menu");
         }
     }
 

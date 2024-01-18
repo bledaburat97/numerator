@@ -28,13 +28,13 @@ namespace Game
             {
                 _isLocalTurn = true;
                 _gameClockController.StartTimer(ChangeTurns);
-                _resultManager.ResultBlockAddition += OnGuessNumber;
+                _resultManager.NumberGuessed += OnGuessNumber;
                 AbleToMove?.Invoke(this, EventArgs.Empty);
             }
             else
             {
                 _isLocalTurn = false;
-                _resultManager.ResultBlockAddition -= OnGuessNumber;
+                _resultManager.NumberGuessed -= OnGuessNumber;
             }
         }
 
@@ -43,9 +43,9 @@ namespace Game
             return _isLocalTurn;
         }
 
-        private void OnGuessNumber(object sender, ResultBlockModel model)
+        private void OnGuessNumber(object sender, NumberGuessedEventArgs args)
         {
-            ChangeTurns();
+            if(!args.isGuessRight) ChangeTurns();
         }
         
         private void ChangeTurns()

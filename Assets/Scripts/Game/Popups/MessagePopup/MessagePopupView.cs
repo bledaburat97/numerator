@@ -8,28 +8,33 @@ namespace Scripts
     {
         [SerializeField] private TMP_Text header;
         
-        public void Init(string text)
+        public void Init(string text, float initialAlpha, Vector2 localPosition)
         {
             transform.localScale = Vector3.one;
-            transform.localPosition = Vector3.zero;
+            transform.localPosition = localPosition;
             header.text = text;
-            header.alpha = 0f;
-            Animate();
+            header.alpha = initialAlpha;
         }
 
-        private void Animate()
+        public void Close()
+        {
+            Destroy(gameObject);
+        }
+
+        public void Animate()
         {
             DOTween.Sequence()
                 .Append(header.DOFade(1f, 0.5f))
                 .AppendInterval(1f)
                 .Append(header.DOFade(0f, 0.5f))
-                .OnComplete(() => Destroy(gameObject));
+                .OnComplete(Close);
         }
-
     }
 
     public interface IMessagePopupView
     {
-        void Init(string text);
+        void Init(string text, float initialAlpha, Vector2 localPosition);
+        void Close();
+        void Animate();
     }
 }

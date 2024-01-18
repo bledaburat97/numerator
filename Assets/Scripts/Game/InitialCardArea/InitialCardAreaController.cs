@@ -30,7 +30,7 @@ namespace Scripts
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
             _cardItemInfoManager = cardItemInfoManager;
-            int numOfTotalWildCards = _levelTracker.GetWildCardCount();
+            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
             int numOfNormalCards = _levelTracker.GetLevelInfo().levelData.NumOfCards;
             _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfTotalWildCards > 0);
             _selectionController = new SelectionController(numOfNormalCards);
@@ -181,7 +181,7 @@ namespace Scripts
                     for (int i = 0; i < args.finalCardNumbers.Count; i++)
                     {
                         int cardIndex = args.finalCardNumbers[i] - 1;
-                        float delay = 0.7f * i;
+                        float delay = 0.3f * i;
 
                         if (cardIndex >= 0 && cardIndex < _normalCardItemControllerList.Count)
                         {
@@ -189,7 +189,7 @@ namespace Scripts
                         }
                     }
                 })
-                .AppendInterval(1.5f + 0.7f * (args.finalCardNumbers.Count - 1))
+                .AppendInterval(1f + 0.3f * (args.finalCardNumbers.Count - 1))
                 .AppendCallback(() => args.onComplete.Invoke());
         }
     }
