@@ -674,7 +674,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lobbyMessagePopup: {fileID: 1688712631}
   connectingPopup: {fileID: 1544718802}
-  lobbyCreationPopup: {fileID: 0}
+  lobbyCreationPopup: {fileID: 976693088}
 --- !u!1 &292019873
 GameObject:
   m_ObjectHideFlags: 0

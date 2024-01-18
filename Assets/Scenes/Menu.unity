@@ -1732,7 +1732,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -30}
+  m_AnchoredPosition: {x: 0, y: -20}
   m_SizeDelta: {x: 350, y: 470}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1880617387
@@ -1755,7 +1755,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d20b7309193847a193ca3ed243a01eba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelButtonPrefab: {fileID: 988604287935057, guid: cf8b7f7fdc925904c871fa6bea2324fe, type: 3}
+  levelButtonPrefab: {fileID: 371490860433157135, guid: 697180a6a86c21d46b453ada54100f46, type: 3}
   directionButtonPrefab: {fileID: 1673646518181781853, guid: 5003074683a20e4428d4f5829f11e6ff, type: 3}
   pineTree: {fileID: 1622065386}
 --- !u!1 &1881874541

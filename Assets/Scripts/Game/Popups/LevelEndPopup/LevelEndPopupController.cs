@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -149,11 +150,14 @@ namespace Scripts
         
         private void CreatePlayButton(bool isNewGame)
         {
+            Action onNewGameClick = () => NetworkManager.Singleton.StartHost();
+            onNewGameClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             _view.CreatePlayButton(new BaseButtonModel()
             {
                 localPosition = new Vector2(0, -170f),
                 text = isNewGame ? "Level " + (_levelTracker.GetLevelId() + 1) : "Menu",
-                OnClick = isNewGame ? () => SceneManager.LoadScene("Game") : () => SceneManager.LoadScene("Menu")
+
+                OnClick = isNewGame ? onNewGameClick : () => SceneManager.LoadScene("Menu")
             });
         }
 
@@ -161,7 +165,9 @@ namespace Scripts
         {
             Action onClick = null;
             onClick += isLevelCompleted && isNewLevel ? () => _levelTracker.SetLevelId(_levelTracker.GetLevelId() - 1) : null;
-            onClick += () => SceneManager.LoadScene("Game");
+            onClick += () => NetworkManager.Singleton.StartHost();
+            onClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+
             _view.CreateRetryButton(new BaseButtonModel()
             {
                 localPosition = isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f),
