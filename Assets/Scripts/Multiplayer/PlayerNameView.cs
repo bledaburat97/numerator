@@ -11,7 +11,7 @@ namespace Scripts
         [SerializeField] private TMP_Text playerName;
         [SerializeField] private Image readyImage;
         [SerializeField] private RectTransform rectTransform;
-        [SerializeField] private Button kickButton;
+        [SerializeField] private BaseButtonView kickButton;
         public void Init(int playerIndex, Action<int> onKickButtonClicked)
         {
             readyImage.gameObject.SetActive(false);
@@ -23,7 +23,10 @@ namespace Scripts
             }
             else
             {
-                kickButton.onClick.AddListener(() => onKickButtonClicked.Invoke(playerIndex));
+                kickButton.Init(new BaseButtonModel()
+                {
+                    OnClick = () => onKickButtonClicked.Invoke(playerIndex)
+                });
                 kickButton.gameObject.SetActive(NetworkManager.Singleton.IsServer);
             }
 

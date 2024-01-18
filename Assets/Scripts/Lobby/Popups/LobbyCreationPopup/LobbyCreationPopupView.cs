@@ -1,6 +1,5 @@
 ﻿using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Scripts
 {
@@ -8,8 +7,8 @@ namespace Scripts
     {
         [SerializeField] private TMP_InputField lobbyNameInputField;
         [SerializeField] private BaseButtonView closeButtonView;
-        [SerializeField] private Button publicButton;
-        [SerializeField] private Button privateButton;
+        [SerializeField] private PlayButtonView publicButton;
+        [SerializeField] private PlayButtonView privateButton;
         
         public void Init()
         {
@@ -18,10 +17,16 @@ namespace Scripts
             {
                 OnClick = Hide
             });
-            publicButton.onClick.AddListener(
-                    () => PlayerLobby.Instance.CreateLobby(lobbyNameInputField.text, false));
-            privateButton.onClick.AddListener(
-                () => PlayerLobby.Instance.CreateLobby(lobbyNameInputField.text, true));
+            publicButton.Init(new BaseButtonModel()
+            {
+                text = "PUBLIC",
+                OnClick = () => PlayerLobby.Instance.CreateLobby(lobbyNameInputField.text, false)
+            });
+            privateButton.Init(new BaseButtonModel()
+            {
+                text = "PRIVATE",
+                OnClick = () => PlayerLobby.Instance.CreateLobby(lobbyNameInputField.text, true)
+            });
             Hide();
         }
         

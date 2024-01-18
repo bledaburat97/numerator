@@ -1,5 +1,4 @@
 ﻿using TMPro;
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 namespace Scripts
@@ -8,7 +7,8 @@ namespace Scripts
     {
         [SerializeField] private TMP_Text lobbyNameText;
         [SerializeField] private TMP_Text lobbyCodeText;
-        [SerializeField] private BaseButtonView menuButton;
+        [SerializeField] private PlayButtonView menuButton;
+        [SerializeField] private PlayButtonView readyButton;
 
         public void SetLobbyNameText(string text)
         {
@@ -24,6 +24,11 @@ namespace Scripts
         {
             menuButton.Init(model);
         }
+
+        public void SetReadyButton(BaseButtonModel model)
+        {
+            readyButton.Init(model);
+        }
     }
 
     public interface IWaitingSceneUIView
@@ -31,5 +36,6 @@ namespace Scripts
         void SetLobbyNameText(string text);
         void SetLobbyCodeText(string text);
         void SetMenuButton(BaseButtonModel model);
+        void SetReadyButton(BaseButtonModel model);
     }
 }
