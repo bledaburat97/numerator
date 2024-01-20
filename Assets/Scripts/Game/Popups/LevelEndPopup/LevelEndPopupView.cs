@@ -9,7 +9,7 @@ namespace Scripts
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private StarImageView starImagePrefab;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
-        [SerializeField] private ParticleSystem particleSystemPrefab;
+        [SerializeField] private List<ParticleSystem> starParticles;
         [SerializeField] private ParticleSystem wildParticle;
         [SerializeField] private CanvasGroup starGroup;
 
@@ -21,7 +21,6 @@ namespace Scripts
         private IPlayButtonView _claimButtonView;
 
         private List<IStarImageView> _starImageList;
-        private List<ParticleSystem> _particleList;
         
         public void Init(StarImageViewFactory starImageViewFactory, PlayButtonViewFactory playButtonViewFactory)
         {
@@ -30,7 +29,6 @@ namespace Scripts
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
             _starImageList = new List<IStarImageView>();
-            _particleList = new List<ParticleSystem>();
         }
 
         public void CreatePlayButton(BaseButtonModel model)
@@ -71,9 +69,7 @@ namespace Scripts
         {
             for (int i = 0; i < localPositions.Count; i++)
             {
-                ParticleSystem particle = Instantiate(particleSystemPrefab, starHolder);
-                particle.transform.localPosition = localPositions[i];
-                _particleList.Add(particle);
+                starParticles[i].transform.localPosition = localPositions[i];
             }
         }
 
@@ -99,8 +95,8 @@ namespace Scripts
         
         public void ActivateParticle(int index)
         {
-            _particleList[index].gameObject.SetActive(true);
-            _particleList[index].Play();
+            starParticles[index].gameObject.SetActive(true);
+            starParticles[index].Play();
         }
         
         public void ActivateWildParticle()

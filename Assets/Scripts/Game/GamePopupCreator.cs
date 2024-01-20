@@ -67,6 +67,7 @@ namespace Scripts
             settingsButtonController.OpenSettings += CreateSettingsPopup;
             checkButtonController.NotAbleToCheck += CreateNotAbleToMovePopup;
             turnOrderDeterminer.AbleToMove += CreateAbleToMovePopup;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? gameSaveService.Save : null;
             _deleteSaveAction += gameSaveService.DeleteSave;
@@ -105,7 +106,6 @@ namespace Scripts
         public override void OnNetworkSpawn()
         {
             _isGameEnd.OnValueChanged += CreateMultiplayerLevelLostPopup;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             _isAnyReady.OnValueChanged += CheckNewGameOfferPopup;
         }
 
@@ -221,7 +221,10 @@ namespace Scripts
         
         private void OnClientDisconnectCallback(ulong clientId)
         {
-            CreateDisconnectionPopup();
+            if((IsHost && clientId != 0) || (!IsHost && clientId == 0))
+            {
+                CreateDisconnectionPopup();
+            }
         }
 
         private void CreateDisconnectionPopup()
@@ -231,6 +234,11 @@ namespace Scripts
             IDisconnectionPopupView disconnectionPopupView =
                 _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
             disconnectionPopupController.Initialize(disconnectionPopupView);
+        }
+
+        private new void OnDestroy()
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
     }
 

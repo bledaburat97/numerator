@@ -14,12 +14,12 @@ namespace Scripts
             _userReady = userReady;
             BaseButtonModel playAgainButtonModel = new BaseButtonModel()
             {
-                text = "Play Again",
+                text = "PLAY AGAIN",
                 OnClick = () => OnPlayAgainButtonClick(openWaitingOpponentPopup)
             };
             BaseButtonModel menuButtonModel = new BaseButtonModel()
             {
-                text = "Menu",
+                text = "MENU",
                 OnClick = OnMenuButtonClick
             };
             _view.Init(isSuccess, playAgainButtonModel, menuButtonModel);

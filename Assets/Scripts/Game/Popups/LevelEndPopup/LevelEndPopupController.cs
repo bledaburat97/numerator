@@ -181,7 +181,7 @@ namespace Scripts
             _view.CreateClaimButton(new BaseButtonModel()
             {
                 localPosition = new Vector2(0, -170f),
-                text = "Claim",
+                text = "CLAIM",
                 OnClick = onClickClaim
             });
         }
