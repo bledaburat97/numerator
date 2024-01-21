@@ -1,4 +1,5 @@
 ﻿using System;
+using Menu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +13,11 @@ namespace Scripts
         [SerializeField] protected Image innerBg;
         [SerializeField] private StarImageView[] starImageViews = new StarImageView[3];
         [SerializeField] private RectTransform starHolder;
+        [SerializeField] private RectTransform spaceShipHolder;
+        [SerializeField] private SpaceShipView spaceShipPrefab;
+        
         private LevelButtonModel _model;
+        private ISpaceShipView _spaceShipView;
         
         public void Init(LevelButtonModel model)
         {
@@ -26,6 +31,7 @@ namespace Scripts
             {
                 starImageViews[i].SetStarStatus(i < _model.starCount);
             }
+            _spaceShipView = null;
         }
 
         public void SetButtonActive()
@@ -41,25 +47,42 @@ namespace Scripts
             button.onClick.AddListener(() => onSelect.Invoke(_model.levelId));
         }
         
-        public void Select(bool status)
-        {
-            if (status) innerBg.color = ConstantValues.SELECTED_LEVEL_BUTTON_COLOR;
-            else innerBg.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
-        }
-        
         public void Destroy()
         {
             Destroy(gameObject);
         }
 
+        public ISpaceShipView GetSpaceShip()
+        {
+            return _spaceShipView;
+        }
+
+        public RectTransform GetRectTransformOfSpaceShipHolder()
+        {
+            return spaceShipHolder;
+        }
+
+        public void CreateSpaceShip(Vector2 localPos)
+        {
+            _spaceShipView = new SpaceShipViewFactory().Spawn(spaceShipHolder, spaceShipPrefab);
+            _spaceShipView.Init(localPos);
+        }
+
+        public void SetSpaceShip(ISpaceShipView spaceShipView)
+        {
+            _spaceShipView = spaceShipView;
+        }
     }
 
     public interface ILevelButtonView
     {
         void Init(LevelButtonModel model);
         void SetButtonActive();
-        void Select(bool status);
         void Destroy();
+        ISpaceShipView GetSpaceShip();
+        RectTransform GetRectTransformOfSpaceShipHolder();
+        void CreateSpaceShip(Vector2 localPos);
+        void SetSpaceShip(ISpaceShipView spaceShipView);
     }
     
     public class LevelButtonModel

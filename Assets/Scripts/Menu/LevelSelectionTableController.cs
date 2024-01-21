@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using DG.Tweening;
 using Menu;
 using UnityEngine;
 
@@ -18,6 +19,8 @@ namespace Scripts
         private readonly int _maxNumOfPageNumber = 20;
         private IDirectionButtonView _backwardButtonView;
         private IDirectionButtonView _forwardButtonView;
+        
+        public const float SPACESHIP_INITIAL_LOCAL_VERTICAL_POS = -10f;
 
         public LevelSelectionTableController(ILevelSelectionTableView view)
         {
@@ -59,7 +62,7 @@ namespace Scripts
                 if (_firstLevelIdOfTable + i <= _levelTracker.GetStarCountOfLevels().Count) levelButtonView.SetButtonActive();
                 if (_firstLevelIdOfTable + i == _activeLevelIdController.GetActiveLevelId())
                 {
-                    levelButtonView.Select(true);
+                    levelButtonView.CreateSpaceShip(new Vector2(0,SPACESHIP_INITIAL_LOCAL_VERTICAL_POS));
                     _lastSelectedLevelId = _activeLevelIdController.GetActiveLevelId();
                 }
                 _levelButtonList.Add(levelButtonView);
@@ -109,9 +112,29 @@ namespace Scripts
         {
             if (_lastSelectedLevelId >= _firstLevelIdOfTable && _lastSelectedLevelId < _firstLevelIdOfTable + rowCount * columnCount)
             {
-                _levelButtonList[_lastSelectedLevelId - _firstLevelIdOfTable].Select(false);
+                RectTransform nextSpaceShipHolder =
+                    _levelButtonList[levelId - _firstLevelIdOfTable].GetRectTransformOfSpaceShipHolder();
+
+                ISpaceShipView spaceShip = _levelButtonList[_lastSelectedLevelId - _firstLevelIdOfTable].GetSpaceShip();
+                RectTransform spaceShipRectTransform = spaceShip.GetRectTransform();
+                
+                spaceShipRectTransform.SetParent(nextSpaceShipHolder);
+                _levelButtonList[levelId - _firstLevelIdOfTable].SetSpaceShip(spaceShip);
+                
+                Vector3 direction = -spaceShipRectTransform.localPosition;
+                Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, direction);
+                Quaternion reverseRotation = Quaternion.LookRotation(Vector3.forward, Vector3.zero);
+                DOTween.Sequence()
+                    .Append(spaceShipRectTransform.DOLocalMove(new Vector2(0, 0), 0.5f).SetEase(Ease.Linear))
+                    .Join(spaceShipRectTransform.DOLocalRotateQuaternion(targetRotation, 0.5f).SetEase(Ease.Linear))
+                    .Append(spaceShipRectTransform.DOLocalMove(new Vector2(0,SPACESHIP_INITIAL_LOCAL_VERTICAL_POS), 0.2f)).SetEase(Ease.Linear)
+                    .Join(spaceShipRectTransform.DOLocalRotateQuaternion(reverseRotation, 0.2f).SetEase(Ease.Linear));
             }
-            _levelButtonList[levelId - _firstLevelIdOfTable].Select(true);
+            else
+            {
+                _levelButtonList[levelId - _firstLevelIdOfTable].CreateSpaceShip(new Vector2(0,SPACESHIP_INITIAL_LOCAL_VERTICAL_POS));
+            }
+            
             _lastSelectedLevelId = levelId;
             _activeLevelIdController.UpdateActiveLevelId(levelId);
         }

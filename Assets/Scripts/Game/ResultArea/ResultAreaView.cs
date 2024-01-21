@@ -14,18 +14,21 @@ namespace Scripts
         private ResultBlockViewFactory _resultBlockViewFactory;
         [SerializeField] private ScrollRect scrollRect;
         private ResultBlockControllerFactory _resultBlockControllerFactory;
-        private IGamePopupCreator _gamePopupCreator;
+        private ILevelTracker _levelTracker;
 
-        public void Init(ResultBlockViewFactory resultBlockViewFactory, IGamePopupCreator gamePopupCreator)
+        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker)
         {
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockViewFactory = resultBlockViewFactory;
-            _gamePopupCreator = gamePopupCreator;
+            _levelTracker = levelTracker;
         }
 
         public void SetScrollPositionToBottom()
         {
-            StartCoroutine(ScrollToBottomCoroutine());
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                StartCoroutine(ScrollToBottomCoroutine());
+            }
         }
         
         IEnumerator ScrollToBottomCoroutine () {
@@ -36,12 +39,6 @@ namespace Scripts
         private IResultBlockView CreateResultBlock()
         {
             return _resultBlockViewFactory.Spawn(transform, resultBlockPrefab);
-        }
-
-
-        public RectTransform GetRectTransform()
-        {
-            return rectTransform;
         }
         
         public void AddResultBlock(object sender, ResultBlockModel resultBlockModel)
@@ -86,8 +83,7 @@ namespace Scripts
 
     public interface IResultAreaView
     {
-        void Init(ResultBlockViewFactory resultBlockViewFactory, IGamePopupCreator gamePopupCreator);
-        void SetScrollPositionToBottom();
+        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker);
         void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
     }
 }

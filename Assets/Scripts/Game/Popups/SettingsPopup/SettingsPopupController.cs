@@ -1,5 +1,6 @@
 ﻿using System;
 using Unity.Netcode;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Scripts
@@ -18,23 +19,32 @@ namespace Scripts
                 OnClick = () => OnCloseButtonClick(onCloseAction)
             };
             
-            BaseButtonModel retryButtonModel = new BaseButtonModel()
-            {
-                text = "RETRY",
-                OnClick = () => OnRetryButtonClick(deleteSaveAction)
-            };
+            _view.Init(closeButtonModel);
 
-            BaseButtonModel menuButtonModel = new BaseButtonModel()
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                text = "MENU",
-                OnClick = () => OnMenuButtonClick(saveGameAction)
-            };
-            
-            _view.Init(retryButtonModel, menuButtonModel, closeButtonModel);
+                _view.CreateRetryButton(new BaseButtonModel()
+                {
+                    text = "RETRY",
+                    OnClick = () => OnRetryButtonClick(deleteSaveAction),
+                    localPosition = new Vector2(0, 30f)
+                });
+                _view.CreateMenuButton(new BaseButtonModel()
+                {
+                    text = "MENU",
+                    OnClick = () => OnMenuButtonClick(saveGameAction),
+                    localPosition = new Vector2(0,-60f)
+                });
+            }
 
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            else if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
-                _view.DestroyRetryButton();
+                _view.CreateMenuButton(new BaseButtonModel()
+                {
+                    text = "MENU",
+                    OnClick = () => OnMenuButtonClick(null),
+                    localPosition = new Vector2(0,-10f)
+                });
             }
         }
 

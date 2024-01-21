@@ -2,6 +2,7 @@
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
@@ -14,7 +15,7 @@ namespace Scripts
         {
             closeButtonView.Init(new BaseButtonModel()
             {
-                OnClick = Hide
+                OnClick = () => SceneManager.LoadScene("Menu")
             });
             Hide();
         }

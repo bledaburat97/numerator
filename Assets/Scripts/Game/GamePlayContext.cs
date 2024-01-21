@@ -55,7 +55,6 @@ namespace Scripts
             InitializeGamePopupCreator();
             _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
-            //CreateFadeMaskService();
         }
 
         private void InitializeCardHolderModelCreator()
@@ -65,7 +64,7 @@ namespace Scripts
         
         private void InitializeResultArea()
         {
-            _resultAreaController.Initialize(_resultManager);
+            _resultAreaController.Initialize(_resultManager, _levelTracker);
         }
 
         private void InitializeResultManager()
@@ -172,13 +171,5 @@ namespace Scripts
         {
             _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker, _userReady, _checkButtonController, _turnOrderDeterminer);
         }
-
-        /*
-        private void CreateFadeMaskService()
-        {
-            fadeMaskService.Initialize(_fadePanelController);
-            fadeMaskService.CreateMask();
-        }
-        */
     }
 }

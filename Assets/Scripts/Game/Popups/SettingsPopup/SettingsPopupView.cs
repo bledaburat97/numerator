@@ -7,18 +7,27 @@ namespace Scripts
         [SerializeField] private PlayButtonView retryButtonView;
         [SerializeField] private PlayButtonView menuButtonView;
         [SerializeField] private BaseButtonView closeButtonView;
-        public void Init(BaseButtonModel retryButtonModel, BaseButtonModel menuButtonModel, BaseButtonModel closeButtonModel)
+        public void Init(BaseButtonModel closeButtonModel)
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-            retryButtonView.Init(retryButtonModel);
-            menuButtonView.Init(menuButtonModel);
+            retryButtonView.gameObject.SetActive(false);
+            menuButtonView.gameObject.SetActive(false);
             closeButtonView.Init(closeButtonModel);
         }
-
-        public void DestroyRetryButton()
+        
+        public void CreateRetryButton(BaseButtonModel model)
         {
-            Destroy(retryButtonView.gameObject);
+            retryButtonView.gameObject.SetActive(true);
+            retryButtonView.Init(model);
+            retryButtonView.InitPosition(model.localPosition);
+        }
+        
+        public void CreateMenuButton(BaseButtonModel model)
+        {
+            menuButtonView.gameObject.SetActive(true);
+            menuButtonView.Init(model);
+            menuButtonView.InitPosition(model.localPosition);
         }
 
         public void Close()
@@ -29,8 +38,9 @@ namespace Scripts
 
     public interface ISettingsPopupView
     {
-        void Init(BaseButtonModel retryButtonModel, BaseButtonModel menuButtonModel, BaseButtonModel closeButtonModel);
-        void DestroyRetryButton();
+        void Init(BaseButtonModel closeButtonModel);
+        void CreateRetryButton(BaseButtonModel model);
+        void CreateMenuButton(BaseButtonModel model);
         void Close();
     }
 }

@@ -4,7 +4,6 @@ namespace Scripts
 {
     public class ResultAreaController : IResultAreaController
     {
-        [Inject] private IGamePopupCreator _gamePopupCreator;
         private IResultAreaView _view;
         
         public ResultAreaController(IResultAreaView view)
@@ -12,24 +11,16 @@ namespace Scripts
             _view = view;
         }
         
-        public void Initialize(IResultManager resultManager)
+        public void Initialize(IResultManager resultManager, ILevelTracker levelTracker)
         {
-            _view.Init(new ResultBlockViewFactory(), _gamePopupCreator);
+            _view.Init(new ResultBlockViewFactory(), levelTracker);
             resultManager.ResultBlockAddition += _view.AddResultBlock;
         }
-        /*
-        private void AddResultBlock(object sender, ResultBlockModel resultBlockModel)
-        {
-            IResultBlockController resultBlockController = _resultBlockControllerFactory.Spawn();
-            IResultBlockView resultBlockView = _view.CreateResultBlockServerRpc();
-            resultBlockController.Initialize(resultBlockView, resultBlockModel);
-            _view.SetScrollPositionToBottom();
-        }
-        */
+
     }
 
     public interface IResultAreaController
     {
-        void Initialize(IResultManager resultManager);
+        void Initialize(IResultManager resultManager, ILevelTracker levelTracker);
     }
 }
