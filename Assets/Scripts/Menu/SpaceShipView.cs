@@ -11,9 +11,9 @@ namespace Scripts
             return rectTransform;
         }
 
-        public void Init(Vector3 localPos)
+        public void Init()
         {
-            rectTransform.localPosition = localPos;
+            rectTransform.localPosition = Vector3.zero;
             rectTransform.localScale = Vector3.one;
         }
     }
@@ -21,6 +21,6 @@ namespace Scripts
     public interface ISpaceShipView
     {
         RectTransform GetRectTransform();
-        void Init(Vector3 localPos);
+        void Init();
     }
 }

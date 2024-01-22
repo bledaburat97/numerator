@@ -24,7 +24,7 @@ namespace Scripts
         public static float SIZE_OF_STARS_ON_LEVEL_SUCCESS = 70f;
         public static Color BOARD_CARD_HOLDER_COLOR = HexToColor("#D65865");
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
-        public static Color SELECTED_LEVEL_BUTTON_COLOR = HexToColor("#5F6DA6");
+        public static Color PLAYED_LEVEL_BUTTON_COLOR = HexToColor("#5F6DA6");
         public static int NUM_OF_STARS_FOR_WILD = 6;
         public static int NUM_OF_PROBABILITY_BUTTONS = 3;
         public static int NUM_OF_DIFFICULTY_BUTTONS = 3;

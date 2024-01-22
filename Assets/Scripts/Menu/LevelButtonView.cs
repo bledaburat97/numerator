@@ -1,5 +1,4 @@
 ﻿using System;
-using Menu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +14,7 @@ namespace Scripts
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private RectTransform spaceShipHolder;
         [SerializeField] private SpaceShipView spaceShipPrefab;
-        
+
         private LevelButtonModel _model;
         private ISpaceShipView _spaceShipView;
         
@@ -39,7 +38,12 @@ namespace Scripts
             button.enabled = true;
             starHolder.gameObject.SetActive(true);
             SetOnSelectAction(_model.onSelect);
-            innerBg.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
+            innerBg.color = ConstantValues.PLAYED_LEVEL_BUTTON_COLOR;
+        }
+
+        public void SetButtonActiveness(bool status)
+        {
+            button.enabled = status;
         }
         
         private void SetOnSelectAction(Action<int> onSelect)
@@ -62,10 +66,10 @@ namespace Scripts
             return spaceShipHolder;
         }
 
-        public void CreateSpaceShip(Vector2 localPos)
+        public void CreateSpaceShip()
         {
             _spaceShipView = new SpaceShipViewFactory().Spawn(spaceShipHolder, spaceShipPrefab);
-            _spaceShipView.Init(localPos);
+            _spaceShipView.Init();
         }
 
         public void SetSpaceShip(ISpaceShipView spaceShipView)
@@ -78,10 +82,11 @@ namespace Scripts
     {
         void Init(LevelButtonModel model);
         void SetButtonActive();
+        void SetButtonActiveness(bool status);
         void Destroy();
         ISpaceShipView GetSpaceShip();
         RectTransform GetRectTransformOfSpaceShipHolder();
-        void CreateSpaceShip(Vector2 localPos);
+        void CreateSpaceShip();
         void SetSpaceShip(ISpaceShipView spaceShipView);
     }
     

@@ -27,12 +27,18 @@ namespace Scripts
         {
             gameObject.SetActive(status);
         }
+
+        public void SetButtonActiveness(bool status)
+        {
+            button.enabled = status;
+        }
     }
 
     public interface IDirectionButtonView : IBaseButtonView
     {
         void Init(DirectionButtonModel model);
         void SetButtonStatus(bool status);
+        void SetButtonActiveness(bool status);
     }
 
     public enum Direction

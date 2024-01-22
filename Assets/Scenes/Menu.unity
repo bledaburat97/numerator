@@ -2009,6 +2009,7 @@ MonoBehaviour:
   levelSelectionTable: {fileID: 1880617388}
   menuHeader: {fileID: 441587104}
   menuUI: {fileID: 123527494}
+  canvas: {fileID: 1157773107}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
