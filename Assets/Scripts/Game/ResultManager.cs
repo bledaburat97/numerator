@@ -8,15 +8,15 @@ namespace Scripts
     {
         private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
-        private ILevelTracker _levelTracker;
+        private int _numOfBoardHolders;
         public event EventHandler<ResultBlockModel> ResultBlockAddition;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         public event EventHandler<BackFlipCorrectCardsEventArgs> CorrectCardsBackFlipped;
-        public void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator)
+        public void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
         {
-            _levelTracker = levelTracker;
+            _numOfBoardHolders = levelDataCreator.GetLevelData().NumOfBoardHolders;
             _targetCards = targetNumberCreator.GetTargetCardsList();
-            _triedCardsList = _levelTracker.GetLevelInfo().levelSaveData.TriedCardsList;
+            _triedCardsList = levelTracker.GetLevelSaveData().TriedCardsList;
             foreach (List<int> triedCards in _triedCardsList)
             {
                 CalculatePositionCounts(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
@@ -68,7 +68,7 @@ namespace Scripts
 
         private void DetermineAction(List<int> finalCards, int numOfCorrectPos, int numOfWrongPos)
         {
-            if (numOfCorrectPos == _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders)
+            if (numOfCorrectPos == _numOfBoardHolders)
             {
                 ResultBlockAddition?.Invoke(this, new ResultBlockModel()
                 {
@@ -124,7 +124,7 @@ namespace Scripts
 
     public interface IResultManager
     {
-        void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator);
+        void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
         int GetTargetCardAtIndex(int index);
         void CheckFinalCards(List<int> finalCards);
         event EventHandler<ResultBlockModel> ResultBlockAddition;

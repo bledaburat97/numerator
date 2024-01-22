@@ -15,14 +15,14 @@ namespace Scripts
         public event EventHandler MultiplayerLevelEnd;
         private bool _isGameOver;
         
-        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController)
+        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController, ILevelDataCreator levelDataCreator)
         {
             _levelTracker = levelTracker;
             _gameSaveService = gameSaveService;
-            _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
+            _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
             _numOfStars = 3;
             _starProgressBarController = starProgressBarController;
-            UpdateStarProgressBar(_maxNumOfTries, _levelTracker.GetLevelInfo().levelSaveData.RemainingGuessCount, 0f);
+            UpdateStarProgressBar(_maxNumOfTries, _levelTracker.GetLevelSaveData().RemainingGuessCount, 0f);
             resultManager.NumberGuessed += CheckGameIsOver;
             _isGameOver = false;
         }
@@ -110,7 +110,7 @@ namespace Scripts
     
     public interface ILevelManager
     {
-        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController);
+        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController, ILevelDataCreator levelDataCreator);
         event EventHandler<LevelEndEventArgs> LevelEnd;
         int GetRemainingGuessCount();
         bool IsGameOver();

@@ -9,11 +9,12 @@ namespace Scripts
     {
         private int _starCount;
         private int _wildCardCount;
-        private LevelInfo _levelInfo;
         private IGameSaveService _gameSaveService;
         private List<int> _starCountOfCompletedLevels;
         private int _levelId;
         private GameOption _gameOption;
+        private Difficulty _multiplayerLevelDifficulty;
+        private LevelSaveData _levelSaveData;
         
         public void Initialize(IGameSaveService gameSaveService)
         {
@@ -23,6 +24,7 @@ namespace Scripts
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
             _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();
+            _multiplayerLevelDifficulty = (Difficulty)PlayerPrefs.GetInt("multiplayer_level_difficulty", 2);
         }
 
         public void SetGameOption(GameOption gameOption)
@@ -36,6 +38,27 @@ namespace Scripts
             return _gameOption;
         }
 
+        public void SetMultiplayerLevelDifficulty(Difficulty difficulty)
+        {
+            PlayerPrefs.SetInt("multiplayer_level_difficulty", (int)difficulty);
+            _multiplayerLevelDifficulty = difficulty;
+        }
+
+        private int GetNumberOfBoardCardsInMultiplayer()
+        {
+            switch (_multiplayerLevelDifficulty)
+            {
+                case Difficulty.Easy:
+                    return 3;
+                case Difficulty.Medium:
+                    return 4;
+                case Difficulty.Hard:
+                    return 5;
+                default:
+                    return 5;
+            } 
+        }
+
         public void ClearPlayerPrefs()
         {
             PlayerPrefs.DeleteKey("level_id");
@@ -44,64 +67,54 @@ namespace Scripts
             PlayerPrefs.DeleteKey("star_count_of_levels");
         }
 
-        public void SetLevelInfo(ITargetNumberCreator targetNumberCreator)
+        public void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
         {
-            _levelInfo = new LevelInfo();
             if (_gameOption == GameOption.SinglePlayer)
             {
-                List<LevelData> levelDataList = LevelDataGetter.GetLevelDataFromJson();
-                LevelData levelData = levelDataList.Find(level => level.LevelId == _levelId % 15);
-                
+                levelDataCreator.SetSinglePlayerLevelData(_levelId);
+                LevelData levelData = levelDataCreator.GetLevelData();
                 LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
 
                 if (levelSaveData != null)
                 {
                     if (_levelId == levelSaveData.LevelId)
                     {
-                        _levelInfo.levelSaveData = levelSaveData;
-                        _levelInfo.levelData = levelData;
-                        targetNumberCreator.SetSavedTargetCardList(_levelInfo.levelSaveData.TargetCards);
+                        _levelSaveData = levelSaveData;
+                        targetNumberCreator.SetSavedTargetCardList(_levelSaveData.TargetCards);
                     }
                     else
                     {
-                        _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
-                        targetNumberCreator.CreateTargetNumber(_levelInfo.levelData.NumOfCards, _levelInfo.levelData.NumOfBoardHolders);
+                        _levelSaveData = CreateDefaultLevelSaveData(levelData);
+                        targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
                     }
                 }
                 else
                 {
-                    _levelInfo = CreateDefaultLevelInfo(_levelId, levelData);
-                    targetNumberCreator.CreateTargetNumber(_levelInfo.levelData.NumOfCards, _levelInfo.levelData.NumOfBoardHolders);
+                    _levelSaveData = CreateDefaultLevelSaveData(levelData);
+                    targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
                 }
             }
 
             else
             {
-                LevelData multiplayerLevelData = new LevelData()
-                {
-                    LevelId = -1,
-                    NumOfBoardHolders = 5,
-                    NumOfCards = 9,
-                    MaxNumOfTries = 1000,
-                };
-                _levelInfo = CreateDefaultLevelInfo(_levelId, multiplayerLevelData);
-                targetNumberCreator.CreateTargetNumber(_levelInfo.levelData.NumOfCards, _levelInfo.levelData.NumOfBoardHolders);
-
+                levelDataCreator.SetMultiplayerLevelData(GetNumberOfBoardCardsInMultiplayer());
+                LevelData levelData = levelDataCreator.GetLevelData();
+                _levelSaveData = CreateDefaultLevelSaveData(levelData);
+                targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
             }
 
         }
         
-        public LevelInfo GetLevelInfo()
+        public LevelSaveData GetLevelSaveData()
         {
-            return _levelInfo;
+            return _levelSaveData;
         }
 
-        private LevelInfo CreateDefaultLevelInfo(int levelId, LevelData levelData)
+        private LevelSaveData CreateDefaultLevelSaveData(LevelData levelData)
         {
             LevelSaveData levelSaveData = new LevelSaveData();
-            levelSaveData.LevelId = levelId;
+            levelSaveData.LevelId = levelData.LevelId;
             levelSaveData.TriedCardsList = new List<List<int>>();
-            //levelSaveData.TargetCards = CreateTargetCards(levelData.NumOfCards, levelData.NumOfBoardHolders);
             levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
             levelSaveData.CardItemInfoList = new List<CardItemInfo>();
             for (int i = 0; i < levelData.NumOfCards; i++)
@@ -115,11 +128,7 @@ namespace Scripts
                 levelSaveData.CardItemInfoList.Add(cardItemInfo);
             }
 
-            return new LevelInfo()
-            {
-                levelSaveData = levelSaveData,
-                levelData = levelData
-            };
+            return levelSaveData;
         }
         
         private List<int> GetAllPossibleCardHolderIndicatorIndexes(int numOfBoardCardHolders)
@@ -214,18 +223,19 @@ namespace Scripts
     public interface ILevelTracker
     {
         void Initialize(IGameSaveService gameSaveService);
-        LevelInfo GetLevelInfo();
+        LevelSaveData GetLevelSaveData();
         int GetLevelId();
         void IncrementLevelId(int starCount);
         void AddStar(int addedStarCount);
         int GetStarCount();
         int GetWildCardCount();
         void DecreaseWildCardCount();
-        void SetLevelInfo(ITargetNumberCreator targetNumberCreator);
+        void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
         List<int> GetStarCountOfLevels();
         void SetLevelId(int levelId);
         void SetGameOption(GameOption gameOption);
         GameOption GetGameOption();
+        void SetMultiplayerLevelDifficulty(Difficulty difficulty);
     }
 
     public class LevelData
@@ -234,13 +244,6 @@ namespace Scripts
         public int NumOfBoardHolders;
         public int NumOfCards;
         public int MaxNumOfTries;
-        public int NumOfGainedStars;
-    }
-
-    public class LevelInfo
-    {
-        public LevelSaveData levelSaveData;
-        public LevelData levelData;
     }
     
     public enum GameOption

@@ -171,7 +171,7 @@ namespace Scripts
 
         private void SetColor(ProbabilityType probabilityType)
         {
-            _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityType]);
+            _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType]);
         }
 
         private void SetLockStatus(bool isLocked)

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 
@@ -18,6 +17,7 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private IGameSaveService _gameSaveService;
         private ICardItemInfoManager _cardItemInfoManager;
+        private ILevelDataCreator _levelDataCreator;
 
         public InitialCardAreaController(IInitialCardAreaView view)
         {
@@ -25,13 +25,14 @@ namespace Scripts
         }
         
         
-        public void Initialize(ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager)
+        public void Initialize(ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
         {
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
             _cardItemInfoManager = cardItemInfoManager;
+            _levelDataCreator = levelDataCreator;
             int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
-            int numOfNormalCards = _levelTracker.GetLevelInfo().levelData.NumOfCards;
+            int numOfNormalCards = _levelDataCreator.GetLevelData().NumOfCards;
             _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfTotalWildCards > 0);
             _selectionController = new SelectionController(numOfNormalCards);
             IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
@@ -92,7 +93,7 @@ namespace Scripts
         
         private void CreateCardItemsData(Action<bool, int> onCardSelected, int numOfTotalWildCard)
         {
-            int numOfBoardCardHolder = _levelTracker.GetLevelInfo().levelData.NumOfBoardHolders;
+            int numOfBoardCardHolder = _levelDataCreator.GetLevelData().NumOfBoardHolders;
             int numOfWildCard = numOfTotalWildCard > numOfBoardCardHolder ? numOfBoardCardHolder : numOfTotalWildCard;
             for (int j = 0; j < numOfWildCard; j++)
             {
@@ -198,7 +199,7 @@ namespace Scripts
     {
         void Initialize(ICardItemLocator cardItemLocator,
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
-            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager);
+            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
 
     }
     

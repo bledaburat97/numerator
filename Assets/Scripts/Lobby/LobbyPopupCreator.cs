@@ -9,7 +9,8 @@ namespace Scripts
         [SerializeField] private LobbyMessagePopupView lobbyMessagePopup;
         [SerializeField] private ConnectingPopupView connectingPopup;
         [SerializeField] private LobbyCreationPopupView lobbyCreationPopup;
-        public void Initialize()
+        private ILobbyCreationPopupController _lobbyCreationPopupController;
+        public void Initialize(ILevelTracker levelTracker)
         {
             lobbyMessagePopup.Init();
             MultiplayerManager.Instance.OnFailedToJoinGame += OnFailedToJoinGame;
@@ -19,12 +20,15 @@ namespace Scripts
             PlayerLobby.Instance.OnQuickJoinFailed += OnQuickJoinFailed;
             PlayerLobby.Instance.OnJoinFailed += OnJoinFailed;
             connectingPopup.Init();
-            lobbyCreationPopup.Init();
+            LobbyCreationPopupControllerFactory lobbyCreationPopupControllerFactory =
+                new LobbyCreationPopupControllerFactory();
+            _lobbyCreationPopupController = lobbyCreationPopupControllerFactory.Spawn();
+            _lobbyCreationPopupController.Initialize(lobbyCreationPopup, levelTracker);
         }
 
         public void OpenLobbyCreationPopup()
         {
-            lobbyCreationPopup.Show();
+            _lobbyCreationPopupController.ShowPopup();
         }
         
         private void OnFailedToJoinGame(object sender, EventArgs args)
@@ -75,7 +79,7 @@ namespace Scripts
 
     public interface ILobbyPopupCreator
     {
-        void Initialize();
+        void Initialize(ILevelTracker levelTracker);
         void OpenLobbyCreationPopup();
     }
 }

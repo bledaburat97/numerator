@@ -25,10 +25,10 @@ namespace Scripts
             _view.DisableStarProgressBar();
         }
         
-        public void Initialize(ILevelTracker levelTracker)
+        public void Initialize(ILevelDataCreator levelDataCreator)
         {
             _view.Init(new BoundaryViewFactory());
-            _maxNumOfTries = levelTracker.GetLevelInfo().levelData.MaxNumOfTries;
+            _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
             _boundaryControllerList = new List<IBoundaryController>();
             CreateBoundaries();
             CreateStars();
@@ -95,7 +95,7 @@ namespace Scripts
 
     public interface IStarProgressBarController
     {
-        void Initialize(ILevelTracker levelTracker);
+        void Initialize(ILevelDataCreator levelDataCreator);
 
         void DecreaseProgressBar(List<int> indexesOfDeletedStars, float targetPercentage, Action levelFailedAction,
             float animationDuration);

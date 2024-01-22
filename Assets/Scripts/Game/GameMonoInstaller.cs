@@ -1,5 +1,6 @@
 ﻿using Game;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Zenject;
 
 namespace Scripts
@@ -22,6 +23,7 @@ namespace Scripts
         {
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
+            Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();

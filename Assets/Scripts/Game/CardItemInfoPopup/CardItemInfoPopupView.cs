@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Scripts
 {
     public class CardItemInfoPopupView : MonoBehaviour, ICardItemInfoPopupView
     {
-        [SerializeField] private ProbabilityButtonView[] probabilityButtonList = new ProbabilityButtonView[3];
+        [SerializeField] private OptionButtonView[] probabilityButtonList = new OptionButtonView[ConstantValues.NUM_OF_PROBABILITY_BUTTONS];
         [SerializeField] private CardHolderIndicatorButtonView cardHolderIndicatorButtonPrefab;
         [SerializeField] private RectTransform cardHolderIndicatorButtonHolderRT;
         private CardHolderIndicatorButtonViewFactory _cardHolderIndicatorButtonViewFactory;
@@ -27,25 +25,24 @@ namespace Scripts
                 cardHolderIndicatorButtonPrefab);
         }
 
-        public IProbabilityButtonView GetProbabilityButtonViewByIndex(int index)
+        public IOptionButtonView GetProbabilityButtonViewByIndex(int index)
         {
             return probabilityButtonList[index];
         }
-
     }
     
     public interface ICardItemInfoPopupView
     {
         void Init(CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory);
         ICardHolderIndicatorButtonView CreateCardHolderIndicatorButtonView();
-        IProbabilityButtonView GetProbabilityButtonViewByIndex(int index);
+        IOptionButtonView GetProbabilityButtonViewByIndex(int index);
         void SetStatus(bool status);
     }
 
     public enum ProbabilityType
     {
-        Certain,
-        Probable,
-        NotExisted
+        Certain = 0,
+        Probable = 1,
+        NotExisted = 2
     }
 }

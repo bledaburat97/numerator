@@ -24,7 +24,7 @@ namespace Scripts
         
         private void InitializeLobbyPopupCreator()
         {
-            _lobbyPopupCreator.Initialize();
+            _lobbyPopupCreator.Initialize(_levelTracker);
         }
         
         private void CreateLobbyUIController()

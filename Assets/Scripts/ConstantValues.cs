@@ -26,13 +26,15 @@ namespace Scripts
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
         public static Color SELECTED_LEVEL_BUTTON_COLOR = HexToColor("#5F6DA6");
         public static int NUM_OF_STARS_FOR_WILD = 6;
+        public static int NUM_OF_PROBABILITY_BUTTONS = 3;
+        public static int NUM_OF_DIFFICULTY_BUTTONS = 3;
 
-        public static Dictionary<ProbabilityType, Color> GetProbabilityTypeToColorMapping()
+        public static Dictionary<int, Color> GetProbabilityTypeToColorMapping()
         {
-            Dictionary<ProbabilityType, Color> probabilityTypeToColorMapping = new Dictionary<ProbabilityType, Color>();
-            probabilityTypeToColorMapping.Add(ProbabilityType.Certain, HexToColor("#57B762"));
-            probabilityTypeToColorMapping.Add(ProbabilityType.Probable, HexToColor("#FADD8C"));
-            probabilityTypeToColorMapping.Add(ProbabilityType.NotExisted, HexToColor("#E03934"));
+            Dictionary<int, Color> probabilityTypeToColorMapping = new Dictionary<int, Color>();
+            probabilityTypeToColorMapping.Add((int)ProbabilityType.Certain, HexToColor("#57B762"));
+            probabilityTypeToColorMapping.Add((int)ProbabilityType.Probable, HexToColor("#FADD8C"));
+            probabilityTypeToColorMapping.Add((int)ProbabilityType.NotExisted, HexToColor("#E03934"));
             return probabilityTypeToColorMapping;
         }
 

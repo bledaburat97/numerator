@@ -6,9 +6,9 @@ namespace Scripts
     {
         private int[] _numbersList;
         private IResultManager _resultManager;
-        public BoardAreaManager(ILevelTracker levelTracker, IResultManager resultManager, ICheckButtonController checkButtonController)
+        public BoardAreaManager(ILevelDataCreator levelDataCreator, IResultManager resultManager, ICheckButtonController checkButtonController)
         {
-            _numbersList = new int[levelTracker.GetLevelInfo().levelData.NumOfBoardHolders];
+            _numbersList = new int[levelDataCreator.GetLevelData().NumOfBoardHolders];
             _resultManager = resultManager;
             checkButtonController.CheckFinalNumbers += CheckFinalNumbers;
         }

@@ -28,13 +28,15 @@ namespace Scripts
         [Inject] private IUserReady _userReady;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameClockController _gameClockController;
+        [Inject] private ILevelDataCreator _levelDataCreator;
         
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
             _levelTracker.Initialize(_gameSaveService);
             _targetNumberCreator.Initialize();
-            _levelTracker.SetLevelInfo(_targetNumberCreator);
+            _levelDataCreator.Initialize();
+            _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
             _userReady.Initialize();
             InitializeCardHolderModelCreator();
             InitializeResultArea();
@@ -69,7 +71,7 @@ namespace Scripts
 
         private void InitializeResultManager()
         {
-            _resultManager.Initialize(_levelTracker, _targetNumberCreator);
+            _resultManager.Initialize(_levelTracker, _targetNumberCreator, _levelDataCreator);
         }
         
         private void SetLevelId()
@@ -111,7 +113,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _starProgressBarController.Initialize(_levelTracker);
+                _starProgressBarController.Initialize(_levelDataCreator);
             }
             else
             {
@@ -121,27 +123,27 @@ namespace Scripts
 
         private void InitializeLevelManager()
         {
-            _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _starProgressBarController);
+            _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _starProgressBarController, _levelDataCreator);
         }
         
         private void InitializeBoardArea()
         {
-            _boardAreaController.Initialize(_cardItemLocator, _resultManager, _levelTracker, _cardHolderModelCreator, _checkButtonController);
+            _boardAreaController.Initialize(_cardItemLocator, _resultManager, _levelDataCreator, _cardHolderModelCreator, _checkButtonController);
         }
 
         private void InitializeCardItemInfoManager()
         {
-            _cardItemInfoManager.Initialize(_levelTracker);
+            _cardItemInfoManager.Initialize(_levelTracker, _levelDataCreator);
         }
         
         private void InitializeCardItemInfoPopup()
         {
-            _cardItemInfoPopupController.Initialize(_cardItemInfoManager, _levelTracker, _cardHolderModelCreator);
+            _cardItemInfoPopupController.Initialize(_cardItemInfoManager, _levelDataCreator, _cardHolderModelCreator);
         }
         
         private void InitializeInitialCardArea()
         {
-            _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager);
+            _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager, _levelDataCreator);
         }
 
         private void InitializeGameClock()
