@@ -15,11 +15,6 @@ namespace Scripts
             _levelTracker.Initialize(null);
             InitializeLobbyPopupCreator();
             CreateLobbyUIController();
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                NetworkManager.Singleton.StartHost();
-                NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
-            }
         }
         
         private void InitializeLobbyPopupCreator()

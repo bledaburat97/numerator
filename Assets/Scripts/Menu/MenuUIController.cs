@@ -33,7 +33,7 @@ namespace Menu
         private void OnSinglePlayerButtonClick()
         {
             _levelTracker.SetGameOption(GameOption.SinglePlayer);
-            SceneManager.LoadScene("Lobby");
+            SceneManager.LoadScene("LoadingScene");
         }
         
         private void OnMultiplayerButtonClick()
