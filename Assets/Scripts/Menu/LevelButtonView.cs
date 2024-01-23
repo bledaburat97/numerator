@@ -21,7 +21,7 @@ namespace Scripts
         public void Init(LevelButtonModel model)
         {
             _model = model;
-            transform.localPosition = new Vector3(model.localPosition.x, model.localPosition.y, transform.localPosition.z);
+            transform.localPosition = new Vector3(model.localPosition.x, model.localPosition.y, 0);
             transform.localScale = Vector3.one;
             starHolder.gameObject.SetActive(false);
             text.SetText((_model.levelId + 1).ToString());

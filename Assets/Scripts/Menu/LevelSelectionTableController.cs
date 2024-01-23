@@ -123,9 +123,10 @@ namespace Scripts
 
                 Vector2 direction = new Vector2((nextSpaceShipHolder.position.x - lastSpaceShipHolder.position.x) / _canvas.scaleFactor,
                     (nextSpaceShipHolder.position.y - lastSpaceShipHolder.position.y) / _canvas.scaleFactor);
-                float movementDuration = direction.magnitude * 0.002f;
+                float movementDuration = direction.magnitude * 0.02f;
                 
                 Quaternion firstRotation = Quaternion.LookRotation(Vector3.forward, direction);
+                Quaternion secondRotation = Quaternion.LookRotation(Vector3.forward, Vector3.zero);
                 float rotationDuration = Quaternion.Angle(spaceShipRectTransform.localRotation, firstRotation) * 0.003f;
                 
                 Action setNewParent = () =>
@@ -134,20 +135,31 @@ namespace Scripts
                     _levelButtonList[levelId - _firstLevelIdOfTable].SetSpaceShip(spaceShip);
                 };
 
-                Quaternion reverseRotation = Quaternion.LookRotation(Vector3.forward, Vector3.zero);
                 DOTween.Sequence()
-                    .OnStart(DeactivateButtons)
+                    .OnStart(OnStart)
                     .AppendCallback(_lastSelectedLevelId < levelId ? setNewParent.Invoke : null)
                     .Append(spaceShipRectTransform.DOLocalRotateQuaternion(firstRotation, rotationDuration)
                         .SetEase(Ease.Linear))
                     .Append(spaceShipRectTransform.DOMove(nextSpaceShipHolder.position, movementDuration).SetEase(Ease.Linear))
                     .AppendCallback(_lastSelectedLevelId > levelId ? setNewParent.Invoke : null)
-                    .Append(spaceShipRectTransform.DOLocalRotateQuaternion(reverseRotation, rotationDuration)
+                    .Append(spaceShipRectTransform.DOLocalRotateQuaternion(secondRotation, rotationDuration)
                         .SetEase(Ease.Linear))
-                    .OnComplete(ActivateButtons);
+                    .OnComplete(OnComplete);
                 
-                void ActivateButtons()
+                void OnStart()
                 {
+                    for (int i = 0; i < _levelButtonList.Count; i++)
+                    {
+                        _levelButtonList[i].SetButtonActiveness(false);
+                    }
+                    _backwardButtonView.SetButtonActiveness(false);
+                    _forwardButtonView.SetButtonActiveness(false);
+                    spaceShip.StartFlames();
+                }
+                
+                void OnComplete()
+                {
+                    spaceShip.StopFlames();
                     for (int i = 0; i < _levelButtonList.Count; i++)
                     {
                         if (_firstLevelIdOfTable + i <= _levelTracker.GetStarCountOfLevels().Count)
@@ -158,16 +170,7 @@ namespace Scripts
                     _backwardButtonView.SetButtonActiveness(true);
                     _forwardButtonView.SetButtonActiveness(true);
                 }
-
-                void DeactivateButtons()
-                {
-                    for (int i = 0; i < _levelButtonList.Count; i++)
-                    {
-                        _levelButtonList[i].SetButtonActiveness(false);
-                    }
-                    _backwardButtonView.SetButtonActiveness(false);
-                    _forwardButtonView.SetButtonActiveness(false);
-                }
+                
             }
             else
             {
