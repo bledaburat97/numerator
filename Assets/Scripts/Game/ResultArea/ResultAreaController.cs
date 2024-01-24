@@ -1,5 +1,4 @@
-﻿using Zenject;
-
+﻿
 namespace Scripts
 {
     public class ResultAreaController : IResultAreaController
@@ -11,9 +10,9 @@ namespace Scripts
             _view = view;
         }
         
-        public void Initialize(IResultManager resultManager, ILevelTracker levelTracker)
+        public void Initialize(IResultManager resultManager, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
         {
-            _view.Init(new ResultBlockViewFactory(), levelTracker);
+            _view.Init(new ResultBlockViewFactory(), levelTracker, turnOrderDeterminer);
             resultManager.ResultBlockAddition += _view.AddResultBlock;
         }
 
@@ -21,6 +20,6 @@ namespace Scripts
 
     public interface IResultAreaController
     {
-        void Initialize(IResultManager resultManager, ILevelTracker levelTracker);
+        void Initialize(IResultManager resultManager, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
     }
 }

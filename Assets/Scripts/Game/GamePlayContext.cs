@@ -1,5 +1,4 @@
-﻿using Game;
-using UnityEngine;
+﻿using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -39,9 +38,12 @@ namespace Scripts
             _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
             _userReady.Initialize();
             InitializeCardHolderModelCreator();
-            InitializeResultArea();
             InitializeResultManager();
+            InitializeGameClock();
+            InitializeTurnOrderDeterminer();
+            InitializeResultArea();
             SetLevelId();
+            SetSizeOfScrollArea();
             InitializeSettingsButton();
             InitializeCheckButton();
             InitializeResetButton();
@@ -51,8 +53,6 @@ namespace Scripts
             InitializeCardItemInfoManager();
             InitializeCardItemInfoPopup();
             InitializeInitialCardArea();
-            InitializeGameClock();
-            InitializeTurnOrderDeterminer();
             InitializeFadePanelController();
             InitializeGamePopupCreator();
             _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
@@ -64,14 +64,27 @@ namespace Scripts
             _cardHolderModelCreator.Initialize();
         }
         
-        private void InitializeResultArea()
-        {
-            _resultAreaController.Initialize(_resultManager, _levelTracker);
-        }
-
         private void InitializeResultManager()
         {
             _resultManager.Initialize(_levelTracker, _targetNumberCreator, _levelDataCreator);
+        }
+        
+        private void InitializeGameClock()
+        {
+            _gameClockController.Initialize(_resultManager);
+        }
+        
+        private void InitializeTurnOrderDeterminer()
+        {
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                _turnOrderDeterminer.Initialize(_gameClockController, _resultManager);
+            }
+        }
+        
+        private void InitializeResultArea()
+        {
+            _resultAreaController.Initialize(_resultManager, _levelTracker, _turnOrderDeterminer);
         }
         
         private void SetLevelId()
@@ -83,6 +96,14 @@ namespace Scripts
             else
             {
                 _gameUIView.DisableLevelId();
+            }
+        }
+
+        private void SetSizeOfScrollArea()
+        {
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                _gameUIView.IncreaseSizeAndPositionOfScrollArea(44f);
             }
         }
 
@@ -99,6 +120,23 @@ namespace Scripts
         private void InitializeResetButton()
         {
             _resetButtonController.Initialize();
+        }
+        
+        #if UNITY_EDITOR
+        private void OnApplicationFocus(bool pauseStatus)
+        {
+            pauseStatus = !pauseStatus;
+        #else
+        private void OnApplicationPause(bool pauseStatus)
+        {
+        #endif
+            if (pauseStatus)
+            {
+                if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+                {
+                    _gameSaveService.Save();
+                }
+            }
         }
         
         private void OnApplicationQuit()
@@ -144,19 +182,6 @@ namespace Scripts
         private void InitializeInitialCardArea()
         {
             _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager, _levelDataCreator);
-        }
-
-        private void InitializeGameClock()
-        {
-            _gameClockController.Initialize(_resultManager);
-        }
-
-        private void InitializeTurnOrderDeterminer()
-        {
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
-            {
-                _turnOrderDeterminer.Initialize(_gameClockController, _resultManager);
-            }
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

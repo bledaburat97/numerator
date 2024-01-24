@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Game;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -81,15 +80,17 @@ namespace Scripts
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)
         {
             IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            messagePopupView.Init("Please wait for your turn.", 0f, new Vector2(0,300));
-            messagePopupView.Animate();
+            messagePopupView.Init("Please wait for your turn.", 0f, new Vector2(0,318));
+            messagePopupView.SetColor(ConstantValues.NOT_ABLE_TO_MOVE_TEXT_COLOR);
+            messagePopupView.Animate(1f);
         }
         
         private void CreateAbleToMovePopup(object sender, EventArgs e)
         {
             IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            messagePopupView.Init("It's your turn.", 0f, new Vector2(0,300));
-            messagePopupView.Animate();
+            messagePopupView.Init("It's your turn.", 0f, new Vector2(0,318));
+            messagePopupView.SetColor(ConstantValues.ABLE_TO_MOVE_TEXT_COLOR);
+            messagePopupView.Animate(3f);
         }
 
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)

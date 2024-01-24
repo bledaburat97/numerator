@@ -15,27 +15,39 @@ namespace Scripts
         [SerializeField] private ScrollRect scrollRect;
         private ResultBlockControllerFactory _resultBlockControllerFactory;
         private ILevelTracker _levelTracker;
+        private ITurnOrderDeterminer _turnOrderDeterminer;
 
-        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker)
+        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
         {
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockViewFactory = resultBlockViewFactory;
             _levelTracker = levelTracker;
+            _turnOrderDeterminer = turnOrderDeterminer;
         }
 
         public void SetScrollPositionToBottom()
         {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                StartCoroutine(ScrollToBottomCoroutine());
-            }
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer && !_turnOrderDeterminer.IsLocalTurn()) return;
+            StartCoroutine(ScrollToBottomCoroutine());
         }
         
         IEnumerator ScrollToBottomCoroutine () {
             yield return new WaitForEndOfFrame ();
-            scrollRect.verticalNormalizedPosition = 0f;
-            Canvas.ForceUpdateCanvases ();
+            float elapsedTime = 0f;
+            float startingPosition = scrollRect.verticalNormalizedPosition;
+            float targetPosition = 0f;
+            float scrollDuration = startingPosition * 1.5f;
+
+            while (elapsedTime < scrollDuration)
+            {
+                scrollRect.verticalNormalizedPosition = Mathf.Lerp(startingPosition, targetPosition, elapsedTime / scrollDuration);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            scrollRect.verticalNormalizedPosition = targetPosition;
         }
+        
         private IResultBlockView CreateResultBlock()
         {
             return _resultBlockViewFactory.Spawn(transform, resultBlockPrefab);
@@ -83,7 +95,7 @@ namespace Scripts
 
     public interface IResultAreaView
     {
-        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker);
+        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
         void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
     }
 }

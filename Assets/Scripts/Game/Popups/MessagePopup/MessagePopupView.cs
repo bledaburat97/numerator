@@ -16,16 +16,21 @@ namespace Scripts
             header.alpha = initialAlpha;
         }
 
+        public void SetColor(Color color)
+        {
+            header.color = color;
+        }
+
         public void Close()
         {
             Destroy(gameObject);
         }
 
-        public void Animate()
+        public void Animate(float showDuration)
         {
             DOTween.Sequence()
                 .Append(header.DOFade(1f, 0.5f))
-                .AppendInterval(1f)
+                .AppendInterval(showDuration)
                 .Append(header.DOFade(0f, 0.5f))
                 .OnComplete(Close);
         }
@@ -35,6 +40,7 @@ namespace Scripts
     {
         void Init(string text, float initialAlpha, Vector2 localPosition);
         void Close();
-        void Animate();
+        void Animate(float showDuration);
+        void SetColor(Color color);
     }
 }

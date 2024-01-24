@@ -2,7 +2,7 @@
 using Scripts;
 using Unity.Netcode;
 
-namespace Game
+namespace Scripts
 {
     public class TurnOrderDeterminer : NetworkBehaviour, ITurnOrderDeterminer
     {

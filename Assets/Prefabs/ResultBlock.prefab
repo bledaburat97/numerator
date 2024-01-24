@@ -31,7 +31,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3390900973314479688}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
@@ -111,7 +110,6 @@ RectTransform:
   - {fileID: 3390900972961722180}
   - {fileID: 3390900973919726945}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -135,7 +133,6 @@ MonoBehaviour:
   nonDraggableCardItemPrefab: {fileID: 3368461494000725629, guid: 8988d5eb31f198f49837a03c49598dda, type: 3}
   cardsHolder: {fileID: 3390900972961722180}
   resultsHolder: {fileID: 3390900973919726945}
-  horizontalLayoutGroupOfCardsHolder: {fileID: 2097527055979369299}
   spacingBetweenCardsAndResult: 20
 --- !u!222 &2508987204749434195
 CanvasRenderer:
@@ -175,7 +172,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3390900973314479688}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
