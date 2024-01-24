@@ -101,7 +101,12 @@ namespace Scripts
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController);
+            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem);
+        }
+
+        private void DeactivateGlowSystem()
+        {
+            glowSystem.SetActive(false);
         }
 
         public override void OnNetworkSpawn()
@@ -113,6 +118,7 @@ namespace Scripts
         private void CreateWaitingOpponentPopup()
         {
             _isLocalReady = true;
+            if (_isAnyReady.Value) return;
             IWaitingOpponentPopupController waitingOpponentPopupController =
                 _waitingOpponentPopupControllerFactory.Spawn();
             IWaitingOpponentPopupView waitingOpponentPopupView =

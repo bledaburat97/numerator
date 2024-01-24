@@ -24,7 +24,7 @@ namespace Scripts
             }
             else
             {
-                _activeLevelId = _levelTracker.GetStarCountOfLevels().Count;
+                _activeLevelId = _levelTracker.GetLastPlayedLevelId();
                 _isNewGame = true;
             }
             _levelTracker.SetLevelId(_activeLevelId);

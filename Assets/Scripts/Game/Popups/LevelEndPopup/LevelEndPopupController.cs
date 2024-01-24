@@ -17,7 +17,7 @@ namespace Scripts
         private IFadePanelController _fadePanelController;
         private IWildCardItemView _wildCardItemView;
 
-        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController)
+        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow)
         {
             _view = view;
             _glowingView = glowingView;
@@ -32,9 +32,9 @@ namespace Scripts
                 int oldStarCount = args.oldStarCount > args.starCount ? args.starCount : args.oldStarCount;
                 CreateStars(args.starCount, oldStarCount);
                 _levelTracker.AddStar(args.starCount - oldStarCount);
-                CreatePlayButton(args.oldStarCount == 0);
+                CreatePlayButton(args.oldStarCount == 0, deactivateGlow);
             }
-            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0);
+            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0, deactivateGlow);
             Animation();
         }
 
@@ -148,10 +148,12 @@ namespace Scripts
             _view.CreateParticles(starsPosition.ToList());
         }
         
-        private void CreatePlayButton(bool isNewGame)
+        private void CreatePlayButton(bool isNewGame, Action deactivateGlow)
         {
             Action onNewGameClick = () => NetworkManager.Singleton.StartHost();
             onNewGameClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+            onNewGameClick += () => deactivateGlow?.Invoke();
+
             _view.CreatePlayButton(new BaseButtonModel()
             {
                 localPosition = new Vector2(0, -170f),
@@ -161,13 +163,13 @@ namespace Scripts
             });
         }
 
-        private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel)
+        private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel, Action deactivateGlow)
         {
             Action onClick = null;
             onClick += isLevelCompleted && isNewLevel ? () => _levelTracker.SetLevelId(_levelTracker.GetLevelId() - 1) : null;
             onClick += () => NetworkManager.Singleton.StartHost();
             onClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
-
+            onClick += () => deactivateGlow?.Invoke();
             _view.CreateRetryButton(new BaseButtonModel()
             {
                 localPosition = isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f),
@@ -190,6 +192,6 @@ namespace Scripts
 
     public interface ILevelEndPopupController
     {
-        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController);
+        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow);
     }
 }

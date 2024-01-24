@@ -38,10 +38,10 @@ namespace Scripts
             _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
             _userReady.Initialize();
             InitializeCardHolderModelCreator();
+            InitializeResultArea();
             InitializeResultManager();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
-            InitializeResultArea();
             SetLevelId();
             SetSizeOfScrollArea();
             InitializeSettingsButton();
@@ -64,6 +64,11 @@ namespace Scripts
             _cardHolderModelCreator.Initialize();
         }
         
+        private void InitializeResultArea()
+        {
+            _resultAreaController.Initialize(_resultManager, _levelTracker, _turnOrderDeterminer);
+        }
+        
         private void InitializeResultManager()
         {
             _resultManager.Initialize(_levelTracker, _targetNumberCreator, _levelDataCreator);
@@ -82,10 +87,7 @@ namespace Scripts
             }
         }
         
-        private void InitializeResultArea()
-        {
-            _resultAreaController.Initialize(_resultManager, _levelTracker, _turnOrderDeterminer);
-        }
+
         
         private void SetLevelId()
         {
