@@ -1,23 +1,21 @@
-﻿using System;
-using TMPro;
-using Unity.Netcode;
+﻿using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
     public class LobbyMessagePopupView : MonoBehaviour
     {
-        [SerializeField] private BaseButtonView closeButtonView;
+        [SerializeField] private BaseButtonView closeButton;
         [SerializeField] private TMP_Text title;
         
         public void Init()
         {
-            closeButtonView.Init(new BaseButtonModel()
-            {
-                OnClick = () => SceneManager.LoadScene("Menu")
-            });
             Hide();
+        }
+
+        public IBaseButtonView GetCloseButton()
+        {
+            return closeButton;
         }
 
         public void Show(string text)

@@ -7,9 +7,12 @@ namespace Scripts
     {
         [SerializeField] private TMP_Text levelIdText;
         [SerializeField] private RectTransform scrollAreaRectTransform;
-        public void SetLevelId(ILevelTracker levelTracker)
+        [SerializeField] private BaseButtonView checkButton;
+        [SerializeField] private BaseButtonView resetButton;
+        [SerializeField] private BaseButtonView settingsButton;
+        public void SetLevelId(string text)
         {
-            levelIdText.SetText("Level " + (levelTracker.GetLevelId() + 1));
+            levelIdText.SetText(text);
         }
 
         public void DisableLevelId()
@@ -22,12 +25,30 @@ namespace Scripts
             scrollAreaRectTransform.localPosition = new Vector2(0, scrollAreaRectTransform.localPosition.y + sizeOfResultBlock / 2);
             scrollAreaRectTransform.sizeDelta = new Vector2(scrollAreaRectTransform.sizeDelta.x,scrollAreaRectTransform.sizeDelta.y + sizeOfResultBlock);
         }
+
+        public IBaseButtonView GetCheckButton()
+        {
+            return checkButton;
+        }
+        
+        public IBaseButtonView GetResetButton()
+        {
+            return resetButton;
+        }
+        
+        public IBaseButtonView GetSettingsButton()
+        {
+            return settingsButton;
+        }
     }
 
     public interface IGameUIView
     {
-        void SetLevelId(ILevelTracker levelTracker);
+        void SetLevelId(string text);
         void DisableLevelId();
         void IncreaseSizeAndPositionOfScrollArea(float sizeOfResultBlock);
+        IBaseButtonView GetCheckButton();
+        IBaseButtonView GetResetButton();
+        IBaseButtonView GetSettingsButton();
     }
 }

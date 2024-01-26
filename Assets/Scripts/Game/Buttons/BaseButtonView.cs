@@ -8,25 +8,57 @@ namespace Scripts
 {
     public class BaseButtonView : MonoBehaviour, IBaseButtonView, IPointerDownHandler, IPointerUpHandler
     {
-        [SerializeField] protected TMP_Text text;
-        [SerializeField] protected Button button;
-        [SerializeField] protected Image outerBg;
-        [SerializeField] protected Image shadow;
-        [SerializeField] protected Image innerBg;
-        protected Vector2 innerBgOffsetMin;
-        protected Vector2 innerBgOffsetMax;
+        [SerializeField] private TMP_Text text;
+        [SerializeField] private Button button;
+        [SerializeField] private Image outerBg;
+        [SerializeField] private Image shadow;
+        [SerializeField] private Image innerBg;
+        [SerializeField] private Image image;
+        private Vector2 innerBgOffsetMin;
+        private Vector2 innerBgOffsetMax;
 
-        public void Init(BaseButtonModel model)
+        public void Init(Action onClick)
         {
-            text.SetText(model.text);
-            SetOnClickAction(model.OnClick);
+            transform.localScale = Vector3.one;
             innerBgOffsetMin = innerBg.rectTransform.offsetMin;
             innerBgOffsetMax = innerBg.rectTransform.offsetMax;
+            button.onClick.AddListener(() => onClick?.Invoke());
+        }
+        
+        public void SetText(string newText)
+        {
+            text.SetText(newText);
         }
 
-        protected void SetOnClickAction(Action onClick)
+        public void SetLocalPosition(Vector2 localPos)
         {
-            button.onClick.AddListener(() => onClick.Invoke());
+            transform.localPosition = localPos;
+        }
+
+        public void SetImageStatus(bool status)
+        {
+            image.gameObject.SetActive(status);
+        }
+
+        public void SetTextStatus(bool status)
+        {
+            text.gameObject.SetActive(status);
+        }
+        
+        public void SetButtonStatus(bool status)
+        {
+            gameObject.SetActive(status);
+        }
+
+        public void SetButtonEnable(bool status)
+        {
+            button.enabled = status;
+        }
+        
+        public void SetColorOfImage(Color color)
+        {
+            innerBg.color = color;
+            outerBg.color = color;
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -44,30 +76,18 @@ namespace Scripts
             innerBg.rectTransform.offsetMin = innerBgOffsetMin;
             innerBg.rectTransform.offsetMax = innerBgOffsetMax;
         }
-
-        public void SetText(string newText)
-        {
-            text.SetText(newText);
-        }
-
-        public void InitPosition(Vector2 localPos)
-        {
-            transform.localScale = Vector3.one;
-            transform.localPosition = localPos;
-        }
     }
     
     public interface IBaseButtonView
     {
-        void Init(BaseButtonModel model);
+        void Init(Action onClick);
         void SetText(string newText);
-        void InitPosition(Vector2 localPos);
+        void SetLocalPosition(Vector2 localPos);
+        void SetImageStatus(bool status);
+        void SetTextStatus(bool status);
+        void SetButtonStatus(bool status);
+        void SetButtonEnable(bool status);
+        void SetColorOfImage(Color color);
     }
-
-    public class BaseButtonModel
-    {
-        public string text;
-        public Action OnClick;
-        public Vector2 localPosition;
-    }
+    
 }

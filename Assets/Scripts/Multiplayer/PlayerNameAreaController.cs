@@ -1,9 +1,12 @@
 ﻿using System;
+using Unity.Netcode;
+using Zenject;
 
 namespace Scripts
 {
     public class PlayerNameAreaController : IPlayerNameAreaController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         private IPlayerNameView[] _playerNameViewList = new IPlayerNameView[MultiplayerManager.MAX_NUM_OF_USERS];
         private IPlayerNameAreaView _view;
         private IUserReady _userReady;
@@ -45,6 +48,18 @@ namespace Scripts
                     {
                         IPlayerNameView playerNameView = _view.CreatePlayerNameView();
                         playerNameView.Init(playerIndex, OnKickButtonClicked);
+
+                        IBaseButtonController kickButtonController =
+                            _baseButtonControllerFactory.Create(playerNameView.GetKickButton());
+                        
+                        kickButtonController.SetButtonStatus(false);
+                        int currentPlayerIndex = playerIndex;
+                        if (currentPlayerIndex != 0) //TODO: may check with host id instead of 0.
+                        {
+                            kickButtonController.Initialize(() => OnKickButtonClicked(currentPlayerIndex));
+                            kickButtonController.SetButtonStatus(NetworkManager.Singleton.IsServer);
+                        }
+                        
                         _playerNameViewList[playerIndex] = playerNameView;
                     }
 

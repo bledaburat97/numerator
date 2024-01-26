@@ -16,10 +16,10 @@ namespace Scripts
             _view = view;
         }
         
-        public void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController)
+        public void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController)
         {
             _view.Init(new CardHolderFactory());
-            _boardAreaManager = new BoardAreaManager(levelDataCreator, resultManager, checkButtonController);
+            _boardAreaManager = new BoardAreaManager(levelDataCreator, resultManager, gameUIController);
             _cardItemLocator = cardItemLocator;
             _cardHolderModelCreator = cardHolderModelCreator;
             _cardHolderModelCreator.AddBoardCardHolderModelList(levelDataCreator.GetLevelData().NumOfBoardHolders);
@@ -47,7 +47,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
-        void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, ICheckButtonController checkButtonController);
+        void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController);
         event EventHandler<int> boardCardHolderClicked;
 
     }

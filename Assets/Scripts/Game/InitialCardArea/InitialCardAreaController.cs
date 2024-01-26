@@ -25,7 +25,7 @@ namespace Scripts
         }
         
         
-        public void Initialize(ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
+        public void Initialize(ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
         {
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
@@ -39,7 +39,7 @@ namespace Scripts
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
-            resetButtonController.ResetNumbers += ResetPositionsOfCardItems;
+            gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
             resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
         }
@@ -199,7 +199,7 @@ namespace Scripts
     {
         void Initialize(ICardItemLocator cardItemLocator,
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
-            ICardHolderModelCreator cardHolderModelCreator, IResetButtonController resetButtonController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
+            ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
 
     }
     

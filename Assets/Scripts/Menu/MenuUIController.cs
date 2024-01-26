@@ -1,13 +1,15 @@
 ﻿using Scripts;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace Menu
 {
     public class MenuUIController : IMenuUIController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         private IMenuUIView _view;
         private ILevelTracker _levelTracker;
-        
+        private IBaseButtonController _singlePlayerButtonController;
         public MenuUIController(IMenuUIView view)
         {
             _view = view;
@@ -17,17 +19,15 @@ namespace Menu
         {
             _levelTracker = levelTracker;
             activeLevelIdController.LevelSelectionChanged += OnLevelChange;
-            _view.SetSinglePlayerButton(new BaseButtonModel()
-            {
-                text = GetLevelText(activeLevelIdController.GetActiveLevelId(), activeLevelIdController.IsNewGame()),
-                OnClick = OnSinglePlayerButtonClick
-            });
             
-            _view.SetMultiplayerButton(new BaseButtonModel()
-            {
-                text = "MULTIPLAYER",
-                OnClick = OnMultiplayerButtonClick
-            });
+            _singlePlayerButtonController = _baseButtonControllerFactory.Create(_view.GetSinglePlayerButton());
+            _singlePlayerButtonController.Initialize(OnSinglePlayerButtonClick);
+            _singlePlayerButtonController.SetText(GetLevelText(activeLevelIdController.GetActiveLevelId(), activeLevelIdController.IsNewGame()));
+
+            IBaseButtonController multiplayerButtonController =
+                _baseButtonControllerFactory.Create(_view.GetMultiplayerButton());
+            multiplayerButtonController.Initialize(OnMultiplayerButtonClick);
+            multiplayerButtonController.SetText("MULTIPLAYER");
         }
 
         private void OnSinglePlayerButtonClick()
@@ -44,7 +44,7 @@ namespace Menu
 
         private void OnLevelChange(object sender, ActiveLevelChangedEventArgs args)
         {
-            _view.SetSinglePlayerButtonText(GetLevelText(args.activeLevelId, args.isNewGame));
+            _singlePlayerButtonController.SetText(GetLevelText(args.activeLevelId, args.isNewGame));
         }
 
         private string GetLevelText(int activeLevelId, bool isNewLevel)

@@ -1,9 +1,11 @@
 ﻿using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace Scripts
 {
     public class LobbyUIController : ILobbyUIController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ILobbyUIView _view;
         private ILobbyPopupCreator _lobbyPopupCreator;
         public LobbyUIController(ILobbyUIView view)
@@ -14,26 +16,25 @@ namespace Scripts
         public void Initialize(ILobbyPopupCreator lobbyPopupCreator)
         {
             _lobbyPopupCreator = lobbyPopupCreator;
-            _view.SetCreateLobbyButton(new BaseButtonModel()
-            {
-                text = "CREATE LOBBY",
-                OnClick = OnCreateLobbyButtonClick
-            });
-            _view.SetQuickJoinButton(new BaseButtonModel()
-            {
-                text = "QUICK JOIN",
-                OnClick = OnQuickJoinButtonClick
-            });
-            _view.SetJoinWithCodeButton(new BaseButtonModel()
-            {
-                text = "JOIN",
-                OnClick = OnJoinWithCodeButtonClick
-            });
-            _view.SetMenuButton(new BaseButtonModel()
-            {
-                text = "MENU",
-                OnClick = OnMenuButtonClick
-            });
+            IBaseButtonController createLobbyButtonController =
+                _baseButtonControllerFactory.Create(_view.GetCreateLobbyButton());
+            createLobbyButtonController.Initialize(OnCreateLobbyButtonClick);
+            createLobbyButtonController.SetText("CREATE LOBBY");
+
+            IBaseButtonController quickJoinButtonController =
+                _baseButtonControllerFactory.Create(_view.GetQuickJoinButton());
+            quickJoinButtonController.Initialize(OnQuickJoinButtonClick);
+            quickJoinButtonController.SetText("QUICK JOIN");
+
+            IBaseButtonController joinWithCodeButtonController =
+                _baseButtonControllerFactory.Create(_view.GetJoinWithCodeButton());
+            joinWithCodeButtonController.Initialize(OnJoinWithCodeButtonClick);
+            joinWithCodeButtonController.SetText("JOIN");
+
+            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
+            menuButtonController.Initialize(OnMenuButtonClick);
+            menuButtonController.SetText("MENU");
+
             _view.InitPlayerNameInputField(MultiplayerManager.Instance.GetPlayerName(), OnPlayerNameChanged);
         }
 

@@ -4,12 +4,12 @@ namespace Scripts
 {
     public class CardItemInfoPopupView : MonoBehaviour, ICardItemInfoPopupView
     {
-        [SerializeField] private OptionButtonView[] probabilityButtonList = new OptionButtonView[ConstantValues.NUM_OF_PROBABILITY_BUTTONS];
-        [SerializeField] private CardHolderIndicatorButtonView cardHolderIndicatorButtonPrefab;
+        [SerializeField] private BaseButtonView[] probabilityButtonList = new BaseButtonView[ConstantValues.NUM_OF_PROBABILITY_BUTTONS];
+        [SerializeField] private BaseButtonView cardHolderIndicatorButton;
         [SerializeField] private RectTransform cardHolderIndicatorButtonHolderRT;
-        private CardHolderIndicatorButtonViewFactory _cardHolderIndicatorButtonViewFactory;
+        private BaseButtonViewFactory _cardHolderIndicatorButtonViewFactory;
         
-        public void Init(CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory)
+        public void Init(BaseButtonViewFactory cardHolderIndicatorButtonViewFactory)
         {
             _cardHolderIndicatorButtonViewFactory = cardHolderIndicatorButtonViewFactory;
         }
@@ -19,13 +19,13 @@ namespace Scripts
             gameObject.SetActive(status);
         }
 
-        public ICardHolderIndicatorButtonView CreateCardHolderIndicatorButtonView()
+        public IBaseButtonView CreateCardHolderIndicatorButtonView()
         {
             return _cardHolderIndicatorButtonViewFactory.Spawn(cardHolderIndicatorButtonHolderRT,
-                cardHolderIndicatorButtonPrefab);
+                cardHolderIndicatorButton);
         }
 
-        public IOptionButtonView GetProbabilityButtonViewByIndex(int index)
+        public IBaseButtonView GetProbabilityButtonViewByIndex(int index)
         {
             return probabilityButtonList[index];
         }
@@ -33,9 +33,9 @@ namespace Scripts
     
     public interface ICardItemInfoPopupView
     {
-        void Init(CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory);
-        ICardHolderIndicatorButtonView CreateCardHolderIndicatorButtonView();
-        IOptionButtonView GetProbabilityButtonViewByIndex(int index);
+        void Init(BaseButtonViewFactory cardHolderIndicatorButtonViewFactory);
+        IBaseButtonView CreateCardHolderIndicatorButtonView();
+        IBaseButtonView GetProbabilityButtonViewByIndex(int index);
         void SetStatus(bool status);
     }
 

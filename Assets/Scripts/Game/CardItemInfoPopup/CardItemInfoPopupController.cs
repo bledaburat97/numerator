@@ -1,13 +1,17 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class CardItemInfoPopupController : ICardItemInfoPopupController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
+
         private ICardItemInfoPopupView _view;
         private ICardItemInfoManager _cardItemInfoManager;
-        private List<ICardHolderIndicatorButtonController> _cardHolderIndicatorButtonControllers;
-        private Dictionary<int, IOptionButtonController> _probabilityButtonControllers;
+        private List<IBaseButtonController> _cardHolderIndicatorButtonControllers;
+        private Dictionary<int, IBaseButtonController> _probabilityButtonControllers;
         private LevelData _levelData;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private int _activeCardIndex;
@@ -19,12 +23,12 @@ namespace Scripts
         public void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator)
         {
             _cardItemInfoManager = cardItemInfoManager;
-            CardHolderIndicatorButtonViewFactory cardHolderIndicatorButtonViewFactory = new CardHolderIndicatorButtonViewFactory();
+            BaseButtonViewFactory cardHolderIndicatorButtonViewFactory = new BaseButtonViewFactory();
             _levelData = levelDataCreator.GetLevelData();
             _cardHolderModelCreator = cardHolderModelCreator;
             _view.Init(cardHolderIndicatorButtonViewFactory);
-            _cardHolderIndicatorButtonControllers = new List<ICardHolderIndicatorButtonController>();
-            _probabilityButtonControllers = new Dictionary<int, IOptionButtonController>(); 
+            _cardHolderIndicatorButtonControllers = new List<IBaseButtonController>();
+            _probabilityButtonControllers = new Dictionary<int, IBaseButtonController>(); 
             CreateCardHolderIndicatorButtons();
             CreateProbabilityButtons();
             _view.SetStatus(false);
@@ -40,9 +44,10 @@ namespace Scripts
                 CardItemInfo cardItemInfo = _cardItemInfoManager.GetCardItemInfoList()[cardIndex];
                 for (int i = 0; i < cardItemInfo.possibleCardHolderIndicatorIndexes.Count; i++)
                 {
-                    _cardHolderIndicatorButtonControllers[cardItemInfo.possibleCardHolderIndicatorIndexes[i]].SetStatus(true);
+                    _cardHolderIndicatorButtonControllers[cardItemInfo.possibleCardHolderIndicatorIndexes[i]].SetImageStatus(false);
+                    _cardHolderIndicatorButtonControllers[cardItemInfo.possibleCardHolderIndicatorIndexes[i]].SetTextStatus(true);
                 }
-                _probabilityButtonControllers[(int)cardItemInfo.probabilityType].SetPointStatus(true);
+                _probabilityButtonControllers[(int)cardItemInfo.probabilityType].SetImageStatus(true);
             }
             else
             {
@@ -56,29 +61,25 @@ namespace Scripts
             int numOfBoardCards = _levelData.NumOfBoardHolders;
             for (int i = 0; i < numOfBoardCards; i++)
             {
-                _cardHolderIndicatorButtonControllers[i].SetStatus(false);
+                _cardHolderIndicatorButtonControllers[i].SetImageStatus(true);
+                _cardHolderIndicatorButtonControllers[i].SetTextStatus(false);
             }
 
-            foreach (KeyValuePair<int, IOptionButtonController> probabilityToController in _probabilityButtonControllers)
+            foreach (KeyValuePair<int, IBaseButtonController> probabilityToController in _probabilityButtonControllers)
             {
-                probabilityToController.Value.SetPointStatus(false);
+                probabilityToController.Value.SetImageStatus(false);
             }
         }
         
         private void CreateCardHolderIndicatorButtons()
         {
-            CardHolderIndicatorButtonControllerFactory cardHolderIndicatorButtonControllerFactory = new CardHolderIndicatorButtonControllerFactory();
             foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
-                CardHolderIndicatorButtonModel cardHolderIndicatorButtonModel = new CardHolderIndicatorButtonModel()
-                {
-                    text = ConstantValues.HOLDER_ID_LIST[boardCardHolderModel.index],
-                    localXPosition = boardCardHolderModel.localPosition.x, 
-                    OnClick = () => OnCardHolderIndicatorButtonClicked(boardCardHolderModel.index)
-                };
-                ICardHolderIndicatorButtonController cardHolderIndicatorButtonController = cardHolderIndicatorButtonControllerFactory.Spawn();
-                ICardHolderIndicatorButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
-                cardHolderIndicatorButtonController.Initialize(cardHolderIndicatorButtonView, cardHolderIndicatorButtonModel);
+                IBaseButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
+                IBaseButtonController cardHolderIndicatorButtonController = _baseButtonControllerFactory.Create(cardHolderIndicatorButtonView);
+                cardHolderIndicatorButtonController.Initialize(() => OnCardHolderIndicatorButtonClicked(boardCardHolderModel.index));
+                cardHolderIndicatorButtonController.SetText(ConstantValues.HOLDER_ID_LIST[boardCardHolderModel.index]);
+                cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(boardCardHolderModel.localPosition.x, 0));
                 _cardHolderIndicatorButtonControllers.Add(cardHolderIndicatorButtonController);
             }
         }
@@ -91,20 +92,15 @@ namespace Scripts
         
         private void CreateProbabilityButtons()
         {
-            OptionButtonControllerFactory probabilityButtonControllerFactory = new OptionButtonControllerFactory();
             for (int i = 0; i < ConstantValues.NUM_OF_PROBABILITY_BUTTONS; i++)
             {
                 int probabilityIndex = i;
-                OptionButtonModel probabilityButtonModel = new OptionButtonModel()
-                {
-                    optionIndex = probabilityIndex,
-                    onClickAction = () => OnProbabilityButtonClicked(probabilityIndex)
-                };
-                IOptionButtonController probabilityButtonController = probabilityButtonControllerFactory.Spawn();
-                IOptionButtonView probabilityButtonView = _view.GetProbabilityButtonViewByIndex(i);
-                probabilityButtonController.Initialize(probabilityButtonView, probabilityButtonModel);
-                probabilityButtonController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityButtonModel.optionIndex]);
-                _probabilityButtonControllers.Add(probabilityButtonModel.optionIndex, probabilityButtonController);
+                IBaseButtonView probabilityButtonView = _view.GetProbabilityButtonViewByIndex(i);
+                IBaseButtonController probabilityButtonController =
+                    _baseButtonControllerFactory.Create(probabilityButtonView);
+                probabilityButtonController.Initialize(() => OnProbabilityButtonClicked(probabilityIndex));
+                probabilityButtonController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityIndex]);
+                _probabilityButtonControllers.Add(probabilityIndex, probabilityButtonController);
             }
         }
         
@@ -119,11 +115,6 @@ namespace Scripts
     {
         void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator);
         void SetCardItemInfoPopupStatus(bool status, int cardIndex);
-    }
-    
-    public class CardHolderIndicatorButtonModel : BaseButtonModel
-    {
-        public float localXPosition;
     }
 }
 

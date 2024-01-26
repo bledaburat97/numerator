@@ -4,13 +4,17 @@ namespace Scripts
 {
     public class WaitingOpponentPopupView : MonoBehaviour, IWaitingOpponentPopupView
     {
-        [SerializeField] private BaseButtonView closeButtonView;
+        [SerializeField] private BaseButtonView closeButton;
 
-        public void Init(BaseButtonModel closeButtonModel)
+        public void Init()
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-            closeButtonView.Init(closeButtonModel);
+        }
+
+        public IBaseButtonView GetCloseButton()
+        {
+            return closeButton;
         }
         
         public void Close()
@@ -21,7 +25,8 @@ namespace Scripts
 
     public interface IWaitingOpponentPopupView
     {
-        void Init(BaseButtonModel closeButtonModel);
+        void Init();
+        IBaseButtonView GetCloseButton();
         void Close();
     }
 }

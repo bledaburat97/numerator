@@ -7,14 +7,13 @@ namespace Scripts
     {
         [SerializeField] private LevelButtonView levelButtonPrefab;
         private LevelButtonViewFactory _levelButtonViewFactory;
-        private DirectionButtonViewFactory _directionButtonViewFactory;
-        [SerializeField] private DirectionButtonView directionButtonPrefab;
-        [SerializeField] private RectTransform pineTree;
-        
-        public void Init(LevelButtonViewFactory levelButtonViewFactory, DirectionButtonViewFactory directionButtonViewFactory)
+        private BaseButtonViewFactory _baseButtonViewFactory;
+        [SerializeField] private BaseButtonView forwardButtonPrefab;
+        [SerializeField] private BaseButtonView backwardButtonPrefab;
+        public void Init(LevelButtonViewFactory levelButtonViewFactory, BaseButtonViewFactory baseButtonViewFactory)
         {
             _levelButtonViewFactory = levelButtonViewFactory;
-            _directionButtonViewFactory = directionButtonViewFactory;
+            _baseButtonViewFactory = baseButtonViewFactory;
         }
 
         public ILevelButtonView CreateLevelButtonView()
@@ -22,17 +21,23 @@ namespace Scripts
             return _levelButtonViewFactory.Spawn(transform, levelButtonPrefab);
         }
 
-        public IDirectionButtonView CreateDirectionButton()
+        public IBaseButtonView CreateForwardButton()
         {
-            return _directionButtonViewFactory.Spawn(transform, directionButtonPrefab);
+            return _baseButtonViewFactory.Spawn(transform, forwardButtonPrefab);
+        }
+        
+        public IBaseButtonView CreateBackwardButton()
+        {
+            return _baseButtonViewFactory.Spawn(transform, backwardButtonPrefab);
         }
 
     }
 
     public interface ILevelSelectionTableView
     {
-        void Init(LevelButtonViewFactory levelButtonViewFactory, DirectionButtonViewFactory directionButtonViewFactory);
+        void Init(LevelButtonViewFactory levelButtonViewFactory, BaseButtonViewFactory baseButtonViewFactory);
         ILevelButtonView CreateLevelButtonView();
-        IDirectionButtonView CreateDirectionButton();
+        IBaseButtonView CreateForwardButton();
+        IBaseButtonView CreateBackwardButton();
     }
 }

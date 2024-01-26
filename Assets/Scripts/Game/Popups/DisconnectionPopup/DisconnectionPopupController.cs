@@ -7,15 +7,13 @@ namespace Scripts
     {
         private IDisconnectionPopupView _view;
         
-        public void Initialize(IDisconnectionPopupView view)
+        public void Initialize(IDisconnectionPopupView view, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _view = view;
-            BaseButtonModel menuButtonModel = new BaseButtonModel()
-            {
-                text = "MENU",
-                OnClick = OnMenuButtonClick
-            };
-            _view.Init(menuButtonModel);
+            _view.Init();
+            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButtonView());
+            menuButtonController.Initialize(OnMenuButtonClick);
+            menuButtonController.SetText("MENU");
         }
         
         private void OnMenuButtonClick()
@@ -30,6 +28,6 @@ namespace Scripts
 
     public interface IDisconnectionPopupController
     {
-        void Initialize(IDisconnectionPopupView view);
+        void Initialize(IDisconnectionPopupView view, BaseButtonControllerFactory baseButtonControllerFactory);
     }
 }

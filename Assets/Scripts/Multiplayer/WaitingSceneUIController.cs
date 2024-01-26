@@ -1,10 +1,12 @@
 ﻿using Unity.Services.Lobbies.Models;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace Scripts
 {
     public class WaitingSceneUIController : IWaitingSceneUIController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         private IWaitingSceneUIView _view;
         private IUserReady _userReady;
         public WaitingSceneUIController(IWaitingSceneUIView view)
@@ -18,14 +20,13 @@ namespace Scripts
             Lobby lobby = PlayerLobby.Instance.GetLobby();
             _view.SetLobbyNameText(lobby.Name);
             _view.SetLobbyCodeText(lobby.LobbyCode);
-            _view.SetMenuButton(new BaseButtonModel()
-            {
-                text = "Menu",
-                OnClick = OnMenuButtonClick
-            });
-            _view.SetReadyButton(new BaseButtonModel(){
-                text = "Ready",
-                OnClick = OnReadyButtonClick});
+            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
+            menuButtonController.Initialize(OnMenuButtonClick);
+            menuButtonController.SetText("MENU");
+
+            IBaseButtonController readyButtonController = _baseButtonControllerFactory.Create(_view.GetReadyButton());
+            readyButtonController.Initialize(OnReadyButtonClick);
+            readyButtonController.SetText("READY");
         }
         
         private void OnReadyButtonClick()

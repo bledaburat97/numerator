@@ -12,15 +12,22 @@ namespace Scripts
         [Inject] private ILevelSelectionTableController _levelSelectionTableController;
         [Inject] private IMenuHeaderController _menuHeaderController;
         [Inject] private IMenuUIController _menuUIController;
+        [Inject] private IHapticController _hapticController;
 
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
             _levelTracker.Initialize(_gameSaveService);
+            InitializeHapticController();
             CreateActiveLevelIdController();
             CreateLevelTable();
             CreateMenuUI();
             CreateMenuHeader();
+        }
+        
+        private void InitializeHapticController() //TODO: set in global installer
+        {
+            _hapticController.Initialize();
         }
 
         private void CreateActiveLevelIdController()

@@ -6,22 +6,32 @@ namespace Scripts
     public class MultiplayerLevelEndPopupView : MonoBehaviour, IMultiplayerLevelEndPopupView
     {
         [SerializeField] private TMP_Text header;
-        [SerializeField] private PlayButtonView playAgainButton;
-        [SerializeField] private PlayButtonView menuButton;
+        [SerializeField] private BaseButtonView playAgainButton;
+        [SerializeField] private BaseButtonView menuButton;
         
-        public void Init(bool isSuccess, BaseButtonModel playAgainButtonModel, BaseButtonModel menuButtonModel)
+        public void Init(bool isSuccess)
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-            playAgainButton.Init(playAgainButtonModel);
-            menuButton.Init(menuButtonModel);
             if (isSuccess) header.text = "Congratulations!";
             else header.text = "Opponent made the right guess.";
+        }
+
+        public BaseButtonView GetPlayAgainButton()
+        {
+            return playAgainButton;
+        }
+
+        public BaseButtonView GetMenuButton()
+        {
+            return menuButton;
         }
     }
     
     public interface IMultiplayerLevelEndPopupView
     {
-        void Init(bool isSuccess, BaseButtonModel playAgainButtonModel, BaseButtonModel menuButtonModel);
+        void Init(bool isSuccess);
+        BaseButtonView GetPlayAgainButton();
+        BaseButtonView GetMenuButton();
     }
 }

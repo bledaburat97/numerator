@@ -16,20 +16,11 @@ namespace Scripts
         {
             readyImage.gameObject.SetActive(false);
             rectTransform.localScale = Vector3.one;
+        }
 
-            if (playerIndex == 0) //TODO: may check with host id instead of 0.
-            {
-                kickButton.gameObject.SetActive(false);
-            }
-            else
-            {
-                kickButton.Init(new BaseButtonModel()
-                {
-                    OnClick = () => onKickButtonClicked.Invoke(playerIndex)
-                });
-                kickButton.gameObject.SetActive(NetworkManager.Singleton.IsServer);
-            }
-
+        public IBaseButtonView GetKickButton()
+        {
+            return kickButton;
         }
 
         public void SetPlayerName(string playerName)
@@ -51,6 +42,7 @@ namespace Scripts
     public interface IPlayerNameView
     {
         void Init(int playerIndex, Action<int> onKickButtonClicked);
+        IBaseButtonView GetKickButton();
         void Destroy();
         void SetReadyStatus(bool isReady);
         void SetPlayerName(string playerName);

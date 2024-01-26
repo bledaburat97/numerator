@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Menu;
 using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class LevelSelectionTableController : ILevelSelectionTableController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
+        
         private ILevelSelectionTableView _view;
         private int rowCount = 5;
         private int columnCount = 3;
@@ -18,9 +21,9 @@ namespace Scripts
         private IActiveLevelIdController _activeLevelIdController;
         private ILevelTracker _levelTracker;
         private readonly int _maxNumOfPageNumber = 20;
-        private IDirectionButtonView _backwardButtonView;
-        private IDirectionButtonView _forwardButtonView;
         private Canvas _canvas;
+        private IBaseButtonController _forwardButtonController;
+        private IBaseButtonController _backwardButtonController;
         
         public LevelSelectionTableController(ILevelSelectionTableView view, Canvas canvas)
         {
@@ -34,7 +37,7 @@ namespace Scripts
             _levelTracker = levelTracker;
             _localPosListForButtons = new Vector2[rowCount * columnCount];
             SetLocalPosListForButtons();
-            _view.Init(new LevelButtonViewFactory(), new DirectionButtonViewFactory());
+            _view.Init(new LevelButtonViewFactory(), new BaseButtonViewFactory());
             _levelButtonList = new List<ILevelButtonView>();
             SetFirstLevelIdOfTable();
             CreateLevelButtons();
@@ -72,28 +75,24 @@ namespace Scripts
 
         private void CreateDirectionButtons()
         {
-            _backwardButtonView = _view.CreateDirectionButton();
-            _backwardButtonView.Init(new DirectionButtonModel()
-            {
-                localPosition = new Vector2(-162f, 0),
-                onClick = OnClickDirectionButton,
-                direction = Direction.Backward
-            });
-
-            _forwardButtonView = _view.CreateDirectionButton();
-            _forwardButtonView.Init(new DirectionButtonModel()
-            {
-                localPosition = new Vector2(162f, 0),
-                onClick = OnClickDirectionButton,
-                direction = Direction.Forward
-            });
+            IBaseButtonView backwardButtonView = _view.CreateBackwardButton();
+            _backwardButtonController = _baseButtonControllerFactory.Create(backwardButtonView);
+            _backwardButtonController.Initialize(() => OnClickDirectionButton(Direction.Backward));
+            _backwardButtonController.SetLocalPosition(new Vector2(-162f, 0));
+            _backwardButtonController.SetButtonStatus(false);
+            
+            IBaseButtonView forwardButtonView = _view.CreateForwardButton();
+            _forwardButtonController = _baseButtonControllerFactory.Create(forwardButtonView);
+            _forwardButtonController.Initialize(() => OnClickDirectionButton(Direction.Forward));
+            _forwardButtonController.SetLocalPosition(new Vector2(162f, 0));
+            _forwardButtonController.SetButtonStatus(false);
             SetDirectionButtonsStatus();
         }
 
         private void SetDirectionButtonsStatus()
         {
-            _backwardButtonView.SetButtonStatus(_firstLevelIdOfTable > 0);
-            _forwardButtonView.SetButtonStatus(_firstLevelIdOfTable < (_maxNumOfPageNumber - 1) * rowCount * columnCount);
+            _backwardButtonController.SetButtonStatus(_firstLevelIdOfTable > 0);
+            _forwardButtonController.SetButtonStatus(_firstLevelIdOfTable < (_maxNumOfPageNumber - 1) * rowCount * columnCount);
         }
 
         private void OnClickDirectionButton(Direction direction)
@@ -152,8 +151,8 @@ namespace Scripts
                     {
                         _levelButtonList[i].SetButtonActiveness(false);
                     }
-                    _backwardButtonView.SetButtonActiveness(false);
-                    _forwardButtonView.SetButtonActiveness(false);
+                    _backwardButtonController.SetButtonEnable(false);
+                    _forwardButtonController.SetButtonEnable(false);
                     spaceShip.StartFlames();
                 }
                 
@@ -167,8 +166,8 @@ namespace Scripts
                             _levelButtonList[i].SetButtonActiveness(true);
                         }
                     }
-                    _backwardButtonView.SetButtonActiveness(true);
-                    _forwardButtonView.SetButtonActiveness(true);
+                    _backwardButtonController.SetButtonEnable(true);
+                    _forwardButtonController.SetButtonEnable(true);
                 }
                 
             }
@@ -208,5 +207,11 @@ namespace Scripts
     public interface ILevelSelectionTableController
     {
         void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker);
+    }
+
+    public enum Direction
+    {
+        Forward,
+        Backward
     }
 }

@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class GamePopupCreator : NetworkBehaviour, IGamePopupCreator
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
+        [Inject] private FadeButtonControllerFactory _fadeButtonControllerFactory;
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -44,7 +47,7 @@ namespace Scripts
         private Action _openWaitingOpponentPopup;
         private Action _closeWaitingOpponentPopup;
         private IMessagePopupView _newGameOfferPopup;
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ICheckButtonController checkButtonController, ITurnOrderDeterminer turnOrderDeterminer)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -63,8 +66,8 @@ namespace Scripts
             _userReady = userReady;
             levelManager.LevelEnd += CreateLevelEndPopup;
             levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
-            settingsButtonController.OpenSettings += CreateSettingsPopup;
-            checkButtonController.NotAbleToCheck += CreateNotAbleToMovePopup;
+            gameUIController.OpenSettings += CreateSettingsPopup;
+            gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
             turnOrderDeterminer.AbleToMove += CreateAbleToMovePopup;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
@@ -101,7 +104,7 @@ namespace Scripts
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem);
+            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem, _fadeButtonControllerFactory);
         }
 
         private void DeactivateGlowSystem()
@@ -123,7 +126,7 @@ namespace Scripts
                 _waitingOpponentPopupControllerFactory.Spawn();
             IWaitingOpponentPopupView waitingOpponentPopupView =
                 _waitingOpponentPopupViewFactory.Spawn(transform, waitingOpponentPopupPrefab);
-            waitingOpponentPopupController.Initialize(waitingOpponentPopupView, _closeWaitingOpponentPopup);
+            waitingOpponentPopupController.Initialize(waitingOpponentPopupView, _closeWaitingOpponentPopup, _baseButtonControllerFactory);
         }
 
         private void CheckNewGameOfferPopup(bool previousValue, bool newValue)
@@ -218,7 +221,7 @@ namespace Scripts
             _fadePanelController.SetFadeImageStatus(true);
             ISettingsPopupController settingsPopupController = _settingsPopupControllerFactory.Spawn();
             ISettingsPopupView settingsPopupView = _settingsPopupViewFactory.Spawn(transform, settingsPopupPrefab);
-            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction, _levelTracker);
+            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction, _levelTracker, _baseButtonControllerFactory);
         }
 
         private void OnClosePopup()
@@ -240,7 +243,7 @@ namespace Scripts
             IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
             IDisconnectionPopupView disconnectionPopupView =
                 _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
-            disconnectionPopupController.Initialize(disconnectionPopupView);
+            disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
         }
 
         private new void OnDestroy()
@@ -251,7 +254,6 @@ namespace Scripts
 
     public interface IGamePopupCreator
     {
-        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController,
-            ISettingsButtonController settingsButtonController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ICheckButtonController checkButtonController, ITurnOrderDeterminer turnOrderDeterminer);
+        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController);
     }
 }

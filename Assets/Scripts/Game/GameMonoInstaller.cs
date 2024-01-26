@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Rendering;
 using Zenject;
 
 namespace Scripts
@@ -12,29 +13,23 @@ namespace Scripts
         [SerializeField] private InitialCardAreaView initialCardAreaView;
         [SerializeField] private FadePanelView fadePanelView;
         [SerializeField] private FadePanelView nonGlowFadePanelView;
-        [SerializeField] private BaseButtonView settingsButtonView;
-        [SerializeField] private BaseButtonView checkButtonView;
-        [SerializeField] private BaseButtonView resetButtonView;
         [SerializeField] private StarProgressBarView starProgressBarView;
         [SerializeField] private GameClockView gameClockView;
+        [SerializeField] private GameUIView gameUI;
         public override void InstallBindings()
         {
+            Container.BindFactory<IFadeButtonView, IFadeButtonController, FadeButtonControllerFactory>().To<FadeButtonController>();
+            Container.BindFactory<IBaseButtonView, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
+            Container.Bind<IHapticController>().To<HapticController>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ICardHolderModelCreator>().To<CardHolderModelCreator>().AsSingle();
             Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
-            Container.Bind<IGameUIView>().To<GameUIView>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<ISettingsButtonController>().To<SettingsButtonController>().AsSingle()
-                .WithArguments(settingsButtonView);
-            Container.Bind<ICheckButtonController>().To<CheckButtonController>().AsSingle()
-                .WithArguments(checkButtonView);
-            Container.Bind<IResetButtonController>().To<ResetButtonController>().AsSingle()
-                .WithArguments(resetButtonView);
             Container.Bind<IStarProgressBarController>().To<StarProgressBarController>().AsSingle()
                 .WithArguments(starProgressBarView);
             Container.Bind<ILevelManager>().To<LevelManager>().AsSingle();
@@ -48,6 +43,8 @@ namespace Scripts
             Container.Bind<IGamePopupCreator>().To<GamePopupCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ICardItemLocator>().To<CardItemLocator>().AsSingle().WithArguments(canvas);
             Container.Bind<ITargetNumberCreator>().To<TargetNumberCreator>().FromComponentInHierarchy().AsSingle();
+            Container.Bind<IGameUIController>().To<GameUIController>().AsSingle()
+                .WithArguments(gameUI);
         }
     }
 }

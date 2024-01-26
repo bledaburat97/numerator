@@ -1,11 +1,14 @@
 ﻿using System;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace Scripts
 {
     public class LobbyPopupCreator : MonoBehaviour, ILobbyPopupCreator
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         [SerializeField] private LobbyMessagePopupView lobbyMessagePopup;
         [SerializeField] private ConnectingPopupView connectingPopup;
         [SerializeField] private LobbyCreationPopupView lobbyCreationPopup;
@@ -13,6 +16,10 @@ namespace Scripts
         public void Initialize(ILevelTracker levelTracker)
         {
             lobbyMessagePopup.Init();
+            IBaseButtonController closeButtonController =
+                _baseButtonControllerFactory.Create(lobbyMessagePopup.GetCloseButton());
+            closeButtonController.Initialize(() => SceneManager.LoadScene("Menu"));
+            
             MultiplayerManager.Instance.OnFailedToJoinGame += OnFailedToJoinGame;
             PlayerLobby.Instance.OnCreateLobbyStarted += OnCreateLobbyStarted;
             PlayerLobby.Instance.OnCreateLobbyFailed += OnCreateLobbyFailed;

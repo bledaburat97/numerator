@@ -10,6 +10,10 @@ namespace Scripts
 {
     public class LevelEndPopupController : ILevelEndPopupController
     {
+        private FadeButtonControllerFactory _fadeButtonControllerFactory;
+        private IFadeButtonController _playButtonController;
+        private IFadeButtonController _retryButtonController;
+        private IFadeButtonController _claimButtonController;
         private ILevelEndPopupView _view;
         private IGlowingLevelEndPopupView _glowingView;
         private ILevelTracker _levelTracker;
@@ -17,13 +21,14 @@ namespace Scripts
         private IFadePanelController _fadePanelController;
         private IWildCardItemView _wildCardItemView;
 
-        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow)
+        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory)
         {
             _view = view;
             _glowingView = glowingView;
             _levelTracker = args.levelTracker;
             _fadePanelController = fadePanelController;
-            _view.Init(new StarImageViewFactory(), new PlayButtonViewFactory());
+            _fadeButtonControllerFactory = fadeButtonControllerFactory;
+            _view.Init(new StarImageViewFactory(), new FadeButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory(), new WildCardItemViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreateCircleProgressBarController();
@@ -40,24 +45,24 @@ namespace Scripts
 
         private void Animation()
         {
-            EndGameAnimationModel model = _view.GetAnimationModel();
+            List<IStarImageView> starImageViewList = _view.GetStarImageViewList();
             GlowingEndGameAnimationModel glowingModel = _glowingView.GetGlowingAnimationModel();
 
             Sequence animationSequence = DOTween.Sequence();
 
             animationSequence.AppendInterval(0.4f)
                 .Append(_fadePanelController.GetFadeImage().DOFade(0.95f, 0.5f))
-                .AppendCallback(() => SetLocalScaleOfOldStars(model.starImageViewList))
+                .AppendCallback(() => SetLocalScaleOfOldStars(starImageViewList))
                 .AppendInterval(0.2f)
                 .Append(_circleProgressBarController.MoveCircleProgressBar(0.8f))
                 .AppendInterval(0.1f)
-                .Append(AnimateStarCreation(model.starImageViewList, glowingModel.starImageViewList)).Play()
+                .Append(AnimateStarCreation(starImageViewList, glowingModel.starImageViewList)).Play()
                 .AppendInterval(0.5f)
                 .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
                 .AppendInterval(0.3f)
                 .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
                 .AppendInterval(0.2f)
-                .Append(TryCreateWildCard(model));
+                .Append(TryCreateWildCard());
         }
 
         private void SetLocalScaleOfOldStars(List<IStarImageView> oldStarImageViews)
@@ -68,11 +73,11 @@ namespace Scripts
             }
         }
 
-        private Sequence TryCreateWildCard(EndGameAnimationModel model)
+        private Sequence TryCreateWildCard()
         {
             if ( _circleProgressBarController.GetCurrentStarCount() < ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
-                return DOTween.Sequence().Append(AnimateButtons(model));
+                return DOTween.Sequence().Append(AnimateButtons());
             }
             
             _wildCardItemView = _glowingView.CreateWildCardImage();
@@ -83,7 +88,7 @@ namespace Scripts
                 .AppendCallback(() => _circleProgressBarController.CreateInitialStars())
                 .AppendCallback(() => _view.SetStarGroupStatus(true))
                 .AppendCallback(() => _glowingView.SetStarGroupStatus(true))
-                .Append(AnimateButtons(model));
+                .Append(AnimateButtons());
             
             CreateClaimButton(onClickClaim);
             return DOTween.Sequence()
@@ -95,7 +100,7 @@ namespace Scripts
                 .Join(_view.GetStarGroup().DOFade(0f, 0.6f))
                 .Join(_glowingView.GetStarGroup().DOFade(0f, 0.6f))
                 .AppendInterval(0.5f)
-                .Append(_view.GetClaimButtonView().GetCanvasGroup().DOFade(1f, 0.3f));
+                .Append(_claimButtonController.GetCanvasGroup().DOFade(1f, 0.3f));
         }
 
         private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews)
@@ -113,10 +118,10 @@ namespace Scripts
             return starCreationAnimation;
         }
         
-        private Sequence AnimateButtons(EndGameAnimationModel model)
+        private Sequence AnimateButtons()
         {
-            Sequence playButtonSequence = model.playButtonView != null ? DOTween.Sequence().Pause().Append(model.playButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
-            Sequence retryButtonSequence = model.retryButtonView != null ? DOTween.Sequence().Pause().Append(model.retryButtonView.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
+            Sequence playButtonSequence = _playButtonController != null ? DOTween.Sequence().Pause().Append(_playButtonController.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
+            Sequence retryButtonSequence = _retryButtonController != null ? DOTween.Sequence().Pause().Append(_retryButtonController.GetCanvasGroup().DOFade(1f, 0.3f)) : DOTween.Sequence();
 
             return DOTween.Sequence().Append(playButtonSequence.Play()).Join(retryButtonSequence.Play());
         }
@@ -154,13 +159,11 @@ namespace Scripts
             onNewGameClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             onNewGameClick += () => deactivateGlow?.Invoke();
 
-            _view.CreatePlayButton(new BaseButtonModel()
-            {
-                localPosition = new Vector2(0, -170f),
-                text = isNewGame ? "Level " + (_levelTracker.GetLevelId() + 1) : "Menu",
-
-                OnClick = isNewGame ? onNewGameClick : () => SceneManager.LoadScene("Menu")
-            });
+            IFadeButtonController playButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
+            playButtonController.Initialize(isNewGame ? onNewGameClick : () => SceneManager.LoadScene("Menu"));
+            playButtonController.SetText(isNewGame ? "LEVEL " + (_levelTracker.GetLevelId() + 1) : "MENU");
+            playButtonController.SetLocalPosition(new Vector2(0, -170f));
+            playButtonController.SetAlpha(0f);
         }
 
         private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel, Action deactivateGlow)
@@ -170,28 +173,26 @@ namespace Scripts
             onClick += () => NetworkManager.Singleton.StartHost();
             onClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             onClick += () => deactivateGlow?.Invoke();
-            _view.CreateRetryButton(new BaseButtonModel()
-            {
-                localPosition = isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f),
-                text = "Retry",
-                OnClick = onClick
-            });
+
+            IFadeButtonController retryButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
+            retryButtonController.Initialize(onClick);
+            retryButtonController.SetText("RETRY");
+            retryButtonController.SetLocalPosition(isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f));
+            retryButtonController.SetAlpha(0f);
         }
         
         private void CreateClaimButton(Action onClickClaim)
         {
-            _view.CreateClaimButton(new BaseButtonModel()
-            {
-                localPosition = new Vector2(0, -170f),
-                text = "CLAIM",
-                OnClick = onClickClaim
-            });
+            _claimButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
+            onClickClaim += _claimButtonController.Destroy;
+            _claimButtonController.Initialize(onClickClaim);
+            _claimButtonController.SetText("CLAIM");
+            _claimButtonController.SetLocalPosition(new Vector2(0, -170f));
         }
-        
     }
 
     public interface ILevelEndPopupController
     {
-        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow);
+        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory);
     }
 }

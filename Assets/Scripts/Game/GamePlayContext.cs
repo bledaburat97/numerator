@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.Netcode;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -10,10 +11,6 @@ namespace Scripts
         [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
         [Inject] private IResultAreaController _resultAreaController;
         [Inject] private IResultManager _resultManager;
-        [Inject] private IGameUIView _gameUIView;
-        [Inject] private ISettingsButtonController _settingsButtonController;
-        [Inject] private ICheckButtonController _checkButtonController;
-        [Inject] private IResetButtonController _resetButtonController;
         [Inject] private IStarProgressBarController _starProgressBarController;
         [Inject] private ILevelManager _levelManager;
         [Inject] private IBoardAreaController _boardAreaController;
@@ -28,7 +25,8 @@ namespace Scripts
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameClockController _gameClockController;
         [Inject] private ILevelDataCreator _levelDataCreator;
-        
+        [Inject] private IHapticController _hapticController;
+        [Inject] private IGameUIController _gameUIController;
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
@@ -37,16 +35,13 @@ namespace Scripts
             _levelDataCreator.Initialize();
             _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
             _userReady.Initialize();
+            InitializeHapticController();
             InitializeCardHolderModelCreator();
             InitializeResultArea();
             InitializeResultManager();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
-            SetLevelId();
-            SetSizeOfScrollArea();
-            InitializeSettingsButton();
-            InitializeCheckButton();
-            InitializeResetButton();
+            InitializeGameUI();
             InitializeStarProgressBar();
             InitializeLevelManager();
             InitializeBoardArea();
@@ -57,6 +52,11 @@ namespace Scripts
             InitializeGamePopupCreator();
             _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
+        }
+
+        private void InitializeHapticController() //TODO: set in global installer
+        {
+            _hapticController.Initialize();
         }
 
         private void InitializeCardHolderModelCreator()
@@ -87,68 +87,11 @@ namespace Scripts
             }
         }
         
-
-        
-        private void SetLevelId()
+        private void InitializeGameUI()
         {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                _gameUIView.SetLevelId(_levelTracker);
-            }
-            else
-            {
-                _gameUIView.DisableLevelId();
-            }
-        }
-
-        private void SetSizeOfScrollArea()
-        {
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
-            {
-                _gameUIView.IncreaseSizeAndPositionOfScrollArea(44f);
-            }
-        }
-
-        private void InitializeSettingsButton()
-        {
-            _settingsButtonController.Initialize();
+            _gameUIController.Initialize(_levelTracker, _turnOrderDeterminer);
         }
         
-        private void InitializeCheckButton()
-        {
-            _checkButtonController.Initialize(_turnOrderDeterminer, _levelTracker);
-        }
-        
-        private void InitializeResetButton()
-        {
-            _resetButtonController.Initialize();
-        }
-        
-        #if UNITY_EDITOR
-        private void OnApplicationFocus(bool pauseStatus)
-        {
-            pauseStatus = !pauseStatus;
-        #else
-        private void OnApplicationPause(bool pauseStatus)
-        {
-        #endif
-            if (pauseStatus)
-            {
-                if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-                {
-                    _gameSaveService.Save();
-                }
-            }
-        }
-        
-        private void OnApplicationQuit()
-        {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                _gameSaveService.Save();
-            }
-        }
-
         private void InitializeStarProgressBar()
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
@@ -168,7 +111,7 @@ namespace Scripts
         
         private void InitializeBoardArea()
         {
-            _boardAreaController.Initialize(_cardItemLocator, _resultManager, _levelDataCreator, _cardHolderModelCreator, _checkButtonController);
+            _boardAreaController.Initialize(_cardItemLocator, _resultManager, _levelDataCreator, _cardHolderModelCreator, _gameUIController);
         }
 
         private void InitializeCardItemInfoManager()
@@ -183,7 +126,7 @@ namespace Scripts
         
         private void InitializeInitialCardArea()
         {
-            _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _resetButtonController, _boardAreaController, _resultManager, _levelDataCreator);
+            _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _gameUIController, _boardAreaController, _resultManager, _levelDataCreator);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
@@ -198,7 +141,40 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _settingsButtonController, _gameSaveService, _levelTracker, _userReady, _checkButtonController, _turnOrderDeterminer);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController);
+        }
+        
+#if UNITY_EDITOR
+        private void OnApplicationFocus(bool pauseStatus)
+        {
+            pauseStatus = !pauseStatus;
+#else
+        private void OnApplicationPause(bool pauseStatus)
+        {
+#endif
+            if (pauseStatus)
+            {
+                if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+                {
+                    _gameSaveService.Save();
+                }
+                else if(NetworkManager.Singleton != null)
+                {
+                    Destroy(NetworkManager.Singleton);
+                }
+            }
+        }
+        
+        private void OnApplicationQuit()
+        {
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                _gameSaveService.Save();
+            }
+            else if(NetworkManager.Singleton != null)
+            {
+                Destroy(NetworkManager.Singleton);
+            }
         }
     }
 }

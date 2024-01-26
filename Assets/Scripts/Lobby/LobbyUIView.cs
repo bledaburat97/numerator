@@ -6,36 +6,36 @@ namespace Scripts
 {
     public class LobbyUIView : MonoBehaviour, ILobbyUIView
     {
-        [SerializeField] private PlayButtonView menuButton;
+        [SerializeField] private BaseButtonView menuButton;
         [SerializeField] private TMP_InputField playerNameInputField;
-        [SerializeField] private PlayButtonView createLobbyButton;
-        [SerializeField] private PlayButtonView quickJoinButton;
-        [SerializeField] private PlayButtonView joinWithCodeButton;
+        [SerializeField] private BaseButtonView createLobbyButton;
+        [SerializeField] private BaseButtonView quickJoinButton;
+        [SerializeField] private BaseButtonView joinWithCodeButton;
         [SerializeField] private TMP_InputField codeInputField;
 
-        public void SetCreateLobbyButton(BaseButtonModel model)
+        public IBaseButtonView GetMenuButton()
         {
-            createLobbyButton.Init(model);
+            return menuButton;
         }
         
-        public void SetQuickJoinButton(BaseButtonModel model)
+        public IBaseButtonView GetCreateLobbyButton()
         {
-            quickJoinButton.Init(model);
+            return createLobbyButton;
         }
         
-        public void SetJoinWithCodeButton(BaseButtonModel model)
+        public IBaseButtonView GetQuickJoinButton()
         {
-            joinWithCodeButton.Init(model);
+            return quickJoinButton;
+        }
+        
+        public IBaseButtonView GetJoinWithCodeButton()
+        {
+            return joinWithCodeButton;
         }
 
         public string GetCodeInputField()
         {
             return codeInputField.text;
-        }
-
-        public void SetMenuButton(BaseButtonModel model)
-        {
-            menuButton.Init(model);
         }
 
         public void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged)
@@ -47,11 +47,11 @@ namespace Scripts
 
     public interface ILobbyUIView
     {
-        void SetCreateLobbyButton(BaseButtonModel model);
-        void SetQuickJoinButton(BaseButtonModel model);
-        void SetJoinWithCodeButton(BaseButtonModel model);
+        public IBaseButtonView GetMenuButton();
+        public IBaseButtonView GetCreateLobbyButton();
+        public IBaseButtonView GetQuickJoinButton();
+        public IBaseButtonView GetJoinWithCodeButton();
         string GetCodeInputField();
         void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged);
-        void SetMenuButton(BaseButtonModel model);
     }
 }

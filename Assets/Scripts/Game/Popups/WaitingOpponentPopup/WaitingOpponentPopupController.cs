@@ -6,15 +6,13 @@ namespace Scripts
     {
         private IWaitingOpponentPopupView _view;
         private Action _closeWaitingOpponentPopup;
-        public void Initialize(IWaitingOpponentPopupView view, Action closeWaitingOpponentPopup)
+        public void Initialize(IWaitingOpponentPopupView view, Action closeWaitingOpponentPopup, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _view = view;
             _closeWaitingOpponentPopup = closeWaitingOpponentPopup;
-            BaseButtonModel closeButtonModel = new BaseButtonModel()
-            {
-                OnClick = OnCloseButtonClick
-            };
-            _view.Init(closeButtonModel);
+            _view.Init();
+            IBaseButtonController closeButtonController = baseButtonControllerFactory.Create(_view.GetCloseButton());
+            closeButtonController.Initialize(OnCloseButtonClick);
         }
 
         private void OnCloseButtonClick()
@@ -26,6 +24,6 @@ namespace Scripts
 
     public interface IWaitingOpponentPopupController
     {
-        void Initialize(IWaitingOpponentPopupView view, Action closeWaitingOpponentPopup);
+        void Initialize(IWaitingOpponentPopupView view, Action closeWaitingOpponentPopup, BaseButtonControllerFactory baseButtonControllerFactory);
     }
 }

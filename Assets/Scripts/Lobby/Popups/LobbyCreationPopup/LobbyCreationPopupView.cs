@@ -7,40 +7,14 @@ namespace Scripts
     public class LobbyCreationPopupView : MonoBehaviour, ILobbyCreationPopupView
     {
         [SerializeField] private TMP_InputField lobbyNameInputField;
-        [SerializeField] private BaseButtonView closeButtonView;
-        [SerializeField] private PlayButtonView publicButton;
-        [SerializeField] private PlayButtonView privateButton;
-        [SerializeField] private OptionButtonView[] difficultyButtonList = new OptionButtonView[ConstantValues.NUM_OF_DIFFICULTY_BUTTONS];
+        [SerializeField] private BaseButtonView[] difficultyButtonList = new BaseButtonView[ConstantValues.NUM_OF_DIFFICULTY_BUTTONS];
+        [SerializeField] private BaseButtonView closeButton;
+        [SerializeField] private BaseButtonView publicButton;
+        [SerializeField] private BaseButtonView privateButton;
         
-
         public void Init()
         {
-            closeButtonView.Init(new BaseButtonModel()
-            {
-                OnClick = Hide
-            });
-            
-            publicButton.Init(new BaseButtonModel()
-            {
-                text = "PUBLIC",
-                OnClick = () => PlayerLobby.Instance.CreateLobby(lobbyNameInputField.text, false)
-            });
-            privateButton.Init(new BaseButtonModel()
-            {
-                text = "PRIVATE",
-                OnClick = () => PlayerLobby.Instance.CreateLobby(lobbyNameInputField.text, true)
-            });
             Hide();
-        }
-        
-        public IOptionButtonView GetDifficultyButtonViewByIndex(int index)
-        {
-            return difficultyButtonList[index];
-        }
-
-        private void OnDifficultyButtonClicked(int difficultyIndex)
-        {
-            
         }
         
         public void Show()
@@ -48,17 +22,47 @@ namespace Scripts
             gameObject.SetActive(true);
         }
 
-        private void Hide()
+        public void Hide()
         {
             gameObject.SetActive(false);
+        }
+
+        public IBaseButtonView GetDifficultyButtonViewByIndex(int index)
+        {
+            return difficultyButtonList[index];
+        }
+        
+        public IBaseButtonView GetCloseButton()
+        {
+            return closeButton;
+        }
+        
+        public IBaseButtonView GetPublicButton()
+        {
+            return publicButton;
+        }
+        
+        public IBaseButtonView GetPrivateButton()
+        {
+            return privateButton;
+        }
+
+        public string GetLobbyName()
+        {
+            return lobbyNameInputField.text;
         }
     }
 
     public interface ILobbyCreationPopupView
     {
         void Init();
-        IOptionButtonView GetDifficultyButtonViewByIndex(int index);
         void Show();
+        void Hide();
+        IBaseButtonView GetDifficultyButtonViewByIndex(int index);
+        public IBaseButtonView GetCloseButton();
+        public IBaseButtonView GetPublicButton();
+        public IBaseButtonView GetPrivateButton();
+        string GetLobbyName();
     }
 
     public enum Difficulty

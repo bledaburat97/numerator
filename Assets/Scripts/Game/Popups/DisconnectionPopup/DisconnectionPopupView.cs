@@ -4,19 +4,23 @@ namespace Scripts
 {
     public class DisconnectionPopupView : MonoBehaviour, IDisconnectionPopupView
     {
-        [SerializeField] private PlayButtonView menuButtonView;
+        [SerializeField] private BaseButtonView menuButtonView;
 
-        public void Init(BaseButtonModel menuButtonModel)
+        public void Init()
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-            menuButtonView.Init(menuButtonModel);
         }
-        
+
+        public IBaseButtonView GetMenuButtonView()
+        {
+            return menuButtonView;
+        }
     }
 
     public interface IDisconnectionPopupView
     {
-        void Init(BaseButtonModel menuButtonModel);
+        void Init();
+        IBaseButtonView GetMenuButtonView();
     }
 }

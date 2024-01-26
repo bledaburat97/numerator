@@ -312,9 +312,9 @@ GameObject:
   - component: {fileID: 8637789107871570058}
   - component: {fileID: 1734243310672105410}
   - component: {fileID: 3821088638700071408}
-  - component: {fileID: 1673646518181781853}
+  - component: {fileID: 1262325741221006247}
   m_Layer: 0
-  m_Name: DirectionButton
+  m_Name: ForwardButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -394,7 +394,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1673646518181781853
+--- !u!114 &1262325741221006247
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -403,7 +403,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8482313267930262406}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8d6518ef9ee41aa8c6af6f39f70045f, type: 3}
+  m_Script: {fileID: 11500000, guid: 32847b611c0240c7b6fc17b551784498, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 0}
@@ -411,4 +411,3 @@ MonoBehaviour:
   outerBg: {fileID: 6157384674032918033}
   shadow: {fileID: 3342070423490076425}
   innerBg: {fileID: 3477183428823223632}
-  directionImage: {fileID: 3270930531488339717}

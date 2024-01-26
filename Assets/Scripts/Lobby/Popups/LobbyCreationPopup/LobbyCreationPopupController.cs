@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
+using Zenject;
 
 namespace Scripts
 {
     public class LobbyCreationPopupController : ILobbyCreationPopupController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
+
         private ILobbyCreationPopupView _view;
-        private Dictionary<int, IOptionButtonController> _difficultyButtonControllers;
+        private Dictionary<int, IBaseButtonController> _difficultyButtonControllers;
         private ILevelTracker _levelTracker;
         
         public void Initialize(ILobbyCreationPopupView view, ILevelTracker levelTracker)
@@ -13,26 +16,33 @@ namespace Scripts
             _view = view;
             _levelTracker = levelTracker;
             _view.Init();
+            
+            IBaseButtonController closeButtonController = _baseButtonControllerFactory.Create(_view.GetCloseButton());
+            closeButtonController.Initialize(_view.Hide);
+
+            IBaseButtonController publicButtonController = _baseButtonControllerFactory.Create(_view.GetPublicButton());
+            publicButtonController.Initialize(() => PlayerLobby.Instance.CreateLobby(_view.GetLobbyName(), false));
+            publicButtonController.SetText("PUBLIC");
+
+            IBaseButtonController privateButtonController =
+                _baseButtonControllerFactory.Create(_view.GetPrivateButton());
+            privateButtonController.Initialize(() => PlayerLobby.Instance.CreateLobby(_view.GetLobbyName(), true));
+            privateButtonController.SetText("PRIVATE");
+            
             CreateDifficultyButtons();
         }
         
         private void CreateDifficultyButtons()
         {
-            _difficultyButtonControllers = new Dictionary<int, IOptionButtonController>();
-            OptionButtonControllerFactory difficultyButtonControllerFactory = new OptionButtonControllerFactory();
+            _difficultyButtonControllers = new Dictionary<int, IBaseButtonController>();
             for (int i = 0; i < ConstantValues.NUM_OF_DIFFICULTY_BUTTONS; i++)
             {
                 int difficultyIndex = i;
-                OptionButtonModel difficultyButtonModel = new OptionButtonModel()
-                {
-                    optionIndex = difficultyIndex,
-                    onClickAction = () => OnDifficultyButtonClicked(difficultyIndex)
-                };
-                IOptionButtonController difficultyButtonController = difficultyButtonControllerFactory.Spawn();
-                IOptionButtonView difficultyButtonView = _view.GetDifficultyButtonViewByIndex(difficultyIndex);
-                difficultyButtonController.Initialize(difficultyButtonView, difficultyButtonModel);
-                difficultyButtonController.SetPointStatus(difficultyIndex == (int)Difficulty.Hard);
-                _difficultyButtonControllers.Add(difficultyButtonModel.optionIndex, difficultyButtonController);
+                IBaseButtonView difficultyButtonView = _view.GetDifficultyButtonViewByIndex(difficultyIndex);
+                IBaseButtonController difficultyButtonController = _baseButtonControllerFactory.Create(difficultyButtonView);
+                difficultyButtonController.Initialize(() => OnDifficultyButtonClicked(difficultyIndex));
+                difficultyButtonController.SetImageStatus(difficultyIndex == (int)Difficulty.Hard);
+                _difficultyButtonControllers.Add(difficultyIndex, difficultyButtonController);
             }
             _levelTracker.SetMultiplayerLevelDifficulty(Difficulty.Hard);
         }
@@ -41,7 +51,7 @@ namespace Scripts
         {
             for (int i = 0; i < _difficultyButtonControllers.Count; i++)
             {
-                _difficultyButtonControllers[i].SetPointStatus(i == difficultyIndex);
+                _difficultyButtonControllers[i].SetImageStatus(i == difficultyIndex);
             }
             _levelTracker.SetMultiplayerLevelDifficulty((Difficulty)difficultyIndex);
         }

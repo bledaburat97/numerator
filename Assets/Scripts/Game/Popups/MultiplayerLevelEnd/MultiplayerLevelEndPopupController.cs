@@ -1,28 +1,28 @@
 ﻿using System;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace Scripts
 {
     public class MultiplayerLevelEndPopupController : IMultiplayerLevelEndPopupController
     {
+        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         private IMultiplayerLevelEndPopupView _view;
         private IUserReady _userReady;
         public void Initialize(IMultiplayerLevelEndPopupView view, bool isSuccess, IUserReady userReady, Action openWaitingOpponentPopup)
         {
             _view = view;
             _userReady = userReady;
-            BaseButtonModel playAgainButtonModel = new BaseButtonModel()
-            {
-                text = "PLAY AGAIN",
-                OnClick = () => OnPlayAgainButtonClick(openWaitingOpponentPopup)
-            };
-            BaseButtonModel menuButtonModel = new BaseButtonModel()
-            {
-                text = "MENU",
-                OnClick = OnMenuButtonClick
-            };
-            _view.Init(isSuccess, playAgainButtonModel, menuButtonModel);
+            IBaseButtonController playAgainButtonController =
+                _baseButtonControllerFactory.Create(_view.GetPlayAgainButton());
+            playAgainButtonController.Initialize(() => OnPlayAgainButtonClick(openWaitingOpponentPopup));
+            playAgainButtonController.SetText("PLAY AGAIN");
+
+            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
+            menuButtonController.Initialize(OnMenuButtonClick);
+            menuButtonController.SetText("MENU");
+            _view.Init(isSuccess);
         }
         
         private void OnPlayAgainButtonClick(Action openWaitingOpponentPopup)

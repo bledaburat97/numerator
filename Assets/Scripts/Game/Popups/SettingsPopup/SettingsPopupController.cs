@@ -9,42 +9,37 @@ namespace Scripts
     {
         private ISettingsPopupView _view;
         private ILevelTracker _levelTracker;
-
-        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker)
+        private BaseButtonControllerFactory _baseButtonControllerFactory;
+        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _view = view;
             _levelTracker = levelTracker;
-            BaseButtonModel closeButtonModel = new BaseButtonModel()
-            {
-                OnClick = () => OnCloseButtonClick(onCloseAction)
-            };
-            
-            _view.Init(closeButtonModel);
+            _view.Init();
+            IBaseButtonController closeButtonController =
+                _baseButtonControllerFactory.Create(_view.GetCloseButton());
+            closeButtonController.Initialize(() => OnCloseButtonClick(onCloseAction));
+
+            IBaseButtonController retryButtonController = _baseButtonControllerFactory.Create(_view.GetRetryButton());
+            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _view.CreateRetryButton(new BaseButtonModel()
-                {
-                    text = "RETRY",
-                    OnClick = () => OnRetryButtonClick(deleteSaveAction),
-                    localPosition = new Vector2(0, 30f)
-                });
-                _view.CreateMenuButton(new BaseButtonModel()
-                {
-                    text = "MENU",
-                    OnClick = () => OnMenuButtonClick(saveGameAction),
-                    localPosition = new Vector2(0,-60f)
-                });
+                retryButtonController.Initialize(() => OnRetryButtonClick(deleteSaveAction));
+                retryButtonController.SetText("RETRY");
+                retryButtonController.SetLocalPosition(new Vector2(0, 30f));
+                
+                menuButtonController.Initialize(() => OnMenuButtonClick(saveGameAction));
+                menuButtonController.SetText("MENU");
+                menuButtonController.SetLocalPosition(new Vector2(0,-60f));
             }
 
             else if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
-                _view.CreateMenuButton(new BaseButtonModel()
-                {
-                    text = "MENU",
-                    OnClick = () => OnMenuButtonClick(null),
-                    localPosition = new Vector2(0,-10f)
-                });
+                menuButtonController.Initialize(() => OnMenuButtonClick(null));
+                menuButtonController.SetText("MENU");
+                menuButtonController.SetLocalPosition(new Vector2(0,-10f));
+                
+                retryButtonController.SetButtonStatus(false);
             }
         }
 
@@ -74,6 +69,6 @@ namespace Scripts
 
     public interface ISettingsPopupController
     {
-        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker);
+        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory);
     }
 }

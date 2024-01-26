@@ -5,17 +5,17 @@ namespace Menu
 {
     public class MenuUIView :  MonoBehaviour, IMenuUIView
     {
-        [SerializeField] private PlayButtonView singlePlayerButton;
-        [SerializeField] private PlayButtonView multiplayerButton;
+        [SerializeField] private BaseButtonView singlePlayerButton;
+        [SerializeField] private BaseButtonView multiplayerButton;
 
-        public void SetSinglePlayerButton(BaseButtonModel model)
+        public IBaseButtonView GetSinglePlayerButton()
         {
-            singlePlayerButton.Init(model);
+            return singlePlayerButton;
         }
         
-        public void SetMultiplayerButton(BaseButtonModel model)
+        public IBaseButtonView GetMultiplayerButton()
         {
-            multiplayerButton.Init(model);
+            return multiplayerButton;
         }
         
         public void SetSinglePlayerButtonText(string text)
@@ -26,8 +26,8 @@ namespace Menu
 
     public interface IMenuUIView
     {
-        void SetSinglePlayerButton(BaseButtonModel model);
-        void SetMultiplayerButton(BaseButtonModel model);
+        IBaseButtonView GetSinglePlayerButton();
+        IBaseButtonView GetMultiplayerButton();
         void SetSinglePlayerButtonText(string text);
     }
 }

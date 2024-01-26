@@ -6,11 +6,11 @@ namespace Scripts
     {
         private int[] _numbersList;
         private IResultManager _resultManager;
-        public BoardAreaManager(ILevelDataCreator levelDataCreator, IResultManager resultManager, ICheckButtonController checkButtonController)
+        public BoardAreaManager(ILevelDataCreator levelDataCreator, IResultManager resultManager, IGameUIController gameUIController)
         {
             _numbersList = new int[levelDataCreator.GetLevelData().NumOfBoardHolders];
             _resultManager = resultManager;
-            checkButtonController.CheckFinalNumbers += CheckFinalNumbers;
+            gameUIController.CheckFinalNumbers += CheckFinalNumbers;
         }
 
         public void SetNumberOfCard(int index, int numberOfCard)
