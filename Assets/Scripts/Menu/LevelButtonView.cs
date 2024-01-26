@@ -41,7 +41,7 @@ namespace Scripts
             innerBg.color = ConstantValues.PLAYED_LEVEL_BUTTON_COLOR;
         }
 
-        public void SetButtonActiveness(bool status)
+        public void SetButtonEnable(bool status)
         {
             button.enabled = status;
         }
@@ -82,7 +82,7 @@ namespace Scripts
     {
         void Init(LevelButtonModel model);
         void SetButtonActive();
-        void SetButtonActiveness(bool status);
+        void SetButtonEnable(bool status);
         void Destroy();
         ISpaceShipView GetSpaceShip();
         RectTransform GetRectTransformOfSpaceShipHolder();

@@ -9,18 +9,17 @@ namespace Scripts
     {
         private ISettingsPopupView _view;
         private ILevelTracker _levelTracker;
-        private BaseButtonControllerFactory _baseButtonControllerFactory;
         public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _view = view;
             _levelTracker = levelTracker;
             _view.Init();
             IBaseButtonController closeButtonController =
-                _baseButtonControllerFactory.Create(_view.GetCloseButton());
+                baseButtonControllerFactory.Create(_view.GetCloseButton());
             closeButtonController.Initialize(() => OnCloseButtonClick(onCloseAction));
 
-            IBaseButtonController retryButtonController = _baseButtonControllerFactory.Create(_view.GetRetryButton());
-            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
+            IBaseButtonController retryButtonController = baseButtonControllerFactory.Create(_view.GetRetryButton());
+            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButton());
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {

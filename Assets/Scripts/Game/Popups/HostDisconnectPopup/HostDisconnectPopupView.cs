@@ -6,11 +6,10 @@ namespace Scripts
 {
     public class HostDisconnectPopupView : MonoBehaviour
     {
-        [SerializeField] private Button menuButton;
+        [SerializeField] private BaseButtonView menuButton;
         public void Init()
         {
             Hide();
-            menuButton.onClick.AddListener(() => SceneManager.LoadScene("Menu"));
         }
 
         public void Show()
@@ -21,6 +20,11 @@ namespace Scripts
         private void Hide()
         {
             gameObject.SetActive(false);
+        }
+
+        public IBaseButtonView GetMenuButton()
+        {
+            return menuButton;
         }
     }
     

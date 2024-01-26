@@ -10,6 +10,7 @@ namespace Scripts
     public class LevelSelectionTableController : ILevelSelectionTableController
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
+        [Inject] private IHapticController _hapticController;
         
         private ILevelSelectionTableView _view;
         private int rowCount = 5;
@@ -110,6 +111,7 @@ namespace Scripts
 
         private void OnClickLevel(int levelId)
         {
+            _hapticController.Vibrate(HapticType.ButtonClick);
             if (_lastSelectedLevelId >= _firstLevelIdOfTable && _lastSelectedLevelId < _firstLevelIdOfTable + rowCount * columnCount)
             {
                 ILevelButtonView selectedLevelButton = _levelButtonList[levelId - _firstLevelIdOfTable];
@@ -149,7 +151,7 @@ namespace Scripts
                 {
                     for (int i = 0; i < _levelButtonList.Count; i++)
                     {
-                        _levelButtonList[i].SetButtonActiveness(false);
+                        _levelButtonList[i].SetButtonEnable(false);
                     }
                     _backwardButtonController.SetButtonEnable(false);
                     _forwardButtonController.SetButtonEnable(false);
@@ -163,7 +165,7 @@ namespace Scripts
                     {
                         if (_firstLevelIdOfTable + i <= _levelTracker.GetStarCountOfLevels().Count)
                         {
-                            _levelButtonList[i].SetButtonActiveness(true);
+                            _levelButtonList[i].SetButtonEnable(true);
                         }
                     }
                     _backwardButtonController.SetButtonEnable(true);

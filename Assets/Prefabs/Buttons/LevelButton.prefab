@@ -372,7 +372,6 @@ MonoBehaviour:
   starHolder: {fileID: 1472201195478286711}
   spaceShipHolder: {fileID: 8211873941328728588}
   spaceShipPrefab: {fileID: 3034052336538157126, guid: 2e95603b80a912d469060386cad9c8e1, type: 3}
-  downwardMovement: {fileID: 11400000, guid: 6be4cb8cbfbca1d49af9d738682d58a4, type: 2}
 --- !u!1 &7272545923836452468
 GameObject:
   m_ObjectHideFlags: 0

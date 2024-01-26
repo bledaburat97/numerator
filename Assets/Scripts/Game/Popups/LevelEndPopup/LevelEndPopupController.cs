@@ -159,11 +159,11 @@ namespace Scripts
             onNewGameClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             onNewGameClick += () => deactivateGlow?.Invoke();
 
-            IFadeButtonController playButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
-            playButtonController.Initialize(isNewGame ? onNewGameClick : () => SceneManager.LoadScene("Menu"));
-            playButtonController.SetText(isNewGame ? "LEVEL " + (_levelTracker.GetLevelId() + 1) : "MENU");
-            playButtonController.SetLocalPosition(new Vector2(0, -170f));
-            playButtonController.SetAlpha(0f);
+            _playButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
+            _playButtonController.Initialize(isNewGame ? onNewGameClick : () => SceneManager.LoadScene("Menu"));
+            _playButtonController.SetText(isNewGame ? "LEVEL " + (_levelTracker.GetLevelId() + 1) : "MENU");
+            _playButtonController.SetLocalPosition(new Vector2(0, -170f));
+            _playButtonController.SetAlpha(0f);
         }
 
         private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel, Action deactivateGlow)
@@ -174,11 +174,11 @@ namespace Scripts
             onClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             onClick += () => deactivateGlow?.Invoke();
 
-            IFadeButtonController retryButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
-            retryButtonController.Initialize(onClick);
-            retryButtonController.SetText("RETRY");
-            retryButtonController.SetLocalPosition(isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f));
-            retryButtonController.SetAlpha(0f);
+            _retryButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
+            _retryButtonController.Initialize(onClick);
+            _retryButtonController.SetText("RETRY");
+            _retryButtonController.SetLocalPosition(isLevelCompleted ? new Vector2(0, -260f) : new Vector2(0, -170f));
+            _retryButtonController.SetAlpha(0f);
         }
         
         private void CreateClaimButton(Action onClickClaim)
@@ -188,6 +188,7 @@ namespace Scripts
             _claimButtonController.Initialize(onClickClaim);
             _claimButtonController.SetText("CLAIM");
             _claimButtonController.SetLocalPosition(new Vector2(0, -170f));
+            _claimButtonController.SetAlpha(0f);
         }
     }
 

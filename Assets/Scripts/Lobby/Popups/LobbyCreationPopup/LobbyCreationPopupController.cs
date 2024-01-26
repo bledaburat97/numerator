@@ -1,22 +1,20 @@
 ﻿using System.Collections.Generic;
-using Zenject;
 
 namespace Scripts
 {
     public class LobbyCreationPopupController : ILobbyCreationPopupController
     {
-        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-
         private ILobbyCreationPopupView _view;
         private Dictionary<int, IBaseButtonController> _difficultyButtonControllers;
         private ILevelTracker _levelTracker;
+        private BaseButtonControllerFactory _baseButtonControllerFactory;
         
-        public void Initialize(ILobbyCreationPopupView view, ILevelTracker levelTracker)
+        public void Initialize(ILobbyCreationPopupView view, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _view = view;
             _levelTracker = levelTracker;
             _view.Init();
-            
+            _baseButtonControllerFactory = baseButtonControllerFactory;
             IBaseButtonController closeButtonController = _baseButtonControllerFactory.Create(_view.GetCloseButton());
             closeButtonController.Initialize(_view.Hide);
 
@@ -44,7 +42,6 @@ namespace Scripts
                 difficultyButtonController.SetImageStatus(difficultyIndex == (int)Difficulty.Hard);
                 _difficultyButtonControllers.Add(difficultyIndex, difficultyButtonController);
             }
-            _levelTracker.SetMultiplayerLevelDifficulty(Difficulty.Hard);
         }
 
         private void OnDifficultyButtonClicked(int difficultyIndex)
@@ -64,7 +61,7 @@ namespace Scripts
 
     public interface ILobbyCreationPopupController
     {
-        void Initialize(ILobbyCreationPopupView view, ILevelTracker levelTracker);
+        void Initialize(ILobbyCreationPopupView view, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory);
         void ShowPopup();
     }
 }

@@ -30,7 +30,7 @@ namespace Scripts
             LobbyCreationPopupControllerFactory lobbyCreationPopupControllerFactory =
                 new LobbyCreationPopupControllerFactory();
             _lobbyCreationPopupController = lobbyCreationPopupControllerFactory.Spawn();
-            _lobbyCreationPopupController.Initialize(lobbyCreationPopup, levelTracker);
+            _lobbyCreationPopupController.Initialize(lobbyCreationPopup, levelTracker, _baseButtonControllerFactory);
         }
 
         public void OpenLobbyCreationPopup()
