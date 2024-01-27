@@ -26,7 +26,6 @@ namespace Scripts
             transform.localPosition = Vector3.zero;
             _glowingStarImageList = new List<IStarImageView>();
             _wildCardItemViewFactory = wildCardItemViewFactory;
-
         }
         
         public void CreateStarImage(Vector2 localPosition, Vector2 size)

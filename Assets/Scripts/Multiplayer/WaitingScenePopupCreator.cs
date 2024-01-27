@@ -8,7 +8,7 @@ namespace Scripts
     public class WaitingScenePopupCreator : MonoBehaviour, IWaitingScenePopupCreator
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-        
+        [Inject] private IHapticController _hapticController;
         [SerializeField] private HostDisconnectPopupView hostDisconnectPopup;
         
         public void Initialize()
@@ -25,6 +25,7 @@ namespace Scripts
             Debug.Log("NetworkManager.Singleton.OnClientDisconnectCallback");
             if (clientId == NetworkManager.ServerClientId)
             {
+                _hapticController.Vibrate(HapticType.Warning);
                 hostDisconnectPopup.Show();
             }
         }

@@ -16,15 +16,16 @@ namespace Scripts
         private Action<bool, int> _onCardSelected;
         private bool _isSelectable;
         private Camera _cam;
+        private IHapticController _hapticController;
         
-        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager)
+        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController)
         {
             _view = cardItemView;
             _cam = cam;
             _cardItemData = cardItemData;
             _selectionController = selectionController;
             _selectionController.SetOnDeselectCards(DeselectCard);
-            
+            _hapticController = hapticController;
             _view.Init(cardItemData.cardNumber);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero, 0f);
@@ -57,11 +58,6 @@ namespace Scripts
             return _view;
         }
 
-        public void SetSize(Vector2 size)
-        {
-            _view.SetSize(size);
-        }
-
         private void SetOnCardSelected(Action<bool, int> action)
         {
             _onCardSelected += action;
@@ -86,6 +82,7 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
+                _hapticController.Vibrate(HapticType.CardGrab);
                 _onDragStart(_cardItemData.cardItemIndex);
                 _view.SetParent(_cardItemData.tempParent);
                 _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
@@ -113,6 +110,7 @@ namespace Scripts
             {
                 if (!_isAlreadySelected && _isSelectable)
                 {
+                    _hapticController.Vibrate(HapticType.ButtonClick);
                     _selectionController.SetSelectionState(_cardItemData.cardItemIndex, true);
                     SetFrameStatus(true);
                     _onCardSelected.Invoke(true, _cardItemData.cardItemIndex);
@@ -120,6 +118,7 @@ namespace Scripts
             }
             else
             {
+                _hapticController.Vibrate(HapticType.CardRelease);
                 RectTransform cardHolderTransform = _onDragComplete(_cardItemData.cardItemIndex);
                 RectTransform parentTransform;
                 if (cardHolderTransform != null)
@@ -184,6 +183,7 @@ namespace Scripts
         {
             return DOTween.Sequence()
                 .AppendInterval(delayDuration)
+                .AppendCallback(() => _hapticController.Vibrate(HapticType.CardGrab))
                 .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.15f))
                 .AppendCallback(() => SetColor(ProbabilityType.Certain))
@@ -199,7 +199,7 @@ namespace Scripts
 
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager);
+        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController);
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);

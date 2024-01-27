@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class InitialCardAreaController : IInitialCardAreaController
     {
+        [Inject] private IHapticController _hapticController;
+        
         private ISelectionController _selectionController;
         private List<IInitialCardHolderController> _normalCardHolderControllerList = new List<IInitialCardHolderController>();
         private IBaseCardHolderController _wildCardHolderController = null;
@@ -131,14 +134,14 @@ namespace Scripts
                 WildCardItemControllerFactory wildCardItemControllerFactory = new WildCardItemControllerFactory();
                 IWildCardItemView wildCardItemView = _view.CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
-                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder, _view.GetCamera());
+                wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder, _view.GetCamera(), _hapticController);
             }
             else
             {
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
                 INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager);
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController);
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }

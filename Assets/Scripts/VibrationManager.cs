@@ -194,10 +194,10 @@ namespace Scripts{
     public class VibrationType
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
-			public long[] Pattern;
-			public int[] Amplitude;
-			public float AdditionRate;
-			public float TotalDuration;
+		public long[] Pattern;
+		public int[] Amplitude;
+		public float AdditionRate;
+		public float TotalDuration;
 #elif UNITY_IOS && !UNITY_EDITOR
 			public Action VibrationExtern;
 #else

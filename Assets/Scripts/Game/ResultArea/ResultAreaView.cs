@@ -16,18 +16,24 @@ namespace Scripts
         private ResultBlockControllerFactory _resultBlockControllerFactory;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
+        private IHapticController _hapticController;
 
-        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
+        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController)
         {
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockViewFactory = resultBlockViewFactory;
             _levelTracker = levelTracker;
             _turnOrderDeterminer = turnOrderDeterminer;
+            _hapticController = hapticController;
         }
 
-        public void SetScrollPositionToBottom()
+        private void SetScrollPositionToBottom()
         {
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer && !_turnOrderDeterminer.IsLocalTurn()) return;
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer && !_turnOrderDeterminer.IsLocalTurn())
+            {
+                _hapticController.Vibrate(HapticType.CardRelease);
+                return;
+            }
             StartCoroutine(ScrollToBottomCoroutine());
         }
         
@@ -36,7 +42,7 @@ namespace Scripts
             float elapsedTime = 0f;
             float startingPosition = scrollRect.verticalNormalizedPosition;
             float targetPosition = 0f;
-            float scrollDuration = startingPosition * 1.5f;
+            float scrollDuration = startingPosition;
 
             while (elapsedTime < scrollDuration)
             {
@@ -95,7 +101,7 @@ namespace Scripts
 
     public interface IResultAreaView
     {
-        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
+        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController);
         void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
     }
 }

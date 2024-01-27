@@ -11,8 +11,8 @@ namespace Scripts
         private int _currentStarCount;
         private List<IStarImageView> _starFrameViewList;
         private List<IStarImageView> _glowingStarImageViewList;
-        
-        public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker)
+        private IHapticController _hapticController;
+        public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker, IHapticController hapticController)
         {
             _view = view;
             _glowingView = glowingView;
@@ -21,6 +21,7 @@ namespace Scripts
             _starFrameViewList = new List<IStarImageView>();
             _glowingStarImageViewList = new List<IStarImageView>();
             _currentStarCount = levelTracker.GetStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            _hapticController = hapticController;
             CreateStarFrames();
             _view.SetLocalPosition(new Vector2(0,510f));
             _glowingView.SetLocalPosition(new Vector2(0,510f));
@@ -121,6 +122,7 @@ namespace Scripts
                     ? DOTween.Sequence()
                     : _view.GetProgressTween(
                         (float)((_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD) / ConstantValues.NUM_OF_STARS_FOR_WILD, 0.5f))
+                .AppendCallback(() => _hapticController.Vibrate(HapticType.Success))
                 .Append(_currentStarCount == ConstantValues.NUM_OF_STARS_FOR_WILD
                     ? _view.GetProgressTween(1f, 0.1f)
                     : DOTween.Sequence());
@@ -130,7 +132,7 @@ namespace Scripts
 
     public interface ICircleProgressBarController
     {
-        void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker);
+        void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker, IHapticController hapticController);
         void CreateInitialStars();
         Sequence AddNewStars(List<IStarImageView> newStars);
         int GetCurrentStarCount();

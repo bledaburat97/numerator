@@ -15,7 +15,12 @@ namespace Scripts
         private const float GAME_PLAYING_TIMER_MAX = 60f;
         private Action _onTimerEnd;
         private bool isColorChanged = false;
-        
+        private int _vibrationCount = 0;
+        private Action _vibrationAction;
+        public void Init(Action vibrationAction)
+        {
+            _vibrationAction = vibrationAction;
+        }
         void Update()
         {
             if (_isTimerStarted)
@@ -29,10 +34,20 @@ namespace Scripts
                     _onTimerEnd.Invoke();
                 }
 
-                if (_gamePlayingTimer < GAME_PLAYING_TIMER_MAX * 1 / 4 && !isColorChanged)
+                if (_gamePlayingTimer < GAME_PLAYING_TIMER_MAX / 4 && !isColorChanged)
                 {
                     timerImage.color = ConstantValues.NOT_ABLE_TO_MOVE_TEXT_COLOR;
                     isColorChanged = true;
+                }
+
+                if (_gamePlayingTimer < 5f && _gamePlayingTimer > 0f)
+                {
+                    if (5 - _vibrationCount > _gamePlayingTimer)
+                    {
+                        _vibrationAction?.Invoke();
+                        _vibrationCount++;
+                        Debug.Log("a");
+                    }
                 }
                 
                 timerImage.fillAmount = _gamePlayingTimer / GAME_PLAYING_TIMER_MAX;
@@ -48,6 +63,7 @@ namespace Scripts
             _onTimerEnd = onTimerEnd;
             timerImage.color = ConstantValues.ABLE_TO_MOVE_TEXT_COLOR;
             isColorChanged = false;
+            _vibrationCount = 0;
         }
 
         public void RemoveTimer()
@@ -60,6 +76,7 @@ namespace Scripts
 
     public interface IGameClockView
     {
+        void Init(Action vibrationAction);
         void StartTimer(Action onTimerEnd);
         void RemoveTimer();
     }

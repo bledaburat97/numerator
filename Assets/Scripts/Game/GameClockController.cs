@@ -1,9 +1,11 @@
 ﻿using System;
+using Zenject;
 
 namespace Scripts
 {
     public class GameClockController : IGameClockController
     {
+        [Inject] private IHapticController _hapticController;
         private IGameClockView _view;
         private ILevelManager _levelManager;
         public GameClockController(IGameClockView view)
@@ -13,6 +15,7 @@ namespace Scripts
 
         public void Initialize(IResultManager resultManager)
         {
+            _view.Init(() => _hapticController.Vibrate(HapticType.CardGrab));
             RemoveTimer();
             resultManager.CorrectCardsBackFlipped += OnLevelEnd;
         }

@@ -10,6 +10,7 @@ namespace Scripts
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         [Inject] private FadeButtonControllerFactory _fadeButtonControllerFactory;
+        [Inject] private IHapticController _hapticController;
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -104,7 +105,7 @@ namespace Scripts
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem, _fadeButtonControllerFactory);
+            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem, _fadeButtonControllerFactory, _hapticController);
         }
 
         private void DeactivateGlowSystem()
@@ -134,6 +135,7 @@ namespace Scripts
             if (!_isLocalReady && _isAnyReady.Value)
             {
                 _newGameOfferPopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+                _hapticController.Vibrate(HapticType.CardRelease);
                 _newGameOfferPopup.Init("Opponent offers a new game.", 1f, new Vector2(0,200));
             }
 
@@ -213,7 +215,8 @@ namespace Scripts
                 _multiplayerLevelEndPopupControllerFactory.Spawn();
             IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
                 _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
-            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, _userReady, _openWaitingOpponentPopup);
+            if(!isSuccess) _hapticController.Vibrate(HapticType.Failure);
+            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, _userReady, _openWaitingOpponentPopup, _baseButtonControllerFactory);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)
@@ -243,6 +246,7 @@ namespace Scripts
             IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
             IDisconnectionPopupView disconnectionPopupView =
                 _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
+            _hapticController.Vibrate(HapticType.Warning);
             disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
         }
 

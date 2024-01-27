@@ -14,8 +14,8 @@ namespace Scripts
         private Action _backSlideCardHolders;
         private bool _isDragStart;
         private Camera _cam;
-        
-        public void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> setLockedCard, Action slideCardHolders, Action backSlideCardHolders, Camera cam)
+        private IHapticController _hapticController;
+        public void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> setLockedCard, Action slideCardHolders, Action backSlideCardHolders, Camera cam, IHapticController hapticController)
         {
             _view = view;
             _cam = cam;
@@ -27,6 +27,7 @@ namespace Scripts
             _view.SetOnPointerUp(OnPointerUp);
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetSize(data.parent.sizeDelta);
+            _hapticController = hapticController;
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnWildDragComplete);
             SetGetLockedCard(setLockedCard);
@@ -62,6 +63,8 @@ namespace Scripts
 
         private void OnPointerUp(PointerEventData data)
         {
+            _hapticController.Vibrate(HapticType.CardRelease);
+
             LockedCardInfo lockedCardInfo = _onDragComplete(_cardItemData.cardItemIndex);
             
             if (lockedCardInfo != null)
@@ -81,6 +84,7 @@ namespace Scripts
 
         private void OnPointerDown(PointerEventData data)
         {
+            _hapticController.Vibrate(HapticType.CardGrab);
             _isDragStart = false;
         }
 
@@ -88,6 +92,6 @@ namespace Scripts
 
     public interface IWildCardItemController
     {
-        void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> getLockedCard, Action slideCardHolders, Action backSlideCardHolders, Camera cam);
+        void Initialize(IWildCardItemView view, CardItemData data, ICardItemLocator cardItemLocator, Action<LockedCardInfo> getLockedCard, Action slideCardHolders, Action backSlideCardHolders, Camera cam, IHapticController hapticController);
     }
 }

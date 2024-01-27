@@ -20,14 +20,16 @@ namespace Scripts
         private ICircleProgressBarController _circleProgressBarController;
         private IFadePanelController _fadePanelController;
         private IWildCardItemView _wildCardItemView;
-
-        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory)
+        private IHapticController _hapticController;
+        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController)
         {
             _view = view;
             _glowingView = glowingView;
             _levelTracker = args.levelTracker;
             _fadePanelController = fadePanelController;
             _fadeButtonControllerFactory = fadeButtonControllerFactory;
+            _hapticController = hapticController;
+            if(!args.isLevelCompleted) _hapticController.Vibrate(HapticType.Failure);
             _view.Init(new StarImageViewFactory(), new FadeButtonViewFactory());
             _glowingView.Init(new StarImageViewFactory(), new WildCardItemViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
@@ -95,7 +97,7 @@ namespace Scripts
                 .Append(DOTween.Sequence().AppendInterval(0.4f)
                     .Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5 / 3f, 1.6f))).SetEase(Ease.OutQuad)
                 .Join(DOTween.Sequence().AppendInterval(1f)
-                    .Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)))
+                    .Append(DOTween.Sequence().Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)).OnComplete(() => _hapticController.Vibrate(HapticType.Success))))
                 .Join(DOTween.Sequence().AppendCallback(_view.ActivateWildParticle))
                 .Join(_view.GetStarGroup().DOFade(0f, 0.6f))
                 .Join(_glowingView.GetStarGroup().DOFade(0f, 0.6f))
@@ -111,8 +113,10 @@ namespace Scripts
                 IStarImageView starImageView = glowingStarImageViews[i];
                 int index = i;
                 float delay = .1f + 0.5f * i;
+                Action particleActivation = () => _view.ActivateParticle(index + starImageViews.Count);
+                particleActivation += () => _hapticController.Vibrate(HapticType.Success);
                 starCreationAnimation.Pause().Append(starImageView.GetRectTransform().transform.DOScale(1f, 0.5f))
-                    .InsertCallback(delay,() => _view.ActivateParticle(index + starImageViews.Count));
+                    .InsertCallback(delay, particleActivation.Invoke);
             }
 
             return starCreationAnimation;
@@ -129,7 +133,7 @@ namespace Scripts
         private void CreateCircleProgressBarController()
         {
             _circleProgressBarController = new CircleProgressBarController();
-            _circleProgressBarController.Initialize(_view.CreateCircleProgressBar(), _glowingView.CreateGlowingCircleProgressBar(), _levelTracker);
+            _circleProgressBarController.Initialize(_view.CreateCircleProgressBar(), _glowingView.CreateGlowingCircleProgressBar(), _levelTracker, _hapticController);
             _circleProgressBarController.CreateInitialStars();
         }
         
@@ -194,6 +198,6 @@ namespace Scripts
 
     public interface ILevelEndPopupController
     {
-        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory);
+        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController);
     }
 }

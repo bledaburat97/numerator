@@ -9,6 +9,7 @@ namespace Scripts
     public class LobbyPopupCreator : MonoBehaviour, ILobbyPopupCreator
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
+        [Inject] private IHapticController _hapticController;
         [SerializeField] private LobbyMessagePopupView lobbyMessagePopup;
         [SerializeField] private ConnectingPopupView connectingPopup;
         [SerializeField] private LobbyCreationPopupView lobbyCreationPopup;
@@ -40,6 +41,7 @@ namespace Scripts
         
         private void OnFailedToJoinGame(object sender, EventArgs args)
         {
+            _hapticController.Vibrate(HapticType.Failure);
             string text = NetworkManager.Singleton.DisconnectReason;
             if (text == "")
             {
@@ -55,6 +57,7 @@ namespace Scripts
         
         private void OnCreateLobbyFailed(object sender, EventArgs args)
         {
+            _hapticController.Vibrate(HapticType.Failure);
             lobbyMessagePopup.Show("Failed to create lobby!");
         }
         
@@ -65,6 +68,7 @@ namespace Scripts
         
         private void OnQuickJoinFailed(object sender, EventArgs args)
         {
+            _hapticController.Vibrate(HapticType.Failure);
             lobbyMessagePopup.Show("Couldn't find a lobby to join");
         }
         
