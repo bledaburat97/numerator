@@ -1,5 +1,4 @@
-﻿using Unity.Netcode;
-using UnityEngine;
+﻿using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -11,6 +10,7 @@ namespace Scripts
         [Inject] private IWaitingScenePopupCreator _waitingScenePopupCreator;
         [Inject] private IUserReady _userReady;
         [Inject] private IHapticController _hapticController;
+        [Inject] private IFadePanelController _fadePanelController;
 
         void Start()
         {
@@ -18,6 +18,7 @@ namespace Scripts
             InitializeUserReady();
             InitializeWaitingSceneUI();
             InitializePlayerNameArea();
+            InitializeFadePanelController();
             InitializeWaitingScenePopupCreator();
         }
         
@@ -41,27 +42,25 @@ namespace Scripts
             _playerNameAreaController.Initialize(_userReady);
         }
         
+        private void InitializeFadePanelController()
+        {
+            _fadePanelController.Initialize();
+        }
+        
         private void InitializeWaitingScenePopupCreator()
         {
-            _waitingScenePopupCreator.Initialize();
+            _waitingScenePopupCreator.Initialize(_fadePanelController);
         }
         
         private void OnApplicationQuit()
         {
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
             if (NetworkManager.Singleton != null)
             {
-                Destroy(NetworkManager.Singleton.gameObject);
+                NetworkManager.Singleton.Shutdown();
             }
-                
-            if (MultiplayerManager.Instance != null)
-            {
-                Destroy(MultiplayerManager.Instance.gameObject);
-            }
-
-            if (PlayerLobby.Instance != null)
-            {
-                Destroy(PlayerLobby.Instance.gameObject);
-            }
+#else
+#endif
         }
     }
 }

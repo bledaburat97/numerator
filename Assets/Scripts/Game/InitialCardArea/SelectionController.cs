@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Scripts
 {
     public class SelectionController : ISelectionController
     {
         private Dictionary<int, bool> _selectionStates;
-        private Action _onDeSelectCards;
-
+        public event EventHandler<List<int>> DeselectCards;
         public SelectionController(int numOfDefaultCards)
         {
             _selectionStates = new Dictionary<int, bool>();
@@ -29,17 +29,13 @@ namespace Scripts
         
         public void DeselectAll()
         {
+            DeselectCards.Invoke(this,
+                _selectionStates.Where(pair => pair.Value == true).Select(pair => pair.Key).ToList());
+            
             for (int i = 0; i < _selectionStates.Count; i++)
             {
                 SetSelectionState(i, false);
             }
-
-            _onDeSelectCards();
-        }
-
-        public void SetOnDeselectCards(Action action)
-        {
-            _onDeSelectCards += action;
         }
 
         public int GetSelectedCardIndex()
@@ -58,8 +54,8 @@ namespace Scripts
         void SetSelectionState(int index, bool status);
         bool GetSelectionState(int index);
         void DeselectAll();
-        void SetOnDeselectCards(Action action);
         int GetSelectedCardIndex();
+        event EventHandler<List<int>> DeselectCards;
     }
     
 }

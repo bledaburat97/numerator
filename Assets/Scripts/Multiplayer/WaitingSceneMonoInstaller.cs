@@ -7,6 +7,8 @@ namespace Scripts
     {
         [SerializeField] private WaitingSceneUIView waitingSceneUI;
         [SerializeField] private PlayerNameAreaView playerNameArea;
+        [SerializeField] private FadePanelView fadePanelView;
+
         public override void InstallBindings()
         {
             Container.BindFactory<IBaseButtonView, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
@@ -17,6 +19,7 @@ namespace Scripts
                 .WithArguments(playerNameArea);
             Container.Bind<IWaitingScenePopupCreator>().To<WaitingScenePopupCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IHapticController>().To<HapticController>().AsSingle();
+            Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView, fadePanelView);
         }
     }
 }

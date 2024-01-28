@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using System;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
@@ -7,7 +8,6 @@ namespace Scripts
     public class MessagePopupView : MonoBehaviour , IMessagePopupView
     {
         [SerializeField] private TMP_Text header;
-        
         public void Init(string text, float initialAlpha, Vector2 localPosition)
         {
             transform.localScale = Vector3.one;

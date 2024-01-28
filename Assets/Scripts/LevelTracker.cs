@@ -15,7 +15,6 @@ namespace Scripts
         private GameOption _gameOption;
         private Difficulty _multiplayerLevelDifficulty;
         private LevelSaveData _levelSaveData;
-        private readonly string _lastPlayedLevelId = "last_played_level_id";
         
         public void Initialize(IGameSaveService gameSaveService)
         {
@@ -26,16 +25,6 @@ namespace Scripts
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
             _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();
             _multiplayerLevelDifficulty = (Difficulty)PlayerPrefs.GetInt("multiplayer_level_difficulty", 2);
-        }
-        
-        public void SetLastPlayedLevelId()
-        {
-            PlayerPrefs.SetInt(_lastPlayedLevelId, _levelId);
-        }
-        
-        public int  GetLastPlayedLevelId()
-        {
-            return PlayerPrefs.GetInt(_lastPlayedLevelId, 0);
         }
 
         public void SetGameOption(GameOption gameOption)
@@ -247,8 +236,6 @@ namespace Scripts
         void SetGameOption(GameOption gameOption);
         GameOption GetGameOption();
         void SetMultiplayerLevelDifficulty(Difficulty difficulty);
-        void SetLastPlayedLevelId();
-        int GetLastPlayedLevelId();
     }
 
     public class LevelData

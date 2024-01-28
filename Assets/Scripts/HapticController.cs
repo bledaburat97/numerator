@@ -19,8 +19,8 @@ namespace Scripts
             Debug.Log("initalize haptic");
             _vibrationTypeDict = new Dictionary<HapticType, ImpactFeedbackStyle>()
             {
-                { HapticType.CardGrab, ImpactFeedbackStyle.Medium },
-                { HapticType.CardRelease, ImpactFeedbackStyle.Heavy },
+                { HapticType.CardGrab, ImpactFeedbackStyle.Light },
+                { HapticType.CardRelease, ImpactFeedbackStyle.Medium },
                 { HapticType.ButtonClick, ImpactFeedbackStyle.Light },
                 { HapticType.Success, ImpactFeedbackStyle.Medium },
                 { HapticType.Failure, ImpactFeedbackStyle.Medium },
@@ -29,9 +29,9 @@ namespace Scripts
 
             _vibrationToIntDict = new Dictionary<ImpactFeedbackStyle, int>()
             {
-                { ImpactFeedbackStyle.Light, 50 },
-                { ImpactFeedbackStyle.Medium, 75 },
-                { ImpactFeedbackStyle.Heavy, 100 }
+                { ImpactFeedbackStyle.Light, 20 },
+                { ImpactFeedbackStyle.Medium, 35 },
+                { ImpactFeedbackStyle.Heavy, 50 }
             };
             
             Vibration.Init();

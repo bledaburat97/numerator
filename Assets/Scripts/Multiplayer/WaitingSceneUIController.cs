@@ -1,4 +1,5 @@
-﻿using Unity.Services.Lobbies.Models;
+﻿using Unity.Netcode;
+using Unity.Services.Lobbies.Models;
 using UnityEngine.SceneManagement;
 using Zenject;
 
@@ -37,6 +38,10 @@ namespace Scripts
         private void OnMenuButtonClick()
         {
             PlayerLobby.Instance.LeaveLobby();
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
             SceneManager.LoadScene("Menu");
         }
     }

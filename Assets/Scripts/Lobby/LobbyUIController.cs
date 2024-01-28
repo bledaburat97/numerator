@@ -1,4 +1,5 @@
-﻿using UnityEngine.SceneManagement;
+﻿using Unity.Netcode;
+using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace Scripts
@@ -61,6 +62,10 @@ namespace Scripts
         private void OnMenuButtonClick()
         {
             PlayerLobby.Instance.LeaveLobby();
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
             SceneManager.LoadScene("Menu");
         }
     }

@@ -1,15 +1,18 @@
 ﻿using System;
 using Scripts;
 using Unity.Netcode;
+using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class TurnOrderDeterminer : NetworkBehaviour, ITurnOrderDeterminer
     {
+        [Inject] private IHapticController _hapticController;
         private bool _isLocalTurn;
         private IGameClockController _gameClockController;
         private IResultManager _resultManager;
-        public event EventHandler AbleToMove;
+        public event EventHandler<bool> LocalTurnEvent;
 
         public void Initialize(IGameClockController gameClockController, IResultManager resultManager)
         {
@@ -27,14 +30,17 @@ namespace Scripts
             if (!_isLocalTurn)
             {
                 _isLocalTurn = true;
+                Debug.Log("Turn vibration");
+                _hapticController.Vibrate(HapticType.CardRelease);
                 _gameClockController.StartTimer(ChangeTurns);
                 _resultManager.NumberGuessed += OnGuessNumber;
-                AbleToMove?.Invoke(this, EventArgs.Empty);
+                LocalTurnEvent?.Invoke(this, true);
             }
             else
             {
                 _isLocalTurn = false;
                 _resultManager.NumberGuessed -= OnGuessNumber;
+                LocalTurnEvent?.Invoke(this, false);
             }
         }
 
@@ -71,6 +77,6 @@ namespace Scripts
     {
         void Initialize(IGameClockController gameClockController, IResultManager resultManager);
         bool IsLocalTurn();
-        event EventHandler AbleToMove;
+        event EventHandler<bool> LocalTurnEvent;
     }
 }

@@ -1,5 +1,4 @@
-﻿using Unity.Netcode;
-using UnityEngine;
+﻿using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -167,23 +166,18 @@ namespace Scripts
             {
                 _gameSaveService.Save();
             }
-            else
+            
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
                 if (NetworkManager.Singleton != null)
                 {
-                    Destroy(NetworkManager.Singleton.gameObject);
-                }
-
-                if (MultiplayerManager.Instance != null)
-                {
-                    Destroy(MultiplayerManager.Instance.gameObject);
-                }
-
-                if (PlayerLobby.Instance != null)
-                {
-                    Destroy(PlayerLobby.Instance.gameObject);
+                    NetworkManager.Singleton.Shutdown();
                 }
             }
+#else
+#endif
         }
     }
+
 }

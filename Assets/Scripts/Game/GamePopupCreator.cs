@@ -48,6 +48,8 @@ namespace Scripts
         private Action _openWaitingOpponentPopup;
         private Action _closeWaitingOpponentPopup;
         private IMessagePopupView _newGameOfferPopup;
+        private IMessagePopupView _notAbleToMovePopup;
+        private IMessagePopupView _ableToMovePopup;
         public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
@@ -69,9 +71,8 @@ namespace Scripts
             levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
             gameUIController.OpenSettings += CreateSettingsPopup;
             gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
-            turnOrderDeterminer.AbleToMove += CreateAbleToMovePopup;
+            turnOrderDeterminer.LocalTurnEvent += ChangeLocalTurn;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
-            //NetworkManager.Singleton.OnClientDisconnectCallback += OnOpponentDisconnection;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? gameSaveService.Save : null;
             _deleteSaveAction += gameSaveService.DeleteSave;
             _playerSuccessDictionary = new Dictionary<ulong, bool>();
@@ -83,18 +84,33 @@ namespace Scripts
 
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)
         {
-            IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            messagePopupView.Init("Please wait for your turn.", 0f, new Vector2(0,318));
-            messagePopupView.SetColor(ConstantValues.NOT_ABLE_TO_MOVE_TEXT_COLOR);
-            messagePopupView.Animate(1f);
+            _notAbleToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+            _notAbleToMovePopup.Init("Please wait for your turn.", 0f, new Vector2(0,318));
+            _notAbleToMovePopup.SetColor(ConstantValues.NOT_ABLE_TO_MOVE_TEXT_COLOR);
+            _notAbleToMovePopup.Animate(1f);
+        }
+
+        private void CreateAbleToMovePopup()
+        {
+            _ableToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+            _ableToMovePopup.Init("It's your turn.", 0f, new Vector2(0, 318));
+            _ableToMovePopup.SetColor(ConstantValues.ABLE_TO_MOVE_TEXT_COLOR);
+            _ableToMovePopup.Animate(3f);
         }
         
-        private void CreateAbleToMovePopup(object sender, EventArgs e)
+        private void ChangeLocalTurn(object sender, bool isLocalTurn)
         {
-            IMessagePopupView messagePopupView = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            messagePopupView.Init("It's your turn.", 0f, new Vector2(0,318));
-            messagePopupView.SetColor(ConstantValues.ABLE_TO_MOVE_TEXT_COLOR);
-            messagePopupView.Animate(3f);
+            if (isLocalTurn)
+            {
+                _notAbleToMovePopup?.Close();
+                _notAbleToMovePopup = null;
+                CreateAbleToMovePopup();
+            }
+            
+            else{
+                _ableToMovePopup?.Close();
+                _ableToMovePopup = null;
+            }
         }
 
         private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
@@ -121,7 +137,6 @@ namespace Scripts
 
         private void CreateWaitingOpponentPopup()
         {
-            _isLocalReady = true;
             if (_isAnyReady.Value) return;
             IWaitingOpponentPopupController waitingOpponentPopupController =
                 _waitingOpponentPopupControllerFactory.Spawn();
@@ -139,13 +154,11 @@ namespace Scripts
                 _newGameOfferPopup.Init("Opponent offers a new game.", 1f, new Vector2(0,200));
             }
 
-            if (!_isAnyReady.Value) CloseNewGameOfferPopup();
-        }
-
-        private void CloseNewGameOfferPopup()
-        {
-            _newGameOfferPopup?.Close();
-            _newGameOfferPopup = null;
+            if (!_isAnyReady.Value)
+            {
+                _newGameOfferPopup?.Close();
+                _newGameOfferPopup = null;
+            }
         }
 
         private void CreateMultiplayerLevelLostPopup(bool previousValue, bool newValue)
@@ -166,8 +179,8 @@ namespace Scripts
         private void OnPlayerReady()
         {
             _isLocalReady = true;
-            TryChangeReadinessStatusServerRpc(true);
             CreateWaitingOpponentPopup();
+            TryChangeReadinessStatusServerRpc(true);
         }
 
         private void OnPlayerUnready()
@@ -248,6 +261,7 @@ namespace Scripts
                 _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
             _hapticController.Vibrate(HapticType.Warning);
             disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
+            disconnectionPopupController.SetText("Opponent is disconnected!");
         }
 
         private new void OnDestroy()

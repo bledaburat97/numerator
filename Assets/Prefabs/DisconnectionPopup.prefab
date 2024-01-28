@@ -301,6 +301,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   menuButtonView: {fileID: 5770343954306760335}
+  text: {fileID: 1032500180433459758}
 --- !u!1001 &7901168703193503578
 PrefabInstance:
   m_ObjectHideFlags: 0

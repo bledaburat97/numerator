@@ -15,6 +15,11 @@ namespace Scripts
             menuButtonController.Initialize(OnMenuButtonClick);
             menuButtonController.SetText("MENU");
         }
+
+        public void SetText(string text)
+        {
+            _view.SetText(text);
+        }
         
         private void OnMenuButtonClick()
         {
@@ -29,5 +34,6 @@ namespace Scripts
     public interface IDisconnectionPopupController
     {
         void Initialize(IDisconnectionPopupView view, BaseButtonControllerFactory baseButtonControllerFactory);
+        void SetText(string text);
     }
 }

@@ -36,20 +36,13 @@ namespace Scripts
         
         private void OnApplicationQuit()
         {
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
             if (NetworkManager.Singleton != null)
             {
-                Destroy(NetworkManager.Singleton.gameObject);
+                NetworkManager.Singleton.Shutdown();
             }
-                
-            if (MultiplayerManager.Instance != null)
-            {
-                Destroy(MultiplayerManager.Instance.gameObject);
-            }
-
-            if (PlayerLobby.Instance != null)
-            {
-                Destroy(PlayerLobby.Instance.gameObject);
-            }
+#else
+#endif
         }
     }
 }

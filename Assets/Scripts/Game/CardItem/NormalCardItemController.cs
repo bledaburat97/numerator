@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -24,7 +25,7 @@ namespace Scripts
             _cam = cam;
             _cardItemData = cardItemData;
             _selectionController = selectionController;
-            _selectionController.SetOnDeselectCards(DeselectCard);
+            _selectionController.DeselectCards += DeselectCard;
             _hapticController = hapticController;
             _view.Init(cardItemData.cardNumber);
             _view.InitLocalScale();
@@ -157,10 +158,14 @@ namespace Scripts
             _isDragStart = false;
         }
 
-        private void DeselectCard()
+        private void DeselectCard(object sender, List<int> selectedCardIndexes)
         {
-            SetFrameStatus(false);
-            _onCardSelected(false, _cardItemData.cardItemIndex);
+            if (selectedCardIndexes.Contains(_cardItemData.cardItemIndex))
+            {
+                SetFrameStatus(false);
+                _hapticController.Vibrate(HapticType.CardRelease);
+                _onCardSelected(false, _cardItemData.cardItemIndex);  
+            }
         }
 
         private void SetFrameStatus(bool status)
@@ -183,7 +188,6 @@ namespace Scripts
         {
             return DOTween.Sequence()
                 .AppendInterval(delayDuration)
-                .AppendCallback(() => _hapticController.Vibrate(HapticType.CardGrab))
                 .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.15f))
                 .AppendCallback(() => SetColor(ProbabilityType.Certain))
@@ -192,7 +196,8 @@ namespace Scripts
                 .AppendCallback(() => _view.SetBackImageStatus(true))
                 .AppendCallback(() => _view.SetNewAnchoredPositionOfRotatedImage())
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.15f))
-                .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce));
+                .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
+                .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
         }
         
     }

@@ -16,22 +16,19 @@ namespace Scripts
         private ResultBlockControllerFactory _resultBlockControllerFactory;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
-        private IHapticController _hapticController;
 
-        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController)
+        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
         {
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
             _resultBlockViewFactory = resultBlockViewFactory;
             _levelTracker = levelTracker;
             _turnOrderDeterminer = turnOrderDeterminer;
-            _hapticController = hapticController;
         }
 
         private void SetScrollPositionToBottom()
         {
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer && !_turnOrderDeterminer.IsLocalTurn())
             {
-                _hapticController.Vibrate(HapticType.CardRelease);
                 return;
             }
             StartCoroutine(ScrollToBottomCoroutine());
@@ -101,7 +98,7 @@ namespace Scripts
 
     public interface IResultAreaView
     {
-        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController);
+        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
         void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
     }
 }

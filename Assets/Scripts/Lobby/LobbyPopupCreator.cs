@@ -74,6 +74,7 @@ namespace Scripts
         
         private void OnJoinFailed(object sender, EventArgs args)
         {
+            _hapticController.Vibrate(HapticType.Failure);
             lobbyMessagePopup.Show("Failed to join the lobby");
         }
 

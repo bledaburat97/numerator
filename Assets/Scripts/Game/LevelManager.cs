@@ -56,7 +56,6 @@ namespace Scripts
                         ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
                         : 0;
                     _levelTracker.IncrementLevelId(_numOfStars);
-                    _levelTracker.SetLastPlayedLevelId();
                     LevelEnd?.Invoke(this, new LevelEndEventArgs()
                     {
                         isLevelCompleted = true,
@@ -82,7 +81,6 @@ namespace Scripts
         {
             _gameSaveService.DeleteSave();
             _isGameOver = true;
-            _levelTracker.SetLastPlayedLevelId();
             LevelEnd?.Invoke(this, new LevelEndEventArgs()
             {
                 isLevelCompleted = false,

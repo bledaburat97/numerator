@@ -9,25 +9,36 @@ namespace Scripts
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         [Inject] private IHapticController _hapticController;
-        [SerializeField] private HostDisconnectPopupView hostDisconnectPopup;
-        
-        public void Initialize()
+        [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
+        private IFadePanelController _fadePanelController;
+        private DisconnectionPopupControllerFactory _disconnectionPopupControllerFactory;
+        private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
+
+        public void Initialize(IFadePanelController fadePanelController)
         {
-            hostDisconnectPopup.Init();
-            IBaseButtonController menuButtonController =
-                _baseButtonControllerFactory.Create(hostDisconnectPopup.GetMenuButton());
-            menuButtonController.Initialize(() => SceneManager.LoadScene("Menu"));
+            _fadePanelController = fadePanelController;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectedCallback;
+            _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
+            _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
         }
         
         private void OnClientDisconnectedCallback(ulong clientId)
         {
-            Debug.Log("NetworkManager.Singleton.OnClientDisconnectCallback");
             if (clientId == NetworkManager.ServerClientId)
             {
-                _hapticController.Vibrate(HapticType.Warning);
-                hostDisconnectPopup.Show();
+                CreateDisconnectionPopup();
             }
+        }
+        
+        private void CreateDisconnectionPopup()
+        {
+            _fadePanelController.SetFadeImageStatus(true);
+            IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
+            IDisconnectionPopupView disconnectionPopupView =
+                _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
+            _hapticController.Vibrate(HapticType.Warning);
+            disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
+            disconnectionPopupController.SetText("You are disconnected!");
         }
         
         private void OnDestroy()
@@ -43,6 +54,6 @@ namespace Scripts
 
     public interface IWaitingScenePopupCreator
     {
-        void Initialize();
+        void Initialize(IFadePanelController fadePanelController);
     }
 }
