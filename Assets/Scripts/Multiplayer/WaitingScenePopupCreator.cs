@@ -33,7 +33,10 @@ namespace Scripts
         private void OnDestroy()
         {
             Debug.Log("Destroy WaitingScenePopupCreator");
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedCallback;
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedCallback;
+            }
         }
         
     }

@@ -34,28 +34,21 @@ namespace Scripts
             _lobbyUIController.Initialize(_lobbyPopupCreator);
         }
         
-#if UNITY_EDITOR
-        private void OnApplicationFocus(bool pauseStatus)
-        {
-            pauseStatus = !pauseStatus;
-#else
-        private void OnApplicationPause(bool pauseStatus)
-        {
-#endif
-            if (pauseStatus)
-            {
-                if(NetworkManager.Singleton != null)
-                {
-                    Destroy(NetworkManager.Singleton);
-                }
-            }
-        }
-        
         private void OnApplicationQuit()
         {
-            if(NetworkManager.Singleton != null)
+            if (NetworkManager.Singleton != null)
             {
-                Destroy(NetworkManager.Singleton);
+                Destroy(NetworkManager.Singleton.gameObject);
+            }
+                
+            if (MultiplayerManager.Instance != null)
+            {
+                Destroy(MultiplayerManager.Instance.gameObject);
+            }
+
+            if (PlayerLobby.Instance != null)
+            {
+                Destroy(PlayerLobby.Instance.gameObject);
             }
         }
     }

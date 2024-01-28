@@ -8,7 +8,7 @@ namespace Scripts
         private Dictionary<int, IBaseButtonController> _difficultyButtonControllers;
         private ILevelTracker _levelTracker;
         private BaseButtonControllerFactory _baseButtonControllerFactory;
-        
+        private int _difficultyIndex;
         public void Initialize(ILobbyCreationPopupView view, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _view = view;
@@ -19,12 +19,12 @@ namespace Scripts
             closeButtonController.Initialize(_view.Hide);
 
             IBaseButtonController publicButtonController = _baseButtonControllerFactory.Create(_view.GetPublicButton());
-            publicButtonController.Initialize(() => PlayerLobby.Instance.CreateLobby(_view.GetLobbyName(), false));
+            publicButtonController.Initialize(() => OnClickButton(false));
             publicButtonController.SetText("PUBLIC");
 
             IBaseButtonController privateButtonController =
                 _baseButtonControllerFactory.Create(_view.GetPrivateButton());
-            privateButtonController.Initialize(() => PlayerLobby.Instance.CreateLobby(_view.GetLobbyName(), true));
+            privateButtonController.Initialize(() => OnClickButton(true));
             privateButtonController.SetText("PRIVATE");
             
             CreateDifficultyButtons();
@@ -42,6 +42,7 @@ namespace Scripts
                 difficultyButtonController.SetImageStatus(difficultyIndex == (int)Difficulty.Hard);
                 _difficultyButtonControllers.Add(difficultyIndex, difficultyButtonController);
             }
+            _difficultyIndex = (int)Difficulty.Hard;
         }
 
         private void OnDifficultyButtonClicked(int difficultyIndex)
@@ -50,9 +51,16 @@ namespace Scripts
             {
                 _difficultyButtonControllers[i].SetImageStatus(i == difficultyIndex);
             }
-            _levelTracker.SetMultiplayerLevelDifficulty((Difficulty)difficultyIndex);
+
+            _difficultyIndex = difficultyIndex;
         }
 
+        private void OnClickButton(bool isPrivate)
+        {
+            _levelTracker.SetMultiplayerLevelDifficulty((Difficulty)_difficultyIndex);
+            PlayerLobby.Instance.CreateLobby(_view.GetLobbyName(), isPrivate);
+        }
+        
         public void ShowPopup()
         {
             _view.Show();

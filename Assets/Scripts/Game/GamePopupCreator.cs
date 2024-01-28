@@ -252,7 +252,10 @@ namespace Scripts
 
         private new void OnDestroy()
         {
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            }
         }
     }
 

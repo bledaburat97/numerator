@@ -1,36 +1,67 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Scripts
 {
     public class HapticController : IHapticController
     {
-        private Dictionary<HapticType, VibrationType> _vibrationTypeDict = new();
-        private VibrationType _defaultVibrationType = VibrationType.LightImpact;
-        
+#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+
+        private Dictionary<HapticType, ImpactFeedbackStyle> _vibrationTypeDict = new();
+        private ImpactFeedbackStyle _defaultVibrationType = ImpactFeedbackStyle.Light;
+        private Dictionary<ImpactFeedbackStyle, int> _vibrationToIntDict = new();
+#else
+#endif
         public void Initialize()
         {
-            _vibrationTypeDict = new Dictionary<HapticType, VibrationType>()
+#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+
+            Debug.Log("initalize haptic");
+            _vibrationTypeDict = new Dictionary<HapticType, ImpactFeedbackStyle>()
             {
-                { HapticType.CardGrab, VibrationType.LightImpact },
-                { HapticType.CardRelease, VibrationType.HeavyImpact },
-                { HapticType.ButtonClick, VibrationType.MediumImpact },
-                { HapticType.Success, VibrationType.Success },
-                { HapticType.Failure, VibrationType.Failure },
-                { HapticType.Warning , VibrationType.Warning}
+                { HapticType.CardGrab, ImpactFeedbackStyle.Medium },
+                { HapticType.CardRelease, ImpactFeedbackStyle.Heavy },
+                { HapticType.ButtonClick, ImpactFeedbackStyle.Light },
+                { HapticType.Success, ImpactFeedbackStyle.Medium },
+                { HapticType.Failure, ImpactFeedbackStyle.Medium },
+                { HapticType.Warning , ImpactFeedbackStyle.Heavy}
             };
-            VibrationManager.Init();
+
+            _vibrationToIntDict = new Dictionary<ImpactFeedbackStyle, int>()
+            {
+                { ImpactFeedbackStyle.Light, 50 },
+                { ImpactFeedbackStyle.Medium, 75 },
+                { ImpactFeedbackStyle.Heavy, 100 }
+            };
+            
+            Vibration.Init();
+#else
+#endif
         }
 
         public void Vibrate(HapticType hapticType)
         {
-            if (!_vibrationTypeDict.TryGetValue(hapticType, out VibrationType vibrationType))
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!_vibrationTypeDict.TryGetValue(hapticType, out ImpactFeedbackStyle vibrationType))
             {
-                VibrationManager.Vibrate(_defaultVibrationType);
+                Vibration.VibrateAndroid(_vibrationToIntDict[_defaultVibrationType]);
             }
             else
             {
-                VibrationManager.Vibrate(vibrationType);
+                Vibration.VibrateAndroid(_vibrationToIntDict[vibrationType]);
             }
+            
+#elif UNITY_IOS && !UNITY_EDITOR
+            if (!_vibrationTypeDict.TryGetValue(hapticType, out ImpactFeedbackStyle vibrationType))
+            {
+                Vibration.VibrateIOS(_defaultVibrationType);
+            }
+            else
+            {
+                Vibration.VibrateIOS(vibrationType);
+            }
+#else 
+#endif
         }
     }
 

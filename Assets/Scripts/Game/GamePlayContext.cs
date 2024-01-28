@@ -151,18 +151,14 @@ namespace Scripts
 #else
         private void OnApplicationPause(bool pauseStatus)
         {
-#endif
             if (pauseStatus)
             {
                 if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
                 {
                     _gameSaveService.Save();
                 }
-                else if(NetworkManager.Singleton != null)
-                {
-                    Destroy(NetworkManager.Singleton);
-                }
             }
+#endif
         }
         
         private void OnApplicationQuit()
@@ -171,9 +167,22 @@ namespace Scripts
             {
                 _gameSaveService.Save();
             }
-            else if(NetworkManager.Singleton != null)
+            else
             {
-                Destroy(NetworkManager.Singleton);
+                if (NetworkManager.Singleton != null)
+                {
+                    Destroy(NetworkManager.Singleton.gameObject);
+                }
+
+                if (MultiplayerManager.Instance != null)
+                {
+                    Destroy(MultiplayerManager.Instance.gameObject);
+                }
+
+                if (PlayerLobby.Instance != null)
+                {
+                    Destroy(PlayerLobby.Instance.gameObject);
+                }
             }
         }
     }
