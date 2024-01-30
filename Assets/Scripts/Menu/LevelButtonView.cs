@@ -9,7 +9,7 @@ namespace Scripts
     {
         [SerializeField] private TMP_Text text;
         [SerializeField] private Button button;
-        [SerializeField] protected Image innerBg;
+        [SerializeField] protected Image image;
         [SerializeField] private StarImageView[] starImageViews = new StarImageView[3];
         [SerializeField] private RectTransform starHolder;
         [SerializeField] private RectTransform spaceShipHolder;
@@ -33,12 +33,16 @@ namespace Scripts
             _spaceShipView = null;
         }
 
+        public void SetSprite(Sprite planetImage)
+        {
+            image.sprite = planetImage;
+        }
+
         public void SetButtonActive()
         {
             button.enabled = true;
             starHolder.gameObject.SetActive(true);
             SetOnSelectAction(_model.onSelect);
-            innerBg.color = ConstantValues.PLAYED_LEVEL_BUTTON_COLOR;
         }
 
         public void SetButtonEnable(bool status)
@@ -88,6 +92,7 @@ namespace Scripts
         RectTransform GetRectTransformOfSpaceShipHolder();
         void CreateSpaceShip();
         void SetSpaceShip(ISpaceShipView spaceShipView);
+        void SetSprite(Sprite planetImage);
     }
     
     public class LevelButtonModel

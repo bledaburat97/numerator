@@ -26,13 +26,14 @@ namespace Scripts
             Destroy(gameObject);
         }
 
-        public void Animate(float showDuration)
+        public void Animate(float showDuration, Action onClose)
         {
+            onClose += Close;
             DOTween.Sequence()
                 .Append(header.DOFade(1f, 0.5f))
                 .AppendInterval(showDuration)
                 .Append(header.DOFade(0f, 0.5f))
-                .OnComplete(Close);
+                .OnComplete(onClose.Invoke);
         }
     }
 
@@ -40,7 +41,7 @@ namespace Scripts
     {
         void Init(string text, float initialAlpha, Vector2 localPosition);
         void Close();
-        void Animate(float showDuration);
+        void Animate(float showDuration, Action onClose);
         void SetColor(Color color);
     }
 }

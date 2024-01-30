@@ -1689,6 +1689,22 @@ MonoBehaviour:
   levelButtonPrefab: {fileID: 371490860433157135, guid: 697180a6a86c21d46b453ada54100f46, type: 3}
   forwardButtonPrefab: {fileID: 1262325741221006247, guid: 5003074683a20e4428d4f5829f11e6ff, type: 3}
   backwardButtonPrefab: {fileID: 1262325741221006247, guid: b9a0407ebf78ee047b4d0eaa792c104b, type: 3}
+  planetSprites:
+  - {fileID: -1425557167, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
+  - {fileID: 48310095, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
+  - {fileID: -1420440437, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
+  - {fileID: 642963911, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
+  - {fileID: -85162551, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
+  - {fileID: 738064108, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: 85282187, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: 47332821, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: -860290998, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: 377625328, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
+  - {fileID: 1960700029, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: 78632635, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: 654591986, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: 1787646661, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
+  - {fileID: -1866768185, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
 --- !u!1 &1881874541
 GameObject:
   m_ObjectHideFlags: 0

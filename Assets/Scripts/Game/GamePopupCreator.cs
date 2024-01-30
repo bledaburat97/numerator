@@ -84,32 +84,38 @@ namespace Scripts
 
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)
         {
+            void OnClose() => _notAbleToMovePopup = null;
             _notAbleToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
             _notAbleToMovePopup.Init("Please wait for your turn.", 0f, new Vector2(0,318));
             _notAbleToMovePopup.SetColor(ConstantValues.NOT_ABLE_TO_MOVE_TEXT_COLOR);
-            _notAbleToMovePopup.Animate(1f);
+            _notAbleToMovePopup.Animate(1f, OnClose);
         }
 
         private void CreateAbleToMovePopup()
         {
+            void OnClose() => _ableToMovePopup = null;
             _ableToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
             _ableToMovePopup.Init("It's your turn.", 0f, new Vector2(0, 318));
             _ableToMovePopup.SetColor(ConstantValues.ABLE_TO_MOVE_TEXT_COLOR);
-            _ableToMovePopup.Animate(3f);
+            _ableToMovePopup.Animate(3f, OnClose);
         }
         
         private void ChangeLocalTurn(object sender, bool isLocalTurn)
         {
             if (isLocalTurn)
             {
-                _notAbleToMovePopup?.Close();
-                _notAbleToMovePopup = null;
+                if (_notAbleToMovePopup != null)
+                {
+                    _notAbleToMovePopup.Close();
+                }
                 CreateAbleToMovePopup();
             }
             
             else{
-                _ableToMovePopup?.Close();
-                _ableToMovePopup = null;
+                if (_ableToMovePopup != null)
+                {
+                    _ableToMovePopup.Close();
+                }
             }
         }
 
@@ -156,8 +162,10 @@ namespace Scripts
 
             if (!_isAnyReady.Value)
             {
-                _newGameOfferPopup?.Close();
-                _newGameOfferPopup = null;
+                if (_newGameOfferPopup != null)
+                {
+                    _newGameOfferPopup.Close();
+                }
             }
         }
 

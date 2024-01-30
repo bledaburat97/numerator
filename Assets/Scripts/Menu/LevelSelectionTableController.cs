@@ -64,6 +64,7 @@ namespace Scripts
                     onSelect = OnClickLevel,
                     starCount = levelId < _levelTracker.GetStarCountOfLevels().Count ? _levelTracker.GetStarCountOfLevels()[levelId] : 0
                 });
+                levelButtonView.SetSprite(_view.GetPlanetImageByIndex(i));
                 if (_firstLevelIdOfTable + i <= _levelTracker.GetStarCountOfLevels().Count) levelButtonView.SetButtonActive();
                 if (_firstLevelIdOfTable + i == _activeLevelIdController.GetActiveLevelId())
                 {

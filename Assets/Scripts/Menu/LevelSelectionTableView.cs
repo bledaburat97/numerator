@@ -1,4 +1,5 @@
-﻿using Menu;
+﻿using System.Collections.Generic;
+using Menu;
 using UnityEngine;
 
 namespace Scripts
@@ -10,6 +11,7 @@ namespace Scripts
         private BaseButtonViewFactory _baseButtonViewFactory;
         [SerializeField] private BaseButtonView forwardButtonPrefab;
         [SerializeField] private BaseButtonView backwardButtonPrefab;
+        [SerializeField] private List<Sprite> planetSprites;
         public void Init(LevelButtonViewFactory levelButtonViewFactory, BaseButtonViewFactory baseButtonViewFactory)
         {
             _levelButtonViewFactory = levelButtonViewFactory;
@@ -31,6 +33,11 @@ namespace Scripts
             return _baseButtonViewFactory.Spawn(transform, backwardButtonPrefab);
         }
 
+        public Sprite GetPlanetImageByIndex(int index)
+        {
+            return planetSprites[index];
+        }
+
     }
 
     public interface ILevelSelectionTableView
@@ -39,5 +46,6 @@ namespace Scripts
         ILevelButtonView CreateLevelButtonView();
         IBaseButtonView CreateForwardButton();
         IBaseButtonView CreateBackwardButton();
+        Sprite GetPlanetImageByIndex(int index);
     }
 }

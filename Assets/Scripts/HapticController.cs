@@ -23,7 +23,7 @@ namespace Scripts
                 { HapticType.CardRelease, ImpactFeedbackStyle.Medium },
                 { HapticType.ButtonClick, ImpactFeedbackStyle.Light },
                 { HapticType.Success, ImpactFeedbackStyle.Medium },
-                { HapticType.Failure, ImpactFeedbackStyle.Medium },
+                { HapticType.Failure, ImpactFeedbackStyle.Heavy },
                 { HapticType.Warning , ImpactFeedbackStyle.Heavy}
             };
 
