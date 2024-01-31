@@ -17,6 +17,7 @@ namespace Scripts
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         [SerializeField] private WaitingOpponentPopupView waitingOpponentPopupPrefab;
         [SerializeField] private MessagePopupView messagePopupPrefab;
+        [SerializeField] private HandTutorialView handTutorialPrefab;
         
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
@@ -50,7 +51,7 @@ namespace Scripts
         private IMessagePopupView _newGameOfferPopup;
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -80,6 +81,21 @@ namespace Scripts
             _openWaitingOpponentPopup += OnPlayerReady;
             _isLocalReady = false;
             _closeWaitingOpponentPopup += OnPlayerUnready;
+            /*
+            if (_levelTracker.GetLevelId() == 0)
+            {
+                CreateSwipeTutorial(unmaskServiceAreaView, initialCardAreaController.GetNormalCardHolderPositionAtIndex(0),
+                    cardItemLocator.GetBoardCardHolderPositionAtIndex(0));
+            }
+            */
+        }
+
+        private void CreateSwipeTutorial(IUnmaskServiceAreaView unmaskServiceAreaView, Vector2 startingPos, Vector2 endPos)
+        {
+            //unmaskServiceAreaView.InstantiateTutorialFade();
+            IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
+            IHandTutorialController handTutorialController = new HandTutorialController();
+            handTutorialController.Initialize(handTutorialView, startingPos, endPos);
         }
 
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)
@@ -283,6 +299,6 @@ namespace Scripts
 
     public interface IGamePopupCreator
     {
-        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController);
+        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView);
     }
 }

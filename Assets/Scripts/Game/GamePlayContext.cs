@@ -27,6 +27,8 @@ namespace Scripts
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private IHapticController _hapticController;
         [Inject] private IGameUIController _gameUIController;
+        [Inject] private IUnmaskServiceAreaView _unmaskServiceAreaView;
+        
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
@@ -49,6 +51,7 @@ namespace Scripts
             InitializeCardItemInfoPopup();
             InitializeInitialCardArea();
             InitializeFadePanelController();
+            InitializeUnmaskServiceAreaView();
             InitializeGamePopupCreator();
             _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
@@ -138,11 +141,17 @@ namespace Scripts
         {
             _fadePanelController.Initialize();
         }
+        
+        private void InitializeUnmaskServiceAreaView()
+        {
+            _unmaskServiceAreaView.Initialize(_fadePanelController);
+        }
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView);
         }
+
         
 #if UNITY_EDITOR
         private void OnApplicationFocus(bool pauseStatus)

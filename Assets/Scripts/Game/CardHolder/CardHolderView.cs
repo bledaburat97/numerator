@@ -62,6 +62,11 @@ namespace Scripts
             return _cam.WorldToScreenPoint(transform.position);
         }
 
+        public Vector3 GetGlobalPosition()
+        {
+            return transform.position;
+        }
+
         public RectTransform GetRectTransform()
         {
             return rectTransform;
@@ -95,5 +100,6 @@ namespace Scripts
         void SetStatus(bool status);
         void SetText(string cardNumber);
         void SetOnClick(Action onClick);
+        Vector3 GetGlobalPosition();
     }
 }

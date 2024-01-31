@@ -93,6 +93,11 @@ namespace Scripts
                 }
             }
         }
+
+        public Vector3 GetNormalCardHolderPositionAtIndex(int index)
+        {
+            return _normalCardHolderControllerList[index].GetPositionOfCardHolder();
+        }
         
         private void CreateCardItemsData(Action<bool, int> onCardSelected, int numOfTotalWildCard)
         {
@@ -204,6 +209,7 @@ namespace Scripts
             Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
             ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
 
+        Vector3 GetNormalCardHolderPositionAtIndex(int index);
     }
     
     public class CardItemData

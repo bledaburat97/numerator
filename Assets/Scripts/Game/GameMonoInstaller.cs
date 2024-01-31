@@ -45,6 +45,7 @@ namespace Scripts
             Container.Bind<ITargetNumberCreator>().To<TargetNumberCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IGameUIController>().To<GameUIController>().AsSingle()
                 .WithArguments(gameUI);
+            Container.Bind<IUnmaskServiceAreaView>().To<UnmaskServiceAreaView>().FromComponentInHierarchy().AsSingle();
         }
     }
 }

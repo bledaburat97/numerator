@@ -20,12 +20,18 @@ namespace Scripts
         {
             return _view;
         }
+        
+        public Vector3 GetPositionOfCardHolder()
+        {
+            return _view.GetGlobalPosition();
+        }
     }
 
     public interface IBaseCardHolderController
     {
         void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam);
         ICardHolderView GetView();
+        Vector3 GetPositionOfCardHolder();
     }
     
     public class CardHolderModel

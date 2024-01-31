@@ -151,6 +151,12 @@ namespace Scripts
 
             return -1;
         }
+        
+        public Vector3 GetBoardCardHolderPositionAtIndex(int index)
+        {
+            List<IBoardCardHolderController> keys = new List<IBoardCardHolderController>(_boardHolderToCardIndexMapping.Keys);
+            return keys[index].GetPositionOfCardHolder();
+        }
     }
 
     public interface ICardItemLocator
@@ -162,6 +168,7 @@ namespace Scripts
         LockedCardInfo OnWildDragComplete(int wildCardIndex);
         void ResetBoard();
         RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex);
+        Vector3 GetBoardCardHolderPositionAtIndex(int index);
     }
 
     public class LockedCardInfo

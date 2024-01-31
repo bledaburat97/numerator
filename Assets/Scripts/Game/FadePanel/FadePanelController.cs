@@ -1,4 +1,5 @@
-﻿using UnityEngine.UI;
+﻿using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scripts
 {
@@ -6,7 +7,6 @@ namespace Scripts
     {
         private IFadePanelView _view;
         private IFadePanelView _nonGlowView;
-        private IFadePanelView _maskedFadeView;
 
         public FadePanelController(IFadePanelView view, IFadePanelView nonGlowView)
         {
@@ -17,6 +17,7 @@ namespace Scripts
         public void Initialize()
         {
             _view.SetFadeImageStatus(false);
+            _view.SetTutorialFadeImageStatus(false);
             _nonGlowView.SetFadeImageStatus(false);
         }
 
@@ -31,11 +32,6 @@ namespace Scripts
             return _view.GetFadeImage();
         }
 
-        public void SetMaskedFadeImageStatus(bool status)
-        {
-            _maskedFadeView.SetFadeImageStatus(status);
-        }
-
         public Image GetMaskedFadePanelImage()
         {
             return _nonGlowView.GetFadeImage();
@@ -45,15 +41,27 @@ namespace Scripts
         {
             _view.SetAlpha(alpha);
         }
+        
+        public void InitMaskSystem(IUnmaskServiceView unmaskService, float fade)
+        {
+            unmaskService.Init(_view.GetTutorialFadeImage(), Color.black, fade);
+        }
+        
+        public void OpenTutorialFade()
+        {
+            _view.SetTutorialFadeImageStatus(true);
+            _view.SetTutorialFadeAlpha(0.5f);
+        }
     }
 
     public interface IFadePanelController
     {
         void Initialize();
         void SetFadeImageStatus(bool status);
-        void SetMaskedFadeImageStatus(bool status);
         Image GetMaskedFadePanelImage();
         Image GetFadeImage();
         void SetFadeImageAlpha(float alpha);
+        void InitMaskSystem(IUnmaskServiceView unmaskService, float fade);
+        void OpenTutorialFade();
     }
 }
