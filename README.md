@@ -23,8 +23,8 @@ Winning the Game:
 
 Main Menu:
 
-•	Select a level you've won or continue an interrupted one. Unplayed levels are locked.
+•	Select a planet you've traveled or continue on interrupted one. Unplayed planets are locked.
 
 •	Mystery digits are randomly generated after each completed or unplayed level.
 
-•	Decorate your tree with stars earned after each level. Each tree has 15 levels, with increasing difficulty.
+•	Travel with your spaceship in the space.
