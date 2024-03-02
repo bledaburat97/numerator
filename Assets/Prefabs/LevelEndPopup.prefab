@@ -9984,6 +9984,8 @@ MonoBehaviour:
   - {fileID: 38535222493206784}
   wildParticle: {fileID: 7321065087627408328}
   starGroup: {fileID: 9000727398548776913}
+  wildCardHolder: {fileID: 3969937104621515025}
+  wildCardItemPrefab: {fileID: -5603641286038599345, guid: 1322d50ce0e5dac429d25595ea32eac1, type: 3}
 --- !u!1 &8247323249175570564
 GameObject:
   m_ObjectHideFlags: 0

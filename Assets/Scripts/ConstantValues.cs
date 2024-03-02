@@ -12,8 +12,6 @@ namespace Scripts
         public static float SPACING_BETWEEN_INITIAL_CARDS = 10f;
         public static float INITIAL_CARD_HOLDER_WIDTH = 52f;
         public static float INITIAL_CARD_HOLDER_HEIGHT = 65f;
-        
-        
 
         public static float RESULT_CARD_WIDTH = 32f;
         public static float RESULT_CARD_HEIGHT = 40f;

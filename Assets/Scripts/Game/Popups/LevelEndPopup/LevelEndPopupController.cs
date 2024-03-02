@@ -30,8 +30,8 @@ namespace Scripts
             _fadeButtonControllerFactory = fadeButtonControllerFactory;
             _hapticController = hapticController;
             if(!args.isLevelCompleted) _hapticController.Vibrate(HapticType.Failure);
-            _view.Init(new StarImageViewFactory(), new FadeButtonViewFactory());
-            _glowingView.Init(new StarImageViewFactory(), new WildCardItemViewFactory());
+            _view.Init(new StarImageViewFactory(), new FadeButtonViewFactory(), new WildCardItemViewFactory());
+            _glowingView.Init(new StarImageViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             CreateCircleProgressBarController();
             if (args.isLevelCompleted)
@@ -82,7 +82,7 @@ namespace Scripts
                 return DOTween.Sequence().Append(AnimateButtons());
             }
             
-            _wildCardItemView = _glowingView.CreateWildCardImage();
+            _wildCardItemView = _view.CreateWildCardImage();
             _wildCardItemView.SetLocalScale(Vector3.zero);
             _wildCardItemView.SetLocalPosition(Vector3.zero, 0f);
             Action onClickClaim = _wildCardItemView.Destroy;

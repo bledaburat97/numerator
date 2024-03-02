@@ -81,18 +81,18 @@ namespace Scripts
             _openWaitingOpponentPopup += OnPlayerReady;
             _isLocalReady = false;
             _closeWaitingOpponentPopup += OnPlayerUnready;
-            /*
+            
             if (_levelTracker.GetLevelId() == 0)
             {
                 CreateSwipeTutorial(unmaskServiceAreaView, initialCardAreaController.GetNormalCardHolderPositionAtIndex(0),
                     cardItemLocator.GetBoardCardHolderPositionAtIndex(0));
             }
-            */
+            
         }
 
         private void CreateSwipeTutorial(IUnmaskServiceAreaView unmaskServiceAreaView, Vector2 startingPos, Vector2 endPos)
         {
-            //unmaskServiceAreaView.InstantiateTutorialFade();
+            unmaskServiceAreaView.InstantiateTutorialFade();
             IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
             IHandTutorialController handTutorialController = new HandTutorialController();
             handTutorialController.Initialize(handTutorialView, startingPos, endPos);

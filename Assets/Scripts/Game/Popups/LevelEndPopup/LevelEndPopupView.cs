@@ -12,19 +12,23 @@ namespace Scripts
         [SerializeField] private List<ParticleSystem> starParticles;
         [SerializeField] private ParticleSystem wildParticle;
         [SerializeField] private CanvasGroup starGroup;
+        [SerializeField] private RectTransform wildCardHolder;
+        [SerializeField] private WildCardItemView wildCardItemPrefab;
+        private WildCardItemViewFactory _wildCardItemViewFactory;
 
         private StarImageViewFactory _starImageViewFactory;
         private FadeButtonViewFactory _fadeButtonViewFactory;
 
         private List<IStarImageView> _starImageList;
         
-        public void Init(StarImageViewFactory starImageViewFactory, FadeButtonViewFactory fadeButtonViewFactory)
+        public void Init(StarImageViewFactory starImageViewFactory, FadeButtonViewFactory fadeButtonViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
         {
             _starImageViewFactory = starImageViewFactory;
             _fadeButtonViewFactory = fadeButtonViewFactory;
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
             _starImageList = new List<IStarImageView>();
+            _wildCardItemViewFactory = wildCardItemViewFactory;
         }
 
         public IFadeButtonView GetFadeButton()
@@ -80,11 +84,16 @@ namespace Scripts
         {
             return starGroup;
         }
+        
+        public IWildCardItemView CreateWildCardImage()
+        {
+            return _wildCardItemViewFactory.Spawn(wildCardHolder, wildCardItemPrefab);
+        }
     }
     
     public interface ILevelEndPopupView
     {
-        void Init(StarImageViewFactory starImageViewFactory, FadeButtonViewFactory fadeButtonViewFactory);
+        void Init(StarImageViewFactory starImageViewFactory, FadeButtonViewFactory fadeButtonViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
         void CreateStarImage(Vector2 localPosition, Vector2 size);
         ICircleProgressBarView CreateCircleProgressBar();
         List<IStarImageView> GetStarImageViewList();
@@ -94,5 +103,6 @@ namespace Scripts
         void SetStarGroupStatus(bool status);
         CanvasGroup GetStarGroup();
         IFadeButtonView GetFadeButton();
+        IWildCardItemView CreateWildCardImage();
     }
 }

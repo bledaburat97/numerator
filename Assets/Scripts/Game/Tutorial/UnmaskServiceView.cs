@@ -20,14 +20,11 @@ namespace Scripts
 
         private Material _material;
         private RenderTexture _texture;
-        private Transform _holder;
-        public Camera Cam => cam;
         
         public void Init(Image maskImage, Color color, float alpha)
         {
             this.maskImage = maskImage;
             _material = new Material(shader);
-            _holder = canvas.transform;
             _texture = new RenderTexture(Screen.width, Screen.height, 0);
             cam.targetTexture = _texture;
             canvas.gameObject.SetActive(true);
