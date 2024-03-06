@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,12 +8,12 @@ namespace Scripts
 {
     public class UnmaskServiceView : MonoBehaviour, IUnmaskServiceView
     {
-        public RectTransform ScaleHelper;
-
         [NonSerialized] private Image maskImage;
         [SerializeField] private Camera cam;
         [SerializeField] private Canvas canvas;
         [SerializeField] private Shader shader;
+        [SerializeField] private UnmaskCardItemView unmaskCardItemPrefab;
+        [SerializeField] private RectTransform scaleHelper;
 
         private static readonly int MainTex = Shader.PropertyToID("_MainTex");
         private static readonly int BaseAlpha = Shader.PropertyToID("_BaseAlpha");
@@ -20,6 +21,7 @@ namespace Scripts
 
         private Material _material;
         private RenderTexture _texture;
+        private List<IUnmaskCardItemView> _unmaskCardItemViews = new List<IUnmaskCardItemView>();
         
         public void Init(Image maskImage, Color color, float alpha)
         {
@@ -52,7 +54,33 @@ namespace Scripts
         public void SetColor(Color color)
         {
             _material.SetColor(BaseColor, color);
-        }        
+        }
+
+        public void CreateUnmaskCardItem(Vector2 position, Vector2 size)
+        {
+            UnmaskCardItemViewFactory unmaskCardItemViewFactory = new UnmaskCardItemViewFactory();
+            IUnmaskCardItemView unmaskCardItemView = unmaskCardItemViewFactory.Spawn(scaleHelper, unmaskCardItemPrefab);
+            unmaskCardItemView.SetPosition(position);
+            unmaskCardItemView.SetSize(size);
+            _unmaskCardItemViews.Add(unmaskCardItemView);
+        }
+
+        public void ClearUnmaskCardItems()
+        {
+            foreach (var unmaskCardItemView in _unmaskCardItemViews)
+            {
+                unmaskCardItemView.Destroy();
+            }
+            _unmaskCardItemViews.Clear();
+        }
+
+        public void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos)
+        {
+            foreach (var unmaskCardItemView in _unmaskCardItemViews)
+            {
+                unmaskCardItemView.ChangeLocalPosition(changeInLocalPos);
+            }
+        }
     }
 
     public interface IUnmaskServiceView
@@ -61,5 +89,8 @@ namespace Scripts
         void SetBaseAlpha(float alpha);
         Tween SetAlpha(float alpha, float duration);
         void SetColor(Color color);
+        void CreateUnmaskCardItem(Vector2 position, Vector2 size);
+        void ClearUnmaskCardItems();
+        void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);
     }
 }

@@ -22,13 +22,15 @@ namespace Scripts
         private ICardItemInfoManager _cardItemInfoManager;
         private ILevelDataCreator _levelDataCreator;
 
+        public event EventHandler<(bool, int)> CardSelectedEvent;
+        
         public InitialCardAreaController(IInitialCardAreaView view)
         {
             _view = view;
         }
         
         
-        public void Initialize(ICardItemLocator cardItemLocator, Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
+        public void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
         {
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
@@ -41,10 +43,15 @@ namespace Scripts
             IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
             invisibleClickHandler.Initialize(_selectionController.DeselectAll);
             _cardItemLocator = cardItemLocator;
-            InitInitialCardAreaView(onCardSelected, numOfTotalWildCards);
+            InitInitialCardAreaView(OnCardSelected, numOfTotalWildCards);
             gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
             resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
+        }
+
+        private void OnCardSelected(bool status, int cardIndex)
+        {
+            CardSelectedEvent?.Invoke(this, (status, cardIndex));
         }
 
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)
@@ -201,15 +208,35 @@ namespace Scripts
                 .AppendInterval(1f + 0.3f * (args.finalCardNumbers.Count - 1))
                 .AppendCallback(() => args.onComplete.Invoke());
         }
+
+        public void SetCardsAsUnselectable(int selectableCardIndex = -1)
+        {
+            for (int i = 0; i < _normalCardItemControllerList.Count; i++)
+            {
+                if (i == selectableCardIndex) _normalCardItemControllerList[i].SetIsSelectable(true);
+                else _normalCardItemControllerList[i].SetIsSelectable(false);
+            }
+        }
+
+        public void SetCardsAsUndraggable(int draggableCardIndex = -1)
+        {
+            for (int i = 0; i < _normalCardItemControllerList.Count; i++)
+            {
+                if (i == draggableCardIndex) _normalCardItemControllerList[i].SetIsDraggable(true);
+                else _normalCardItemControllerList[i].SetIsDraggable(false);
+            }
+        }
     }
     
     public interface IInitialCardAreaController
     {
-        void Initialize(ICardItemLocator cardItemLocator,
-            Action<bool, int> onCardSelected, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
+        void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
             ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
 
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
+        void SetCardsAsUnselectable(int selectableCardIndex = -1);
+        void SetCardsAsUndraggable(int draggableCardIndex = -1);
+        event EventHandler<(bool, int)> CardSelectedEvent;
     }
     
     public class CardItemData

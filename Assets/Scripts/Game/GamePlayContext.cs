@@ -1,5 +1,4 @@
-﻿using Unity.Netcode;
-using UnityEngine;
+﻿using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -48,8 +47,8 @@ namespace Scripts
             InitializeLevelManager();
             InitializeBoardArea();
             InitializeCardItemInfoManager();
-            InitializeCardItemInfoPopup();
             InitializeInitialCardArea();
+            InitializeCardItemInfoPopup();
             InitializeFadePanelController();
             InitializeUnmaskServiceAreaView();
             InitializeGamePopupCreator();
@@ -122,19 +121,14 @@ namespace Scripts
             _cardItemInfoManager.Initialize(_levelTracker, _levelDataCreator);
         }
         
-        private void InitializeCardItemInfoPopup()
-        {
-            _cardItemInfoPopupController.Initialize(_cardItemInfoManager, _levelDataCreator, _cardHolderModelCreator);
-        }
-        
         private void InitializeInitialCardArea()
         {
-            _initialCardAreaController.Initialize(_cardItemLocator, SetCardItemInfoPopupStatus, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _gameUIController, _boardAreaController, _resultManager, _levelDataCreator);
+            _initialCardAreaController.Initialize(_cardItemLocator, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _gameUIController, _boardAreaController, _resultManager, _levelDataCreator);
         }
-
-        private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
+        
+        private void InitializeCardItemInfoPopup()
         {
-            _cardItemInfoPopupController.SetCardItemInfoPopupStatus(status, cardIndex);
+            _cardItemInfoPopupController.Initialize(_cardItemInfoManager, _levelDataCreator, _cardHolderModelCreator, _initialCardAreaController);
         }
 
         private void InitializeFadePanelController()
@@ -149,7 +143,7 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView, _cardHolderModelCreator, _resultAreaController);
         }
 
         

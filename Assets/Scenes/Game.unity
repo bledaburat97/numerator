@@ -2123,8 +2123,8 @@ RectTransform:
   - {fileID: 1177125429}
   - {fileID: 1675762317}
   - {fileID: 712370581}
-  - {fileID: 872332907}
   - {fileID: 1370009496}
+  - {fileID: 872332907}
   - {fileID: 1714900003}
   - {fileID: 1190057576}
   - {fileID: 1176604905}
@@ -3248,6 +3248,7 @@ MonoBehaviour:
   rectTransform: {fileID: 1280983160}
   resultBlockPrefab: {fileID: 2424187574287040640, guid: c3be73362540cab4c98fae001d84a333, type: 3}
   scrollRect: {fileID: 943878276}
+  verticalLayoutGroup: {fileID: 1280983162}
 --- !u!114 &1280983162
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4239,6 +4240,7 @@ MonoBehaviour:
   waitingOpponentPopupPrefab: {fileID: 2977186154892670492, guid: eb1a2ddee7cc48e43840355924a7472d, type: 3}
   messagePopupPrefab: {fileID: 1794011495472088801, guid: b6a52420f49a4804ba861b8007091243, type: 3}
   handTutorialPrefab: {fileID: 6016333092749220106, guid: 9844bfe245f971a4d806b6e75c10d3c4, type: 3}
+  tutorialMessagePopupPrefab: {fileID: 1522502369497219775, guid: b9b8962c1b01e57469fb97f65b3fff1c, type: 3}
   glowSystem: {fileID: 1256676159}
   glowingLevelEndPopup: {fileID: 797455563}
 --- !u!114 &1714900005

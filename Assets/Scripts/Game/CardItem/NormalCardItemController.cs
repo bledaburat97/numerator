@@ -16,6 +16,7 @@ namespace Scripts
         private Func<int, int, RectTransform> _onPlaceByClick;
         private Action<bool, int> _onCardSelected;
         private bool _isSelectable;
+        private bool _isDraggable;
         private Camera _cam;
         private IHapticController _hapticController;
         
@@ -27,6 +28,7 @@ namespace Scripts
             _selectionController = selectionController;
             _selectionController.DeselectCards += DeselectCard;
             _hapticController = hapticController;
+            _isDraggable = true;
             _view.Init(cardItemData.cardNumber);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero, 0f);
@@ -81,6 +83,7 @@ namespace Scripts
 
         private void OnDrag(PointerEventData data)
         {
+            if(!_isDraggable) return;
             if (!_isDragStart)
             {
                 _hapticController.Vibrate(HapticType.CardGrab);
@@ -199,6 +202,16 @@ namespace Scripts
                 .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
                 .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
         }
+
+        public void SetIsDraggable(bool status)
+        {
+            _isDraggable = status;
+        }
+
+        public void SetIsSelectable(bool status)
+        {
+            _isSelectable = status;
+        }
         
     }
 
@@ -209,5 +222,7 @@ namespace Scripts
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
         Sequence BackFlipAnimation(float delayDuration);
+        void SetIsDraggable(bool status);
+        void SetIsSelectable(bool status);
     }
 }

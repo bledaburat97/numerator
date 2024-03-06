@@ -47,6 +47,11 @@ namespace Scripts
         {
             return _nonDraggableCardItemViewFactory.Spawn(cardsHolder, nonDraggableCardItemPrefab);
         }
+
+        public RectTransform GetRectTransform()
+        {
+            return rectTransform;
+        }
     }
 
     public interface IResultBlockView
@@ -56,5 +61,6 @@ namespace Scripts
         void SetResultHolderLocalPosition();
         void SetCardsHolderLocalPosition();
         INonDraggableCardItemView CreateCardItem();
+        RectTransform GetRectTransform();
     }
 }

@@ -20,7 +20,7 @@ namespace Scripts
         {
             _view = view;
         }
-        public void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator)
+        public void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IInitialCardAreaController inInitialCardAreaController)
         {
             _cardItemInfoManager = cardItemInfoManager;
             BaseButtonViewFactory cardHolderIndicatorButtonViewFactory = new BaseButtonViewFactory();
@@ -32,9 +32,10 @@ namespace Scripts
             CreateCardHolderIndicatorButtons();
             CreateProbabilityButtons();
             _view.SetStatus(false);
+            inInitialCardAreaController.CardSelectedEvent += (sender, tuple) => SetCardItemInfoPopupStatus(tuple.Item1, tuple.Item2);
         }
 
-        public void SetCardItemInfoPopupStatus(bool status, int cardIndex)
+        private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
         {
             if (status)
             {
@@ -113,8 +114,7 @@ namespace Scripts
     
     public interface ICardItemInfoPopupController
     {
-        void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator);
-        void SetCardItemInfoPopupStatus(bool status, int cardIndex);
+        void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IInitialCardAreaController inInitialCardAreaController);
     }
 }
 

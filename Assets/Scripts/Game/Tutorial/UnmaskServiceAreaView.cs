@@ -6,7 +6,8 @@ namespace Scripts
     {
         private IFadePanelController _fadePanelController;
         [SerializeField] private UnmaskServiceView unmaskServicePrefab;
-        private float _fade = 0.6f;
+        private float _fade = 0.9f;
+        private IUnmaskServiceView _unmaskServiceView;
         
         public void Initialize(IFadePanelController fadePanelController)
         {
@@ -21,9 +22,24 @@ namespace Scripts
         
         private void CreateMaskSystem(float duration)
         {
-            UnmaskServiceView unmaskServiceView = Instantiate(unmaskServicePrefab, transform);
-            _fadePanelController.InitMaskSystem(unmaskServiceView, _fade);
-            unmaskServiceView.SetAlpha(_fade, duration);
+            _unmaskServiceView = Instantiate(unmaskServicePrefab, transform);
+            _fadePanelController.InitMaskSystem(_unmaskServiceView, _fade);
+            _unmaskServiceView.SetAlpha(_fade, duration);
+        }
+
+        public void CreateUnmaskCardItem(Vector2 position, Vector2 size)
+        {
+            _unmaskServiceView.CreateUnmaskCardItem(position, size);
+        }
+
+        public void ClearUnmaskCardItems()
+        {
+            _unmaskServiceView.ClearUnmaskCardItems();
+        }
+
+        public void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos)
+        {
+            _unmaskServiceView.ChangeLocalPositionOfUnmaskCardItem(changeInLocalPos);
         }
     }
 
@@ -31,6 +47,9 @@ namespace Scripts
     {
         void Initialize(IFadePanelController fadePanelController);
         void InstantiateTutorialFade();
+        void CreateUnmaskCardItem(Vector2 position, Vector2 size);
+        void ClearUnmaskCardItems();
+        void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);
     }
 
 }

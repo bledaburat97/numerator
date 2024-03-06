@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -69,6 +70,16 @@ namespace Scripts
         {
             OpenSettings?.Invoke(this,  null);
         }
+
+        public RectTransform GetCheckButtonRectTransform()
+        {
+            return _view.GetCheckButton().GetRectTransform();
+        }
+        
+        public RectTransform GetResetButtonRectTransform()
+        {
+            return _view.GetResetButton().GetRectTransform();
+        }
         
     }
 
@@ -79,5 +90,7 @@ namespace Scripts
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;
         event EventHandler OpenSettings;
+        RectTransform GetCheckButtonRectTransform();
+        RectTransform GetResetButtonRectTransform();
     }
 }

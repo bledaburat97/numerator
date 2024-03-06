@@ -76,6 +76,11 @@ namespace Scripts
             innerBg.rectTransform.offsetMin = innerBgOffsetMin;
             innerBg.rectTransform.offsetMax = innerBgOffsetMax;
         }
+
+        public RectTransform GetRectTransform()
+        {
+            return outerBg.rectTransform;
+        }
     }
     
     public interface IBaseButtonView
@@ -88,6 +93,7 @@ namespace Scripts
         void SetButtonStatus(bool status);
         void SetButtonEnable(bool status);
         void SetColorOfImage(Color color);
+        RectTransform GetRectTransform();
     }
     
 }

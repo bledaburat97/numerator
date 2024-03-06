@@ -16,7 +16,8 @@ namespace Scripts
         private ResultBlockControllerFactory _resultBlockControllerFactory;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
-
+        [SerializeField] private VerticalLayoutGroup verticalLayoutGroup;
+        
         public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
         {
             _resultBlockControllerFactory = new ResultBlockControllerFactory();
@@ -93,12 +94,29 @@ namespace Scripts
             });
             SetScrollPositionToBottom();
         }
-        
+
+        public ResultAreaInfo GetResultAreaInfo()
+        {
+            return new ResultAreaInfo()
+            {
+                topPoint = rectTransform.position,
+                resultBlockSize = new Vector2(rectTransform.rect.width, resultBlockPrefab.GetRectTransform().rect.height),
+                spacing = verticalLayoutGroup.spacing,
+            };
+        }
     }
 
     public interface IResultAreaView
     {
         void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
         void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
+        ResultAreaInfo GetResultAreaInfo();
+    }
+
+    public struct ResultAreaInfo
+    {
+        public Vector2 topPoint;
+        public Vector2 resultBlockSize;
+        public float spacing;
     }
 }

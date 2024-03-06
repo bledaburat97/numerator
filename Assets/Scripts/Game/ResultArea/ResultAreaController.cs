@@ -1,4 +1,6 @@
-﻿namespace Scripts
+﻿using UnityEngine;
+
+namespace Scripts
 {
     public class ResultAreaController : IResultAreaController
     {
@@ -15,10 +17,16 @@
             resultManager.ResultBlockAddition += _view.AddResultBlock;
         }
 
+        public ResultAreaInfo GetResultAreaInfo()
+        {
+            return _view.GetResultAreaInfo();
+        }
+
     }
 
     public interface IResultAreaController
     {
         void Initialize(IResultManager resultManager, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
+        ResultAreaInfo GetResultAreaInfo();
     }
 }

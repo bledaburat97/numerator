@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -11,6 +12,12 @@ namespace Scripts
         private int _probableCardHolderIndex;
         private IBoardAreaManager _boardAreaManager;
         private Canvas _canvas;
+        private List<int> _disallowedCardHolderIndexes = new List<int>();
+
+        public event EventHandler OnCardDragStarted;
+        public event EventHandler OnCardPlacedBoard;
+        public event EventHandler OnCardReturnedToInitial;
+        
         public CardItemLocator(Canvas canvas)
         {
             _canvas = canvas;
@@ -49,6 +56,7 @@ namespace Scripts
 
         public void OnDragStart(int cardIndex)
         {
+            OnCardDragStarted?.Invoke(this, EventArgs.Empty);
             TryResetCardIndexOnBoard(cardIndex);
         }
 
@@ -90,12 +98,14 @@ namespace Scripts
         {
             if (_activeCardIndex == cardIndex)
             {
+                OnCardPlacedBoard?.Invoke(this, EventArgs.Empty);
                 IBoardCardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
                 _boardAreaManager.SetNumberOfCard(_probableCardHolderIndex, cardIndex + 1);
                 _boardHolderToCardIndexMapping[cardHolderController] = cardIndex;
                 cardHolderController.SetHighlightStatus(false);
                 return cardHolderController.GetView().GetRectTransform();
             }
+            OnCardReturnedToInitial?.Invoke(this, EventArgs.Empty);
             return null;
         }
 
@@ -130,6 +140,7 @@ namespace Scripts
         {
             for (int i = 0; i < _boardHolderToCardIndexMapping.Count; i++)
             {
+                if(_disallowedCardHolderIndexes.Contains(i)) continue;
                 IBoardCardHolderController holderController = _boardHolderToCardIndexMapping.Keys.ElementAt(i);
                 if (_boardHolderToCardIndexMapping[holderController] != -1)
                 {
@@ -157,6 +168,16 @@ namespace Scripts
             List<IBoardCardHolderController> keys = new List<IBoardCardHolderController>(_boardHolderToCardIndexMapping.Keys);
             return keys[index].GetPositionOfCardHolder();
         }
+
+        public void SetDisallowedCardHolderIndexes(int allowedCardHolderIndex = -1)
+        {
+            _disallowedCardHolderIndexes = new List<int>();
+            for (int i = 0; i < _boardHolderToCardIndexMapping.Count; i++)
+            {
+                if(i != allowedCardHolderIndex) _disallowedCardHolderIndexes.Add(i);
+            }
+        }
+        
     }
 
     public interface ICardItemLocator
@@ -169,6 +190,10 @@ namespace Scripts
         void ResetBoard();
         RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex);
         Vector3 GetBoardCardHolderPositionAtIndex(int index);
+        void SetDisallowedCardHolderIndexes(int allowedCardHolderIndex = -1);
+        event EventHandler OnCardDragStarted;
+        event EventHandler OnCardPlacedBoard;
+        event EventHandler OnCardReturnedToInitial;
     }
 
     public class LockedCardInfo
