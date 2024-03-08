@@ -178,6 +178,10 @@ namespace Scripts
             }
         }
         
+        public int GetEmptyBoardHolderIndex()
+        {
+            return _boardAreaManager.GetEmptyBoardHolderIndex();
+        }
     }
 
     public interface ICardItemLocator
@@ -191,6 +195,7 @@ namespace Scripts
         RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex);
         Vector3 GetBoardCardHolderPositionAtIndex(int index);
         void SetDisallowedCardHolderIndexes(int allowedCardHolderIndex = -1);
+        int GetEmptyBoardHolderIndex();
         event EventHandler OnCardDragStarted;
         event EventHandler OnCardPlacedBoard;
         event EventHandler OnCardReturnedToInitial;

@@ -109,13 +109,20 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
-                if (!_isAlreadySelected && _isSelectable)
+                if (!_isSelected)
                 {
-                    _hapticController.Vibrate(HapticType.ButtonClick);
-                    SetFrameStatus(true);
-                    _onCardClicked.Invoke(_cardItemData.cardItemIndex);
-                    _isSelected = true;
+                    if(_isSelectable)
+                    {
+                        _hapticController.Vibrate(HapticType.ButtonClick);
+                        _isSelected = true;
+                        _onCardClicked.Invoke(_cardItemData.cardItemIndex);
+                    }
                 }
+                else
+                {
+                    _onCardClicked.Invoke(-1);
+                }
+
             }
             else
             {
@@ -149,25 +156,18 @@ namespace Scripts
 
         private void OnPointerDown(PointerEventData data)
         {
-            if (_isSelectable)
-            {
-                _isAlreadySelected = _isSelected;
-                _onCardClicked(-1);
-            }
-            
             _isDragStart = false;
         }
 
         public void DeselectCard()
         {
             _isSelected = false;
-            SetFrameStatus(false);
             _hapticController.Vibrate(HapticType.CardRelease);
         }
 
-        private void SetFrameStatus(bool status)
+        public void SetCardAnimation(bool status)
         {
-            _view.SetSelectionStatus(status);
+            _view.SetCardAnimation(status);
         }
 
         private void SetColor(ProbabilityType probabilityType)
@@ -218,5 +218,6 @@ namespace Scripts
         void SetIsDraggable(bool status);
         void SetIsSelectable(bool status);
         void DeselectCard();
+        void SetCardAnimation(bool status);
     }
 }

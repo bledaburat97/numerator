@@ -43,30 +43,66 @@ namespace Scripts
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaView(numOfTotalWildCards);
             gameUIController.ResetNumbers += ResetPositionsOfCardItems;
-            boardAreaController.boardCardHolderClicked += MoveSelectedCard;
+            boardAreaController.BoardCardHolderClicked += MoveSelectedCard;
             resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
+            gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
+        }
+
+        private void OnCardInfoToggleChanged(object sender, bool isCardInfoToggleOn)
+        {
+            _isCardItemInfoPopupToggleOn = isCardInfoToggleOn;
+            SetSelectedIndex(-1);
         }
 
         private void OnInvisibleClicked(object sender, EventArgs args)
         {
             SetSelectedIndex(-1);
         }
+
+        private void OnCardClicked(int cardIndex)
+        {
+            if (_isCardItemInfoPopupToggleOn)
+            {
+                SetSelectedIndex(cardIndex);
+            }
+            else
+            {
+                int boardCardHolderIndex = _cardItemLocator.GetEmptyBoardHolderIndex();
+                _normalCardItemControllerList[cardIndex].DeselectCard();
+
+                if (cardIndex != -1 && boardCardHolderIndex != -1)
+                {
+                    MoveCard(cardIndex, boardCardHolderIndex);
+                }
+            }
+        }
+
+        private void MoveCard(int cardIndex, int boardCardHolderIndex)
+        {
+            _normalCardItemControllerList[cardIndex].MoveCardByClick(boardCardHolderIndex);
+        }
         
         private void SetSelectedIndex(int cardIndex)
         {
-            if (cardIndex == -1)
+            if (_selectedCardIndex != -1)
             {
-                if(_selectedCardIndex != -1) _normalCardItemControllerList[_selectedCardIndex].DeselectCard();
+                _normalCardItemControllerList[_selectedCardIndex].DeselectCard();
+                _normalCardItemControllerList[_selectedCardIndex].SetCardAnimation(false);
             }
+            
+            if (cardIndex != -1)
+            {
+                _normalCardItemControllerList[cardIndex].SetCardAnimation(true);
+            }
+
             _selectedCardIndex = cardIndex;
             CardSelectedEvent?.Invoke(this, (cardIndex > -1, cardIndex));
-
         }
 
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)
         {
-            if (_selectedCardIndex == -1) return;
-            _normalCardItemControllerList[_selectedCardIndex].MoveCardByClick(boardCardHolderIndex);
+            if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn) return;
+            MoveCard(_selectedCardIndex, boardCardHolderIndex);
             SetSelectedIndex(-1);
         }
 
@@ -139,7 +175,7 @@ namespace Scripts
                     parent = _normalCardHolderControllerList[i].GetView().GetRectTransform(),
                     tempParent = _view.GetTempRectTransform(),
                     cardItemIndex = i,
-                    onCardClicked = SetSelectedIndex,
+                    onCardClicked = OnCardClicked,
                     cardItemType = CardItemType.Normal,
                     cardNumber = i + 1,
                 };

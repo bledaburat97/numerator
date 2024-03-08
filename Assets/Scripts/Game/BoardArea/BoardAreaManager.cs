@@ -42,11 +42,22 @@ namespace Scripts
 
             return true;
         }
+
+        public int GetEmptyBoardHolderIndex()
+        {
+            for (int i = 0; i < _numbersList.Length; i++)
+            {
+                if (_numbersList[i] == 0) return i;
+            }
+
+            return -1;
+        }
     }
     
     public interface IBoardAreaManager
     {
         void SetNumberOfCard(int index, int numberOfCard);
         int SetWildCardOnBoard(int index);
+        int GetEmptyBoardHolderIndex();
     }
 }

@@ -9,7 +9,7 @@ namespace Scripts
         private IBoardAreaManager _boardAreaManager;
         private ICardItemLocator _cardItemLocator;
         private ICardHolderModelCreator _cardHolderModelCreator;
-        public event EventHandler<int> boardCardHolderClicked;
+        public event EventHandler<int> BoardCardHolderClicked;
 
         public BoardAreaController(IBoardAreaView view)
         {
@@ -34,7 +34,7 @@ namespace Scripts
                 IBoardCardHolderController cardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardCardHolderView = _view.CreateCardHolderView();
                 boardCardHolderModel.onClickAction =
-                    () => boardCardHolderClicked?.Invoke(this, boardCardHolderModel.index);
+                    () => BoardCardHolderClicked?.Invoke(this, boardCardHolderModel.index);
                 cardHolderController.Initialize(boardCardHolderView, boardCardHolderModel, _view.GetCamera());
                 boardCardHolderControllerList.Add(cardHolderController);
             }
@@ -47,7 +47,7 @@ namespace Scripts
     public interface IBoardAreaController
     {
         void Initialize(ICardItemLocator cardItemLocator, IResultManager resultManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController);
-        event EventHandler<int> boardCardHolderClicked;
+        event EventHandler<int> BoardCardHolderClicked;
 
     }
 }

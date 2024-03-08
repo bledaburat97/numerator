@@ -10,6 +10,7 @@ namespace Scripts
         [SerializeField] private BaseButtonView checkButton;
         [SerializeField] private BaseButtonView resetButton;
         [SerializeField] private BaseButtonView settingsButton;
+        [SerializeField] private BaseButtonView cardItemInfoPopupToggleButton;
         public void SetLevelId(string text)
         {
             levelIdText.SetText(text);
@@ -40,6 +41,11 @@ namespace Scripts
         {
             return settingsButton;
         }
+
+        public IBaseButtonView GetCardItemInfoPopupToggleButton()
+        {
+            return cardItemInfoPopupToggleButton;
+        }
     }
 
     public interface IGameUIView
@@ -50,5 +56,6 @@ namespace Scripts
         IBaseButtonView GetCheckButton();
         IBaseButtonView GetResetButton();
         IBaseButtonView GetSettingsButton();
+        IBaseButtonView GetCardItemInfoPopupToggleButton();
     }
 }

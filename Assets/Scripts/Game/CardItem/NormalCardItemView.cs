@@ -21,7 +21,7 @@ namespace Scripts
             lockImage.gameObject.SetActive(status);
         }
 
-        public void SetSelectionStatus(bool isSelected)
+        public void SetCardAnimation(bool isSelected)
         {
             animator.SetBool(IsSelected, isSelected);
         }
@@ -52,7 +52,7 @@ namespace Scripts
     {
         void SetColor(Color color);
         void SetLockImageStatus(bool status);
-        void SetSelectionStatus(bool isSelected);
+        void SetCardAnimation(bool isSelected);
         RectTransform GetRectTransform();
         void SetBackImageStatus(bool status);
         void SetTextStatus(bool status);
