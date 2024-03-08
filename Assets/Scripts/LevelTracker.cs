@@ -85,13 +85,27 @@ namespace Scripts
                     else
                     {
                         _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                        targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
+                        if (_levelId == 0)
+                        {
+                            targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
+                        }
+                        else
+                        {
+                            targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
+                        }
                     }
                 }
                 else
                 {
                     _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                    targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
+                    if (_levelId == 0)
+                    {
+                        targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
+                    }
+                    else
+                    {
+                        targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
+                    }
                 }
             }
 
