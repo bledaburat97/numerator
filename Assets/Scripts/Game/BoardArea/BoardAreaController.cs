@@ -22,7 +22,6 @@ namespace Scripts
             _boardAreaManager = new BoardAreaManager(levelDataCreator, resultManager, gameUIController);
             _cardItemLocator = cardItemLocator;
             _cardHolderModelCreator = cardHolderModelCreator;
-            _cardHolderModelCreator.AddBoardCardHolderModelList(levelDataCreator.GetLevelData().NumOfBoardHolders);
             CreateBoardCardHolders();
         }
         

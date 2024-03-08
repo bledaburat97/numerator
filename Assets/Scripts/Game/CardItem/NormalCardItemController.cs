@@ -8,25 +8,22 @@ namespace Scripts
     public class NormalCardItemController : DraggableCardItemController, INormalCardItemController
     {
         private INormalCardItemView _view;
-        private ISelectionController _selectionController;
         private bool _isDragStart;
-        private bool _isAlreadySelected;
         private Action<int> _onDragStart;
         private Func<int, RectTransform> _onDragComplete;
         private Func<int, int, RectTransform> _onPlaceByClick;
-        private Action<bool, int> _onCardSelected;
+        private Action<int> _onCardClicked;
         private bool _isSelectable;
         private bool _isDraggable;
         private Camera _cam;
         private IHapticController _hapticController;
-        
-        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController)
+        private bool _isSelected;
+        private bool _isAlreadySelected;
+        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController)
         {
             _view = cardItemView;
             _cam = cam;
             _cardItemData = cardItemData;
-            _selectionController = selectionController;
-            _selectionController.DeselectCards += DeselectCard;
             _hapticController = hapticController;
             _isDraggable = true;
             _view.Init(cardItemData.cardNumber);
@@ -40,7 +37,7 @@ namespace Scripts
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);
             SetOnPlaceByClick(cardItemLocator.PlaceCardByClick);
-            SetOnCardSelected(_cardItemData.onCardSelected);
+            SetOnCardClicked(_cardItemData.onCardClicked);
             CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[_cardItemData.cardItemIndex];
             SetColor(cardItemInfo.probabilityType);
             SetLockStatus(cardItemInfo.isLocked);
@@ -61,9 +58,9 @@ namespace Scripts
             return _view;
         }
 
-        private void SetOnCardSelected(Action<bool, int> action)
+        private void SetOnCardClicked(Action<int> action)
         {
-            _onCardSelected += action;
+            _onCardClicked += action;
         }
         
         private void SetOnDragStart(Action<int> action)
@@ -115,9 +112,9 @@ namespace Scripts
                 if (!_isAlreadySelected && _isSelectable)
                 {
                     _hapticController.Vibrate(HapticType.ButtonClick);
-                    _selectionController.SetSelectionState(_cardItemData.cardItemIndex, true);
                     SetFrameStatus(true);
-                    _onCardSelected.Invoke(true, _cardItemData.cardItemIndex);
+                    _onCardClicked.Invoke(_cardItemData.cardItemIndex);
+                    _isSelected = true;
                 }
             }
             else
@@ -154,21 +151,18 @@ namespace Scripts
         {
             if (_isSelectable)
             {
-                _isAlreadySelected = _selectionController.GetSelectionState(_cardItemData.cardItemIndex);
-                _selectionController.DeselectAll();
+                _isAlreadySelected = _isSelected;
+                _onCardClicked(-1);
             }
             
             _isDragStart = false;
         }
 
-        private void DeselectCard(object sender, List<int> selectedCardIndexes)
+        public void DeselectCard()
         {
-            if (selectedCardIndexes.Contains(_cardItemData.cardItemIndex))
-            {
-                SetFrameStatus(false);
-                _hapticController.Vibrate(HapticType.CardRelease);
-                _onCardSelected(false, _cardItemData.cardItemIndex);  
-            }
+            _isSelected = false;
+            SetFrameStatus(false);
+            _hapticController.Vibrate(HapticType.CardRelease);
         }
 
         private void SetFrameStatus(bool status)
@@ -212,17 +206,17 @@ namespace Scripts
         {
             _isSelectable = status;
         }
-        
     }
 
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ISelectionController selectionController, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController);
+        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController);
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
         Sequence BackFlipAnimation(float delayDuration);
         void SetIsDraggable(bool status);
         void SetIsSelectable(bool status);
+        void DeselectCard();
     }
 }

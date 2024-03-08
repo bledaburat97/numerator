@@ -37,7 +37,6 @@ namespace Scripts
             _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
             _userReady.Initialize();
             InitializeHapticController();
-            InitializeCardHolderModelCreator();
             InitializeResultArea();
             InitializeResultManager();
             InitializeGameClock();
@@ -45,6 +44,7 @@ namespace Scripts
             InitializeGameUI();
             InitializeStarProgressBar();
             InitializeLevelManager();
+            InitializeCardHolderModelCreator();
             InitializeBoardArea();
             InitializeCardItemInfoManager();
             InitializeInitialCardArea();
@@ -59,11 +59,6 @@ namespace Scripts
         private void InitializeHapticController() //TODO: set in global installer
         {
             _hapticController.Initialize();
-        }
-
-        private void InitializeCardHolderModelCreator()
-        {
-            _cardHolderModelCreator.Initialize();
         }
         
         private void InitializeResultArea()
@@ -109,6 +104,14 @@ namespace Scripts
         private void InitializeLevelManager()
         {
             _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _starProgressBarController, _levelDataCreator);
+        }
+        
+        private void InitializeCardHolderModelCreator()
+        {
+            _cardHolderModelCreator.Initialize();
+            _cardHolderModelCreator.AddBoardCardHolderModelList(_levelDataCreator.GetLevelData().NumOfBoardHolders);
+            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
+            _cardHolderModelCreator.AddInitialCardHolderModelList(_levelDataCreator.GetLevelData().NumOfCards, numOfTotalWildCards > 0);
         }
         
         private void InitializeBoardArea()

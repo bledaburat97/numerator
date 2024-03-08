@@ -10,7 +10,6 @@ namespace Scripts
     {
         [Inject] private IHapticController _hapticController;
         
-        private ISelectionController _selectionController;
         private List<IInitialCardHolderController> _normalCardHolderControllerList = new List<IInitialCardHolderController>();
         private IBaseCardHolderController _wildCardHolderController = null;
         private List<INormalCardItemController> _normalCardItemControllerList = new List<INormalCardItemController>();
@@ -22,13 +21,15 @@ namespace Scripts
         private ICardItemInfoManager _cardItemInfoManager;
         private ILevelDataCreator _levelDataCreator;
 
+        private int _selectedCardIndex = -1;
+        private bool _isCardItemInfoPopupToggleOn = false;
+
         public event EventHandler<(bool, int)> CardSelectedEvent;
         
         public InitialCardAreaController(IInitialCardAreaView view)
         {
             _view = view;
         }
-        
         
         public void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
         {
@@ -37,29 +38,36 @@ namespace Scripts
             _cardItemInfoManager = cardItemInfoManager;
             _levelDataCreator = levelDataCreator;
             int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
-            int numOfNormalCards = _levelDataCreator.GetLevelData().NumOfCards;
-            _cardHolderModelCreator.AddInitialCardHolderModelList(numOfNormalCards, numOfTotalWildCards > 0);
-            _selectionController = new SelectionController(numOfNormalCards);
             IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
-            invisibleClickHandler.Initialize(_selectionController.DeselectAll);
+            invisibleClickHandler.OnInvisibleClicked += OnInvisibleClicked;
             _cardItemLocator = cardItemLocator;
-            InitInitialCardAreaView(OnCardSelected, numOfTotalWildCards);
+            InitInitialCardAreaView(numOfTotalWildCards);
             gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.boardCardHolderClicked += MoveSelectedCard;
             resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
         }
 
-        private void OnCardSelected(bool status, int cardIndex)
+        private void OnInvisibleClicked(object sender, EventArgs args)
         {
-            CardSelectedEvent?.Invoke(this, (status, cardIndex));
+            SetSelectedIndex(-1);
+        }
+        
+        private void SetSelectedIndex(int cardIndex)
+        {
+            if (cardIndex == -1)
+            {
+                if(_selectedCardIndex != -1) _normalCardItemControllerList[_selectedCardIndex].DeselectCard();
+            }
+            _selectedCardIndex = cardIndex;
+            CardSelectedEvent?.Invoke(this, (cardIndex > -1, cardIndex));
+
         }
 
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)
         {
-            int selectedCardIndex = _selectionController.GetSelectedCardIndex();
-            if (selectedCardIndex == -1) return;
-            _normalCardItemControllerList[selectedCardIndex].MoveCardByClick(boardCardHolderIndex);
-            _selectionController.DeselectAll();
+            if (_selectedCardIndex == -1) return;
+            _normalCardItemControllerList[_selectedCardIndex].MoveCardByClick(boardCardHolderIndex);
+            SetSelectedIndex(-1);
         }
 
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
@@ -71,11 +79,11 @@ namespace Scripts
             }
         }
 
-        private void InitInitialCardAreaView(Action<bool, int> onCardSelected, int numOfTotalWildCard)
+        private void InitInitialCardAreaView(int numOfTotalWildCard)
         {
             _view.Init(new CardHolderFactory(), new NormalCardItemViewFactory(), new WildCardItemViewFactory());
             CreateCardHolders();
-            CreateCardItemsData(onCardSelected, numOfTotalWildCard);
+            CreateCardItemsData(numOfTotalWildCard);
         }
         
         private void CreateCardHolders()
@@ -106,7 +114,7 @@ namespace Scripts
             return _normalCardHolderControllerList[index].GetPositionOfCardHolder();
         }
         
-        private void CreateCardItemsData(Action<bool, int> onCardSelected, int numOfTotalWildCard)
+        private void CreateCardItemsData(int numOfTotalWildCard)
         {
             int numOfBoardCardHolder = _levelDataCreator.GetLevelData().NumOfBoardHolders;
             int numOfWildCard = numOfTotalWildCard > numOfBoardCardHolder ? numOfBoardCardHolder : numOfTotalWildCard;
@@ -117,7 +125,7 @@ namespace Scripts
                     parent = _wildCardHolderController.GetView().GetRectTransform(),
                     tempParent = _view.GetTempRectTransform(),
                     cardItemIndex = j,
-                    onCardSelected = onCardSelected,
+                    onCardClicked = null,
                     cardItemType = CardItemType.Wild
                 };
                 CreateCardItem(cardItemData);
@@ -131,7 +139,7 @@ namespace Scripts
                     parent = _normalCardHolderControllerList[i].GetView().GetRectTransform(),
                     tempParent = _view.GetTempRectTransform(),
                     cardItemIndex = i,
-                    onCardSelected = onCardSelected,
+                    onCardClicked = SetSelectedIndex,
                     cardItemType = CardItemType.Normal,
                     cardNumber = i + 1,
                 };
@@ -153,7 +161,7 @@ namespace Scripts
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
                 INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _selectionController, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController);
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController);
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
@@ -244,7 +252,7 @@ namespace Scripts
         public RectTransform parent;
         public RectTransform tempParent;
         public int cardItemIndex;
-        public Action<bool, int> onCardSelected;
+        public Action<int> onCardClicked;
         public CardItemType cardItemType;
         public int cardNumber;
     }

@@ -6,21 +6,17 @@ namespace Scripts
 {
     public class InvisibleClickHandler : MonoBehaviour, IPointerClickHandler, IInvisibleClickHandler
     {
-        private Action _deselectAction;
-        public void Initialize(Action deselectAction)
-        {
-            _deselectAction = deselectAction;
-        }
+        public event EventHandler OnInvisibleClicked;
         
         public void OnPointerClick(PointerEventData eventData)
         {
             Debug.Log("InvisibleClick");
-            _deselectAction.Invoke();
+            OnInvisibleClicked?.Invoke(this, EventArgs.Empty);
         }
     }
 
     public interface IInvisibleClickHandler
     {
-        void Initialize(Action deselectAction);
+        event EventHandler OnInvisibleClicked;
     }
 }
