@@ -11,8 +11,7 @@ namespace Scripts
         private IGameUIView _view;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
-        private bool _isCardInfoToggleOn;
-
+        
         public event EventHandler CheckFinalNumbers;
         public event EventHandler NotAbleToCheck;
         public event EventHandler ResetNumbers;
@@ -50,10 +49,15 @@ namespace Scripts
                 _baseButtonControllerFactory.Create(_view.GetSettingsButton());
             settingsButtonController.Initialize(OnClickSettings);
 
-            IBaseButtonController cardInfoButtonController =
-                _baseButtonControllerFactory.Create(_view.GetCardItemInfoPopupToggleButton());
-            cardInfoButtonController.Initialize(OnCardInfoButton);
-
+            if (_levelTracker.GetLevelId() > 8)
+            {
+                ICardInfoButtonController cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton());
+                cardInfoButtonController.Initialize(OnCardInfoButton);
+            }
+            else
+            {
+                _view.GetCardInfoButton().SetActive(false);
+            }
         }
         
         private void OnClickCheckButton()
@@ -78,10 +82,9 @@ namespace Scripts
             OpenSettings?.Invoke(this,  null);
         }
 
-        private void OnCardInfoButton()
+        private void OnCardInfoButton(bool isCardInfoToggleOn)
         {
-            _isCardInfoToggleOn = !_isCardInfoToggleOn;
-            CardInfoToggleChanged?.Invoke(this, _isCardInfoToggleOn);
+            CardInfoToggleChanged?.Invoke(this, isCardInfoToggleOn);
         }
 
         public RectTransform GetCheckButtonRectTransform()
@@ -96,7 +99,7 @@ namespace Scripts
         
         public RectTransform GetCardInfoButtonRectTransform()
         {
-            return _view.GetCardItemInfoPopupToggleButton().GetRectTransform();
+            return _view.GetCardInfoButton().GetRectTransform();
         }
     }
 

@@ -10,7 +10,7 @@ namespace Scripts
         [SerializeField] private BaseButtonView checkButton;
         [SerializeField] private BaseButtonView resetButton;
         [SerializeField] private BaseButtonView settingsButton;
-        [SerializeField] private BaseButtonView cardItemInfoPopupToggleButton;
+        [SerializeField] private CardInfoButtonView cardInfoButton;
         public void SetLevelId(string text)
         {
             levelIdText.SetText(text);
@@ -42,9 +42,9 @@ namespace Scripts
             return settingsButton;
         }
 
-        public IBaseButtonView GetCardItemInfoPopupToggleButton()
+        public ICardInfoButtonView GetCardInfoButton()
         {
-            return cardItemInfoPopupToggleButton;
+            return cardInfoButton;
         }
     }
 
@@ -56,6 +56,6 @@ namespace Scripts
         IBaseButtonView GetCheckButton();
         IBaseButtonView GetResetButton();
         IBaseButtonView GetSettingsButton();
-        IBaseButtonView GetCardItemInfoPopupToggleButton();
+        ICardInfoButtonView GetCardInfoButton();
     }
 }
