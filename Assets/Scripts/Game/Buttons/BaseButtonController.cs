@@ -54,6 +54,11 @@ namespace Scripts
         {
             _view.SetColorOfImage(color);
         }
+
+        public IBaseButtonView GetView()
+        {
+            return _view;
+        }
     }
 
     public interface IBaseButtonController
@@ -66,6 +71,7 @@ namespace Scripts
         void SetButtonStatus(bool status);
         void SetButtonEnable(bool status);
         void SetColor(Color color);
+        IBaseButtonView GetView();
     }
     
     public class BaseButtonControllerFactory : PlaceholderFactory<IBaseButtonView, IBaseButtonController>

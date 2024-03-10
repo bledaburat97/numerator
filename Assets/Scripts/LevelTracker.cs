@@ -89,6 +89,10 @@ namespace Scripts
                         {
                             targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
                         }
+                        else if (_levelId == 9)
+                        {
+                            targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
+                        }
                         else
                         {
                             targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
@@ -101,6 +105,10 @@ namespace Scripts
                     if (_levelId == 0)
                     {
                         targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
+                    }
+                    else if (_levelId == 9)
+                    {
+                        targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
                     }
                     else
                     {

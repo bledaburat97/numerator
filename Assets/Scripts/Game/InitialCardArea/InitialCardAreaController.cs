@@ -24,8 +24,9 @@ namespace Scripts
         private int _selectedCardIndex = -1;
         private bool _isCardItemInfoPopupToggleOn = false;
 
-        public event EventHandler<(bool, int)> CardSelectedEvent;
-        
+        public event EventHandler CardClicked;
+        public event EventHandler<(bool, int)> OpenCardItemInfoPopup;
+
         public InitialCardAreaController(IInitialCardAreaView view)
         {
             _view = view;
@@ -39,13 +40,17 @@ namespace Scripts
             _levelDataCreator = levelDataCreator;
             int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
             IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
-            invisibleClickHandler.OnInvisibleClicked += OnInvisibleClicked;
+            invisibleClickHandler.OnInvisibleClicked += RemoveSelection;
             _cardItemLocator = cardItemLocator;
             InitInitialCardAreaView(numOfTotalWildCards);
             gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.BoardCardHolderClicked += MoveSelectedCard;
             resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
             gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
+            _cardItemLocator.OnCardDragStarted += RemoveSelection;
+            gameUIController.CheckFinalNumbers += RemoveSelection;
+            gameUIController.NotAbleToCheck += RemoveSelection;
+            gameUIController.ResetNumbers += RemoveSelection;
         }
 
         private void OnCardInfoToggleChanged(object sender, bool isCardInfoToggleOn)
@@ -54,13 +59,14 @@ namespace Scripts
             SetSelectedIndex(-1);
         }
 
-        private void OnInvisibleClicked(object sender, EventArgs args)
+        private void RemoveSelection(object sender, EventArgs args)
         {
             SetSelectedIndex(-1);
         }
 
         private void OnCardClicked(int cardIndex)
         {
+            CardClicked?.Invoke(this, EventArgs.Empty);
             if (_isCardItemInfoPopupToggleOn)
             {
                 SetSelectedIndex(cardIndex);
@@ -75,6 +81,13 @@ namespace Scripts
                     MoveCard(cardIndex, boardCardHolderIndex);
                 }
             }
+        }
+        
+        private void MoveSelectedCard(object sender, int boardCardHolderIndex)
+        {
+            if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn) return;
+            MoveCard(_selectedCardIndex, boardCardHolderIndex);
+            SetSelectedIndex(-1);
         }
 
         private void MoveCard(int cardIndex, int boardCardHolderIndex)
@@ -96,14 +109,7 @@ namespace Scripts
             }
 
             _selectedCardIndex = cardIndex;
-            CardSelectedEvent?.Invoke(this, (cardIndex > -1, cardIndex));
-        }
-
-        private void MoveSelectedCard(object sender, int boardCardHolderIndex)
-        {
-            if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn) return;
-            MoveCard(_selectedCardIndex, boardCardHolderIndex);
-            SetSelectedIndex(-1);
+            OpenCardItemInfoPopup?.Invoke(this, (cardIndex > -1, cardIndex));
         }
 
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
@@ -280,7 +286,8 @@ namespace Scripts
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
         void SetCardsAsUnselectable(int selectableCardIndex = -1);
         void SetCardsAsUndraggable(int draggableCardIndex = -1);
-        event EventHandler<(bool, int)> CardSelectedEvent;
+        event EventHandler CardClicked;
+        event EventHandler<(bool, int)> OpenCardItemInfoPopup;
     }
     
     public class CardItemData

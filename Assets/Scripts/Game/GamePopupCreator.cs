@@ -53,7 +53,7 @@ namespace Scripts
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
 
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -91,6 +91,16 @@ namespace Scripts
 
                 IFirstLevelTutorialController firstLevelTutorialController = new FirstLevelTutorialController();
                 firstLevelTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController);
+            }
+            
+            if (_levelTracker.GetLevelId() == 9)
+            {
+                IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
+                ITutorialMessagePopupView tutorialMessagePopupView =
+                    new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
+
+                ICardInfoTutorialController cardInfoTutorialController = new CardInfoTutorialController();
+                cardInfoTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController, cardItemInfoPopupController, cardItemInfoManager);
             }
         }
         
@@ -295,6 +305,6 @@ namespace Scripts
 
     public interface IGamePopupCreator
     {
-        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController);
+        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager);
     }
 }

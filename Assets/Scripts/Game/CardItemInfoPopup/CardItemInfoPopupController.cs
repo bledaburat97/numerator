@@ -32,7 +32,7 @@ namespace Scripts
             CreateCardHolderIndicatorButtons();
             CreateProbabilityButtons();
             _view.SetStatus(false);
-            initialCardAreaController.CardSelectedEvent += (sender, tuple) => SetCardItemInfoPopupStatus(tuple.Item1, tuple.Item2);
+            initialCardAreaController.OpenCardItemInfoPopup += (sender, tuple) => SetCardItemInfoPopupStatus(tuple.Item1, tuple.Item2);
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)
@@ -110,11 +110,23 @@ namespace Scripts
             _cardItemInfoManager.OnProbabilityButtonClicked(_activeCardIndex, (ProbabilityType)probabilityIndex);
             SetCardItemInfoPopupStatus(true, _activeCardIndex);
         }
+        
+        public IBaseButtonController GetProbabilityButton(ProbabilityType probabilityType)
+        {
+            return _probabilityButtonControllers[(int)probabilityType];
+        }
+
+        public IBaseButtonController GetHolderIndicatorButton(int index)
+        {
+            return _cardHolderIndicatorButtonControllers[index];
+        }
     }
     
     public interface ICardItemInfoPopupController
     {
         void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IInitialCardAreaController initialCardAreaController);
+        IBaseButtonController GetProbabilityButton(ProbabilityType probabilityType);
+        IBaseButtonController GetHolderIndicatorButton(int index);
     }
 }
 

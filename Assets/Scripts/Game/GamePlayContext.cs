@@ -146,7 +146,7 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView, _cardHolderModelCreator, _resultAreaController);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView, _cardHolderModelCreator, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager);
         }
 
         

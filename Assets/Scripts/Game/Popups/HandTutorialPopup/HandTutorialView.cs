@@ -25,6 +25,8 @@ namespace Scripts
             _activeAnimation =  DOTween.Sequence()
                 .SetLoops(-1, LoopType.Restart)
                 .Append(handRectTransform.DOMove(newStartingPos, 0f))
+                .Append(handImage.DOFade(0f, 0f).SetEase(Ease.Linear))
+                .AppendInterval(0.5f)
                 .Append(handImage.DOFade(1f, 0.3f).SetEase(Ease.Linear))
                 .Append(handRectTransform.DOScale(1.5f, 0f))
                 .Append(handRectTransform.DOScale(1.1f, 0.4f).SetEase(Ease.Linear))
@@ -42,6 +44,8 @@ namespace Scripts
             _activeAnimation =  DOTween.Sequence()
                 .SetLoops(-1, LoopType.Restart)
                 .Append(handRectTransform.DOMove(newPos, 0f))
+                .Append(handImage.DOFade(0f, 0f).SetEase(Ease.Linear))
+                .AppendInterval(0.5f)
                 .Append(handImage.DOFade(1f, 0.3f).SetEase(Ease.Linear))
                 .Append(handRectTransform.DOScale(1.5f, 0f))
                 .Append(handRectTransform.DOScale(1.1f, 0.4f).SetEase(Ease.Linear))
@@ -59,6 +63,11 @@ namespace Scripts
                 _activeAnimation = null;
             }
         }
+        
+        public void Destroy()
+        {
+            Destroy(gameObject);
+        }
     }
 
     public interface IHandTutorialView
@@ -67,5 +76,6 @@ namespace Scripts
         void StartDragAnimation(Vector2 startingPos, Vector2 endPos);
         void StartClickAnimation(Vector2 pos);
         void StopActiveAnimation();
+        void Destroy();
     }
 }

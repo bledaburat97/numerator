@@ -6,7 +6,7 @@ namespace Scripts
     {
         private IFadePanelController _fadePanelController;
         [SerializeField] private UnmaskServiceView unmaskServicePrefab;
-        private float _fade = 0.9f;
+        private float _fade = 0.5f;
         private IUnmaskServiceView _unmaskServiceView;
         
         public void Initialize(IFadePanelController fadePanelController)

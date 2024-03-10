@@ -55,12 +55,6 @@ namespace Scripts
                 selectableCardIndex = 1,
                 text = "Click the card."
             }));
-            AddTutorialAction(() => StartClickAnimation(new TutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                text = "Click the board."
-            }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
@@ -75,7 +69,7 @@ namespace Scripts
                 changeInLocalPos = new Vector2(0,- resultAreaInfo.resultBlockSize.y / 2),
                 text = "Any number is not at correct position. One number is at wrong position."
             }));
-            AddTutorialAction(() => WaitForDuration(5));
+            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
             AddTutorialAction(() => StartResetButtonClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
@@ -111,7 +105,7 @@ namespace Scripts
                 changeInLocalPos = new Vector2(0, - (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
                 text = "Only one number is at correct position."
             }));
-            AddTutorialAction(() => WaitForDuration(5));
+            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0), _initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
@@ -154,6 +148,11 @@ namespace Scripts
             if (_tutorialAnimationActions.Count > 0)
             {
                 _tutorialAnimationActions.Dequeue()?.Invoke();
+            }
+            else
+            {
+                _tutorialMessagePopupView.Destroy();
+                _handTutorialView.Destroy();
             }
         }
 
@@ -201,8 +200,7 @@ namespace Scripts
                     _cardItemLocator.OnCardReturnedToInitial -= CloseDragAnimation;
                     _cardItemLocator.OnCardPlacedBoard -= RestartDragAnimation;
                 }
-
-                ExecuteNextTutorialAction();
+                ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
 
@@ -212,14 +210,14 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
             _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
             _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            _initialCardAreaController.CardSelectedEvent += CloseClickAnimation;
+            _initialCardAreaController.CardClicked += CloseClickAnimation;
             
-            void CloseClickAnimation(object sender, (bool,int) args)
+            void CloseClickAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearUnmaskCardItems();
-                _initialCardAreaController.CardSelectedEvent -= CloseClickAnimation;
+                _initialCardAreaController.CardClicked -= CloseClickAnimation;
                 _handTutorialView.StopActiveAnimation();
-                ExecuteNextTutorialAction();
+                ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
 
@@ -229,7 +227,7 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
             _unmaskServiceAreaView.ChangeLocalPositionOfUnmaskCardItem(tutorialAnimation.changeInLocalPos);
             _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            ExecuteNextTutorialAction();
+            ExecuteNextTutorialActionWithDelay(0.3f);
         }
         
         private void StartCheckButtonClickAnimation(TutorialAnimation tutorialAnimation)
@@ -245,7 +243,7 @@ namespace Scripts
                 _unmaskServiceAreaView.ClearUnmaskCardItems();
                 _gameUIController.CheckFinalNumbers -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
-                ExecuteNextTutorialAction();
+                ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
         
@@ -262,7 +260,7 @@ namespace Scripts
                 _unmaskServiceAreaView.ClearUnmaskCardItems();
                 _gameUIController.ResetNumbers -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
-                ExecuteNextTutorialAction();
+                ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
 
@@ -273,12 +271,9 @@ namespace Scripts
             _initialCardAreaController.SetCardsAsUnselectable(tutorialAnimation.selectableCardIndex);
         }
 
-        private void WaitForDuration(float duration)
+        private void ExecuteNextTutorialActionWithDelay(float duration)
         {
-            DOTween.Sequence().AppendInterval(duration).OnComplete(() =>
-            {
-                _tutorialAnimationActions.Dequeue()?.Invoke();
-            });
+            DOTween.Sequence().AppendInterval(duration).OnComplete(ExecuteNextTutorialAction);
         }
 
     }

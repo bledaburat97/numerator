@@ -7,11 +7,13 @@ namespace Scripts
     {
         private NetworkVariable<int> _numOfBoardHolders = new NetworkVariable<int>();
         private LevelData _levelData;
-        private List<LevelData> _levelDataList;
+        private List<LevelData> _startingLevelsDataList;
+        private List<LevelData> _loopLevelsDataList;
         
         public void Initialize()
         {
-            _levelDataList = LevelDataGetter.GetLevelDataFromJson();
+            _startingLevelsDataList = LevelDataGetter.GetStartingLevelsData();
+            _loopLevelsDataList = LevelDataGetter.GetLoopLevelsData();
         }
 
         public override void OnNetworkSpawn()
@@ -37,7 +39,14 @@ namespace Scripts
 
         public void SetSinglePlayerLevelData(int levelId)
         {
-            _levelData = _levelDataList.Find(level => level.LevelId == levelId % 15);
+            if (levelId < 30)
+            {
+                _levelData = _startingLevelsDataList.Find(level => level.LevelId == levelId);
+            }
+            else
+            {
+                _levelData = _loopLevelsDataList.Find(level => level.LevelId == levelId % 15);
+            }
         }
 
         public void SetMultiplayerLevelData(int numOfBoardHolders)

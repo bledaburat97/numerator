@@ -1,0 +1,94 @@
+﻿{
+  "levels": [
+    {
+      "LevelId": 0,
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 5,
+      "MaxNumOfTries": 6
+    },
+    {
+      "LevelId": 1,
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 8
+    },
+    {
+      "LevelId": 2,
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 8,
+      "MaxNumOfTries": 9
+    },
+    {
+      "LevelId": 3,
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 10
+    },
+    {
+      "LevelId": 4,
+      "NumOfBoardHolders": 2,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 8
+    },
+    {
+      "LevelId": 5,
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 6,
+      "MaxNumOfTries": 7
+    },
+    {
+      "LevelId": 6,
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 8
+    },
+    {
+      "LevelId": 7,
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 8,
+      "MaxNumOfTries": 11
+    },
+    {
+      "LevelId": 8,
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 6,
+      "MaxNumOfTries": 7
+    },
+    {
+      "LevelId": 9,
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 10
+    },
+    {
+      "LevelId": 10,
+      "NumOfBoardHolders": 2,
+      "NumOfCards": 6,
+      "MaxNumOfTries": 7
+    },
+    {
+      "LevelId": 11,
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 5,
+      "MaxNumOfTries": 6
+    },
+    {
+      "LevelId": 12,
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 8
+    },
+    {
+      "LevelId": 13,
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 8,
+      "MaxNumOfTries": 9
+    },
+    {
+      "LevelId": 14,
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 12
+    }
+  ]
+}

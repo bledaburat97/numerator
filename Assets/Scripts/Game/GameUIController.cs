@@ -94,6 +94,10 @@ namespace Scripts
             return _view.GetResetButton().GetRectTransform();
         }
         
+        public RectTransform GetCardInfoButtonRectTransform()
+        {
+            return _view.GetCardItemInfoPopupToggleButton().GetRectTransform();
+        }
     }
 
     public interface IGameUIController
@@ -105,6 +109,8 @@ namespace Scripts
         event EventHandler OpenSettings;
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
+        RectTransform GetCardInfoButtonRectTransform();
+
         event EventHandler<bool> CardInfoToggleChanged;
     }
 }
