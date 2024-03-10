@@ -48,6 +48,12 @@ namespace Scripts
         {
             return curvedAnimationPreset;
         }
+
+        public void SetColor(bool originalColor)
+        {
+            if (originalColor) star.color = ConstantValues.YELLOW_STAR_COLOR;
+            else star.color = ConstantValues.BLUE_STAR_COLOR;
+        }
     }
 
     public interface IStarImageView
@@ -60,5 +66,6 @@ namespace Scripts
         void SetParent(RectTransform parent);
         void Destroy();
         CurvedAnimationPreset GetCurvedAnimationPreset();
+        void SetColor(bool originalColor);
     }
 }

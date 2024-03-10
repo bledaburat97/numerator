@@ -24,6 +24,8 @@ namespace Scripts
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
         public static Color ABLE_TO_MOVE_TEXT_COLOR = HexToColor("#52C567");
         public static Color NOT_ABLE_TO_MOVE_TEXT_COLOR = HexToColor("#FF5240");
+        public static Color YELLOW_STAR_COLOR = HexToColor("#FFC62A");
+        public static Color BLUE_STAR_COLOR = HexToColor("#2A82FF");
         public static int NUM_OF_STARS_FOR_WILD = 6;
         public static int NUM_OF_PROBABILITY_BUTTONS = 3;
         public static int NUM_OF_DIFFICULTY_BUTTONS = 3;

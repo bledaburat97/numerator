@@ -93,7 +93,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _starProgressBarController.Initialize(_levelDataCreator);
+                _starProgressBarController.Initialize(_levelDataCreator, _levelTracker);
             }
             else
             {
@@ -146,7 +146,7 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView, _cardHolderModelCreator, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager);
+            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView, _cardHolderModelCreator, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _levelDataCreator);
         }
 
         

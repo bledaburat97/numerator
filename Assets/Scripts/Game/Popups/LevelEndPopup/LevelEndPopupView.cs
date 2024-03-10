@@ -42,6 +42,7 @@ namespace Scripts
             starImageView.SetLocalPosition(localPosition);
             starImageView.SetLocalScale(Vector3.zero);
             starImageView.SetSize(size);
+            starImageView.SetColor(true);
             _starImageList.Add(starImageView);
         }
 
@@ -63,8 +64,10 @@ namespace Scripts
             return _starImageList;
         }
         
-        public void ActivateParticle(int index)
+        public void ActivateParticle(int index, bool isOriginal)
         {
+            var mainModule = starParticles[index].main;
+            mainModule.startColor = isOriginal ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR;
             starParticles[index].gameObject.SetActive(true);
             starParticles[index].Play();
         }
@@ -98,7 +101,7 @@ namespace Scripts
         ICircleProgressBarView CreateCircleProgressBar();
         List<IStarImageView> GetStarImageViewList();
         void CreateParticles(List<Vector2> localPositions);
-        void ActivateParticle(int index);
+        void ActivateParticle(int index, bool isOriginal);
         void ActivateWildParticle();
         void SetStarGroupStatus(bool status);
         CanvasGroup GetStarGroup();

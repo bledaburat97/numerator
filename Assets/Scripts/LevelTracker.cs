@@ -9,6 +9,7 @@ namespace Scripts
     {
         private int _starCount;
         private int _wildCardCount;
+        private int _blueStarCount;
         private IGameSaveService _gameSaveService;
         private List<int> _starCountOfCompletedLevels;
         private int _levelId;
@@ -22,6 +23,7 @@ namespace Scripts
             _gameSaveService = gameSaveService;
             _levelId = PlayerPrefs.GetInt("level_id", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
+            _blueStarCount = PlayerPrefs.GetInt("blue_star_count", 0);
             _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
             _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();
             _multiplayerLevelDifficulty = (Difficulty)PlayerPrefs.GetInt("multiplayer_level_difficulty", 2);
@@ -217,17 +219,24 @@ namespace Scripts
             PlayerPrefs.SetString("star_count_of_levels", data);
         }
 
-        public void AddStar(int addedStarCount)
+        public void AddStar(int addedStarCount, int addedBlueStarCount)
         {
-            if (_starCount % 6 + addedStarCount >= 6) _wildCardCount += 1;
+            if (_blueStarCount % 6 + addedBlueStarCount >= 6) _wildCardCount += 1;
             PlayerPrefs.SetInt("wild_card_count", _wildCardCount);
             _starCount += addedStarCount;
             PlayerPrefs.SetInt("star_count", _starCount);
+            _blueStarCount += addedBlueStarCount;
+            PlayerPrefs.SetInt("blue_star_count", _blueStarCount);
         }
 
         public int GetStarCount()
         {
             return _starCount;
+        }
+
+        public int GetBlueStarCount()
+        {
+            return _blueStarCount;
         }
 
         public int GetWildCardCount()
@@ -248,8 +257,9 @@ namespace Scripts
         LevelSaveData GetLevelSaveData();
         int GetLevelId();
         void IncrementLevelId(int starCount);
-        void AddStar(int addedStarCount);
+        void AddStar(int addedStarCount, int addedBlueStarCount);
         int GetStarCount();
+        int GetBlueStarCount();
         int GetWildCardCount();
         void DecreaseWildCardCount();
         void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);

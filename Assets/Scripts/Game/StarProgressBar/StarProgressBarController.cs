@@ -14,7 +14,7 @@ namespace Scripts
         private ILevelManager _levelManager;
         private int _activeStarCount;
         private List<int> _indexesContainsStar = new List<int>();
-
+        private int _blueStarCount;
         public StarProgressBarController(IStarProgressBarView view)
         {
             _view = view;
@@ -25,10 +25,15 @@ namespace Scripts
             _view.DisableStarProgressBar();
         }
         
-        public void Initialize(ILevelDataCreator levelDataCreator)
+        public void Initialize(ILevelDataCreator levelDataCreator, ILevelTracker levelTracker)
         {
             _view.Init(new BoundaryViewFactory());
             _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
+            int maxBlueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
+            int oldStarCount = levelTracker.GetLevelId() < levelTracker.GetStarCountOfLevels().Count
+                ? levelTracker.GetStarCountOfLevels()[levelTracker.GetLevelId()]
+                : 0;
+            _blueStarCount = maxBlueStarCount < 3 - oldStarCount ? maxBlueStarCount : 3 - oldStarCount;
             _boundaryControllerList = new List<IBoundaryController>();
             CreateBoundaries();
             CreateStars();
@@ -72,7 +77,7 @@ namespace Scripts
             SetIndexesContainsStar();
             for (int i = 0; i < _indexesContainsStar.Count; i++)
             {
-                _boundaryControllerList[_indexesContainsStar[i]].AddStarImage(_localPositionOfStar);
+                _boundaryControllerList[_indexesContainsStar[i]].AddStarImage(_localPositionOfStar, _blueStarCount < _indexesContainsStar.Count - i);
             }
         }
 
@@ -95,7 +100,7 @@ namespace Scripts
 
     public interface IStarProgressBarController
     {
-        void Initialize(ILevelDataCreator levelDataCreator);
+        void Initialize(ILevelDataCreator levelDataCreator, ILevelTracker levelTracker);
 
         void DecreaseProgressBar(List<int> indexesOfDeletedStars, float targetPercentage, Action levelFailedAction,
             float animationDuration);

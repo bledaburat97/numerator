@@ -20,7 +20,7 @@ namespace Scripts
             _glowingView.Init(new StarImageViewFactory());
             _starFrameViewList = new List<IStarImageView>();
             _glowingStarImageViewList = new List<IStarImageView>();
-            _currentStarCount = levelTracker.GetStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            _currentStarCount = levelTracker.GetBlueStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
             _hapticController = hapticController;
             CreateStarFrames();
             _view.SetLocalPosition(new Vector2(0,510f));
@@ -67,6 +67,7 @@ namespace Scripts
                 glowingStarImageView.SetLocalPosition(_starFrameViewList[i].GetRectTransform().localPosition);
                 glowingStarImageView.SetLocalScale(Vector3.one);
                 glowingStarImageView.SetSize(new Vector2(25f, 25f));
+                glowingStarImageView.SetColor(false);
                 _glowingStarImageViewList.Add(glowingStarImageView);
             }
 
@@ -80,12 +81,12 @@ namespace Scripts
             }
         }
 
-        public Sequence AddNewStars(List<IStarImageView> newStars)
+        public Sequence AddNewStars(List<IStarImageView> newStars, int blueStarCount, int oldStarCount)
         {
             return DOTween.Sequence()
-                .Append(GetNewStarAnimation(newStars.Count >= 1 ? newStars[0] : null))
-                    .Append(GetNewStarAnimation(newStars.Count >= 2 ? newStars[1] : null))
-                    .Append(GetNewStarAnimation(newStars.Count == 3 ? newStars[2] : null));
+                .Append(GetNewStarAnimation(newStars.Count >= 1 && oldStarCount >= 3 - blueStarCount ? newStars[0] : null))
+                    .Append(GetNewStarAnimation(newStars.Count >= 2 && oldStarCount >= 2 - blueStarCount ? newStars[1] : null))
+                    .Append(GetNewStarAnimation(newStars.Count == 3 && oldStarCount >= 1 - blueStarCount ? newStars[2] : null));
         }
 
         public Sequence MoveCircleProgressBar(float duration)
@@ -98,20 +99,20 @@ namespace Scripts
         {
             if (newStar == null) return DOTween.Sequence();
             IStarImageView animatedStar = _glowingView.CreateStarImage();
-
-
+            
             animatedStar.SetParent(newStar.GetRectTransform());
             animatedStar.SetLocalPosition(Vector2.zero);
             animatedStar.SetSize(new Vector2(70f, 70f));
+            animatedStar.SetColor(false);
             _glowingStarImageViewList.Add(animatedStar);
             _currentStarCount += 1;
             RectTransform targetInCircle = _starFrameViewList[(_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD].GetRectTransform();
             RectTransform animatedStarTransform = animatedStar.GetRectTransform();
             float scaleRatio = targetInCircle.sizeDelta.x / animatedStarTransform.sizeDelta.x;
-
-
+            
             return DOTween.Sequence().AppendCallback(() => animatedStar.SetLocalScale(Vector3.one))
                 .AppendCallback(() => animatedStar.SetParent(_glowingView.GetRectTransform()))
+                .AppendCallback(() => newStar.SetColor(true))
                 .Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 0.5f)
                     .SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
                 .Join(animatedStar.GetRectTransform().DOLocalMoveX(targetInCircle.localPosition.x, 0.5f)
@@ -134,7 +135,7 @@ namespace Scripts
     {
         void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker, IHapticController hapticController);
         void CreateInitialStars();
-        Sequence AddNewStars(List<IStarImageView> newStars);
+        Sequence AddNewStars(List<IStarImageView> newStars, int blueStarCount, int oldStarCount);
         int GetCurrentStarCount();
         Sequence MoveCircleProgressBar(float duration);
     }

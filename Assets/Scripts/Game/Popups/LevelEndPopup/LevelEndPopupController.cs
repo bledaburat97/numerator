@@ -21,7 +21,8 @@ namespace Scripts
         private IFadePanelController _fadePanelController;
         private IWildCardItemView _wildCardItemView;
         private IHapticController _hapticController;
-        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController)
+
+        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator)
         {
             _view = view;
             _glowingView = glowingView;
@@ -33,19 +34,24 @@ namespace Scripts
             _view.Init(new StarImageViewFactory(), new FadeButtonViewFactory(), new WildCardItemViewFactory());
             _glowingView.Init(new StarImageViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
+            int maxBlueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
+            int blueStarCount = maxBlueStarCount < 3 - args.oldStarCount ? maxBlueStarCount : 3 - args.oldStarCount;
+
             CreateCircleProgressBarController();
             if (args.isLevelCompleted)
             {
                 int oldStarCount = args.oldStarCount > args.starCount ? args.starCount : args.oldStarCount;
-                CreateStars(args.starCount, oldStarCount);
-                _levelTracker.AddStar(args.starCount - oldStarCount);
+                CreateStars(args.starCount, oldStarCount, blueStarCount);
+                int addedBlueStarCount =
+                    blueStarCount - 3 + args.starCount > 0 ? blueStarCount - 3 + args.starCount : 0;
+                _levelTracker.AddStar(args.starCount - oldStarCount, addedBlueStarCount);
                 CreatePlayButton(args.oldStarCount == 0, deactivateGlow);
             }
             if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0, deactivateGlow);
-            Animation();
+            Animation(blueStarCount, args.oldStarCount);
         }
 
-        private void Animation()
+        private void Animation(int blueStarCount, int oldStarCount)
         {
             List<IStarImageView> starImageViewList = _view.GetStarImageViewList();
             GlowingEndGameAnimationModel glowingModel = _glowingView.GetGlowingAnimationModel();
@@ -58,11 +64,11 @@ namespace Scripts
                 .AppendInterval(0.2f)
                 .Append(_circleProgressBarController.MoveCircleProgressBar(0.8f))
                 .AppendInterval(0.1f)
-                .Append(AnimateStarCreation(starImageViewList, glowingModel.starImageViewList)).Play()
+                .Append(AnimateStarCreation(starImageViewList, glowingModel.starImageViewList, blueStarCount)).Play()
                 .AppendInterval(0.5f)
                 .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
                 .AppendInterval(0.3f)
-                .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList))
+                .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList, blueStarCount, oldStarCount))
                 .AppendInterval(0.2f)
                 .Append(TryCreateWildCard());
         }
@@ -105,7 +111,7 @@ namespace Scripts
                 .Append(_claimButtonController.GetCanvasGroup().DOFade(1f, 0.3f));
         }
 
-        private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews)
+        private Sequence AnimateStarCreation(List<IStarImageView> starImageViews, List<IStarImageView> glowingStarImageViews, int blueStarCount)
         {
             Sequence starCreationAnimation = DOTween.Sequence();
             for (int i = 0; i < glowingStarImageViews.Count; i++)
@@ -113,7 +119,8 @@ namespace Scripts
                 IStarImageView starImageView = glowingStarImageViews[i];
                 int index = i;
                 float delay = .1f + 0.5f * i;
-                Action particleActivation = () => _view.ActivateParticle(index + starImageViews.Count);
+                bool isOriginal = starImageViews.Count < 3 - blueStarCount - i;
+                Action particleActivation = () => _view.ActivateParticle(index + starImageViews.Count, isOriginal);
                 particleActivation += () => _hapticController.Vibrate(HapticType.Success);
                 starCreationAnimation.Pause().Append(starImageView.GetRectTransform().transform.DOScale(1f, 0.5f))
                     .InsertCallback(delay, particleActivation.Invoke);
@@ -137,7 +144,7 @@ namespace Scripts
             _circleProgressBarController.CreateInitialStars();
         }
         
-        private void CreateStars(int numOfStars, int numOfOldStars)
+        private void CreateStars(int numOfStars, int numOfOldStars, int blueStarCount)
         {
             Vector2[] starsPosition = new Vector2[numOfStars];
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
@@ -151,7 +158,7 @@ namespace Scripts
             
             for (int i = numOfOldStars; i < numOfStars; i++)
             {
-                _glowingView.CreateStarImage(starsPosition[i], size);
+                _glowingView.CreateStarImage(starsPosition[i], size, blueStarCount < 3 - i);
             }
 
             _view.CreateParticles(starsPosition.ToList());
@@ -198,6 +205,6 @@ namespace Scripts
 
     public interface ILevelEndPopupController
     {
-        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController);
+        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator);
     }
 }

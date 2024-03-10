@@ -34,6 +34,7 @@ namespace Scripts
         
         private IFadePanelController _fadePanelController;
         private ILevelTracker _levelTracker;
+        private ILevelDataCreator _levelDataCreator;
         private Action _saveGameAction = null;
         private Action _deleteSaveAction = null;
         [SerializeField] private GameObject glowSystem;
@@ -53,7 +54,7 @@ namespace Scripts
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
 
-        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager)
+        public void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator)
         {
             _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
@@ -70,6 +71,7 @@ namespace Scripts
             _fadePanelController = fadePanelController;
             _levelTracker = levelTracker;
             _userReady = userReady;
+            _levelDataCreator = levelDataCreator;
             levelManager.LevelEnd += CreateLevelEndPopup;
             levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
             gameUIController.OpenSettings += CreateSettingsPopup;
@@ -149,7 +151,7 @@ namespace Scripts
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem, _fadeButtonControllerFactory, _hapticController);
+            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
         }
 
         private void DeactivateGlowSystem()
@@ -305,6 +307,6 @@ namespace Scripts
 
     public interface IGamePopupCreator
     {
-        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager);
+        void Initialize(ILevelManager levelManager, IFadePanelController fadePanelController, IGameSaveService gameSaveService, ILevelTracker levelTracker, IUserReady userReady, ITurnOrderDeterminer turnOrderDeterminer, IGameUIController gameUIController, IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator, IUnmaskServiceAreaView unmaskServiceAreaView, ICardHolderModelCreator cardHolderModelCreator, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator);
     }
 }

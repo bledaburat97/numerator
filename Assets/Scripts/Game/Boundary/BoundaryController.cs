@@ -15,11 +15,12 @@ namespace Scripts
             _view.Init(_model.localPosition, new StarImageViewFactory());
         }
 
-        public void AddStarImage(Vector2 starLocalPosition)
+        public void AddStarImage(Vector2 starLocalPosition, bool isOriginal)
         {
             _starImageView = _view.CreateStarImage();
             _starImageView.SetLocalPosition(starLocalPosition);
             _starImageView.SetLocalScale(Vector3.one);
+            _starImageView.SetColor(isOriginal);
         }
 
         public void RemoveStar()
@@ -31,7 +32,7 @@ namespace Scripts
     public interface IBoundaryController
     {
         void Initialize(IBoundaryView view, BoundaryModel model);
-        void AddStarImage(Vector2 starLocalPosition);
+        void AddStarImage(Vector2 starLocalPosition, bool isOriginal);
         void RemoveStar();
     }
 
