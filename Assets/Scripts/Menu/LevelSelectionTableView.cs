@@ -7,11 +7,14 @@ namespace Scripts
     public class LevelSelectionTableView : MonoBehaviour, ILevelSelectionTableView
     {
         [SerializeField] private LevelButtonView levelButtonPrefab;
-        private LevelButtonViewFactory _levelButtonViewFactory;
-        private BaseButtonViewFactory _baseButtonViewFactory;
+        [SerializeField] private GalaxyLockView galaxyLockPrefab;
         [SerializeField] private BaseButtonView forwardButtonPrefab;
         [SerializeField] private BaseButtonView backwardButtonPrefab;
         [SerializeField] private List<Sprite> planetSprites;
+        
+        private LevelButtonViewFactory _levelButtonViewFactory;
+        private BaseButtonViewFactory _baseButtonViewFactory;
+
         public void Init(LevelButtonViewFactory levelButtonViewFactory, BaseButtonViewFactory baseButtonViewFactory)
         {
             _levelButtonViewFactory = levelButtonViewFactory;
@@ -38,6 +41,11 @@ namespace Scripts
             return planetSprites[index];
         }
 
+        public IGalaxyLockView CreateGalaxyLockView()
+        {
+            return Instantiate(galaxyLockPrefab, transform);
+        }
+
     }
 
     public interface ILevelSelectionTableView
@@ -47,5 +55,6 @@ namespace Scripts
         IBaseButtonView CreateForwardButton();
         IBaseButtonView CreateBackwardButton();
         Sprite GetPlanetImageByIndex(int index);
+        IGalaxyLockView CreateGalaxyLockView();
     }
 }

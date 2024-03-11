@@ -21,11 +21,11 @@ namespace Scripts
         private int _firstLevelIdOfTable = 0;
         private IActiveLevelIdController _activeLevelIdController;
         private ILevelTracker _levelTracker;
-        private readonly int _maxNumOfPageNumber = 20;
         private Canvas _canvas;
         private IBaseButtonController _forwardButtonController;
         private IBaseButtonController _backwardButtonController;
-        
+        private int _totalStarCount;
+        private IGalaxyLockView _galaxyLockView;
         public LevelSelectionTableController(ILevelSelectionTableView view, Canvas canvas)
         {
             _view = view;
@@ -40,9 +40,13 @@ namespace Scripts
             SetLocalPosListForButtons();
             _view.Init(new LevelButtonViewFactory(), new BaseButtonViewFactory());
             _levelButtonList = new List<ILevelButtonView>();
+            _galaxyLockView = _view.CreateGalaxyLockView();
+            _galaxyLockView.Init();
+            _galaxyLockView.SetStatus(false);
             SetFirstLevelIdOfTable();
             CreateLevelButtons();
             CreateDirectionButtons();
+            _totalStarCount = levelTracker.GetStarCount();
         }
 
         private void SetFirstLevelIdOfTable()
@@ -75,6 +79,12 @@ namespace Scripts
             }
         }
 
+        private void CreateGalaxyLockImage(int starCountToUnlock)
+        {
+            _galaxyLockView.SetStarCountToUnlock(starCountToUnlock);
+            _galaxyLockView.SetStatus(true);
+        }
+
         private void CreateDirectionButtons()
         {
             IBaseButtonView backwardButtonView = _view.CreateBackwardButton();
@@ -88,13 +98,13 @@ namespace Scripts
             _forwardButtonController.Initialize(() => OnClickDirectionButton(Direction.Forward));
             _forwardButtonController.SetLocalPosition(new Vector2(162f, 0));
             _forwardButtonController.SetButtonStatus(false);
-            SetDirectionButtonsStatus();
+            SetDirectionButtonsStatus(false);
         }
 
-        private void SetDirectionButtonsStatus()
+        private void SetDirectionButtonsStatus(bool isLockedGalaxy)
         {
             _backwardButtonController.SetButtonStatus(_firstLevelIdOfTable > 0);
-            _forwardButtonController.SetButtonStatus(_firstLevelIdOfTable < (_maxNumOfPageNumber - 1) * rowCount * columnCount);
+            _forwardButtonController.SetButtonStatus(!isLockedGalaxy);
         }
 
         private void OnClickDirectionButton(Direction direction)
@@ -103,11 +113,37 @@ namespace Scripts
             {
                 levelButtonView.Destroy();
             }
+            
+            _galaxyLockView.SetStatus(false);
+            
             _levelButtonList = new List<ILevelButtonView>();
-            if (direction == Direction.Forward) _firstLevelIdOfTable += rowCount * columnCount;
-            else if (direction == Direction.Backward) _firstLevelIdOfTable -= rowCount * columnCount;
-            CreateLevelButtons();
-            SetDirectionButtonsStatus();
+            if (direction == Direction.Forward)
+            {
+                _firstLevelIdOfTable += rowCount * columnCount;
+                int starCountToUnlock = CalculateStarCountToUnlock(_firstLevelIdOfTable / (rowCount * columnCount));
+                if (_totalStarCount >= starCountToUnlock)
+                {
+                    CreateLevelButtons();
+                    SetDirectionButtonsStatus(false);
+                }
+                else
+                {
+                    CreateGalaxyLockImage(starCountToUnlock);
+                    SetDirectionButtonsStatus(true);
+                }
+            }
+            else if (direction == Direction.Backward)
+            {
+                _firstLevelIdOfTable -= rowCount * columnCount;
+                CreateLevelButtons();
+                SetDirectionButtonsStatus(false);
+            }
+        }
+
+        private int CalculateStarCountToUnlock(int galaxyIndex)
+        {
+            if (galaxyIndex < 10) return galaxyIndex * 30 + galaxyIndex * (galaxyIndex + 1) / 2;
+            return 315 + 40 * (galaxyIndex - 1);
         }
 
         private void OnClickLevel(int levelId)
