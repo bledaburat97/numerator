@@ -158,16 +158,16 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(true);
             _fadePanelController.SetFadeImageAlpha(0f);
-            glowSystem.SetActive(true);
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, DeactivateGlowSystem, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
+            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, SetGlowSystemStatus, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
         }
 
-        private void DeactivateGlowSystem()
+        private void SetGlowSystemStatus(bool status)
         {
-            glowSystem.SetActive(false);
+            glowSystem.SetActive(status);
+            _fadePanelController.SetNonGlowFadeImageStatus(status);
         }
 
         public override void OnNetworkSpawn()

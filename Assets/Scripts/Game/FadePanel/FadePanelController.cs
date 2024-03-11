@@ -24,6 +24,10 @@ namespace Scripts
         public void SetFadeImageStatus(bool status)
         {
             _view.SetFadeImageStatus(status);
+        }
+
+        public void SetNonGlowFadeImageStatus(bool status)
+        {
             _nonGlowView.SetFadeImageStatus(status);
         }
 
@@ -63,5 +67,6 @@ namespace Scripts
         void InitMaskSystem(IUnmaskServiceView unmaskService, float fade);
         void OpenTutorialFade();
         void CloseTutorialFade();
+        void SetNonGlowFadeImageStatus(bool status);
     }
 }

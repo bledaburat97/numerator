@@ -225,10 +225,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82b82129fbce4d03af79ba7bf03d7560, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ScaleHelper: {fileID: 7345973279448771500}
   cam: {fileID: 7465997550008778774}
   canvas: {fileID: 9123723318333679005}
   shader: {fileID: -6465566751694194690, guid: 4294d4876ee8b45ec97ec842b83c4c5f, type: 3}
+  unmaskCardItemPrefab: {fileID: -8246203410710662716, guid: 7ae9cc083b657b44e924437edf56ba3e, type: 3}
+  scaleHelper: {fileID: 7345973279448771500}
 --- !u!1 &8730891227433303033
 GameObject:
   m_ObjectHideFlags: 0

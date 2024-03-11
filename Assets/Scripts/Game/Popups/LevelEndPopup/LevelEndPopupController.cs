@@ -22,7 +22,7 @@ namespace Scripts
         private IWildCardItemView _wildCardItemView;
         private IHapticController _hapticController;
 
-        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator)
+        public void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action<bool> setGlowStatus, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator)
         {
             _view = view;
             _glowingView = glowingView;
@@ -45,13 +45,13 @@ namespace Scripts
                 int addedBlueStarCount =
                     blueStarCount - 3 + args.starCount > 0 ? blueStarCount - 3 + args.starCount : 0;
                 _levelTracker.AddStar(args.starCount - oldStarCount, addedBlueStarCount);
-                CreatePlayButton(args.oldStarCount == 0, deactivateGlow);
+                CreatePlayButton(args.oldStarCount == 0, () => setGlowStatus(false));
             }
-            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0, deactivateGlow);
-            Animation(blueStarCount, args.oldStarCount);
+            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0, () => setGlowStatus(false));
+            Animation(blueStarCount, args.oldStarCount, setGlowStatus);
         }
 
-        private void Animation(int blueStarCount, int oldStarCount)
+        private void Animation(int blueStarCount, int oldStarCount, Action<bool> setGlowStatus)
         {
             List<IStarImageView> starImageViewList = _view.GetStarImageViewList();
             GlowingEndGameAnimationModel glowingModel = _glowingView.GetGlowingAnimationModel();
@@ -60,6 +60,7 @@ namespace Scripts
 
             animationSequence.AppendInterval(0.4f)
                 .Append(_fadePanelController.GetFadeImage().DOFade(0.95f, 0.5f))
+                .AppendCallback(() => setGlowStatus(true))
                 .AppendCallback(() => SetLocalScaleOfOldStars(starImageViewList))
                 .AppendInterval(0.2f)
                 .Append(_circleProgressBarController.MoveCircleProgressBar(0.8f))
@@ -205,6 +206,6 @@ namespace Scripts
 
     public interface ILevelEndPopupController
     {
-        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action deactivateGlow, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator);
+        void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action<bool> setGlowStatus, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator);
     }
 }
