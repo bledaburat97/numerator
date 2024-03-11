@@ -155,6 +155,11 @@ namespace Scripts
         {
             return _normalCardHolderControllerList[index].GetPositionOfCardHolder();
         }
+
+        public Vector3 GetWildCardHolderPosition()
+        {
+            return _wildCardHolderController.GetPositionOfCardHolder();
+        }
         
         private void CreateCardItemsData(int numOfTotalWildCard)
         {
@@ -284,6 +289,7 @@ namespace Scripts
             ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
 
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
+        Vector3 GetWildCardHolderPosition();
         void SetCardsAsUnselectable(int selectableCardIndex = -1);
         void SetCardsAsUndraggable(int draggableCardIndex = -1);
         event EventHandler CardClicked;

@@ -19,6 +19,11 @@ namespace Scripts
             _fadePanelController.OpenTutorialFade();
             CreateMaskSystem(0f);
         }
+
+        public void CloseTutorialFade()
+        {
+            _fadePanelController.CloseTutorialFade();
+        }
         
         private void CreateMaskSystem(float duration)
         {
@@ -31,10 +36,15 @@ namespace Scripts
         {
             _unmaskServiceView.CreateUnmaskCardItem(position, size);
         }
-
-        public void ClearUnmaskCardItems()
+        
+        public void ClearAllUnmaskCardItems()
         {
-            _unmaskServiceView.ClearUnmaskCardItems();
+            _unmaskServiceView.ClearAllUnmaskCardItems();
+        }
+
+        public void ClearUnmaskCardItem(int index)
+        {
+            _unmaskServiceView.ClearUnmaskCardItem(index);
         }
 
         public void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos)
@@ -47,8 +57,10 @@ namespace Scripts
     {
         void Initialize(IFadePanelController fadePanelController);
         void InstantiateTutorialFade();
+        void CloseTutorialFade();
         void CreateUnmaskCardItem(Vector2 position, Vector2 size);
-        void ClearUnmaskCardItems();
+        void ClearAllUnmaskCardItems();
+        void ClearUnmaskCardItem(int index);
         void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);
     }
 

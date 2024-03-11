@@ -153,6 +153,7 @@ namespace Scripts
             {
                 _tutorialMessagePopupView.Destroy();
                 _handTutorialView.Destroy();
+                _unmaskServiceAreaView.CloseTutorialFade();
             }
         }
 
@@ -188,7 +189,7 @@ namespace Scripts
 
             void CloseDragAnimation(object sender, EventArgs args)
             {
-                _unmaskServiceAreaView.ClearUnmaskCardItems();
+                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
                 _cardItemLocator.OnCardDragStarted -= StopDragAnimation;
                 if (!isReversed)
                 {
@@ -214,7 +215,7 @@ namespace Scripts
             
             void CloseClickAnimation(object sender, EventArgs args)
             {
-                _unmaskServiceAreaView.ClearUnmaskCardItems();
+                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
                 _initialCardAreaController.CardClicked -= CloseClickAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
@@ -240,7 +241,7 @@ namespace Scripts
             
             void CloseClickButtonAnimation(object sender, EventArgs args)
             {
-                _unmaskServiceAreaView.ClearUnmaskCardItems();
+                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
                 _gameUIController.CheckFinalNumbers -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
@@ -257,7 +258,7 @@ namespace Scripts
             
             void CloseClickButtonAnimation(object sender, EventArgs args)
             {
-                _unmaskServiceAreaView.ClearUnmaskCardItems();
+                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
                 _gameUIController.ResetNumbers -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);

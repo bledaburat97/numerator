@@ -121,6 +121,7 @@ namespace Scripts
         {
             if (_activeCardIndex == wildCardIndex)
             {
+                OnCardPlacedBoard?.Invoke(this, EventArgs.Empty);
                 IBoardCardHolderController cardHolderController = _boardHolderToCardIndexMapping.Keys.ElementAt(_probableCardHolderIndex);
                 int targetCardIndex = _boardAreaManager.SetWildCardOnBoard(_probableCardHolderIndex);
                 TryResetCardIndexOnBoard(targetCardIndex);
@@ -133,6 +134,7 @@ namespace Scripts
                     boardCardHolderIndex = _probableCardHolderIndex
                 };
             }
+            OnCardReturnedToInitial?.Invoke(this, EventArgs.Empty);
             return null;
         }
 

@@ -104,6 +104,17 @@ namespace Scripts
                 ICardInfoTutorialController cardInfoTutorialController = new CardInfoTutorialController();
                 cardInfoTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController, cardItemInfoPopupController, cardItemInfoManager);
             }
+            /*
+            if (_levelTracker.GetWildCardCount() > 0)
+            {
+                IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
+                ITutorialMessagePopupView tutorialMessagePopupView =
+                    new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
+
+                IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
+                wildCardTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator);
+            }
+            */
         }
         
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)

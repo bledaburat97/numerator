@@ -32,11 +32,6 @@ namespace Scripts
             return _view.GetFadeImage();
         }
 
-        public Image GetMaskedFadePanelImage()
-        {
-            return _nonGlowView.GetFadeImage();
-        }
-
         public void SetFadeImageAlpha(float alpha)
         {
             _view.SetAlpha(alpha);
@@ -52,16 +47,21 @@ namespace Scripts
             _view.SetTutorialFadeImageStatus(true);
             _view.SetTutorialFadeAlpha(0.5f);
         }
+        
+        public void CloseTutorialFade()
+        {
+            _view.SetTutorialFadeImageStatus(false);
+        }
     }
 
     public interface IFadePanelController
     {
         void Initialize();
         void SetFadeImageStatus(bool status);
-        Image GetMaskedFadePanelImage();
         Image GetFadeImage();
         void SetFadeImageAlpha(float alpha);
         void InitMaskSystem(IUnmaskServiceView unmaskService, float fade);
         void OpenTutorialFade();
+        void CloseTutorialFade();
     }
 }

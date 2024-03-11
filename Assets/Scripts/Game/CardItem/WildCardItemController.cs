@@ -7,6 +7,7 @@ namespace Scripts
     public class WildCardItemController : DraggableCardItemController, IWildCardItemController
     {
         private IWildCardItemView _view;
+        private Action<int> _onDragStart;
         private Func<int, LockedCardInfo> _onDragComplete;
         private Func<int, int, RectTransform> _afterDragComplete;
         private Action<LockedCardInfo> _setLockedCard;
@@ -28,6 +29,7 @@ namespace Scripts
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetSize(data.parent.sizeDelta);
             _hapticController = hapticController;
+            SetOnDragStart(cardItemLocator.OnDragStart);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnWildDragComplete);
             SetGetLockedCard(setLockedCard);
@@ -44,6 +46,11 @@ namespace Scripts
         {
             _setLockedCard = func;
         }
+        
+        private void SetOnDragStart(Action<int> action)
+        {
+            _onDragStart += action;
+        }
 
         private void OnDrag(PointerEventData data)
         {
@@ -56,6 +63,10 @@ namespace Scripts
             if (!_isDragStart && _cardItemData.cardItemIndex == 0)
             {
                 _slideCardHolders.Invoke();
+            }
+            if (!_isDragStart)
+            {
+                _onDragStart(_cardItemData.cardItemIndex);
             }
 
             _isDragStart = true;

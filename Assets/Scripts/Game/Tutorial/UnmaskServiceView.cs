@@ -65,13 +65,19 @@ namespace Scripts
             _unmaskCardItemViews.Add(unmaskCardItemView);
         }
 
-        public void ClearUnmaskCardItems()
+        public void ClearAllUnmaskCardItems()
         {
             foreach (var unmaskCardItemView in _unmaskCardItemViews)
             {
                 unmaskCardItemView.Destroy();
             }
             _unmaskCardItemViews.Clear();
+        }
+        
+        public void ClearUnmaskCardItem(int index)
+        {
+            _unmaskCardItemViews[index].Destroy();
+            _unmaskCardItemViews.RemoveAt(index);
         }
 
         public void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos)
@@ -90,7 +96,8 @@ namespace Scripts
         Tween SetAlpha(float alpha, float duration);
         void SetColor(Color color);
         void CreateUnmaskCardItem(Vector2 position, Vector2 size);
-        void ClearUnmaskCardItems();
+        void ClearAllUnmaskCardItems();
+        void ClearUnmaskCardItem(int index);
         void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);
     }
 }
