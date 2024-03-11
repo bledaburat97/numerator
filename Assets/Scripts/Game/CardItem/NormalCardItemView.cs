@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
@@ -8,6 +9,7 @@ namespace Scripts
         [SerializeField] private Image lockImage;
         [SerializeField] private Animator animator;
         [SerializeField] private Image backImage;
+        [SerializeField] private TMP_Text backText;
         private const string IsSelected = "IsSelected";
 
         public void SetColor(Color color)
@@ -35,6 +37,12 @@ namespace Scripts
         {
             backImage.gameObject.SetActive(status);
         }
+        
+        public void SetBackText(string text)
+        {
+            backText.gameObject.SetActive(true);
+            backText.text = text;
+        }
 
         public void SetTextStatus(bool status)
         {
@@ -57,5 +65,6 @@ namespace Scripts
         void SetBackImageStatus(bool status);
         void SetTextStatus(bool status);
         void SetNewAnchoredPositionOfRotatedImage();
+        void SetBackText(string text);
     }
 }

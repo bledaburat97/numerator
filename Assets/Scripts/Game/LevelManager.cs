@@ -11,8 +11,11 @@ namespace Scripts
         private IGameSaveService _gameSaveService;
         private int _numOfStars;
         private IStarProgressBarController _starProgressBarController;
+        private List<int> _finalCardNumbers;
+        private List<int> _targetCardNumbers;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
         public event EventHandler MultiplayerLevelEnd;
+        public event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
         private bool _isGameOver;
         
         public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController, ILevelDataCreator levelDataCreator)
@@ -22,6 +25,8 @@ namespace Scripts
             _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
             _numOfStars = 3;
             _starProgressBarController = starProgressBarController;
+            _finalCardNumbers = new List<int>();
+            _targetCardNumbers = new List<int>();
             UpdateStarProgressBar(_maxNumOfTries, _levelTracker.GetLevelSaveData().RemainingGuessCount, 0f);
             resultManager.NumberGuessed += CheckGameIsOver;
             _isGameOver = false;
@@ -46,6 +51,8 @@ namespace Scripts
 
         private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
         {
+            _finalCardNumbers = args.finalCardNumbers;
+            _targetCardNumbers = args.targetCardNumbers;
             if (args.isGuessRight)
             {
                 if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
@@ -56,12 +63,18 @@ namespace Scripts
                         ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
                         : 0;
                     _levelTracker.IncrementLevelId(_numOfStars);
-                    LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                    CardsBackFlipped.Invoke(this, new BackFlipCardsEventArgs()
                     {
-                        isLevelCompleted = true,
-                        levelTracker = _levelTracker,
-                        starCount = _numOfStars,
-                        oldStarCount = oldStarCount,
+                        finalCardNumbers = _finalCardNumbers,
+                        targetCardNumbers = _targetCardNumbers,
+                        isGuessRight = true,
+                        onComplete = () => LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                        {
+                            isLevelCompleted = true,
+                            levelTracker = _levelTracker,
+                            starCount = _numOfStars,
+                            oldStarCount = oldStarCount,
+                        })
                     });
                 }
 
@@ -81,11 +94,17 @@ namespace Scripts
         {
             _gameSaveService.DeleteSave();
             _isGameOver = true;
-            LevelEnd?.Invoke(this, new LevelEndEventArgs()
+            CardsBackFlipped.Invoke(this, new BackFlipCardsEventArgs()
             {
-                isLevelCompleted = false,
-                levelTracker = _levelTracker,
-                starCount = 0
+                finalCardNumbers = _finalCardNumbers,
+                targetCardNumbers = _targetCardNumbers,
+                isGuessRight = false,
+                onComplete = () => LevelEnd?.Invoke(this, new LevelEndEventArgs()
+                {
+                    isLevelCompleted = false,
+                    levelTracker = _levelTracker,
+                    starCount = 0
+                })
             });
         }
 
@@ -108,6 +127,14 @@ namespace Scripts
         public int oldStarCount;
     }
     
+    public class BackFlipCardsEventArgs : EventArgs
+    {
+        public List<int> finalCardNumbers;
+        public List<int> targetCardNumbers;
+        public Action onComplete;
+        public bool isGuessRight;
+    }
+    
     public interface ILevelManager
     {
         void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController, ILevelDataCreator levelDataCreator);
@@ -115,5 +142,6 @@ namespace Scripts
         int GetRemainingGuessCount();
         bool IsGameOver();
         event EventHandler MultiplayerLevelEnd;
+        event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
     }
 }

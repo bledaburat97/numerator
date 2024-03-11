@@ -11,7 +11,6 @@ namespace Scripts
         private int _numOfBoardHolders;
         public event EventHandler<ResultBlockModel> ResultBlockAddition;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
-        public event EventHandler<BackFlipCorrectCardsEventArgs> CorrectCardsBackFlipped;
         public void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
         {
             _numOfBoardHolders = levelDataCreator.GetLevelData().NumOfBoardHolders;
@@ -76,13 +75,11 @@ namespace Scripts
                     correctPosCount = numOfCorrectPos,
                     wrongPosCount = numOfWrongPos
                 });
-                CorrectCardsBackFlipped.Invoke(this, new BackFlipCorrectCardsEventArgs()
+                NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
                 {
                     finalCardNumbers = finalCards,
-                    onComplete = () => NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
-                    {
-                        isGuessRight = true,
-                    })
+                    targetCardNumbers = _targetCards,
+                    isGuessRight = true,
                 });
             }
             else
@@ -95,6 +92,8 @@ namespace Scripts
                 });
                 NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
                 {
+                    finalCardNumbers = finalCards,
+                    targetCardNumbers = _targetCards,
                     isGuessRight = false,
                 });
             }
@@ -113,13 +112,9 @@ namespace Scripts
     
     public class NumberGuessedEventArgs : EventArgs
     {
-        public bool isGuessRight;
-    }
-    
-    public class BackFlipCorrectCardsEventArgs : EventArgs
-    {
         public List<int> finalCardNumbers;
-        public Action onComplete;
+        public List<int> targetCardNumbers;
+        public bool isGuessRight;
     }
 
     public interface IResultManager
@@ -131,6 +126,5 @@ namespace Scripts
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         List<List<int>> GetTriedCardsList();
         List<int> GetTargetCards();
-        event EventHandler<BackFlipCorrectCardsEventArgs> CorrectCardsBackFlipped;
     }
 }

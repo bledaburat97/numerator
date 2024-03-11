@@ -73,7 +73,7 @@ namespace Scripts
         
         private void InitializeGameClock()
         {
-            _gameClockController.Initialize(_resultManager);
+            _gameClockController.Initialize(_levelManager);
         }
         
         private void InitializeTurnOrderDeterminer()
@@ -126,7 +126,7 @@ namespace Scripts
         
         private void InitializeInitialCardArea()
         {
-            _initialCardAreaController.Initialize(_cardItemLocator, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _gameUIController, _boardAreaController, _resultManager, _levelDataCreator);
+            _initialCardAreaController.Initialize(_cardItemLocator, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _gameUIController, _boardAreaController, _levelManager, _levelDataCreator);
         }
         
         private void InitializeCardItemInfoPopup()

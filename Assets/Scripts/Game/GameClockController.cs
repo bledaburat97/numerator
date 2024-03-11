@@ -13,11 +13,11 @@ namespace Scripts
             _view = view;
         }
 
-        public void Initialize(IResultManager resultManager)
+        public void Initialize(ILevelManager levelManager)
         {
             _view.Init(() => _hapticController.Vibrate(HapticType.CardGrab));
             RemoveTimer();
-            resultManager.CorrectCardsBackFlipped += OnLevelEnd;
+            levelManager.CardsBackFlipped += OnLevelEnd;
         }
 
         private void OnLevelEnd(object sender, EventArgs e)
@@ -40,6 +40,6 @@ namespace Scripts
     {
         void StartTimer(Action onTimerEnd);
         void RemoveTimer();
-        void Initialize(IResultManager resultManager);
+        void Initialize(ILevelManager levelManager);
     }
 }

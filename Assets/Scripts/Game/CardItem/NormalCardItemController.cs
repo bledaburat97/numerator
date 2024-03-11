@@ -39,7 +39,7 @@ namespace Scripts
             SetOnPlaceByClick(cardItemLocator.PlaceCardByClick);
             SetOnCardClicked(_cardItemData.onCardClicked);
             CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[_cardItemData.cardItemIndex];
-            SetColor(cardItemInfo.probabilityType);
+            SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)cardItemInfo.probabilityType]);
             SetLockStatus(cardItemInfo.isLocked);
             cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
         }
@@ -48,7 +48,7 @@ namespace Scripts
         {
             if (_cardItemData.cardItemIndex == args.cardIndex)
             {
-                SetColor(args.probabilityType);
+                SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)args.probabilityType]);
                 SetLockStatus(args.isLocked);
             }
         }
@@ -170,9 +170,9 @@ namespace Scripts
             _view.SetCardAnimation(status);
         }
 
-        private void SetColor(ProbabilityType probabilityType)
+        private void SetColor(Color color)
         {
-            _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType]);
+            _view.SetColor(color);
         }
 
         private void SetLockStatus(bool isLocked)
@@ -181,16 +181,16 @@ namespace Scripts
             _isSelectable = !isLocked;
         }
 
-        public Sequence BackFlipAnimation(float delayDuration)
+        public Sequence BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
         {
             return DOTween.Sequence()
                 .AppendInterval(delayDuration)
                 .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.15f))
-                .AppendCallback(() => SetColor(ProbabilityType.Certain))
+                .AppendCallback(() => SetColor(isGuessRight ? ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain] : ConstantValues.GREY_CARD_COLOR))
                 .AppendCallback(() => _view.SetTextStatus(false))
                 .AppendCallback(() => _view.SetLockImageStatus(false))
-                .AppendCallback(() => _view.SetBackImageStatus(true))
+                .AppendCallback(isGuessRight ? () => _view.SetBackImageStatus(true) : () => _view.SetBackText(correctNumber))
                 .AppendCallback(() => _view.SetNewAnchoredPositionOfRotatedImage())
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.15f))
                 .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
@@ -214,7 +214,7 @@ namespace Scripts
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
-        Sequence BackFlipAnimation(float delayDuration);
+        Sequence BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         void SetIsDraggable(bool status);
         void SetIsSelectable(bool status);
         void DeselectCard();

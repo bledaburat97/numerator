@@ -32,7 +32,7 @@ namespace Scripts
             _view = view;
         }
         
-        public void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator)
+        public void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, ILevelManager levelManager, ILevelDataCreator levelDataCreator)
         {
             _cardHolderModelCreator = cardHolderModelCreator;
             _levelTracker = levelTracker;
@@ -45,7 +45,7 @@ namespace Scripts
             InitInitialCardAreaView(numOfTotalWildCards);
             gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             boardAreaController.BoardCardHolderClicked += MoveSelectedCard;
-            resultManager.CorrectCardsBackFlipped += BackFlipCorrectCards;
+            levelManager.CardsBackFlipped += BackFlipCards;
             gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
             _cardItemLocator.OnCardDragStarted += RemoveSelection;
             gameUIController.CheckFinalNumbers += RemoveSelection;
@@ -244,7 +244,7 @@ namespace Scripts
             }
         }
 
-        private void BackFlipCorrectCards(object sender, BackFlipCorrectCardsEventArgs args)
+        private void BackFlipCards(object sender, BackFlipCardsEventArgs args)
         {
             DOTween.Sequence()
                 .AppendCallback(() => 
@@ -256,11 +256,11 @@ namespace Scripts
 
                         if (cardIndex >= 0 && cardIndex < _normalCardItemControllerList.Count)
                         {
-                            _normalCardItemControllerList[cardIndex].BackFlipAnimation(delay);
+                            _normalCardItemControllerList[cardIndex].BackFlipAnimation(delay, args.isGuessRight, args.targetCardNumbers[i].ToString());
                         }
                     }
                 })
-                .AppendInterval(1f + 0.3f * (args.finalCardNumbers.Count - 1))
+                .AppendInterval(1.5f + 0.3f * args.finalCardNumbers.Count)
                 .AppendCallback(() => args.onComplete.Invoke());
         }
 
@@ -286,7 +286,7 @@ namespace Scripts
     public interface IInitialCardAreaController
     {
         void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
-            ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultManager resultManager, ILevelDataCreator levelDataCreator);
+            ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, ILevelManager levelManager, ILevelDataCreator levelDataCreator);
 
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
         Vector3 GetWildCardHolderPosition();
