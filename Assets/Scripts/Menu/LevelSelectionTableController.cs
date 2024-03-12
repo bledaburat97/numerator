@@ -142,8 +142,8 @@ namespace Scripts
 
         private int CalculateStarCountToUnlock(int galaxyIndex)
         {
-            if (galaxyIndex < 10) return galaxyIndex * 30 + galaxyIndex * (galaxyIndex + 1) / 2;
-            return 315 + 40 * (galaxyIndex - 1);
+            if (galaxyIndex < 11) return galaxyIndex * 30 + galaxyIndex * (galaxyIndex - 1) / 2;
+            return 345 + 40 * (galaxyIndex - 10);
         }
 
         private void OnClickLevel(int levelId)

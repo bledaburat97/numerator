@@ -63,7 +63,7 @@ namespace Scripts
                 .AppendCallback(() => setGlowStatus(true))
                 .AppendCallback(() => SetLocalScaleOfOldStars(starImageViewList))
                 .AppendInterval(0.2f)
-                .Append(_levelTracker.GetLevelId() > 9 ? _circleProgressBarController.MoveCircleProgressBar(0.8f) : DOTween.Sequence())
+                .Append(_levelTracker.GetLevelId() > 10 ? _circleProgressBarController.MoveCircleProgressBar(0.8f) : DOTween.Sequence())
                 .AppendInterval(0.1f)
                 .Append(AnimateStarCreation(starImageViewList, glowingModel.starImageViewList, blueStarCount)).Play()
                 .AppendInterval(0.5f)

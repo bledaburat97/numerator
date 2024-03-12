@@ -85,7 +85,7 @@ namespace Scripts
             _openWaitingOpponentPopup += OnPlayerReady;
             _isLocalReady = false;
             _closeWaitingOpponentPopup += OnPlayerUnready;
-            if (_levelTracker.GetLevelId() == 0)
+            if (_levelTracker.IsFirstLevelTutorial())
             {
                 IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
                 ITutorialMessagePopupView tutorialMessagePopupView =
@@ -95,7 +95,7 @@ namespace Scripts
                 firstLevelTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController);
             }
             
-            if (_levelTracker.GetLevelId() == 9)
+            if (_levelTracker.IsCardInfoTutorial())
             {
                 IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
                 ITutorialMessagePopupView tutorialMessagePopupView =
@@ -104,8 +104,8 @@ namespace Scripts
                 ICardInfoTutorialController cardInfoTutorialController = new CardInfoTutorialController();
                 cardInfoTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController, cardItemInfoPopupController, cardItemInfoManager);
             }
-            /*
-            if (_levelTracker.GetWildCardCount() > 0)
+            
+            if (_levelTracker.IsWildCardTutorial())
             {
                 ITutorialMessagePopupView tutorialMessagePopupView =
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
@@ -113,7 +113,6 @@ namespace Scripts
                 IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
                 wildCardTutorialController.Initialize(initialCardAreaController, cardItemLocator, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator);
             }
-            */
             
         }
         

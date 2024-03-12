@@ -69,6 +69,21 @@ namespace Scripts
             PlayerPrefs.DeleteKey("star_count_of_levels");
         }
 
+        public bool IsFirstLevelTutorial()
+        {
+            return _levelId == 0 && PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0;
+        }
+
+        public bool IsCardInfoTutorial()
+        {
+            return _levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
+        }
+
+        public bool IsWildCardTutorial()
+        {
+            return _wildCardCount > 0 && PlayerPrefs.GetInt("wild_card_tutorial_completed", 0) == 0;
+        }
+
         public void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
         {
             if (_gameOption == GameOption.SinglePlayer)
@@ -77,6 +92,19 @@ namespace Scripts
                 LevelData levelData = levelDataCreator.GetLevelData();
                 LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
 
+                if (IsFirstLevelTutorial())
+                {
+                    _levelSaveData = CreateDefaultLevelSaveData(levelData);
+                    targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
+                    return;
+                }
+                if (IsCardInfoTutorial())
+                {
+                    _levelSaveData = CreateDefaultLevelSaveData(levelData);
+                    targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
+                    return;
+                }
+                
                 if (levelSaveData != null)
                 {
                     if (_levelId == levelSaveData.LevelId)
@@ -87,35 +115,13 @@ namespace Scripts
                     else
                     {
                         _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                        if (_levelId == 0)
-                        {
-                            targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
-                        }
-                        else if (_levelId == 9)
-                        {
-                            targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
-                        }
-                        else
-                        {
-                            targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
-                        }
+                        targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
                     }
                 }
                 else
                 {
                     _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                    if (_levelId == 0)
-                    {
-                        targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
-                    }
-                    else if (_levelId == 9)
-                    {
-                        targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
-                    }
-                    else
-                    {
-                        targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
-                    }
+                    targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
                 }
             }
 
@@ -268,6 +274,9 @@ namespace Scripts
         void SetGameOption(GameOption gameOption);
         GameOption GetGameOption();
         void SetMultiplayerLevelDifficulty(Difficulty difficulty);
+        bool IsFirstLevelTutorial();
+        bool IsCardInfoTutorial();
+        bool IsWildCardTutorial();
     }
 
     public class LevelData

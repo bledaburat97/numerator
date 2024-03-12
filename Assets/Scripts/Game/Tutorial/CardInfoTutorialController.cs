@@ -305,6 +305,7 @@ namespace Scripts
                 _tutorialMessagePopupView.Destroy();
                 _handTutorialView.Destroy();
                 _unmaskServiceAreaView.CloseTutorialFade();
+                PlayerPrefs.SetInt("card_info_tutorial_completed", 1);
             }
         }
 

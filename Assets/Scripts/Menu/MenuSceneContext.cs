@@ -1,5 +1,6 @@
 ﻿using Menu;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace Scripts
@@ -14,6 +15,20 @@ namespace Scripts
         [Inject] private IMenuUIController _menuUIController;
         [Inject] private IHapticController _hapticController;
 
+        void Awake()
+        {
+            if (PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0)
+            {
+                PlayerPrefs.SetInt("level_id", 0);
+                PlayerPrefs.SetInt("star_count", 0);
+                PlayerPrefs.SetInt("blue_star_count", 0);
+                PlayerPrefs.SetInt("wild_card_count", 0);
+                PlayerPrefs.SetString("star_count_of_levels", "");
+                _levelTracker.SetGameOption(GameOption.SinglePlayer);
+                SceneManager.LoadScene("LoadingScene");
+            }
+        }
+        
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);

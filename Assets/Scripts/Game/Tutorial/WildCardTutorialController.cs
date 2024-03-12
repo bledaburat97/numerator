@@ -111,6 +111,7 @@ namespace Scripts
             {
                 _tutorialMessagePopupView.Destroy();
                 _unmaskServiceAreaView.CloseTutorialFade();
+                PlayerPrefs.SetInt("wild_card_tutorial_completed", 1);
             }
         }
         

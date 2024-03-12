@@ -158,6 +158,7 @@ namespace Scripts
                 _tutorialMessagePopupView.Destroy();
                 _handTutorialView.Destroy();
                 _unmaskServiceAreaView.CloseTutorialFade();
+                PlayerPrefs.SetInt("first_level_tutorial_completed", 1);
             }
         }
 
