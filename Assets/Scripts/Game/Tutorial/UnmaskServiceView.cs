@@ -56,12 +56,13 @@ namespace Scripts
             _material.SetColor(BaseColor, color);
         }
 
-        public void CreateUnmaskCardItem(Vector2 position, Vector2 size)
+        public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit)
         {
             UnmaskCardItemViewFactory unmaskCardItemViewFactory = new UnmaskCardItemViewFactory();
             IUnmaskCardItemView unmaskCardItemView = unmaskCardItemViewFactory.Spawn(scaleHelper, unmaskCardItemPrefab);
             unmaskCardItemView.SetPosition(position);
             unmaskCardItemView.SetSize(size);
+            unmaskCardItemView.SetPixelPerUnit(pixelPerUnit);
             _unmaskCardItemViews.Add(unmaskCardItemView);
         }
 
@@ -95,7 +96,7 @@ namespace Scripts
         void SetBaseAlpha(float alpha);
         Tween SetAlpha(float alpha, float duration);
         void SetColor(Color color);
-        void CreateUnmaskCardItem(Vector2 position, Vector2 size);
+        void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit);
         void ClearAllUnmaskCardItems();
         void ClearUnmaskCardItem(int index);
         void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);

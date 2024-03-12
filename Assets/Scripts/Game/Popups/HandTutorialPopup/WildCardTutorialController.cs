@@ -11,12 +11,11 @@ namespace Scripts
         private ICardHolderModelCreator _cardHolderModelCreator;
         private IInitialCardAreaController _initialCardAreaController;
         private IUnmaskServiceAreaView _unmaskServiceAreaView;
-        private IHandTutorialView _handTutorialView;
         private ITutorialMessagePopupView _tutorialMessagePopupView;
         private Queue<Action> _tutorialAnimationActions;
 
         public void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
-            IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
+            IUnmaskServiceAreaView unmaskServiceAreaView,
             ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator)
         {
             _cardItemLocator = cardItemLocator;
@@ -24,9 +23,7 @@ namespace Scripts
             _initialCardAreaController = initialCardAreaController;
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _tutorialMessagePopupView = tutorialMessagePopupView;
-            _handTutorialView = handTutorialView;
             _unmaskServiceAreaView.InstantiateTutorialFade();
-            _handTutorialView.Init();
             _tutorialMessagePopupView.Init();
             InitializeTutorialAnimationActions();
         }
@@ -34,10 +31,14 @@ namespace Scripts
         private void InitializeTutorialAnimationActions()
         {
             _tutorialAnimationActions = new Queue<Action>();
+            _unmaskServiceAreaView.CreateUnmaskCardItem(_initialCardAreaController.GetWildCardHolderPosition(), _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size);
+            _tutorialMessagePopupView.SetText("You can drag the wild card to see correct number.");
+            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
+
+            /*
             Vector2 sizeOfInitialHolder =
                 _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size;
             Vector2 sizeOfBoardHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size;
-
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>()
@@ -47,11 +48,12 @@ namespace Scripts
                 },
                 sizeList = new List<Vector2>() { sizeOfInitialHolder, sizeOfBoardHolder },
                 allowedBoardHolderIndex = 0,
-                text = "Drag the wild card to the board."
+                text = "Drag the wild card to see correct number."
             }));
+            */
             ExecuteNextTutorialAction();
         }
-
+/*
         private void StartDragAnimation(TutorialAnimation tutorialAnimation)
         {
             DisableUI(tutorialAnimation);
@@ -86,14 +88,14 @@ namespace Scripts
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
-        
         private void DisableUI(TutorialAnimation tutorialAnimation)
         {
             _cardItemLocator.SetDisallowedCardHolderIndexes(tutorialAnimation.allowedBoardHolderIndex);
             _initialCardAreaController.SetCardsAsUndraggable(tutorialAnimation.draggableCardIndex);
             _initialCardAreaController.SetCardsAsUnselectable(tutorialAnimation.selectableCardIndex);
         }
-        
+        */
+
         private void ExecuteNextTutorialActionWithDelay(float duration)
         {
             DOTween.Sequence().AppendInterval(duration).OnComplete(ExecuteNextTutorialAction);
@@ -108,7 +110,6 @@ namespace Scripts
             else
             {
                 _tutorialMessagePopupView.Destroy();
-                _handTutorialView.Destroy();
                 _unmaskServiceAreaView.CloseTutorialFade();
             }
         }
@@ -122,7 +123,7 @@ namespace Scripts
     public interface IWildCardTutorialController
     {
         void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
-            IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
+            IUnmaskServiceAreaView unmaskServiceAreaView,
             ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator);
     }
 }

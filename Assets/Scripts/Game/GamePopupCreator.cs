@@ -107,14 +107,14 @@ namespace Scripts
             /*
             if (_levelTracker.GetWildCardCount() > 0)
             {
-                IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
                 ITutorialMessagePopupView tutorialMessagePopupView =
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
 
                 IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
-                wildCardTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator);
+                wildCardTutorialController.Initialize(initialCardAreaController, cardItemLocator, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator);
             }
             */
+            
         }
         
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)

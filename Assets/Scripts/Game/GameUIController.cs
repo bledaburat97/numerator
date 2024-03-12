@@ -11,7 +11,10 @@ namespace Scripts
         private IGameUIView _view;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
-        
+        private ICardInfoButtonController _cardInfoButtonController;
+        private bool _isCheckButtonClickable;
+        private bool _isResetButtonClickable;
+        private bool _isCardInfoButtonClickable;
         public event EventHandler CheckFinalNumbers;
         public event EventHandler NotAbleToCheck;
         public event EventHandler ResetNumbers;
@@ -51,17 +54,22 @@ namespace Scripts
 
             if (_levelTracker.GetLevelId() > 8)
             {
-                ICardInfoButtonController cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton());
-                cardInfoButtonController.Initialize(OnCardInfoButton);
+                _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton());
+                _cardInfoButtonController.Initialize(OnCardInfoButton);
             }
             else
             {
                 _view.GetCardInfoButton().SetActive(false);
             }
+            
+            SetCheckButtonClickable(true);
+            SetResetButtonClickable(true);
+            SetCardInfoButtonClickable(true);
         }
         
         private void OnClickCheckButton()
         {
+            if(!_isCheckButtonClickable) return;
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
             {
                 CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
@@ -74,6 +82,7 @@ namespace Scripts
         
         private void OnClickResetButton()
         {
+            if(!_isResetButtonClickable) return;
             ResetNumbers?.Invoke(this,  null);
         }
         
@@ -101,6 +110,21 @@ namespace Scripts
         {
             return _view.GetCardInfoButton().GetRectTransform();
         }
+
+        public void SetCheckButtonClickable(bool status)
+        {
+            _isCheckButtonClickable = status;
+        }
+        
+        public void SetResetButtonClickable(bool status)
+        {
+            _isResetButtonClickable = status;
+        }
+        
+        public void SetCardInfoButtonClickable(bool status)
+        {
+            _cardInfoButtonController?.SetIsClickable(status);
+        }
     }
 
     public interface IGameUIController
@@ -110,10 +134,12 @@ namespace Scripts
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;
         event EventHandler OpenSettings;
+        event EventHandler<bool> CardInfoToggleChanged;
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
         RectTransform GetCardInfoButtonRectTransform();
-
-        event EventHandler<bool> CardInfoToggleChanged;
+        void SetCheckButtonClickable(bool status);
+        void SetResetButtonClickable(bool status);
+        void SetCardInfoButtonClickable(bool status);
     }
 }

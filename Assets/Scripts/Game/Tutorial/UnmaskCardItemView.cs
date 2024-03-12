@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scripts
 {
     public class UnmaskCardItemView : MonoBehaviour, IUnmaskCardItemView
     {
         [SerializeField] private RectTransform rectTransform;
-
+        [SerializeField] private Image image;
         public void SetPosition(Vector2 position)
         {
             rectTransform.localScale = Vector3.one;
@@ -28,6 +29,11 @@ namespace Scripts
             rectTransform.localPosition = new Vector3(rectTransform.localPosition.x + changeInLocalPos.x,
                 rectTransform.localPosition.y + changeInLocalPos.y, rectTransform.localPosition.z);
         }
+
+        public void SetPixelPerUnit(float value)
+        {
+            image.pixelsPerUnitMultiplier = value;
+        }
     }
 
     public interface IUnmaskCardItemView
@@ -36,5 +42,6 @@ namespace Scripts
         void SetSize(Vector2 size);
         void Destroy();
         void ChangeLocalPosition(Vector2 changeInLocalPos);
+        void SetPixelPerUnit(float value);
     }
 }

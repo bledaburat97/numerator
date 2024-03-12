@@ -7,6 +7,7 @@ namespace Scripts
         private ICardInfoButtonView _view;
         private bool _isCardInfoToggleOn;
         private Action<bool> _cardInfoTogglePressed;
+        private bool _isClickable;
         public CardInfoButtonController(ICardInfoButtonView view)
         {
             _view = view;
@@ -22,14 +23,23 @@ namespace Scripts
 
         private void ChangeCardInfoToggle()
         {
-            _isCardInfoToggleOn = !_isCardInfoToggleOn;
-            _view.SetCardInfoToggleStatus(_isCardInfoToggleOn, 0.2f);
-            _cardInfoTogglePressed?.Invoke(_isCardInfoToggleOn);
+            if (_isClickable)
+            {
+                _isCardInfoToggleOn = !_isCardInfoToggleOn;
+                _view.SetCardInfoToggleStatus(_isCardInfoToggleOn, 0.2f);
+                _cardInfoTogglePressed?.Invoke(_isCardInfoToggleOn);
+            }
+        }
+
+        public void SetIsClickable(bool isClickable)
+        {
+            _isClickable = isClickable;
         }
     }
 
     public interface ICardInfoButtonController
     {
         void Initialize(Action<bool> cardInfoTogglePressed);
+        void SetIsClickable(bool isClickable);
     }
 }

@@ -32,9 +32,9 @@ namespace Scripts
             _unmaskServiceView.SetAlpha(_fade, duration);
         }
 
-        public void CreateUnmaskCardItem(Vector2 position, Vector2 size)
+        public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit = 230f)
         {
-            _unmaskServiceView.CreateUnmaskCardItem(position, size);
+            _unmaskServiceView.CreateUnmaskCardItem(position, size, pixelPerUnit);
         }
         
         public void ClearAllUnmaskCardItems()
@@ -58,7 +58,7 @@ namespace Scripts
         void Initialize(IFadePanelController fadePanelController);
         void InstantiateTutorialFade();
         void CloseTutorialFade();
-        void CreateUnmaskCardItem(Vector2 position, Vector2 size);
+        void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit = 230f);
         void ClearAllUnmaskCardItems();
         void ClearUnmaskCardItem(int index);
         void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);

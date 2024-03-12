@@ -260,7 +260,7 @@ namespace Scripts
                         }
                     }
                 })
-                .AppendInterval(1.5f + 0.3f * args.finalCardNumbers.Count)
+                .AppendInterval(1.2f + 0.3f * args.finalCardNumbers.Count)
                 .AppendCallback(() => args.onComplete.Invoke());
         }
 

@@ -15,7 +15,8 @@ namespace Scripts
         private LevelData _levelData;
         private ICardHolderModelCreator _cardHolderModelCreator;
         private int _activeCardIndex;
-
+        private List<int> _pressableProbabilityButtonIndexList;
+        private List<int> _pressableHolderIndicatorButtonIndexList;
         public CardItemInfoPopupController(ICardItemInfoPopupView view)
         {
             _view = view;
@@ -28,7 +29,9 @@ namespace Scripts
             _cardHolderModelCreator = cardHolderModelCreator;
             _view.Init(cardHolderIndicatorButtonViewFactory);
             _cardHolderIndicatorButtonControllers = new List<IBaseButtonController>();
-            _probabilityButtonControllers = new Dictionary<int, IBaseButtonController>(); 
+            _probabilityButtonControllers = new Dictionary<int, IBaseButtonController>();
+            _pressableProbabilityButtonIndexList = new List<int>();
+            _pressableHolderIndicatorButtonIndexList = new List<int>();
             CreateCardHolderIndicatorButtons();
             CreateProbabilityButtons();
             _view.SetStatus(false);
@@ -74,6 +77,7 @@ namespace Scripts
         
         private void CreateCardHolderIndicatorButtons()
         {
+            _pressableHolderIndicatorButtonIndexList.Clear();
             foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
                 IBaseButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
@@ -82,17 +86,20 @@ namespace Scripts
                 cardHolderIndicatorButtonController.SetText(ConstantValues.HOLDER_ID_LIST[boardCardHolderModel.index]);
                 cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(boardCardHolderModel.localPosition.x, 0));
                 _cardHolderIndicatorButtonControllers.Add(cardHolderIndicatorButtonController);
+                _pressableHolderIndicatorButtonIndexList.Add(boardCardHolderModel.index);
             }
         }
 
         private void OnCardHolderIndicatorButtonClicked(int cardHolderIndicatorIndex)
         {
+            if (!_pressableHolderIndicatorButtonIndexList.Contains(cardHolderIndicatorIndex)) return;
             _cardItemInfoManager.OnCardHolderIndicatorClicked(_activeCardIndex, cardHolderIndicatorIndex);
             SetCardItemInfoPopupStatus(true, _activeCardIndex);
         }
         
         private void CreateProbabilityButtons()
         {
+            _pressableProbabilityButtonIndexList.Clear();
             for (int i = 0; i < ConstantValues.NUM_OF_PROBABILITY_BUTTONS; i++)
             {
                 int probabilityIndex = i;
@@ -102,11 +109,13 @@ namespace Scripts
                 probabilityButtonController.Initialize(() => OnProbabilityButtonClicked(probabilityIndex));
                 probabilityButtonController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityIndex]);
                 _probabilityButtonControllers.Add(probabilityIndex, probabilityButtonController);
+                _pressableProbabilityButtonIndexList.Add(probabilityIndex);
             }
         }
         
         private void OnProbabilityButtonClicked(int probabilityIndex)
         {
+            if (!_pressableProbabilityButtonIndexList.Contains(probabilityIndex)) return;
             _cardItemInfoManager.OnProbabilityButtonClicked(_activeCardIndex, (ProbabilityType)probabilityIndex);
             SetCardItemInfoPopupStatus(true, _activeCardIndex);
         }
@@ -120,6 +129,18 @@ namespace Scripts
         {
             return _cardHolderIndicatorButtonControllers[index];
         }
+        
+        public void SetPressableProbabilityButtonIndex(int index)
+        {
+            _pressableProbabilityButtonIndexList.Clear();
+            _pressableProbabilityButtonIndexList.Add(index);
+        }
+        
+        public void SetPressableHolderIndicatorButtonIndex(int index)
+        {
+            _pressableHolderIndicatorButtonIndexList.Clear();
+            _pressableHolderIndicatorButtonIndexList.Add(index);
+        }
     }
     
     public interface ICardItemInfoPopupController
@@ -127,6 +148,8 @@ namespace Scripts
         void Initialize(ICardItemInfoManager cardItemInfoManager, ILevelDataCreator levelDataCreator, ICardHolderModelCreator cardHolderModelCreator, IInitialCardAreaController initialCardAreaController);
         IBaseButtonController GetProbabilityButton(ProbabilityType probabilityType);
         IBaseButtonController GetHolderIndicatorButton(int index);
+        void SetPressableProbabilityButtonIndex(int index);
+        void SetPressableHolderIndicatorButtonIndex(int index);
     }
 }
 

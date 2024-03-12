@@ -59,6 +59,7 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
+                isCheckButtonActive = true,
                 text = "Click the check button."
             }));
             ResultAreaInfo resultAreaInfo = _resultAreaController.GetResultAreaInfo();
@@ -74,6 +75,7 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetResetButtonRectTransform().rect.width, _gameUIController.GetResetButtonRectTransform().rect.height)},
+                isResetButtonActive = true,
                 text = "Click the reset button."
             }));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
@@ -96,6 +98,7 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
+                isCheckButtonActive = true,
                 text = "Click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new TutorialAnimation()
@@ -126,6 +129,7 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
+                isCheckButtonActive = true,
                 text = "Click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new TutorialAnimation()
@@ -270,6 +274,9 @@ namespace Scripts
             _cardItemLocator.SetDisallowedCardHolderIndexes(tutorialAnimation.allowedBoardHolderIndex);
             _initialCardAreaController.SetCardsAsUndraggable(tutorialAnimation.draggableCardIndex);
             _initialCardAreaController.SetCardsAsUnselectable(tutorialAnimation.selectableCardIndex);
+            _gameUIController.SetCheckButtonClickable(tutorialAnimation.isCheckButtonActive);
+            _gameUIController.SetResetButtonClickable(tutorialAnimation.isResetButtonActive);
+            _gameUIController.SetCardInfoButtonClickable(tutorialAnimation.isCardInfoButtonActive);
         }
 
         private void ExecuteNextTutorialActionWithDelay(float duration)
@@ -293,6 +300,9 @@ namespace Scripts
         public int allowedBoardHolderIndex = -1;
         public int draggableCardIndex = -1;
         public int selectableCardIndex = -1;
+        public bool isCheckButtonActive = false;
+        public bool isResetButtonActive = false;
+        public bool isCardInfoButtonActive = false;
         public string text;
         public Vector2 changeInLocalPos;
     }
