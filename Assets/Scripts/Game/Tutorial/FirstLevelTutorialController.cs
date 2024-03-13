@@ -37,8 +37,8 @@ namespace Scripts
         private void InitializeTutorialAnimationActions()
         {
             _tutorialAnimationActions = new Queue<Action>();
-            Vector2 sizeOfInitialHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size;
-            Vector2 sizeOfBoardHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size;
+            Vector2 sizeOfInitialHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size + Vector2.one;
+            Vector2 sizeOfBoardHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size + Vector2.one;
             
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
@@ -46,21 +46,21 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 0,
                 draggableCardIndex = 0,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(1)},
                 sizeList = new List<Vector2>(){sizeOfInitialHolder},
                 selectableCardIndex = 1,
-                text = "Click the card."
+                text = "Or you can click the number."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             ResultAreaInfo resultAreaInfo = _resultAreaController.GetResultAreaInfo();
             AddTutorialAction(() => ShowResultBlock(new TutorialAnimation()
@@ -76,7 +76,7 @@ namespace Scripts
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetResetButtonRectTransform().rect.width, _gameUIController.GetResetButtonRectTransform().rect.height)},
                 isResetButtonActive = true,
-                text = "Click the reset button."
+                text = "You can click the reset button."
             }));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
@@ -84,7 +84,7 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 0,
                 draggableCardIndex = 2,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
@@ -92,21 +92,21 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 1,
                 draggableCardIndex = 0,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
                 changeInLocalPos = new Vector2(0, - (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
-                text = "Only one number is at correct position."
+                text = "Only one number is at correct position, the other one doesn't exist."
             }));
             AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
@@ -115,7 +115,7 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfBoardHolder, sizeOfInitialHolder},
                 allowedBoardHolderIndex = 0,
                 draggableCardIndex = 2,
-                text = "Drag the card to the initial area back."
+                text = "You can drag the number to the initial area back."
             }, true));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
@@ -123,14 +123,14 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 0,
                 draggableCardIndex = 3,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new TutorialAnimation()
             {

@@ -50,22 +50,21 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 0,
                 draggableCardIndex = 0,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
+            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(1), _cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
-                allowedBoardHolderIndex = 1,
-                draggableCardIndex = 1,
-                text = "Drag the card to the board."
+                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(1)},
+                sizeList = new List<Vector2>(){sizeOfInitialHolder},
+                selectableCardIndex = 1,
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             ResultAreaInfo resultAreaInfo = _resultAreaController.GetResultAreaInfo();
             AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
@@ -73,7 +72,7 @@ namespace Scripts
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
                 changeInLocalPos = new Vector2(0,- resultAreaInfo.resultBlockSize.y / 2),
-                text = "Any number does not located on the board."
+                text = "Any number does not exist on the board. Now you can specify these numbers."
             }));
             AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
             AddTutorialAction(() => StartCardInfoButtonClickAnimation(new CardInfoTutorialAnimation()
@@ -81,42 +80,42 @@ namespace Scripts
                 posList = new List<Vector2>(){_gameUIController.GetCardInfoButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCardInfoButtonRectTransform().rect.width, _gameUIController.GetCardInfoButtonRectTransform().rect.height)},
                 isCardInfoButtonActive = true,
-                text = "Click the card info button."
+                text = "You can click the number info button. It will help you to play."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
                 sizeList = new List<Vector2>(){sizeOfBoardHolder},
                 selectableCardIndex = 0,
-                text = "Click the card."
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the card does not exist on the board, turn the color to red."
+                text = "When you believe that the number does not exist on the board, turn the color of number to red."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
                 sizeList = new List<Vector2>(){sizeOfBoardHolder},
                 selectableCardIndex = 1,
-                text = "Click the card."
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the card does not exist on the board, turn the color to red."
+                text = "When you believe that the number does not exist on the board, turn the color of number to red."
             }));
             AddTutorialAction(() => StartResetButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetResetButtonRectTransform().rect.width, _gameUIController.GetResetButtonRectTransform().rect.height)},
                 isResetButtonActive = true,
-                text = "Click the reset button."
+                text = "You can click the reset button."
             }));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
             {
@@ -124,7 +123,7 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 0,
                 draggableCardIndex = 2,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
             {
@@ -132,14 +131,14 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 1,
                 draggableCardIndex = 3,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
             {
@@ -154,41 +153,41 @@ namespace Scripts
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetResetButtonRectTransform().rect.width, _gameUIController.GetResetButtonRectTransform().rect.height)},
                 isResetButtonActive = true,
-                text = "Click the reset button."
+                text = "You can click the reset button."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
                 sizeList = new List<Vector2>(){sizeOfInitialHolder},
                 selectableCardIndex = 2,
-                text = "Click the card."
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartHolderIndicatorButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().rect.height)},
                 pressableHolderButtonIndex = 0,
-                text = "If the card does not exist on a holder on the board, put a cross for that holder."
+                text = "When you believe that the number does not exist on a specific place, put a cross for that place."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(3)},
                 sizeList = new List<Vector2>(){sizeOfInitialHolder},
                 selectableCardIndex = 3,
-                text = "Click the card."
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartHolderIndicatorButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().rect.height)},
                 pressableHolderButtonIndex = 1,
-                text = "If the card does not exist on a holder on the board, put a cross for that holder."
+                text = "When you believe that the number does not exist on a specific place, put a cross for that place."
             }));
             AddTutorialAction(() => StartBoardClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
                 sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                text = "Click the board."
+                text = "You can click the board."
             }));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
             {
@@ -196,21 +195,21 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 1,
                 draggableCardIndex = 4,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
                 changeInLocalPos = new Vector2(0, -2* (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
-                text = "Only one number is at correct position."
+                text = "Only one number is at correct position, the other one doesn't exist."
             }));
             AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
@@ -218,43 +217,41 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
                 sizeList = new List<Vector2>(){sizeOfBoardHolder},
                 selectableCardIndex = 3,
-                text = "Click the card."
+                text = "You can click the number."
             }));
-            //CLICK GREEN.
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.Certain).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.Certain).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.Certain).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.Certain,
-                text = "When the card certainly exists on the board, turn the color to green."
+                text = "When the number certainly exists somewhere on the board, turn the color to green."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
                 sizeList = new List<Vector2>(){sizeOfBoardHolder},
                 selectableCardIndex = 4,
-                text = "Click the card."
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the card does not exist on the board, turn the color to red."
-            }));
+                text = "When you believe that the number does not exist on the board, turn the color of number to red."            }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
                 sizeList = new List<Vector2>(){sizeOfInitialHolder},
                 selectableCardIndex = 2,
-                text = "Click the card."
+                text = "You can click the number."
             }));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the card does not exist on the board, turn the color to red."
+                text = "When you believe that the number does not exist on the board, turn the color of number to red."
             }));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
             {
@@ -262,7 +259,7 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfBoardHolder, sizeOfInitialHolder},
                 allowedBoardHolderIndex = 1,
                 draggableCardIndex = 4,
-                text = "Drag the card to the initial area back."
+                text = "You can drag the number to the initial area back."
             }, true));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
             {
@@ -270,14 +267,14 @@ namespace Scripts
                 sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
                 allowedBoardHolderIndex = 1,
                 draggableCardIndex = 5,
-                text = "Drag the card to the board."
+                text = "You can drag the number to the board."
             }));
             AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
                 isCheckButtonActive = true,
-                text = "Click the check button."
+                text = "You can click the check button."
             }));
             AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
             {

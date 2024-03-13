@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
@@ -49,11 +50,12 @@ namespace Scripts
         public void OpenTutorialFade()
         {
             _view.SetTutorialFadeImageStatus(true);
-            _view.SetTutorialFadeAlpha(0.5f);
+            _view.SetTutorialFadeAlpha(0f);
         }
         
-        public void CloseTutorialFade()
+        public void CloseTutorialFade(float duration)
         {
+            _view.AnimateTutorialFade(0f, duration);
             _view.SetTutorialFadeImageStatus(false);
         }
     }
@@ -66,7 +68,7 @@ namespace Scripts
         void SetFadeImageAlpha(float alpha);
         void InitMaskSystem(IUnmaskServiceView unmaskService, float fade);
         void OpenTutorialFade();
-        void CloseTutorialFade();
+        void CloseTutorialFade(float duration);
         void SetNonGlowFadeImageStatus(bool status);
     }
 }

@@ -13,7 +13,7 @@ namespace Scripts
         [SerializeField] private Canvas canvas;
         [SerializeField] private Shader shader;
         [SerializeField] private UnmaskCardItemView unmaskCardItemPrefab;
-        [SerializeField] private RectTransform scaleHelper;
+        //[SerializeField] private RectTransform safeArea;
 
         private static readonly int MainTex = Shader.PropertyToID("_MainTex");
         private static readonly int BaseAlpha = Shader.PropertyToID("_BaseAlpha");
@@ -59,7 +59,7 @@ namespace Scripts
         public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit)
         {
             UnmaskCardItemViewFactory unmaskCardItemViewFactory = new UnmaskCardItemViewFactory();
-            IUnmaskCardItemView unmaskCardItemView = unmaskCardItemViewFactory.Spawn(scaleHelper, unmaskCardItemPrefab);
+            IUnmaskCardItemView unmaskCardItemView = unmaskCardItemViewFactory.Spawn(canvas.transform, unmaskCardItemPrefab);
             unmaskCardItemView.SetPosition(position);
             unmaskCardItemView.SetSize(size);
             unmaskCardItemView.SetPixelPerUnit(pixelPerUnit);

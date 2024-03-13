@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
@@ -41,6 +42,11 @@ namespace Scripts
             color.a = alpha;
             tutorialFadeImage.color = color;
         }
+
+        public void AnimateTutorialFade(float finalAlpha, float duration)
+        {
+            DOTween.Sequence().Append(tutorialFadeImage.DOFade(finalAlpha, duration));
+        }
     }
 
     public interface IFadePanelView
@@ -51,5 +57,6 @@ namespace Scripts
         void SetTutorialFadeImageStatus(bool status);
         Image GetTutorialFadeImage();
         void SetTutorialFadeAlpha(float alpha);
+        void AnimateTutorialFade(float finalAlpha, float duration);
     }
 }

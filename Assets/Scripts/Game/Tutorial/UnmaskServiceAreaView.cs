@@ -7,6 +7,7 @@ namespace Scripts
         private IFadePanelController _fadePanelController;
         [SerializeField] private UnmaskServiceView unmaskServicePrefab;
         private float _fade = 0.5f;
+        private float _fadeDuration = 0.4f;
         private IUnmaskServiceView _unmaskServiceView;
         
         public void Initialize(IFadePanelController fadePanelController)
@@ -17,12 +18,12 @@ namespace Scripts
         public void InstantiateTutorialFade()
         {
             _fadePanelController.OpenTutorialFade();
-            CreateMaskSystem(0f);
+            CreateMaskSystem(_fadeDuration);
         }
 
         public void CloseTutorialFade()
         {
-            _fadePanelController.CloseTutorialFade();
+            _fadePanelController.CloseTutorialFade(_fadeDuration);
         }
         
         private void CreateMaskSystem(float duration)

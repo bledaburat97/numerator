@@ -32,7 +32,7 @@ namespace Scripts
         {
             _tutorialAnimationActions = new Queue<Action>();
             _unmaskServiceAreaView.CreateUnmaskCardItem(_initialCardAreaController.GetWildCardHolderPosition(), _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size);
-            _tutorialMessagePopupView.SetText("You can drag the wild card to see correct number.");
+            _tutorialMessagePopupView.SetText("You can drag the wild card to see correct number at any position.");
             AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
 
             /*
