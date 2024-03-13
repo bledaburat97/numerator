@@ -7,11 +7,13 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private Image image;
-        public void SetPosition(Vector2 position)
+        public void SetPosition(Vector2 position, float anchorMaxYOfSafeArea, float heightOfCanvas)
         {
             rectTransform.localScale = Vector3.one;
             rectTransform.position = position;
-            rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, rectTransform.localPosition.y, 0);
+            float localPositionY = rectTransform.localPosition.y;
+            float newLocalPositionY = (localPositionY + heightOfCanvas / 2) / anchorMaxYOfSafeArea - heightOfCanvas / 2;
+            rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, newLocalPositionY , 0);
         }
 
         public void SetSize(Vector2 size)
@@ -38,7 +40,7 @@ namespace Scripts
 
     public interface IUnmaskCardItemView
     {
-        void SetPosition(Vector2 position);
+        void SetPosition(Vector2 position, float anchorMaxYOfSafeArea, float heightOfCanvas);
         void SetSize(Vector2 size);
         void Destroy();
         void ChangeLocalPosition(Vector2 changeInLocalPos);

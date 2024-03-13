@@ -14,6 +14,7 @@ namespace Scripts
         private ICardInfoButtonController _cardInfoButtonController;
         private bool _isCheckButtonClickable;
         private bool _isResetButtonClickable;
+        private bool _isSettingsButtonClickable;
         private bool _isCardInfoButtonClickable;
         public event EventHandler CheckFinalNumbers;
         public event EventHandler NotAbleToCheck;
@@ -65,6 +66,7 @@ namespace Scripts
             SetCheckButtonClickable(true);
             SetResetButtonClickable(true);
             SetCardInfoButtonClickable(true);
+            SetSettingsButtonClickable(true);
         }
         
         private void OnClickCheckButton()
@@ -88,6 +90,7 @@ namespace Scripts
         
         private void OnClickSettings()
         {
+            if(!_isSettingsButtonClickable) return;
             OpenSettings?.Invoke(this,  null);
         }
 
@@ -125,6 +128,11 @@ namespace Scripts
         {
             _cardInfoButtonController?.SetIsClickable(status);
         }
+
+        public void SetSettingsButtonClickable(bool status)
+        {
+            _isSettingsButtonClickable = status;
+        }
     }
 
     public interface IGameUIController
@@ -141,5 +149,6 @@ namespace Scripts
         void SetCheckButtonClickable(bool status);
         void SetResetButtonClickable(bool status);
         void SetCardInfoButtonClickable(bool status);
+        void SetSettingsButtonClickable(bool status);
     }
 }

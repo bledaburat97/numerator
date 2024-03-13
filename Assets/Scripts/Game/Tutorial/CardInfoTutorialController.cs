@@ -492,6 +492,7 @@ namespace Scripts
             _gameUIController.SetCheckButtonClickable(tutorialAnimation.isCheckButtonActive);
             _gameUIController.SetResetButtonClickable(tutorialAnimation.isResetButtonActive);
             _gameUIController.SetCardInfoButtonClickable(tutorialAnimation.isCardInfoButtonActive);
+            _gameUIController.SetSettingsButtonClickable(false);
         }
 
         private void ExecuteNextTutorialActionWithDelay(float duration)

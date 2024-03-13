@@ -1,17 +1,18 @@
 ﻿using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Scripts
 {
     public class TutorialMessagePopupView : MonoBehaviour, ITutorialMessagePopupView
     {
         [SerializeField] private TMP_Text text;
-        
+        [SerializeField] private RectTransform rectTransform;
         public void Init()
         {
             transform.localScale = Vector3.one;
-            transform.localPosition = new Vector3(0f, 295f, 0);
+            rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            rectTransform.anchorMin = new Vector2(0.5f, 1f);
+            rectTransform.anchoredPosition = new Vector2(0f, -rectTransform.rect.height / 2);
         }
 
         public void Destroy()

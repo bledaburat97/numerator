@@ -6,10 +6,10 @@ namespace Scripts
     {
         private IFadePanelController _fadePanelController;
         [SerializeField] private UnmaskServiceView unmaskServicePrefab;
+        [SerializeField] private RectTransform safeAreaRectTransform;
         private float _fade = 0.5f;
         private float _fadeDuration = 0.4f;
         private IUnmaskServiceView _unmaskServiceView;
-        
         public void Initialize(IFadePanelController fadePanelController)
         {
             _fadePanelController = fadePanelController;
@@ -35,7 +35,7 @@ namespace Scripts
 
         public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit = 230f)
         {
-            _unmaskServiceView.CreateUnmaskCardItem(position, size, pixelPerUnit);
+            _unmaskServiceView.CreateUnmaskCardItem(position, size, safeAreaRectTransform.anchorMax.y, pixelPerUnit);
         }
         
         public void ClearAllUnmaskCardItems()
