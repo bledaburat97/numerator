@@ -39,6 +39,8 @@ namespace Scripts
         private Action _deleteSaveAction = null;
         [SerializeField] private GameObject glowSystem;
         [SerializeField] private GlowingLevelEndPopupView glowingLevelEndPopup;
+        [SerializeField] private RectTransform safeAreaRectTransform;
+        [SerializeField] private RectTransform canvasRectTransform;
 
         private Dictionary<ulong, bool> _playerSuccessDictionary;
         private bool _isLocalGameEnd = false;
@@ -88,6 +90,8 @@ namespace Scripts
             if (_levelTracker.IsFirstLevelTutorial())
             {
                 IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
+                handTutorialView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
+                unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
                 ITutorialMessagePopupView tutorialMessagePopupView =
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
 
@@ -95,9 +99,11 @@ namespace Scripts
                 firstLevelTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController);
             }
             
-            if (_levelTracker.IsCardInfoTutorial())
+            else if (_levelTracker.IsCardInfoTutorial())
             {
                 IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
+                handTutorialView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
+                unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
                 ITutorialMessagePopupView tutorialMessagePopupView =
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
 
@@ -105,15 +111,14 @@ namespace Scripts
                 cardInfoTutorialController.Initialize(initialCardAreaController, cardItemLocator, handTutorialView, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, gameUIController, resultAreaController, cardItemInfoPopupController, cardItemInfoManager);
             }
             
-            if (_levelTracker.IsWildCardTutorial())
+            else if (_levelTracker.IsWildCardTutorial())
             {
                 ITutorialMessagePopupView tutorialMessagePopupView =
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
 
                 IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
-                wildCardTutorialController.Initialize(initialCardAreaController, cardItemLocator, unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator);
+                wildCardTutorialController.Initialize(unmaskServiceAreaView, tutorialMessagePopupView);
             }
-            
         }
         
         private void CreateNotAbleToMovePopup(object sender, EventArgs e)

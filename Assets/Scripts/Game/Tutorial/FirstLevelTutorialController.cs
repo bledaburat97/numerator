@@ -29,7 +29,6 @@ namespace Scripts
             _cardHolderModelCreator = cardHolderModelCreator;
             _resultAreaController = resultAreaController;
             _unmaskServiceAreaView.InstantiateTutorialFade();
-            _handTutorialView.Init();
             _tutorialMessagePopupView.Init();
             InitializeTutorialAnimationActions();
         }
@@ -67,10 +66,10 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0,- resultAreaInfo.resultBlockSize.y / 2),
+                changeInLocalPosY = - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Any number is not at correct position. One number is at wrong position."
             }));
-            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
+            AddTutorialAction(()=> WaitForATime(5));
             AddTutorialAction(() => StartResetButtonClickAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
@@ -105,10 +104,10 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0, - (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
+                changeInLocalPosY = - (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Only one number is at correct position, the other one doesn't exist."
             }));
-            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
+            AddTutorialAction(()=> WaitForATime(5));
             AddTutorialAction(() => StartDragAnimation(new TutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0), _initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
@@ -136,7 +135,7 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0, - 2 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
+                changeInLocalPosY = - 2 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Both of the numbers are at correct position. Congratulations!!!"
             }));
             ExecuteNextTutorialAction();
@@ -230,8 +229,7 @@ namespace Scripts
         private void ShowResultBlock(TutorialAnimation tutorialAnimation)
         {
             DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _unmaskServiceAreaView.ChangeLocalPositionOfUnmaskCardItem(tutorialAnimation.changeInLocalPos);
+            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0], tutorialAnimation.changeInLocalPosY);
             _tutorialMessagePopupView.SetText(tutorialAnimation.text);
             ExecuteNextTutorialActionWithDelay(0.3f);
         }
@@ -268,6 +266,15 @@ namespace Scripts
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
+        }
+        
+        private void WaitForATime(float duration)
+        {
+            DOTween.Sequence().AppendInterval(duration).OnComplete(() =>
+            {
+                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
+                ExecuteNextTutorialAction();
+            });
         }
 
         private void DisableUI(TutorialAnimation tutorialAnimation)
@@ -306,6 +313,6 @@ namespace Scripts
         public bool isResetButtonActive = false;
         public bool isCardInfoButtonActive = false;
         public string text;
-        public Vector2 changeInLocalPos;
+        public float changeInLocalPosY;
     }
 }

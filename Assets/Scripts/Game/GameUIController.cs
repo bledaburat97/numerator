@@ -7,7 +7,7 @@ namespace Scripts
     public class GameUIController : IGameUIController
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-
+        [Inject] private IHapticController _hapticController;
         private IGameUIView _view;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
@@ -96,6 +96,7 @@ namespace Scripts
 
         private void OnCardInfoButton(bool isCardInfoToggleOn)
         {
+            _hapticController.Vibrate(HapticType.ButtonClick);
             CardInfoToggleChanged?.Invoke(this, isCardInfoToggleOn);
         }
 

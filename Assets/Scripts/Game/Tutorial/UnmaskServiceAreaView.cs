@@ -6,13 +6,20 @@ namespace Scripts
     {
         private IFadePanelController _fadePanelController;
         [SerializeField] private UnmaskServiceView unmaskServicePrefab;
-        [SerializeField] private RectTransform safeAreaRectTransform;
         private float _fade = 0.5f;
         private float _fadeDuration = 0.4f;
         private IUnmaskServiceView _unmaskServiceView;
+        private float _anchorMaxYOfSafeArea;
+        private float _heightOfCanvas;
         public void Initialize(IFadePanelController fadePanelController)
         {
             _fadePanelController = fadePanelController;
+        }
+
+        public void Init(float anchorMaxYOfSafeArea, float heightOfCanvas)
+        {
+            _anchorMaxYOfSafeArea = anchorMaxYOfSafeArea;
+            _heightOfCanvas = heightOfCanvas;
         }
         
         public void InstantiateTutorialFade()
@@ -33,9 +40,9 @@ namespace Scripts
             _unmaskServiceView.SetAlpha(_fade, duration);
         }
 
-        public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit = 230f)
+        public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float changeInLocalPosY = 0f, float pixelPerUnit = 230f)
         {
-            _unmaskServiceView.CreateUnmaskCardItem(position, size, safeAreaRectTransform.anchorMax.y, pixelPerUnit);
+            _unmaskServiceView.CreateUnmaskCardItem(position, size, _anchorMaxYOfSafeArea, _heightOfCanvas, pixelPerUnit, changeInLocalPosY);
         }
         
         public void ClearAllUnmaskCardItems()
@@ -47,22 +54,17 @@ namespace Scripts
         {
             _unmaskServiceView.ClearUnmaskCardItem(index);
         }
-
-        public void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos)
-        {
-            _unmaskServiceView.ChangeLocalPositionOfUnmaskCardItem(changeInLocalPos);
-        }
     }
 
     public interface IUnmaskServiceAreaView
     {
         void Initialize(IFadePanelController fadePanelController);
+        void Init(float anchorMaxYOfSafeArea, float heightOfCanvas);
         void InstantiateTutorialFade();
         void CloseTutorialFade();
-        void CreateUnmaskCardItem(Vector2 position, Vector2 size, float pixelPerUnit = 230f);
+        void CreateUnmaskCardItem(Vector2 position, Vector2 size, float changeInLocalPosY = 0f, float pixelPerUnit = 230f);
         void ClearAllUnmaskCardItems();
         void ClearUnmaskCardItem(int index);
-        void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);
     }
 
 }

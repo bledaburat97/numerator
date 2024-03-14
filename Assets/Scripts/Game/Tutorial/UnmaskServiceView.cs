@@ -11,7 +11,6 @@ namespace Scripts
         [NonSerialized] private Image maskImage;
         [SerializeField] private Camera cam;
         [SerializeField] private Canvas canvas;
-        [SerializeField] private RectTransform canvasRectTransform;
         [SerializeField] private Shader shader;
         [SerializeField] private UnmaskCardItemView unmaskCardItemPrefab;
 
@@ -55,11 +54,11 @@ namespace Scripts
             _material.SetColor(BaseColor, color);
         }
 
-        public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float anchorMaxYOfSafeArea, float pixelPerUnit)
+        public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float anchorMaxYOfSafeArea, float heightOfCanvas, float pixelPerUnit, float changeInLocalPosY)
         {
             UnmaskCardItemViewFactory unmaskCardItemViewFactory = new UnmaskCardItemViewFactory();
             IUnmaskCardItemView unmaskCardItemView = unmaskCardItemViewFactory.Spawn(canvas.transform, unmaskCardItemPrefab);
-            unmaskCardItemView.SetPosition(position, anchorMaxYOfSafeArea, canvasRectTransform.rect.height);
+            unmaskCardItemView.SetPosition(position, anchorMaxYOfSafeArea, heightOfCanvas, changeInLocalPosY);
             unmaskCardItemView.SetSize(size);
             unmaskCardItemView.SetPixelPerUnit(pixelPerUnit);
             _unmaskCardItemViews.Add(unmaskCardItemView);
@@ -79,14 +78,6 @@ namespace Scripts
             _unmaskCardItemViews[index].Destroy();
             _unmaskCardItemViews.RemoveAt(index);
         }
-
-        public void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos)
-        {
-            foreach (var unmaskCardItemView in _unmaskCardItemViews)
-            {
-                unmaskCardItemView.ChangeLocalPosition(changeInLocalPos);
-            }
-        }
     }
 
     public interface IUnmaskServiceView
@@ -95,9 +86,8 @@ namespace Scripts
         void SetBaseAlpha(float alpha);
         Tween SetAlpha(float alpha, float duration);
         void SetColor(Color color);
-        void CreateUnmaskCardItem(Vector2 position, Vector2 size, float anchorMaxYOfSafeArea, float pixelPerUnit);
+        void CreateUnmaskCardItem(Vector2 position, Vector2 size, float anchorMaxYOfSafeArea, float heightOfCanvas, float pixelPerUnit, float changeInLocalPosY);
         void ClearAllUnmaskCardItems();
         void ClearUnmaskCardItem(int index);
-        void ChangeLocalPositionOfUnmaskCardItem(Vector2 changeInLocalPos);
     }
 }

@@ -33,7 +33,6 @@ namespace Scripts
             _cardItemInfoPopupController = cardItemInfoPopupController;
             _cardItemInfoManager = cardItemInfoManager;
             _unmaskServiceAreaView.InstantiateTutorialFade();
-            _handTutorialView.Init();
             _tutorialMessagePopupView.Init();
             InitializeTutorialAnimationActions();
         }
@@ -71,10 +70,10 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0,- resultAreaInfo.resultBlockSize.y / 2),
+                changeInLocalPosY = - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Any number does not exist on the board. Now you can specify these numbers."
             }));
-            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
+            AddTutorialAction(()=> WaitForATime(5));
             AddTutorialAction(() => StartCardInfoButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetCardInfoButtonRectTransform().position},
@@ -94,7 +93,7 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When you believe that the number does not exist on the board, turn the color of number to red."
+                text = "When the number does not exist on the board, turn the color of number to red."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
@@ -108,7 +107,7 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When you believe that the number does not exist on the board, turn the color of number to red."
+                text = "When the number does not exist on the board, turn the color of number to red."
             }));
             AddTutorialAction(() => StartResetButtonClickAnimation(new CardInfoTutorialAnimation()
             {
@@ -144,10 +143,10 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0, - resultAreaInfo.resultBlockSize.y - resultAreaInfo.spacing - resultAreaInfo.resultBlockSize.y / 2),
+                changeInLocalPosY = - resultAreaInfo.resultBlockSize.y - resultAreaInfo.spacing - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Any number is not at correct position. One number is at wrong position."
             }));
-            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
+            AddTutorialAction(()=> WaitForATime(5));
             AddTutorialAction(() => StartResetButtonClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
@@ -167,7 +166,7 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().rect.height)},
                 pressableHolderButtonIndex = 0,
-                text = "When you believe that the number does not exist on a specific place, put a cross for that place."
+                text = "When the number does not exist on a specific place, put a cross for that place."
             }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
@@ -181,12 +180,13 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().rect.height)},
                 pressableHolderButtonIndex = 1,
-                text = "When you believe that the number does not exist on a specific place, put a cross for that place."
+                text = "When the number does not exist on a specific place, put a cross for that place."
             }));
             AddTutorialAction(() => StartBoardClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
                 sizeList = new List<Vector2>(){sizeOfBoardHolder},
+                nonForbiddenBoardIndex = 0,
                 text = "You can click the board."
             }));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
@@ -208,10 +208,10 @@ namespace Scripts
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
                 sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0, -2* (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
+                changeInLocalPosY = -2 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Only one number is at correct position, the other one doesn't exist."
             }));
-            AddTutorialAction(() => ExecuteNextTutorialActionWithDelay(5));
+            AddTutorialAction(()=> WaitForATime(5));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
@@ -238,7 +238,7 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When you believe that the number does not exist on the board, turn the color of number to red."            }));
+                text = "When the number does not exist on the board, turn the color of number to red."            }));
             AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
@@ -251,7 +251,7 @@ namespace Scripts
                 posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
                 sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
                 pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When you believe that the number does not exist on the board, turn the color of number to red."
+                text = "When the number does not exist on the board, turn the color of number to red."
             }));
             AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
             {
@@ -279,8 +279,8 @@ namespace Scripts
             AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
             {
                 posList = new List<Vector2>(){resultAreaInfo.topPoint},
-                sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPos = new Vector2(0, - 3 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2),
+                sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize}, 
+                changeInLocalPosY = - 3 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2,
                 text = "Both of the numbers are at correct position. Congratulations!!!"
             }));
             ExecuteNextTutorialAction();
@@ -373,8 +373,9 @@ namespace Scripts
         
         private void StartProbabilityButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
         {
+            tutorialAnimation.selectedCardIndexChangeable = false;
             DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0], 1f);
+            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0], 0f, 1f);
             _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
             _tutorialMessagePopupView.SetText(tutorialAnimation.text);
             _cardItemInfoManager.ProbabilityChanged += CloseClickAnimation;
@@ -390,6 +391,7 @@ namespace Scripts
         
         private void StartHolderIndicatorButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
         {
+            tutorialAnimation.selectedCardIndexChangeable = false;
             DisableUI(tutorialAnimation);
             _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
             _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
@@ -425,8 +427,7 @@ namespace Scripts
         private void ShowResultBlock(CardInfoTutorialAnimation tutorialAnimation)
         {
             DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _unmaskServiceAreaView.ChangeLocalPositionOfUnmaskCardItem(tutorialAnimation.changeInLocalPos);
+            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0], tutorialAnimation.changeInLocalPosY);
             _tutorialMessagePopupView.SetText(tutorialAnimation.text);
             ExecuteNextTutorialActionWithDelay(0.3f);
         }
@@ -482,11 +483,25 @@ namespace Scripts
             }
         }
 
+        private void WaitForATime(float duration)
+        {
+            DOTween.Sequence().AppendInterval(duration).OnComplete(() =>
+            {
+                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
+                ExecuteNextTutorialAction();
+            });
+        }
+
         private void DisableUI(CardInfoTutorialAnimation tutorialAnimation)
         {
+            List<int> forbiddenBoardIndexes = new List<int>() { 0, 1 };
+            if (forbiddenBoardIndexes.Contains(tutorialAnimation.nonForbiddenBoardIndex))
+                forbiddenBoardIndexes.Remove(tutorialAnimation.nonForbiddenBoardIndex);
             _cardItemLocator.SetDisallowedCardHolderIndexes(tutorialAnimation.allowedBoardHolderIndex);
             _initialCardAreaController.SetCardsAsUndraggable(tutorialAnimation.draggableCardIndex);
             _initialCardAreaController.SetCardsAsUnselectable(tutorialAnimation.selectableCardIndex);
+            _initialCardAreaController.SetSelectedCardIndexChangeable(tutorialAnimation.selectedCardIndexChangeable);
+            _initialCardAreaController.SetBoardIndexesAsForbidden(forbiddenBoardIndexes);
             _cardItemInfoPopupController.SetPressableHolderIndicatorButtonIndex(tutorialAnimation.pressableHolderButtonIndex);
             _cardItemInfoPopupController.SetPressableProbabilityButtonIndex(tutorialAnimation.pressableProbabilityButtonIndex);
             _gameUIController.SetCheckButtonClickable(tutorialAnimation.isCheckButtonActive);
@@ -513,6 +528,8 @@ namespace Scripts
     {
         public int pressableHolderButtonIndex = -1;
         public int pressableProbabilityButtonIndex = -1;
+        public bool selectedCardIndexChangeable = true;
+        public int nonForbiddenBoardIndex = -1;
     }
     
 }

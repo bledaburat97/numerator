@@ -22,8 +22,9 @@ namespace Scripts
         private ILevelDataCreator _levelDataCreator;
 
         private int _selectedCardIndex = -1;
+        private bool _isSelectedCardIndexChangeable; 
         private bool _isCardItemInfoPopupToggleOn = false;
-
+        private List<int> _forbiddenBoardIndexes;
         public event EventHandler CardClicked;
         public event EventHandler<(bool, int)> OpenCardItemInfoPopup;
 
@@ -38,6 +39,8 @@ namespace Scripts
             _levelTracker = levelTracker;
             _cardItemInfoManager = cardItemInfoManager;
             _levelDataCreator = levelDataCreator;
+            _isSelectedCardIndexChangeable = true;
+            _forbiddenBoardIndexes = new List<int>();
             int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
             IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
             invisibleClickHandler.OnInvisibleClicked += RemoveSelection;
@@ -85,7 +88,7 @@ namespace Scripts
         
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)
         {
-            if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn) return;
+            if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn || _forbiddenBoardIndexes.Contains(boardCardHolderIndex)) return;
             MoveCard(_selectedCardIndex, boardCardHolderIndex);
             SetSelectedIndex(-1);
         }
@@ -97,6 +100,7 @@ namespace Scripts
         
         private void SetSelectedIndex(int cardIndex)
         {
+            if (!_isSelectedCardIndexChangeable) return;
             if (_selectedCardIndex != -1)
             {
                 _normalCardItemControllerList[_selectedCardIndex].DeselectCard();
@@ -281,6 +285,20 @@ namespace Scripts
                 else _normalCardItemControllerList[i].SetIsDraggable(false);
             }
         }
+
+        public void SetBoardIndexesAsForbidden(List<int> list)
+        {
+            _forbiddenBoardIndexes.Clear();
+            foreach (int boardIndex in list)
+            {
+                _forbiddenBoardIndexes.Add(boardIndex);
+            }
+        }
+
+        public void SetSelectedCardIndexChangeable(bool status)
+        {
+            _isSelectedCardIndexChangeable = status;
+        }
     }
     
     public interface IInitialCardAreaController
@@ -292,6 +310,8 @@ namespace Scripts
         Vector3 GetWildCardHolderPosition();
         void SetCardsAsUnselectable(int selectableCardIndex = -1);
         void SetCardsAsUndraggable(int draggableCardIndex = -1);
+        void SetSelectedCardIndexChangeable(bool status);
+        void SetBoardIndexesAsForbidden(List<int> list);
         event EventHandler CardClicked;
         event EventHandler<(bool, int)> OpenCardItemInfoPopup;
     }

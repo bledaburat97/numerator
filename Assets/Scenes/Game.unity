@@ -168,7 +168,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unmaskServicePrefab: {fileID: 1876726101192286397, guid: 921d6f824de3f5d42869d4bf71efa9d0, type: 3}
-  safeAreaRectTransform: {fileID: 962908610}
 --- !u!1 &44400223
 GameObject:
   m_ObjectHideFlags: 0
@@ -4320,6 +4319,8 @@ MonoBehaviour:
   tutorialMessagePopupPrefab: {fileID: 1522502369497219775, guid: b9b8962c1b01e57469fb97f65b3fff1c, type: 3}
   glowSystem: {fileID: 1256676159}
   glowingLevelEndPopup: {fileID: 797455563}
+  safeAreaRectTransform: {fileID: 962908610}
+  canvasRectTransform: {fileID: 2064828891}
 --- !u!114 &1714900005
 MonoBehaviour:
   m_ObjectHideFlags: 0

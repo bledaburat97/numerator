@@ -109,20 +109,20 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
-                if (!_isSelected)
+                if (_isSelectable)
                 {
-                    if(_isSelectable)
+                    if (!_isSelected)
                     {
+
                         _hapticController.Vibrate(HapticType.ButtonClick);
                         _isSelected = true;
                         _onCardClicked.Invoke(_cardItemData.cardItemIndex);
                     }
+                    else
+                    {
+                        _onCardClicked.Invoke(-1);
+                    }
                 }
-                else
-                {
-                    _onCardClicked.Invoke(-1);
-                }
-
             }
             else
             {

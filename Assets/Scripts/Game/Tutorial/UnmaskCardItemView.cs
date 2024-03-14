@@ -7,11 +7,11 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private Image image;
-        public void SetPosition(Vector2 position, float anchorMaxYOfSafeArea, float heightOfCanvas)
+        public void SetPosition(Vector2 position, float anchorMaxYOfSafeArea, float heightOfCanvas, float changeInLocalPosY)
         {
             rectTransform.localScale = Vector3.one;
             rectTransform.position = position;
-            float localPositionY = rectTransform.localPosition.y;
+            float localPositionY = rectTransform.localPosition.y + changeInLocalPosY;
             float newLocalPositionY = (localPositionY + heightOfCanvas / 2) / anchorMaxYOfSafeArea - heightOfCanvas / 2;
             rectTransform.localPosition = new Vector3(rectTransform.localPosition.x, newLocalPositionY , 0);
         }
@@ -26,12 +26,6 @@ namespace Scripts
             Destroy(gameObject);
         }
 
-        public void ChangeLocalPosition(Vector2 changeInLocalPos)
-        {
-            rectTransform.localPosition = new Vector3(rectTransform.localPosition.x + changeInLocalPos.x,
-                rectTransform.localPosition.y + changeInLocalPos.y, rectTransform.localPosition.z);
-        }
-
         public void SetPixelPerUnit(float value)
         {
             image.pixelsPerUnitMultiplier = value;
@@ -40,10 +34,9 @@ namespace Scripts
 
     public interface IUnmaskCardItemView
     {
-        void SetPosition(Vector2 position, float anchorMaxYOfSafeArea, float heightOfCanvas);
+        void SetPosition(Vector2 position, float anchorMaxYOfSafeArea, float heightOfCanvas, float changeInLocalPosY);
         void SetSize(Vector2 size);
         void Destroy();
-        void ChangeLocalPosition(Vector2 changeInLocalPos);
         void SetPixelPerUnit(float value);
     }
 }
