@@ -270,13 +270,13 @@ namespace Scripts
         private void CreateMultiplayerLevelEnd(bool isSuccess)
         {
             _fadePanelController.SetFadeImageStatus(true);
-            _fadePanelController.SetFadeImageAlpha(0.8f);
+            _fadePanelController.SetFadeImageAlpha(0f);
             IMultiplayerLevelEndPopupController multiplayerLevelEndPopupController =
                 _multiplayerLevelEndPopupControllerFactory.Spawn();
             IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
                 _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
             if(!isSuccess) _hapticController.Vibrate(HapticType.Failure);
-            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, _userReady, _openWaitingOpponentPopup, _baseButtonControllerFactory);
+            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, _userReady, _openWaitingOpponentPopup, _baseButtonControllerFactory, _fadePanelController);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)

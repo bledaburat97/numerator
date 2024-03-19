@@ -59,7 +59,7 @@ namespace Scripts
             Sequence animationSequence = DOTween.Sequence();
 
             animationSequence.AppendInterval(0.4f)
-                .Append(_fadePanelController.GetFadeImage().DOFade(0.95f, 0.5f))
+                .Append(_fadePanelController.GetFadeImage().DOFade(1f, 0.5f))
                 .AppendCallback(() => setGlowStatus(true))
                 .AppendCallback(() => SetLocalScaleOfOldStars(starImageViewList))
                 .AppendInterval(0.2f)
