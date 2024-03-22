@@ -8,14 +8,12 @@ namespace Scripts
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         [Inject] private IHapticController _hapticController;
+        [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
+        [Inject] private ILevelTracker _levelTracker;
+        [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
+        
         private IGameUIView _view;
-        private ILevelTracker _levelTracker;
-        private ITurnOrderDeterminer _turnOrderDeterminer;
         private ICardInfoButtonController _cardInfoButtonController;
-        private bool _isCheckButtonClickable;
-        private bool _isResetButtonClickable;
-        private bool _isSettingsButtonClickable;
-        private bool _isCardInfoButtonClickable;
         public event EventHandler CheckFinalNumbers;
         public event EventHandler NotAbleToCheck;
         public event EventHandler ResetNumbers;
@@ -27,11 +25,8 @@ namespace Scripts
             _view = view;
         }
 
-        public void Initialize(ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
+        public void Initialize()
         {
-            _levelTracker = levelTracker;
-            _turnOrderDeterminer = turnOrderDeterminer;
-
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
                 _view.SetLevelId("Level " + (_levelTracker.GetLevelId() + 1));
@@ -56,22 +51,18 @@ namespace Scripts
             if (_levelTracker.GetLevelId() > 8)
             {
                 _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton());
-                _cardInfoButtonController.Initialize(OnCardInfoButton);
+                _cardInfoButtonController.Initialize(_tutorialAbilityManager, OnCardInfoButton);
             }
             else
             {
                 _view.GetCardInfoButton().SetActive(false);
             }
             
-            SetCheckButtonClickable(true);
-            SetResetButtonClickable(true);
-            SetCardInfoButtonClickable(true);
-            SetSettingsButtonClickable(true);
         }
         
         private void OnClickCheckButton()
         {
-            if(!_isCheckButtonClickable) return;
+            if(!_tutorialAbilityManager.IsCheckButtonClickable()) return;
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
             {
                 CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
@@ -84,13 +75,13 @@ namespace Scripts
         
         private void OnClickResetButton()
         {
-            if(!_isResetButtonClickable) return;
+            if(!_tutorialAbilityManager.IsResetButtonClickable()) return;
             ResetNumbers?.Invoke(this,  null);
         }
         
         private void OnClickSettings()
         {
-            if(!_isSettingsButtonClickable) return;
+            if(!_tutorialAbilityManager.IsSettingsButtonClickable()) return;
             OpenSettings?.Invoke(this,  null);
         }
 
@@ -114,31 +105,12 @@ namespace Scripts
         {
             return _view.GetCardInfoButton().GetRectTransform();
         }
-
-        public void SetCheckButtonClickable(bool status)
-        {
-            _isCheckButtonClickable = status;
-        }
         
-        public void SetResetButtonClickable(bool status)
-        {
-            _isResetButtonClickable = status;
-        }
-        
-        public void SetCardInfoButtonClickable(bool status)
-        {
-            _cardInfoButtonController?.SetIsClickable(status);
-        }
-
-        public void SetSettingsButtonClickable(bool status)
-        {
-            _isSettingsButtonClickable = status;
-        }
     }
 
     public interface IGameUIController
     {
-        void Initialize(ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
+        void Initialize();
         event EventHandler CheckFinalNumbers;
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;
@@ -147,9 +119,5 @@ namespace Scripts
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
         RectTransform GetCardInfoButtonRectTransform();
-        void SetCheckButtonClickable(bool status);
-        void SetResetButtonClickable(bool status);
-        void SetCardInfoButtonClickable(bool status);
-        void SetSettingsButtonClickable(bool status);
     }
 }

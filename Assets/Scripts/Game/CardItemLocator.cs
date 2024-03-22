@@ -2,17 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class CardItemLocator : ICardItemLocator
     {
+        [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
+        
         private Dictionary<IBoardCardHolderController, int> _boardHolderToCardIndexMapping = new Dictionary<IBoardCardHolderController, int>();
         private int _activeCardIndex;
         private int _probableCardHolderIndex;
         private IBoardAreaManager _boardAreaManager;
         private Canvas _canvas;
-        private List<int> _disallowedCardHolderIndexes = new List<int>();
 
         public event EventHandler OnCardDragStarted;
         public event EventHandler OnCardPlacedBoard;
@@ -142,7 +144,7 @@ namespace Scripts
         {
             for (int i = 0; i < _boardHolderToCardIndexMapping.Count; i++)
             {
-                if(_disallowedCardHolderIndexes.Contains(i)) continue;
+                if(!_tutorialAbilityManager.IsBoardIndexDraggable(i)) continue;
                 IBoardCardHolderController holderController = _boardHolderToCardIndexMapping.Keys.ElementAt(i);
                 if (_boardHolderToCardIndexMapping[holderController] != -1)
                 {
@@ -170,15 +172,6 @@ namespace Scripts
             List<IBoardCardHolderController> keys = new List<IBoardCardHolderController>(_boardHolderToCardIndexMapping.Keys);
             return keys[index].GetPositionOfCardHolder();
         }
-
-        public void SetDisallowedCardHolderIndexes(int allowedCardHolderIndex = -1)
-        {
-            _disallowedCardHolderIndexes = new List<int>();
-            for (int i = 0; i < _boardHolderToCardIndexMapping.Count; i++)
-            {
-                if(i != allowedCardHolderIndex) _disallowedCardHolderIndexes.Add(i);
-            }
-        }
         
         public int GetEmptyBoardHolderIndex()
         {
@@ -196,7 +189,6 @@ namespace Scripts
         void ResetBoard();
         RectTransform PlaceCardByClick(int cardIndex, int boardHolderIndex);
         Vector3 GetBoardCardHolderPositionAtIndex(int index);
-        void SetDisallowedCardHolderIndexes(int allowedCardHolderIndex = -1);
         int GetEmptyBoardHolderIndex();
         event EventHandler OnCardDragStarted;
         event EventHandler OnCardPlacedBoard;

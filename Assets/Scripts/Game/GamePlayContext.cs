@@ -1,4 +1,5 @@
-﻿using Unity.Netcode;
+﻿using System;
+using Unity.Netcode;
 using UnityEngine;
 using Zenject;
 
@@ -17,6 +18,7 @@ namespace Scripts
         [Inject] private ICardItemInfoManager _cardItemInfoManager;
         [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
+        [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private IFadePanelController _fadePanelController;
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private ICardItemLocator _cardItemLocator;
@@ -28,7 +30,6 @@ namespace Scripts
         [Inject] private IHapticController _hapticController;
         [Inject] private IGameUIController _gameUIController;
         [Inject] private IUnmaskServiceAreaView _unmaskServiceAreaView;
-        
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
@@ -49,6 +50,7 @@ namespace Scripts
             InitializeBoardArea();
             InitializeCardItemInfoManager();
             InitializeInitialCardArea();
+            InitializeCardInteractionManager();
             InitializeCardItemInfoPopup();
             InitializeFadePanelController();
             InitializeUnmaskServiceAreaView();
@@ -87,7 +89,7 @@ namespace Scripts
         
         private void InitializeGameUI()
         {
-            _gameUIController.Initialize(_levelTracker, _turnOrderDeterminer);
+            _gameUIController.Initialize();
         }
         
         private void InitializeStarProgressBar()
@@ -127,12 +129,17 @@ namespace Scripts
         
         private void InitializeInitialCardArea()
         {
-            _initialCardAreaController.Initialize(_cardItemLocator, _cardItemInfoManager, _levelTracker, _cardHolderModelCreator, _gameUIController, _boardAreaController, _levelManager, _levelDataCreator);
+            _initialCardAreaController.Initialize();
+        }
+
+        private void InitializeCardInteractionManager()
+        {
+            _cardInteractionManager.Initialize();
         }
         
         private void InitializeCardItemInfoPopup()
         {
-            _cardItemInfoPopupController.Initialize(_cardItemInfoManager, _levelDataCreator, _cardHolderModelCreator, _initialCardAreaController);
+            _cardItemInfoPopupController.Initialize();
         }
 
         private void InitializeFadePanelController()
@@ -147,9 +154,15 @@ namespace Scripts
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize(_levelManager, _fadePanelController, _gameSaveService, _levelTracker, _userReady, _turnOrderDeterminer, _gameUIController, _initialCardAreaController, _cardItemLocator, _unmaskServiceAreaView, _cardHolderModelCreator, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _levelDataCreator);
+            _gamePopupCreator.Initialize();
         }
 
+        private void OnDestroy()
+        {
+            _initialCardAreaController.Unsubscribe();
+            _cardInteractionManager.Unsubscribe();
+            _cardItemInfoPopupController.Unsubscribe();
+        }
         
 #if UNITY_EDITOR
         private void OnApplicationFocus(bool pauseStatus)

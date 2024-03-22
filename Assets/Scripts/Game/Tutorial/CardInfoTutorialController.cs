@@ -1,383 +1,66 @@
 ﻿using System;
-using System.Collections.Generic;
-using DG.Tweening;
 using UnityEngine;
 
 namespace Scripts
 {
-    public class CardInfoTutorialController : ICardInfoTutorialController
+    public class CardInfoTutorialController : TutorialController
     {
-        private IUnmaskServiceAreaView _unmaskServiceAreaView;
-        private IHandTutorialView _handTutorialView;
-        private ITutorialMessagePopupView _tutorialMessagePopupView;
-        private ICardItemLocator _cardItemLocator;
-        private IInitialCardAreaController _initialCardAreaController;
-        private IGameUIController _gameUIController;
-        private Queue<Action> _tutorialAnimationActions;
-        private ICardHolderModelCreator _cardHolderModelCreator;
-        private IResultAreaController _resultAreaController;
-        private ICardItemInfoPopupController _cardItemInfoPopupController;
-        private ICardItemInfoManager _cardItemInfoManager;
-        public void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
-            IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager)
+        
+        protected override void InitializeTutorialAnimationActions()
         {
-            _unmaskServiceAreaView = unmaskServiceAreaView;
-            _handTutorialView = handTutorialView;
-            _tutorialMessagePopupView = tutorialMessagePopupView;
-            _cardItemLocator = cardItemLocator;
-            _initialCardAreaController = initialCardAreaController;
-            _gameUIController = gameUIController;
-            _cardHolderModelCreator = cardHolderModelCreator;
-            _resultAreaController = resultAreaController;
-            _cardItemInfoPopupController = cardItemInfoPopupController;
-            _cardItemInfoManager = cardItemInfoManager;
-            _unmaskServiceAreaView.InstantiateTutorialFade();
-            _tutorialMessagePopupView.Init();
-            InitializeTutorialAnimationActions();
-        }
-
-        private void InitializeTutorialAnimationActions()
-        {
-            _tutorialAnimationActions = new Queue<Action>();
-            Vector2 sizeOfInitialHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size;
-            Vector2 sizeOfBoardHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size;
-            
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(0), _cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
-                allowedBoardHolderIndex = 0,
-                draggableCardIndex = 0,
-                text = "You can drag the number to the board."
-            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder},
-                selectableCardIndex = 1,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
-                isCheckButtonActive = true,
-                text = "You can click the check button."
-            }));
-            ResultAreaInfo resultAreaInfo = _resultAreaController.GetResultAreaInfo();
-            AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){resultAreaInfo.topPoint},
-                sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPosY = - resultAreaInfo.resultBlockSize.y / 2,
-                text = "Any number does not exist on the board. Now you can specify these numbers."
-            }));
+            AddTutorialAction(() => StartDragAnimation(0, 0));
+            AddTutorialAction(() => StartCardClickAnimation(1, _initialCardAreaController.GetNormalCardHolderPositionAtIndex(1), _sizeOfInitialHolder));
+            AddTutorialAction(StartCheckButtonClickAnimation);
+            AddTutorialAction(() => ShowResultBlock(0, "Any number does not exist on the board. Now you can specify these numbers."));
             AddTutorialAction(()=> WaitForATime(5));
-            AddTutorialAction(() => StartCardInfoButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetCardInfoButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCardInfoButtonRectTransform().rect.width, _gameUIController.GetCardInfoButtonRectTransform().rect.height)},
-                isCardInfoButtonActive = true,
-                text = "You can click the number info button. It will help you to play."
-            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                selectableCardIndex = 0,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
-                pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the number does not exist on the board, turn the color of number to red."
-            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                selectableCardIndex = 1,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
-                pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the number does not exist on the board, turn the color of number to red."
-            }));
-            AddTutorialAction(() => StartResetButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetResetButtonRectTransform().rect.width, _gameUIController.GetResetButtonRectTransform().rect.height)},
-                isResetButtonActive = true,
-                text = "You can click the reset button."
-            }));
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(2), _cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
-                allowedBoardHolderIndex = 0,
-                draggableCardIndex = 2,
-                text = "You can drag the number to the board."
-            }));
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(3), _cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
-                allowedBoardHolderIndex = 1,
-                draggableCardIndex = 3,
-                text = "You can drag the number to the board."
-            }));
-            AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
-                isCheckButtonActive = true,
-                text = "You can click the check button."
-            }));
-            AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){resultAreaInfo.topPoint},
-                sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPosY = - resultAreaInfo.resultBlockSize.y - resultAreaInfo.spacing - resultAreaInfo.resultBlockSize.y / 2,
-                text = "Any number is not at correct position. One number is at wrong position."
-            }));
+            AddTutorialAction(StartCardInfoButtonClickAnimation);
+            AddTutorialAction(() => StartCardClickAnimation(0, _cardItemLocator.GetBoardCardHolderPositionAtIndex(0), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
+            AddTutorialAction(() => StartCardClickAnimation(1, _cardItemLocator.GetBoardCardHolderPositionAtIndex(1), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
+            AddTutorialAction(StartResetButtonClickAnimation);
+            AddTutorialAction(() => StartDragAnimation(2,0));
+            AddTutorialAction(() => StartDragAnimation(3,1));
+            AddTutorialAction(StartCheckButtonClickAnimation);
+            AddTutorialAction(() => ShowResultBlock(1, "Any number is not at correct position. One number is at wrong position."));
             AddTutorialAction(()=> WaitForATime(5));
-            AddTutorialAction(() => StartResetButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetResetButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetResetButtonRectTransform().rect.width, _gameUIController.GetResetButtonRectTransform().rect.height)},
-                isResetButtonActive = true,
-                text = "You can click the reset button."
-            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder},
-                selectableCardIndex = 2,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartHolderIndicatorButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetHolderIndicatorButton(0).GetView().GetRectTransform().rect.height)},
-                pressableHolderButtonIndex = 0,
-                text = "When the number does not exist on a specific place, put a cross for that place."
-            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(3)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder},
-                selectableCardIndex = 3,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartHolderIndicatorButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetHolderIndicatorButton(1).GetView().GetRectTransform().rect.height)},
-                pressableHolderButtonIndex = 1,
-                text = "When the number does not exist on a specific place, put a cross for that place."
-            }));
-            AddTutorialAction(() => StartBoardClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                nonForbiddenBoardIndex = 0,
-                text = "You can click the board."
-            }));
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(4), _cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
-                allowedBoardHolderIndex = 1,
-                draggableCardIndex = 4,
-                text = "You can drag the number to the board."
-            }));
-            AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
-                isCheckButtonActive = true,
-                text = "You can click the check button."
-            }));
-            AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){resultAreaInfo.topPoint},
-                sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize},
-                changeInLocalPosY = -2 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2,
-                text = "Only one number is at correct position, the other one doesn't exist."
-            }));
+            AddTutorialAction(StartResetButtonClickAnimation);
+            AddTutorialAction(() => StartCardClickAnimation(2, _initialCardAreaController.GetNormalCardHolderPositionAtIndex(2), _sizeOfInitialHolder));
+            AddTutorialAction(() => StartHolderIndicatorButtonClickAnimation(0));
+            AddTutorialAction(() => StartCardClickAnimation(3, _initialCardAreaController.GetNormalCardHolderPositionAtIndex(3), _sizeOfInitialHolder));
+            AddTutorialAction(() => StartHolderIndicatorButtonClickAnimation(1));
+            AddTutorialAction(() => StartBoardClickAnimation(0));
+            AddTutorialAction(() => StartDragAnimation(4, 1));
+            AddTutorialAction(StartCheckButtonClickAnimation);
+            AddTutorialAction(() => ShowResultBlock(2, "Only one number is at correct position, the other one doesn't exist."));
             AddTutorialAction(()=> WaitForATime(5));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(0)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                selectableCardIndex = 3,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.Certain).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.Certain).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.Certain).GetView().GetRectTransform().rect.height)},
-                pressableProbabilityButtonIndex = (int) ProbabilityType.Certain,
-                text = "When the number certainly exists somewhere on the board, turn the color to green."
-            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder},
-                selectableCardIndex = 4,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
-                pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the number does not exist on the board, turn the color of number to red."            }));
-            AddTutorialAction(() => StartClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(2)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder},
-                selectableCardIndex = 2,
-                text = "You can click the number."
-            }));
-            AddTutorialAction(() => StartProbabilityButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.width, _cardItemInfoPopupController.GetProbabilityButton(ProbabilityType.NotExisted).GetView().GetRectTransform().rect.height)},
-                pressableProbabilityButtonIndex = (int) ProbabilityType.NotExisted,
-                text = "When the number does not exist on the board, turn the color of number to red."
-            }));
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_cardItemLocator.GetBoardCardHolderPositionAtIndex(1), _initialCardAreaController.GetNormalCardHolderPositionAtIndex(4)},
-                sizeList = new List<Vector2>(){sizeOfBoardHolder, sizeOfInitialHolder},
-                allowedBoardHolderIndex = 1,
-                draggableCardIndex = 4,
-                text = "You can drag the number to the initial area back."
-            }, true));
-            AddTutorialAction(() => StartDragAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_initialCardAreaController.GetNormalCardHolderPositionAtIndex(5), _cardItemLocator.GetBoardCardHolderPositionAtIndex(1)},
-                sizeList = new List<Vector2>(){sizeOfInitialHolder, sizeOfBoardHolder},
-                allowedBoardHolderIndex = 1,
-                draggableCardIndex = 5,
-                text = "You can drag the number to the board."
-            }));
-            AddTutorialAction(() => StartCheckButtonClickAnimation(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){_gameUIController.GetCheckButtonRectTransform().position},
-                sizeList = new List<Vector2>(){new Vector2(_gameUIController.GetCheckButtonRectTransform().rect.width, _gameUIController.GetCheckButtonRectTransform().rect.height)},
-                isCheckButtonActive = true,
-                text = "You can click the check button."
-            }));
-            AddTutorialAction(() => ShowResultBlock(new CardInfoTutorialAnimation()
-            {
-                posList = new List<Vector2>(){resultAreaInfo.topPoint},
-                sizeList = new List<Vector2>(){resultAreaInfo.resultBlockSize}, 
-                changeInLocalPosY = - 3 * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) - resultAreaInfo.resultBlockSize.y / 2,
-                text = "Both of the numbers are at correct position. Congratulations!!!"
-            }));
+            AddTutorialAction(() => StartCardClickAnimation(3, _cardItemLocator.GetBoardCardHolderPositionAtIndex(0), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.Certain, "When the number certainly exists somewhere on the board, turn the color to green."));
+            AddTutorialAction(() => StartCardClickAnimation(4, _cardItemLocator.GetBoardCardHolderPositionAtIndex(1), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
+            AddTutorialAction(() => StartCardClickAnimation(2, _initialCardAreaController.GetNormalCardHolderPositionAtIndex(2), _sizeOfInitialHolder));
+            AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
+            AddTutorialAction(() => StartDragAnimation(4, 1, true));
+            AddTutorialAction(() => StartDragAnimation(5, 1));
+            AddTutorialAction(StartCheckButtonClickAnimation);
+            AddTutorialAction(() => ShowResultBlock(3, "Both of the numbers are at correct position. Congratulations!!!"));
             ExecuteNextTutorialAction();
         }
         
-        private void AddTutorialAction(Action action)
+        private void StartProbabilityButtonClickAnimation(ProbabilityType probabilityType, string text)
         {
-            _tutorialAnimationActions.Enqueue(action);
-        }
-
-        private void ExecuteNextTutorialAction()
-        {
-            if (_tutorialAnimationActions.Count > 0)
+            RectTransform probabilityButtonRectTransform = _cardItemInfoPopupController.GetProbabilityButton(probabilityType).GetView().GetRectTransform();
+            Vector2 position = probabilityButtonRectTransform.position;
+            Vector2 size = new Vector2(probabilityButtonRectTransform.rect.width,
+                probabilityButtonRectTransform.rect.height);
+            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
             {
-                _tutorialAnimationActions.Dequeue()?.Invoke();
-            }
-            else
-            {
-                _tutorialMessagePopupView.Destroy();
-                _handTutorialView.Destroy();
-                _unmaskServiceAreaView.CloseTutorialFade();
-                PlayerPrefs.SetInt("card_info_tutorial_completed", 1);
-            }
-        }
-
-        private void StartDragAnimation(CardInfoTutorialAnimation tutorialAnimation, bool isReversed = false)
-        {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[1], tutorialAnimation.sizeList[1]);
-            _handTutorialView.StartDragAnimation(tutorialAnimation.posList[0], tutorialAnimation.posList[1]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            _cardItemLocator.OnCardDragStarted += StopDragAnimation;
-
-            if (!isReversed)
-            {
-                _cardItemLocator.OnCardReturnedToInitial += RestartDragAnimation;
-                _cardItemLocator.OnCardPlacedBoard += CloseDragAnimation;
-            }
-            else
-            {
-                _cardItemLocator.OnCardReturnedToInitial += CloseDragAnimation;
-                _cardItemLocator.OnCardPlacedBoard += RestartDragAnimation;
-            }
-
-            void StopDragAnimation(object sender, EventArgs args)
-            {
-                _handTutorialView.StopActiveAnimation();
-            }
-
-            void RestartDragAnimation(object sender, EventArgs args)
-            {
-                _handTutorialView.StartDragAnimation(tutorialAnimation.posList[0], tutorialAnimation.posList[1]);
-            }
-
-            void CloseDragAnimation(object sender, EventArgs args)
-            {
-                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _cardItemLocator.OnCardDragStarted -= StopDragAnimation;
-                if (!isReversed)
-                {
-                    _cardItemLocator.OnCardReturnedToInitial -= RestartDragAnimation;
-                    _cardItemLocator.OnCardPlacedBoard -= CloseDragAnimation;
-                }
-                else
-                {
-                    _cardItemLocator.OnCardReturnedToInitial -= CloseDragAnimation;
-                    _cardItemLocator.OnCardPlacedBoard -= RestartDragAnimation;
-                }
-                ExecuteNextTutorialActionWithDelay(0.3f);
-            }
-        }
-
-        private void StartClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
-        {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            _initialCardAreaController.CardClicked += CloseClickAnimation;
-            
-            void CloseClickAnimation(object sender, EventArgs args)
-            {
-                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _initialCardAreaController.CardClicked -= CloseClickAnimation;
-                _handTutorialView.StopActiveAnimation();
-                ExecuteNextTutorialActionWithDelay(0.3f);
-            }
-        }
-        
-        private void StartProbabilityButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
-        {
-            tutorialAnimation.selectedCardIndexChangeable = false;
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0], 0f, 1f);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
+                pressableProbabilityButtonIndex = (int)probabilityType,
+                isSelectedCardIndexChangeable = false
+            });
+            _unmaskServiceAreaView.CreateUnmaskCardItem(position, size, 0f, 1f);
+            _handTutorialView.StartClickAnimation(position);
+            _tutorialMessagePopupView.SetText(text);
             _cardItemInfoManager.ProbabilityChanged += CloseClickAnimation;
             
             void CloseClickAnimation(object sender, EventArgs args)
@@ -389,13 +72,22 @@ namespace Scripts
             }
         }
         
-        private void StartHolderIndicatorButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
+        private void StartHolderIndicatorButtonClickAnimation(int holderIndicatorIndex)
         {
-            tutorialAnimation.selectedCardIndexChangeable = false;
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
+            RectTransform holderIndicatorButtonRectTransform = _cardItemInfoPopupController
+                .GetHolderIndicatorButton(holderIndicatorIndex).GetView().GetRectTransform();
+
+            Vector2 position = holderIndicatorButtonRectTransform.position;
+            Vector2 size = new Vector2(holderIndicatorButtonRectTransform.rect.width,
+                holderIndicatorButtonRectTransform.rect.height);
+            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
+            {
+                pressableHolderButtonIndex = holderIndicatorIndex,
+                isSelectedCardIndexChangeable = false
+            });
+            _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
+            _handTutorialView.StartClickAnimation(size);
+            _tutorialMessagePopupView.SetText("When the number does not exist on a specific place, put a cross for that place.");
             _cardItemInfoManager.HolderIndicatorListChanged += CloseClickAnimation;
             
             void CloseClickAnimation(object sender, EventArgs args)
@@ -407,71 +99,39 @@ namespace Scripts
             }
         }
         
-        private void StartBoardClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
+        private void StartBoardClickAnimation(int boardHolderIndex)
         {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            _initialCardAreaController.OpenCardItemInfoPopup += CloseClickAnimation;
+            Vector2 position = _cardItemLocator.GetBoardCardHolderPositionAtIndex(boardHolderIndex);
+            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
+            {
+                clickableBoardIndex = boardHolderIndex,
+            });
+            _unmaskServiceAreaView.CreateUnmaskCardItem(position, _sizeOfBoardHolder);
+            _handTutorialView.StartClickAnimation(position);
+            _tutorialMessagePopupView.SetText("You can click the board.");
+            _cardInteractionManager.OpenCardItemInfoPopupEvent += CloseClickAnimation;
             
             void CloseClickAnimation(object sender, (bool,int) args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _initialCardAreaController.OpenCardItemInfoPopup -= CloseClickAnimation;
+                _cardInteractionManager.OpenCardItemInfoPopupEvent -= CloseClickAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
-
-        private void ShowResultBlock(CardInfoTutorialAnimation tutorialAnimation)
-        {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0], tutorialAnimation.changeInLocalPosY);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            ExecuteNextTutorialActionWithDelay(0.3f);
-        }
         
-        private void StartCheckButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
+        private void StartCardInfoButtonClickAnimation()
         {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            _gameUIController.CheckFinalNumbers += CloseClickButtonAnimation;
-            
-            void CloseClickButtonAnimation(object sender, EventArgs args)
+            RectTransform cardInfoButtonRectTransform = _gameUIController.GetCardInfoButtonRectTransform();
+            Vector2 position = cardInfoButtonRectTransform.position;
+            Vector2 size = new Vector2(cardInfoButtonRectTransform.rect.width, cardInfoButtonRectTransform.rect.height);
+            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
             {
-                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _gameUIController.CheckFinalNumbers -= CloseClickButtonAnimation;
-                _handTutorialView.StopActiveAnimation();
-                ExecuteNextTutorialActionWithDelay(0.3f);
-            }
-        }
-        
-        private void StartResetButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
-        {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
-            _gameUIController.ResetNumbers += CloseClickButtonAnimation;
-            
-            void CloseClickButtonAnimation(object sender, EventArgs args)
-            {
-                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _gameUIController.ResetNumbers -= CloseClickButtonAnimation;
-                _handTutorialView.StopActiveAnimation();
-                ExecuteNextTutorialActionWithDelay(0.3f);
-            }
-        }
-        
-        private void StartCardInfoButtonClickAnimation(CardInfoTutorialAnimation tutorialAnimation)
-        {
-            DisableUI(tutorialAnimation);
-            _unmaskServiceAreaView.CreateUnmaskCardItem(tutorialAnimation.posList[0], tutorialAnimation.sizeList[0]);
-            _handTutorialView.StartClickAnimation(tutorialAnimation.posList[0]);
-            _tutorialMessagePopupView.SetText(tutorialAnimation.text);
+                isCardInfoButtonActive = true
+            });
+            _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
+            _handTutorialView.StartClickAnimation(position);
+            _tutorialMessagePopupView.SetText("You can click the number info button. It will help you to play.");
             _gameUIController.CardInfoToggleChanged += CloseClickButtonAnimation;
             
             void CloseClickButtonAnimation(object sender, bool args)
@@ -482,54 +142,5 @@ namespace Scripts
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
         }
-
-        private void WaitForATime(float duration)
-        {
-            DOTween.Sequence().AppendInterval(duration).OnComplete(() =>
-            {
-                _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                ExecuteNextTutorialAction();
-            });
-        }
-
-        private void DisableUI(CardInfoTutorialAnimation tutorialAnimation)
-        {
-            List<int> forbiddenBoardIndexes = new List<int>() { 0, 1 };
-            if (forbiddenBoardIndexes.Contains(tutorialAnimation.nonForbiddenBoardIndex))
-                forbiddenBoardIndexes.Remove(tutorialAnimation.nonForbiddenBoardIndex);
-            _cardItemLocator.SetDisallowedCardHolderIndexes(tutorialAnimation.allowedBoardHolderIndex);
-            _initialCardAreaController.SetCardsAsUndraggable(tutorialAnimation.draggableCardIndex);
-            _initialCardAreaController.SetCardsAsUnselectable(tutorialAnimation.selectableCardIndex);
-            _initialCardAreaController.SetSelectedCardIndexChangeable(tutorialAnimation.selectedCardIndexChangeable);
-            _initialCardAreaController.SetBoardIndexesAsForbidden(forbiddenBoardIndexes);
-            _cardItemInfoPopupController.SetPressableHolderIndicatorButtonIndex(tutorialAnimation.pressableHolderButtonIndex);
-            _cardItemInfoPopupController.SetPressableProbabilityButtonIndex(tutorialAnimation.pressableProbabilityButtonIndex);
-            _gameUIController.SetCheckButtonClickable(tutorialAnimation.isCheckButtonActive);
-            _gameUIController.SetResetButtonClickable(tutorialAnimation.isResetButtonActive);
-            _gameUIController.SetCardInfoButtonClickable(tutorialAnimation.isCardInfoButtonActive);
-            _gameUIController.SetSettingsButtonClickable(false);
-        }
-
-        private void ExecuteNextTutorialActionWithDelay(float duration)
-        {
-            DOTween.Sequence().AppendInterval(duration).OnComplete(ExecuteNextTutorialAction);
-        }
-
     }
-
-    public interface ICardInfoTutorialController
-    {
-        void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
-            IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager);
-    }
-
-    public class CardInfoTutorialAnimation : TutorialAnimation
-    {
-        public int pressableHolderButtonIndex = -1;
-        public int pressableProbabilityButtonIndex = -1;
-        public bool selectedCardIndexChangeable = true;
-        public int nonForbiddenBoardIndex = -1;
-    }
-    
 }

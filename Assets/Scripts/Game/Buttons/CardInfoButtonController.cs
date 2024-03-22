@@ -7,14 +7,16 @@ namespace Scripts
         private ICardInfoButtonView _view;
         private bool _isCardInfoToggleOn;
         private Action<bool> _cardInfoTogglePressed;
-        private bool _isClickable;
+        private ITutorialAbilityManager _tutorialAbilityManager;
+        
         public CardInfoButtonController(ICardInfoButtonView view)
         {
             _view = view;
         }
         
-        public void Initialize(Action<bool> cardInfoTogglePressed)
+        public void Initialize(ITutorialAbilityManager tutorialAbilityManager, Action<bool> cardInfoTogglePressed)
         {
+            _tutorialAbilityManager = tutorialAbilityManager;
             _isCardInfoToggleOn = false;
             _cardInfoTogglePressed = cardInfoTogglePressed;
             _view.Init(ChangeCardInfoToggle);
@@ -23,23 +25,17 @@ namespace Scripts
 
         private void ChangeCardInfoToggle()
         {
-            if (_isClickable)
+            if (_tutorialAbilityManager.IsCardInfoButtonClickable())
             {
                 _isCardInfoToggleOn = !_isCardInfoToggleOn;
                 _view.SetCardInfoToggleStatus(_isCardInfoToggleOn, 0.2f);
                 _cardInfoTogglePressed?.Invoke(_isCardInfoToggleOn);
             }
         }
-
-        public void SetIsClickable(bool isClickable)
-        {
-            _isClickable = isClickable;
-        }
     }
 
     public interface ICardInfoButtonController
     {
-        void Initialize(Action<bool> cardInfoTogglePressed);
-        void SetIsClickable(bool isClickable);
+        void Initialize(ITutorialAbilityManager tutorialAbilityManager, Action<bool> cardInfoTogglePressed);
     }
 }

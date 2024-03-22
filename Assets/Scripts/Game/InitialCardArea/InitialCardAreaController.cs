@@ -9,127 +9,35 @@ namespace Scripts
     public class InitialCardAreaController : IInitialCardAreaController
     {
         [Inject] private IHapticController _hapticController;
-        
-        private List<IInitialCardHolderController> _normalCardHolderControllerList = new List<IInitialCardHolderController>();
-        private IBaseCardHolderController _wildCardHolderController = null;
-        private List<INormalCardItemController> _normalCardItemControllerList = new List<INormalCardItemController>();
-        private ICardItemLocator _cardItemLocator;
-        private ICardHolderModelCreator _cardHolderModelCreator;
+        [Inject] private ICardItemLocator _cardItemLocator;
+        [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
+        [Inject] private ICardItemInfoManager _cardItemInfoManager;
+        [Inject] private ILevelDataCreator _levelDataCreator;
+        [Inject] private ILevelTracker _levelTracker;
+        [Inject] private ILevelManager _levelManager;
+        [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
+        [Inject] private IGameUIController _gameUIController;
+
         private IInitialCardAreaView _view;
-        private ILevelTracker _levelTracker;
-        private IGameSaveService _gameSaveService;
-        private ICardItemInfoManager _cardItemInfoManager;
-        private ILevelDataCreator _levelDataCreator;
-
-        private int _selectedCardIndex = -1;
-        private bool _isSelectedCardIndexChangeable; 
-        private bool _isCardItemInfoPopupToggleOn = false;
-        private List<int> _forbiddenBoardIndexes;
-        public event EventHandler CardClicked;
-        public event EventHandler<(bool, int)> OpenCardItemInfoPopup;
-
+        private List<IInitialCardHolderController> _normalCardHolderControllerList;
+        private IBaseCardHolderController _wildCardHolderController;
+        private List<INormalCardItemController> _normalCardItemControllerList;
+        public event EventHandler<int> OnCardClickedEvent;
         public InitialCardAreaController(IInitialCardAreaView view)
         {
             _view = view;
         }
         
-        public void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, ILevelManager levelManager, ILevelDataCreator levelDataCreator)
+        public void Initialize()
         {
-            _cardHolderModelCreator = cardHolderModelCreator;
-            _levelTracker = levelTracker;
-            _cardItemInfoManager = cardItemInfoManager;
-            _levelDataCreator = levelDataCreator;
-            _isSelectedCardIndexChangeable = true;
-            _forbiddenBoardIndexes = new List<int>();
-            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
-            IInvisibleClickHandler invisibleClickHandler = _view.GetInvisibleClickHandler();
-            invisibleClickHandler.OnInvisibleClicked += RemoveSelection;
-            _cardItemLocator = cardItemLocator;
-            InitInitialCardAreaView(numOfTotalWildCards);
-            gameUIController.ResetNumbers += ResetPositionsOfCardItems;
-            boardAreaController.BoardCardHolderClicked += MoveSelectedCard;
-            levelManager.CardsBackFlipped += BackFlipCards;
-            gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
-            _cardItemLocator.OnCardDragStarted += RemoveSelection;
-            gameUIController.CheckFinalNumbers += RemoveSelection;
-            gameUIController.NotAbleToCheck += RemoveSelection;
-            gameUIController.ResetNumbers += RemoveSelection;
-        }
-
-        private void OnCardInfoToggleChanged(object sender, bool isCardInfoToggleOn)
-        {
-            _isCardItemInfoPopupToggleOn = isCardInfoToggleOn;
-            SetSelectedIndex(-1);
-        }
-
-        private void RemoveSelection(object sender, EventArgs args)
-        {
-            SetSelectedIndex(-1);
-        }
-
-        private void OnCardClicked(int cardIndex)
-        {
-            CardClicked?.Invoke(this, EventArgs.Empty);
-            if (_isCardItemInfoPopupToggleOn)
-            {
-                SetSelectedIndex(cardIndex);
-            }
-            else
-            {
-                int boardCardHolderIndex = _cardItemLocator.GetEmptyBoardHolderIndex();
-                _normalCardItemControllerList[cardIndex].DeselectCard();
-
-                if (cardIndex != -1 && boardCardHolderIndex != -1)
-                {
-                    MoveCard(cardIndex, boardCardHolderIndex);
-                }
-            }
-        }
-        
-        private void MoveSelectedCard(object sender, int boardCardHolderIndex)
-        {
-            if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn || _forbiddenBoardIndexes.Contains(boardCardHolderIndex)) return;
-            MoveCard(_selectedCardIndex, boardCardHolderIndex);
-            SetSelectedIndex(-1);
-        }
-
-        private void MoveCard(int cardIndex, int boardCardHolderIndex)
-        {
-            _normalCardItemControllerList[cardIndex].MoveCardByClick(boardCardHolderIndex);
-        }
-        
-        private void SetSelectedIndex(int cardIndex)
-        {
-            if (!_isSelectedCardIndexChangeable) return;
-            if (_selectedCardIndex != -1)
-            {
-                _normalCardItemControllerList[_selectedCardIndex].DeselectCard();
-                _normalCardItemControllerList[_selectedCardIndex].SetCardAnimation(false);
-            }
-            
-            if (cardIndex != -1)
-            {
-                _normalCardItemControllerList[cardIndex].SetCardAnimation(true);
-            }
-
-            _selectedCardIndex = cardIndex;
-            OpenCardItemInfoPopup?.Invoke(this, (cardIndex > -1, cardIndex));
-        }
-
-        private void ResetPositionsOfCardItems(object sender, EventArgs args)
-        {
-            _cardItemLocator.ResetBoard();
-            foreach (INormalCardItemController cardItemController in _normalCardItemControllerList)
-            {
-                cardItemController.ResetPosition();
-            }
-        }
-
-        private void InitInitialCardAreaView(int numOfTotalWildCard)
-        {
+            _normalCardHolderControllerList = new List<IInitialCardHolderController>();
+            _wildCardHolderController = null;
+            _normalCardItemControllerList = new List<INormalCardItemController>();
+            _levelManager.CardsBackFlipped += BackFlipCards;
+            _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             _view.Init(new CardHolderFactory(), new NormalCardItemViewFactory(), new WildCardItemViewFactory());
             CreateCardHolders();
-            CreateCardItemsData(numOfTotalWildCard);
+            CreateCardItemsData();
         }
         
         private void CreateCardHolders()
@@ -154,21 +62,12 @@ namespace Scripts
                 }
             }
         }
-
-        public Vector3 GetNormalCardHolderPositionAtIndex(int index)
-        {
-            return _normalCardHolderControllerList[index].GetPositionOfCardHolder();
-        }
-
-        public Vector3 GetWildCardHolderPosition()
-        {
-            return _wildCardHolderController.GetPositionOfCardHolder();
-        }
         
-        private void CreateCardItemsData(int numOfTotalWildCard)
+        private void CreateCardItemsData()
         {
+            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
             int numOfBoardCardHolder = _levelDataCreator.GetLevelData().NumOfBoardHolders;
-            int numOfWildCard = numOfTotalWildCard > numOfBoardCardHolder ? numOfBoardCardHolder : numOfTotalWildCard;
+            int numOfWildCard = numOfTotalWildCards > numOfBoardCardHolder ? numOfBoardCardHolder : numOfTotalWildCards;
             for (int j = 0; j < numOfWildCard; j++)
             {
                 CardItemData cardItemData = new CardItemData()
@@ -197,6 +96,11 @@ namespace Scripts
                 CreateCardItem(cardItemData);
             }
         }
+
+        private void OnCardClicked(int cardIndex)
+        {
+            OnCardClickedEvent?.Invoke(this, cardIndex);
+        }
         
         private void CreateCardItem(CardItemData cardItemData)
         {
@@ -212,11 +116,11 @@ namespace Scripts
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
                 INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController);
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController, _tutorialAbilityManager);
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
-
+        
         private void SetLockedCardController(LockedCardInfo lockedCardInfo)
         {
             _levelTracker.DecreaseWildCardCount();
@@ -227,7 +131,7 @@ namespace Scripts
             normalCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
             _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardCardHolderIndex);
         }
-
+        
         private void SlideNormalCardHolders()
         {
             _wildCardHolderController.GetView().SetStatus(false);
@@ -247,7 +151,7 @@ namespace Scripts
                 _normalCardHolderControllerList[i-1].SetLocalPosition(newLocalPositions[i]);
             }
         }
-
+        
         private void BackFlipCards(object sender, BackFlipCardsEventArgs args)
         {
             DOTween.Sequence()
@@ -267,53 +171,65 @@ namespace Scripts
                 .AppendInterval(1.2f + 0.3f * args.finalCardNumbers.Count)
                 .AppendCallback(() => args.onComplete.Invoke());
         }
-
-        public void SetCardsAsUnselectable(int selectableCardIndex = -1)
+        
+        private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
-            for (int i = 0; i < _normalCardItemControllerList.Count; i++)
+            _cardItemLocator.ResetBoard();
+            foreach (INormalCardItemController cardItemController in _normalCardItemControllerList)
             {
-                if (i == selectableCardIndex) _normalCardItemControllerList[i].SetIsSelectable(true);
-                else _normalCardItemControllerList[i].SetIsSelectable(false);
+                cardItemController.ResetPosition();
             }
         }
-
-        public void SetCardsAsUndraggable(int draggableCardIndex = -1)
+        
+        public void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
-            for (int i = 0; i < _normalCardItemControllerList.Count; i++)
+            if(boardCardHolderIndex == -1) boardCardHolderIndex =  _cardItemLocator.GetEmptyBoardHolderIndex();
+            
+            _normalCardItemControllerList[cardIndex].DeselectCard();
+
+            if (cardIndex != -1 && boardCardHolderIndex != -1)
             {
-                if (i == draggableCardIndex) _normalCardItemControllerList[i].SetIsDraggable(true);
-                else _normalCardItemControllerList[i].SetIsDraggable(false);
+                _normalCardItemControllerList[cardIndex].MoveCardByClick(boardCardHolderIndex);
             }
         }
-
-        public void SetBoardIndexesAsForbidden(List<int> list)
+        
+        public Vector3 GetNormalCardHolderPositionAtIndex(int index)
         {
-            _forbiddenBoardIndexes.Clear();
-            foreach (int boardIndex in list)
-            {
-                _forbiddenBoardIndexes.Add(boardIndex);
-            }
+            return _normalCardHolderControllerList[index].GetPositionOfCardHolder();
         }
 
-        public void SetSelectedCardIndexChangeable(bool status)
+        public void DeselectCard(int cardIndex)
         {
-            _isSelectedCardIndexChangeable = status;
+            _normalCardItemControllerList[cardIndex].DeselectCard();
+        }
+
+        public void SetCardAnimation(int cardIndex, bool status)
+        {
+            _normalCardItemControllerList[cardIndex].SetCardAnimation(status);
+        }
+
+        public IInvisibleClickHandler GetInvisibleClickHandler()
+        {
+            return _view.GetInvisibleClickHandler();
+        }
+
+        public void Unsubscribe()
+        {
+            _levelManager.CardsBackFlipped -= BackFlipCards;
+            _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
         }
     }
     
     public interface IInitialCardAreaController
     {
-        void Initialize(ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker,
-            ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IBoardAreaController boardAreaController, ILevelManager levelManager, ILevelDataCreator levelDataCreator);
-
+        event EventHandler<int> OnCardClickedEvent;
+        void Initialize();
+        void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1);
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
-        Vector3 GetWildCardHolderPosition();
-        void SetCardsAsUnselectable(int selectableCardIndex = -1);
-        void SetCardsAsUndraggable(int draggableCardIndex = -1);
-        void SetSelectedCardIndexChangeable(bool status);
-        void SetBoardIndexesAsForbidden(List<int> list);
-        event EventHandler CardClicked;
-        event EventHandler<(bool, int)> OpenCardItemInfoPopup;
+        void DeselectCard(int cardIndex);
+        void SetCardAnimation(int cardIndex, bool status);
+        IInvisibleClickHandler GetInvisibleClickHandler();
+        void Unsubscribe();
     }
     
     public class CardItemData
