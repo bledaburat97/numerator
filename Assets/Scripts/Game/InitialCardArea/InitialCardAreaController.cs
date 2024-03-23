@@ -17,6 +17,7 @@ namespace Scripts
         [Inject] private ILevelManager _levelManager;
         [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
         [Inject] private IGameUIController _gameUIController;
+        [Inject] private IBoardAreaController _boardAreaController;
 
         private IInitialCardAreaView _view;
         private List<IInitialCardHolderController> _normalCardHolderControllerList;
@@ -116,7 +117,7 @@ namespace Scripts
                 NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
                 INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
                 INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-                normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController, _tutorialAbilityManager);
+                normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController, _tutorialAbilityManager, _boardAreaController);
                 _normalCardItemControllerList.Add(normalCardItemController);
             }
         }
@@ -125,11 +126,11 @@ namespace Scripts
         {
             _levelTracker.DecreaseWildCardCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
-            normalCardItemController.GetView().SetParent(lockedCardInfo.parent);
+            normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfBoardHolder(lockedCardInfo.boardHolderIndex));
             normalCardItemController.GetView().InitLocalScale();
             normalCardItemController.GetView().SetLocalPosition(Vector3.zero, 0f);
-            normalCardItemController.GetView().SetSize(lockedCardInfo.parent.sizeDelta);
-            _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardCardHolderIndex);
+            normalCardItemController.GetView().SetSize(_boardAreaController.GetRectTransformOfBoardHolder(lockedCardInfo.boardHolderIndex).sizeDelta);
+            _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardHolderIndex);
         }
         
         private void SlideNormalCardHolders()

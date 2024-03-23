@@ -17,12 +17,12 @@ namespace Scripts
         public void Initialize()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked += OnInvisibleClicked;
-            _cardItemLocator.OnCardDragStarted += RemoveSelection;
+            _cardItemLocator.CardDragStartedEvent += RemoveSelection;
             _gameUIController.CheckFinalNumbers += RemoveSelection;
             _gameUIController.NotAbleToCheck += RemoveSelection;
             _gameUIController.ResetNumbers += RemoveSelection;
             _gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
-            _boardAreaController.BoardCardHolderClicked += MoveSelectedCard;
+            _boardAreaController.BoardHolderClickedEvent += MoveSelectedCard;
             _initialCardAreaController.OnCardClickedEvent += OnCardClicked;
         }
         
@@ -85,12 +85,12 @@ namespace Scripts
         public void Unsubscribe()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked -= OnInvisibleClicked;
-            _cardItemLocator.OnCardDragStarted -= RemoveSelection;
+            _cardItemLocator.CardDragStartedEvent -= RemoveSelection;
             _gameUIController.CheckFinalNumbers -= RemoveSelection;
             _gameUIController.NotAbleToCheck -= RemoveSelection;
             _gameUIController.ResetNumbers -= RemoveSelection;
             _gameUIController.CardInfoToggleChanged -= OnCardInfoToggleChanged;
-            _boardAreaController.BoardCardHolderClicked -= MoveSelectedCard;
+            _boardAreaController.BoardHolderClickedEvent -= MoveSelectedCard;
             _initialCardAreaController.OnCardClickedEvent -= OnCardClicked;
         }
     }

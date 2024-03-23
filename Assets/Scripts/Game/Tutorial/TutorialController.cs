@@ -20,12 +20,13 @@ namespace Scripts
         protected ICardItemInfoManager _cardItemInfoManager;
         protected ITutorialAbilityManager _tutorialAbilityManager;
         protected ICardInteractionManager _cardInteractionManager;
+        protected IBoardAreaController _boardAreaController;
         protected Vector2 _sizeOfInitialHolder;
         protected Vector2 _sizeOfBoardHolder;
         
         public void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager)
+            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _handTutorialView = handTutorialView;
@@ -39,6 +40,7 @@ namespace Scripts
             _cardItemInfoManager = cardItemInfoManager;
             _tutorialAbilityManager = tutorialAbilityManager;
             _cardInteractionManager = cardInteractionManager;
+            _boardAreaController = boardAreaController;
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _tutorialMessagePopupView.Init();
             _tutorialAnimationActions = new Queue<Action>();
@@ -75,7 +77,7 @@ namespace Scripts
         protected void StartDragAnimation(int cardIndex, int boardIndex, bool isReversed = false)
         {
             Vector2 cardHolderPosition = _initialCardAreaController.GetNormalCardHolderPositionAtIndex(cardIndex);
-            Vector2 boardHolderPosition = _cardItemLocator.GetBoardCardHolderPositionAtIndex(boardIndex);
+            Vector2 boardHolderPosition = _boardAreaController.GetBoardHolderPositionAtIndex(boardIndex);
             _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
             {
                 draggableBoardIndex = boardIndex,
@@ -83,21 +85,21 @@ namespace Scripts
             });
             _unmaskServiceAreaView.CreateUnmaskCardItem(cardHolderPosition, _sizeOfInitialHolder);
             _unmaskServiceAreaView.CreateUnmaskCardItem(boardHolderPosition, _sizeOfBoardHolder);
-            _cardItemLocator.OnCardDragStarted += StopDragAnimation;
+            _cardItemLocator.CardDragStartedEvent += StopDragAnimation;
 
             if (!isReversed)
             {
                 _handTutorialView.StartDragAnimation(cardHolderPosition, boardHolderPosition);
                 _tutorialMessagePopupView.SetText("You can drag the number to the board.");
-                _cardItemLocator.OnCardReturnedToInitial += RestartDragAnimation;
-                _cardItemLocator.OnCardPlacedBoard += CloseDragAnimation;
+                _cardItemLocator.CardReturnedToInitialEvent += RestartDragAnimation;
+                _cardItemLocator.CardPlacedBoardEvent += CloseDragAnimation;
             }
             else
             {
                 _handTutorialView.StartDragAnimation(boardHolderPosition, cardHolderPosition);
                 _tutorialMessagePopupView.SetText("You can drag the number to initial area back.");
-                _cardItemLocator.OnCardReturnedToInitial += CloseDragAnimation;
-                _cardItemLocator.OnCardPlacedBoard += RestartDragAnimation;
+                _cardItemLocator.CardReturnedToInitialEvent += CloseDragAnimation;
+                _cardItemLocator.CardPlacedBoardEvent += RestartDragAnimation;
             }
 
             void StopDragAnimation(object sender, EventArgs args)
@@ -113,16 +115,16 @@ namespace Scripts
             void CloseDragAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _cardItemLocator.OnCardDragStarted -= StopDragAnimation;
+                _cardItemLocator.CardDragStartedEvent -= StopDragAnimation;
                 if (!isReversed)
                 {
-                    _cardItemLocator.OnCardReturnedToInitial -= RestartDragAnimation;
-                    _cardItemLocator.OnCardPlacedBoard -= CloseDragAnimation;
+                    _cardItemLocator.CardReturnedToInitialEvent -= RestartDragAnimation;
+                    _cardItemLocator.CardPlacedBoardEvent -= CloseDragAnimation;
                 }
                 else
                 {
-                    _cardItemLocator.OnCardReturnedToInitial -= CloseDragAnimation;
-                    _cardItemLocator.OnCardPlacedBoard -= RestartDragAnimation;
+                    _cardItemLocator.CardReturnedToInitialEvent -= CloseDragAnimation;
+                    _cardItemLocator.CardPlacedBoardEvent -= RestartDragAnimation;
                 }
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
@@ -224,6 +226,6 @@ namespace Scripts
     {
         void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager);
+            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController);
     }
 }

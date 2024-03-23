@@ -13,7 +13,7 @@ namespace Scripts
             gameUIController.CheckFinalNumbers += CheckFinalNumbers;
         }
 
-        public void SetNumberOfCard(int index, int numberOfCard)
+        public void SetCardNumber(int index, int numberOfCard)
         {
             _numbersList[index] = numberOfCard;
         }
@@ -35,12 +35,7 @@ namespace Scripts
 
         private bool CheckAllNumbersPlaced()
         {
-            for (int i = 0; i < _numbersList.Length; i++)
-            {
-                if (_numbersList[i] == 0) return false;
-            }
-
-            return true;
+            return _numbersList.All(number => number != 0);
         }
 
         public int GetEmptyBoardHolderIndex()
@@ -56,7 +51,7 @@ namespace Scripts
     
     public interface IBoardAreaManager
     {
-        void SetNumberOfCard(int index, int numberOfCard);
+        void SetCardNumber(int index, int numberOfCard);
         int SetWildCardOnBoard(int index);
         int GetEmptyBoardHolderIndex();
     }

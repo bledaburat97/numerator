@@ -119,7 +119,7 @@ namespace Scripts
         
         private void InitializeBoardArea()
         {
-            _boardAreaController.Initialize(_cardItemLocator, _resultManager, _levelDataCreator, _cardHolderModelCreator, _gameUIController);
+            _boardAreaController.Initialize();
         }
 
         private void InitializeCardItemInfoManager()

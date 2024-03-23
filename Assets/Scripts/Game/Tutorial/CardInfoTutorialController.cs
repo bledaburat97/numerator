@@ -5,7 +5,6 @@ namespace Scripts
 {
     public class CardInfoTutorialController : TutorialController
     {
-        
         protected override void InitializeTutorialAnimationActions()
         {
             AddTutorialAction(() => StartDragAnimation(0, 0));
@@ -14,9 +13,9 @@ namespace Scripts
             AddTutorialAction(() => ShowResultBlock(0, "Any number does not exist on the board. Now you can specify these numbers."));
             AddTutorialAction(()=> WaitForATime(5));
             AddTutorialAction(StartCardInfoButtonClickAnimation);
-            AddTutorialAction(() => StartCardClickAnimation(0, _cardItemLocator.GetBoardCardHolderPositionAtIndex(0), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartCardClickAnimation(0, _boardAreaController.GetBoardHolderPositionAtIndex(0), _sizeOfBoardHolder));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
-            AddTutorialAction(() => StartCardClickAnimation(1, _cardItemLocator.GetBoardCardHolderPositionAtIndex(1), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartCardClickAnimation(1, _boardAreaController.GetBoardHolderPositionAtIndex(1), _sizeOfBoardHolder));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
             AddTutorialAction(StartResetButtonClickAnimation);
             AddTutorialAction(() => StartDragAnimation(2,0));
@@ -34,9 +33,9 @@ namespace Scripts
             AddTutorialAction(StartCheckButtonClickAnimation);
             AddTutorialAction(() => ShowResultBlock(2, "Only one number is at correct position, the other one doesn't exist."));
             AddTutorialAction(()=> WaitForATime(5));
-            AddTutorialAction(() => StartCardClickAnimation(3, _cardItemLocator.GetBoardCardHolderPositionAtIndex(0), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartCardClickAnimation(3, _boardAreaController.GetBoardHolderPositionAtIndex(0), _sizeOfBoardHolder));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.Certain, "When the number certainly exists somewhere on the board, turn the color to green."));
-            AddTutorialAction(() => StartCardClickAnimation(4, _cardItemLocator.GetBoardCardHolderPositionAtIndex(1), _sizeOfBoardHolder));
+            AddTutorialAction(() => StartCardClickAnimation(4, _boardAreaController.GetBoardHolderPositionAtIndex(1), _sizeOfBoardHolder));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
             AddTutorialAction(() => StartCardClickAnimation(2, _initialCardAreaController.GetNormalCardHolderPositionAtIndex(2), _sizeOfInitialHolder));
             AddTutorialAction(() => StartProbabilityButtonClickAnimation(ProbabilityType.NotExisted, "When the number does not exist on the board, turn the color of number to red."));
@@ -101,7 +100,7 @@ namespace Scripts
         
         private void StartBoardClickAnimation(int boardHolderIndex)
         {
-            Vector2 position = _cardItemLocator.GetBoardCardHolderPositionAtIndex(boardHolderIndex);
+            Vector2 position = _boardAreaController.GetBoardHolderPositionAtIndex(boardHolderIndex);
             _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
             {
                 clickableBoardIndex = boardHolderIndex,

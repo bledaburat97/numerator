@@ -9,8 +9,8 @@ namespace Scripts
         private INormalCardItemView _view;
         private bool _isDragStart;
         private Action<int> _onDragStart;
-        private Func<int, RectTransform> _onDragComplete;
-        private Func<int, int, RectTransform> _onPlaceByClick;
+        private Func<int, int> _onDragComplete;
+        private Action<int, int> _onPlaceByClick;
         private Action<int> _onCardClicked;
         private bool _isSelectable;
         private Camera _cam;
@@ -18,13 +18,15 @@ namespace Scripts
         private bool _isSelected;
         private bool _isAlreadySelected;
         private ITutorialAbilityManager _tutorialAbilityManager;
-        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager)
+        private IBoardAreaController _boardAreaController;
+        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaController boardAreaController)
         {
             _view = cardItemView;
             _cam = cam;
             _cardItemData = cardItemData;
             _hapticController = hapticController;
             _tutorialAbilityManager = tutorialAbilityManager;
+            _boardAreaController = boardAreaController;
             _view.Init(cardItemData.cardNumber);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero, 0f);
@@ -67,14 +69,14 @@ namespace Scripts
             _onDragStart += action;
         }
 
-        private void SetOnDragComplete(Func<int, RectTransform> func)
+        private void SetOnDragComplete(Func<int, int> func)
         {
             _onDragComplete += func;
         }
 
-        private void SetOnPlaceByClick(Func<int, int, RectTransform> func)
+        private void SetOnPlaceByClick(Action<int, int> action)
         {
-            _onPlaceByClick += func;
+            _onPlaceByClick += action;
         }
 
         private void OnDrag(PointerEventData data)
@@ -126,11 +128,12 @@ namespace Scripts
             else
             {
                 _hapticController.Vibrate(HapticType.CardRelease);
-                RectTransform cardHolderTransform = _onDragComplete(_cardItemData.cardItemIndex);
+                int boardHolderIndex = _onDragComplete(_cardItemData.cardItemIndex);
+                
                 RectTransform parentTransform;
-                if (cardHolderTransform != null)
+                if (boardHolderIndex != -1)
                 {
-                    parentTransform = cardHolderTransform;
+                    parentTransform = _boardAreaController.GetRectTransformOfBoardHolder(boardHolderIndex);
                 }
                 else
                 {
@@ -146,7 +149,8 @@ namespace Scripts
         public void MoveCardByClick(int boardCardHolderIndex)
         {
             _onDragStart.Invoke(_cardItemData.cardItemIndex);
-            RectTransform cardHolderTransform = _onPlaceByClick(_cardItemData.cardItemIndex, boardCardHolderIndex);
+            _onPlaceByClick(_cardItemData.cardItemIndex, boardCardHolderIndex);
+            RectTransform cardHolderTransform = _boardAreaController.GetRectTransformOfBoardHolder(boardCardHolderIndex);
             _view.SetParent(cardHolderTransform);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero, 0.3f);
@@ -199,7 +203,7 @@ namespace Scripts
 
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager);
+        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaController boardAreaController);
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
