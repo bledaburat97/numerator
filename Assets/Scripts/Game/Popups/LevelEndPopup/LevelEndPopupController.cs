@@ -91,7 +91,7 @@ namespace Scripts
             
             _wildCardItemView = _view.CreateWildCardImage();
             _wildCardItemView.SetLocalScale(Vector3.zero);
-            _wildCardItemView.SetLocalPosition(Vector3.zero, 0f);
+            _wildCardItemView.SetLocalPosition(Vector3.zero);
             Action onClickClaim = _wildCardItemView.Destroy;
             onClickClaim += () => DOTween.Sequence().AppendInterval(0.2f)
                 .AppendCallback(() => _circleProgressBarController.CreateInitialStars())

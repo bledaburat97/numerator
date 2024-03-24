@@ -128,7 +128,7 @@ namespace Scripts
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
             normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfBoardHolder(lockedCardInfo.boardHolderIndex));
             normalCardItemController.GetView().InitLocalScale();
-            normalCardItemController.GetView().SetLocalPosition(Vector3.zero, 0f);
+            normalCardItemController.GetView().SetLocalPosition(Vector3.zero);
             normalCardItemController.GetView().SetSize(_boardAreaController.GetRectTransformOfBoardHolder(lockedCardInfo.boardHolderIndex).sizeDelta);
             _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardHolderIndex);
         }

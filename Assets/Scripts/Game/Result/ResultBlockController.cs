@@ -35,7 +35,7 @@ namespace Scripts
                 cardItemView.Init(_model.finalNumbers[i]);
                 cardItemView.SetSize(new Vector2(ConstantValues.RESULT_CARD_WIDTH, ConstantValues.RESULT_CARD_HEIGHT));
                 cardItemView.InitLocalScale();
-                cardItemView.SetLocalPosition(Vector3.zero, 0f);
+                cardItemView.SetLocalPosition(Vector3.zero);
                 cardItemView.MultiplyPixelsPerUnit();
             }
         }

@@ -99,7 +99,7 @@ namespace Scripts
             _openWaitingOpponentPopup += OnPlayerReady;
             _isLocalReady = false;
             _closeWaitingOpponentPopup += OnPlayerUnready;
-            if (_levelTracker.GetLevelId() == 0)
+            if (_levelTracker.IsFirstLevelTutorial())
             {
                 _tutorialAbilityManager.SetTutorialLevel(true);
                 IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
@@ -112,7 +112,7 @@ namespace Scripts
                 firstLevelTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, _cardHolderModelCreator, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _tutorialAbilityManager, _cardInteractionManager, _boardAreaController);
             }
             
-            else if (_levelTracker.GetLevelId() == 9)
+            else if (_levelTracker.IsCardInfoTutorial())
             {
                 _tutorialAbilityManager.SetTutorialLevel(true);
                 IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);

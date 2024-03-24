@@ -29,7 +29,7 @@ namespace Scripts
             _boardAreaController = boardAreaController;
             _view.Init(cardItemData.cardNumber);
             _view.InitLocalScale();
-            _view.SetLocalPosition(Vector3.zero, 0f);
+            _view.SetLocalPosition(Vector3.zero);
             _view.SetOnPointerDown(OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
@@ -100,9 +100,10 @@ namespace Scripts
         public void ResetPosition()
         {
             RectTransform parentTransform = _cardItemData.parent;
-            _view.SetParent(parentTransform);
+            _view.SetParent(_cardItemData.tempParent);
             _view.InitLocalScale();
-            _view.SetLocalPosition(Vector3.zero, 0.3f);
+            DOTween.Sequence().Append(_view.ChangePosition(parentTransform.position, 0.3f))
+                .OnComplete(() => _view.SetParent(parentTransform));
             _view.SetSize(parentTransform.sizeDelta);
         }
         
@@ -129,19 +130,22 @@ namespace Scripts
             {
                 _hapticController.Vibrate(HapticType.CardRelease);
                 int boardHolderIndex = _onDragComplete(_cardItemData.cardItemIndex);
-                
+                _view.SetParent(_cardItemData.tempParent);
+                Vector2 targetPosition;
                 RectTransform parentTransform;
                 if (boardHolderIndex != -1)
                 {
+                    targetPosition = _boardAreaController.GetBoardHolderPositionAtIndex(boardHolderIndex);
                     parentTransform = _boardAreaController.GetRectTransformOfBoardHolder(boardHolderIndex);
                 }
                 else
                 {
+                    targetPosition = _cardItemData.parent.position;
                     parentTransform = _cardItemData.parent;
                 }
-                _view.SetParent(parentTransform);
                 _view.InitLocalScale();
-                _view.SetLocalPosition(Vector3.zero, 0.3f);
+                DOTween.Sequence().Append(_view.ChangePosition(targetPosition, 0.3f))
+                    .OnComplete(() => _view.SetParent(parentTransform));
                 _view.SetSize(parentTransform.sizeDelta);
             }
         }
@@ -151,9 +155,10 @@ namespace Scripts
             _onDragStart.Invoke(_cardItemData.cardItemIndex);
             _onPlaceByClick(_cardItemData.cardItemIndex, boardCardHolderIndex);
             RectTransform cardHolderTransform = _boardAreaController.GetRectTransformOfBoardHolder(boardCardHolderIndex);
-            _view.SetParent(cardHolderTransform);
+            _view.SetParent(_cardItemData.tempParent);
             _view.InitLocalScale();
-            _view.SetLocalPosition(Vector3.zero, 0.3f);
+            DOTween.Sequence().Append(_view.ChangePosition(cardHolderTransform.position, 0.3f))
+                .OnComplete(() => _view.SetParent(cardHolderTransform));
             _view.SetSize(cardHolderTransform.sizeDelta);
         }
 
@@ -184,11 +189,11 @@ namespace Scripts
             _isSelectable = !isLocked;
         }
 
-        public Sequence BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
+        public void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
         {
-            return DOTween.Sequence()
+            DOTween.Sequence()
                 .AppendInterval(delayDuration)
-                .Append(_view.SetLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
+                .Append(_view.ChangeLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.15f))
                 .AppendCallback(() => SetColor(isGuessRight ? ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain] : ConstantValues.GREY_CARD_COLOR))
                 .AppendCallback(() => _view.SetTextStatus(false))
@@ -196,7 +201,7 @@ namespace Scripts
                 .AppendCallback(isGuessRight ? () => _view.SetBackImageStatus(true) : () => _view.SetBackText(correctNumber))
                 .AppendCallback(() => _view.SetNewAnchoredPositionOfRotatedImage())
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.15f))
-                .Append(_view.SetLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
+                .Append(_view.ChangeLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
                 .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
         }
     }
@@ -207,7 +212,7 @@ namespace Scripts
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
-        Sequence BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
+        void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         void DeselectCard();
         void SetCardAnimation(bool status);
     }

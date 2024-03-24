@@ -1,4 +1,5 @@
 ﻿using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -23,7 +24,7 @@ namespace Scripts
             _cardItemData = data;
             _view.SetLocalPositionGap(data.cardItemIndex);
             _view.InitLocalScale();
-            _view.SetLocalPosition(Vector3.zero, 0f);
+            _view.SetLocalPosition(Vector3.zero);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
             _view.SetOnPointerDown(OnPointerDown);
@@ -86,9 +87,11 @@ namespace Scripts
             else
             {
                 if (_cardItemData.cardItemIndex == 0) _backSlideCardHolders.Invoke();
-                _view.SetParent(_cardItemData.parent);
                 _view.InitLocalScale();
-                _view.SetLocalPosition(Vector3.zero, 0.3f);
+                _view.SetParent(_cardItemData.tempParent);
+                DOTween.Sequence().Append(_view.ChangePosition(_cardItemData.parent.position, 0.3f)
+                    .AppendCallback(() => _view.SetParent(_cardItemData.parent))
+                    .Append(_view.ChangeLocalPosition(Vector3.zero, 0.05f)));
                 _view.SetSize(_cardItemData.parent.sizeDelta);
             }
         }

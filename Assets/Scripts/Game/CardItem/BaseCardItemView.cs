@@ -19,10 +19,20 @@ namespace Scripts
             SetCardNumberText(cardNumber);
             SetFrameStatus(false);
         }
+        
+        public virtual void SetLocalPosition(Vector3 localPosition)
+        {
+            rectTransform.localPosition = localPosition;
+        }
 
-        public virtual Sequence SetLocalPosition(Vector3 localPosition, float duration)
+        public virtual Sequence ChangeLocalPosition(Vector3 localPosition, float duration)
         {
             return DOTween.Sequence().Append(rectTransform.DOLocalMove(localPosition, duration)).SetEase(Ease.OutQuad);
+        }
+
+        public virtual Sequence ChangePosition(Vector3 position, float duration)
+        {
+            return DOTween.Sequence().Append(rectTransform.DOMove(position, duration)).SetEase(Ease.OutQuad);
         }
 
         public void InitLocalScale()
@@ -52,6 +62,8 @@ namespace Scripts
         void InitLocalScale();
         void SetSize(Vector2 size);
         void SetFrameStatus(bool status);
-        Sequence SetLocalPosition(Vector3 localPosition, float duration);
+        void SetLocalPosition(Vector3 localPosition);
+        Sequence ChangeLocalPosition(Vector3 localPosition, float duration);
+        Sequence ChangePosition(Vector3 position, float duration);
     }
 }
