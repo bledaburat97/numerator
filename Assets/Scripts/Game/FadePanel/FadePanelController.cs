@@ -18,7 +18,7 @@ namespace Scripts
         public void Initialize()
         {
             _view.SetFadeImageStatus(false);
-            _view.SetTutorialFadeImageStatus(false);
+            //_view.SetTutorialFadeImageStatus(false);
             _nonGlowView.SetFadeImageStatus(false);
         }
 

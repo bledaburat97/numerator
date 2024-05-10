@@ -14,7 +14,7 @@ namespace Scripts
         private List<int> _finalCardNumbers;
         private List<int> _targetCardNumbers;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
-        public event EventHandler MultiplayerLevelEnd;
+        public event EventHandler MultiplayerLevelEndEvent;
         public event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
         private bool _isGameOver;
         
@@ -80,7 +80,7 @@ namespace Scripts
 
                 if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
                 {
-                    MultiplayerLevelEnd?.Invoke(sender, EventArgs.Empty);
+                    MultiplayerLevelEndEvent?.Invoke(sender, EventArgs.Empty);
                 }
             }
 
@@ -141,7 +141,7 @@ namespace Scripts
         event EventHandler<LevelEndEventArgs> LevelEnd;
         int GetRemainingGuessCount();
         bool IsGameOver();
-        event EventHandler MultiplayerLevelEnd;
+        event EventHandler MultiplayerLevelEndEvent;
         event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
     }
 }

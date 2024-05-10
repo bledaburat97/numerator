@@ -87,7 +87,7 @@ namespace Scripts
             _messagePopupViewFactory = new MessagePopupViewFactory();
             
             _levelManager.LevelEnd += CreateLevelEndPopup;
-            _levelManager.MultiplayerLevelEnd += OnMultiplayerLevelEnd;
+            _levelManager.MultiplayerLevelEndEvent += OnMultiplayerLevelEnd;
             _gameUIController.OpenSettings += CreateSettingsPopup;
             _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
             _turnOrderDeterminer.LocalTurnEvent += ChangeLocalTurn;

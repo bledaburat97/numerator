@@ -129,6 +129,7 @@ namespace Scripts
             {
                 levelDataCreator.SetMultiplayerLevelData(GetNumberOfBoardCardsInMultiplayer());
                 LevelData levelData = levelDataCreator.GetLevelData();
+                Debug.Log(levelData.LevelId);
                 _levelSaveData = CreateDefaultLevelSaveData(levelData);
                 targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
             }

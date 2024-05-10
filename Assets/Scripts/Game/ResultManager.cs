@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
     public class ResultManager : IResultManager
     {
+        [Inject] private GamePopupCreator _gamePopupCreator;
+        
         private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
         private int _numOfBoardHolders;
