@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7361286077150920955
+--- !u!1 &5621990438169575076
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,24 +8,24 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7361286077150920954}
-  - component: {fileID: 7361286077150920952}
-  - component: {fileID: 7361286077150920953}
-  - component: {fileID: 7266938262060809855}
+  - component: {fileID: 264529451369317187}
+  - component: {fileID: 651523424228518593}
+  - component: {fileID: 7668428128579586453}
+  - component: {fileID: -7220728925059160841}
   m_Layer: 0
-  m_Name: Boundary
+  m_Name: CrystalImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &7361286077150920954
+--- !u!224 &264529451369317187
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7361286077150920955}
+  m_GameObject: {fileID: 5621990438169575076}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -36,30 +36,30 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1, y: 11.7}
+  m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &7361286077150920952
+--- !u!222 &651523424228518593
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7361286077150920955}
+  m_GameObject: {fileID: 5621990438169575076}
   m_CullTransparentMesh: 1
---- !u!114 &7361286077150920953
+--- !u!114 &7668428128579586453
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7361286077150920955}
+  m_GameObject: {fileID: 5621990438169575076}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.59607846, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -67,26 +67,29 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 0}
-  m_Type: 3
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 0
+  m_FillMethod: 4
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &7266938262060809855
+--- !u!114 &-7220728925059160841
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7361286077150920955}
+  m_GameObject: {fileID: 5621990438169575076}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a1eb20684a9e42bca1ba2796980fa31f, type: 3}
+  m_Script: {fileID: 11500000, guid: dc2be6c4e28d47c599355c263d991c2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rectTransform: {fileID: 7361286077150920954}
-  crystalPrefab: {fileID: -7220728925059160841, guid: 8ebac9cd30483f040a4b9de6eb13029f, type: 3}
+  image: {fileID: 7668428128579586453}
+  crystalModels:
+  - {fileID: 11400000, guid: f8d33aa9275f5744983242d8cfd51fc0, type: 2}
+  - {fileID: 11400000, guid: 15b6961f2e878434390949f0b8fd0293, type: 2}
+  - {fileID: 11400000, guid: 4b9ab2e0688569e44b3261350f3e8186, type: 2}

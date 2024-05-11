@@ -10,7 +10,7 @@ namespace Scripts
         private int _remainingGuessCount;
         private IGameSaveService _gameSaveService;
         private int _numOfStars;
-        private IStarProgressBarController _starProgressBarController;
+        private ILifeBarController _lifeBarController;
         private List<int> _finalCardNumbers;
         private List<int> _targetCardNumbers;
         public event EventHandler<LevelEndEventArgs> LevelEnd;
@@ -18,13 +18,13 @@ namespace Scripts
         public event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
         private bool _isGameOver;
         
-        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController, ILevelDataCreator levelDataCreator)
+        public void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, ILifeBarController lifeBarController, ILevelDataCreator levelDataCreator)
         {
             _levelTracker = levelTracker;
             _gameSaveService = gameSaveService;
             _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
             _numOfStars = 3;
-            _starProgressBarController = starProgressBarController;
+            _lifeBarController = lifeBarController;
             _finalCardNumbers = new List<int>();
             _targetCardNumbers = new List<int>();
             UpdateStarProgressBar(_maxNumOfTries, _levelTracker.GetLevelSaveData().RemainingGuessCount, 0f);
@@ -35,7 +35,7 @@ namespace Scripts
         private void UpdateStarProgressBar(int previousRemainingGuessCount, int currentRemainingGuessCount, float animationDuration)
         {
             List<int> indexesOfDeletedStars = new List<int>();
-            List<int> indexesContainsStar = _starProgressBarController.GetIndexesContainsStar();
+            List<int> indexesContainsStar = _lifeBarController.GetIndexesContainsStar();
             for (int i = previousRemainingGuessCount - 1; i >= currentRemainingGuessCount; i--)
             {
                 if (indexesContainsStar.Contains(i))
@@ -46,7 +46,7 @@ namespace Scripts
             }
 
             _remainingGuessCount = currentRemainingGuessCount;
-            _starProgressBarController.DecreaseProgressBar(indexesOfDeletedStars, (float) _remainingGuessCount / _maxNumOfTries, _remainingGuessCount == 0 ? LevelFailed : null, animationDuration);
+            _lifeBarController.DecreaseProgressBar(indexesOfDeletedStars, (float) _remainingGuessCount / _maxNumOfTries, _remainingGuessCount == 0 ? LevelFailed : null, animationDuration);
         }
 
         private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
@@ -59,10 +59,7 @@ namespace Scripts
                 {
                     _gameSaveService.DeleteSave();
                     _isGameOver = true;
-                    int oldStarCount = _levelTracker.GetLevelId() < _levelTracker.GetStarCountOfLevels().Count
-                        ? _levelTracker.GetStarCountOfLevels()[_levelTracker.GetLevelId()]
-                        : 0;
-                    _levelTracker.IncrementLevelId(_numOfStars);
+                    _levelTracker.IncrementLevelId();
                     CardsBackFlipped.Invoke(this, new BackFlipCardsEventArgs()
                     {
                         finalCardNumbers = _finalCardNumbers,
@@ -73,7 +70,6 @@ namespace Scripts
                             isLevelCompleted = true,
                             levelTracker = _levelTracker,
                             starCount = _numOfStars,
-                            oldStarCount = oldStarCount,
                         })
                     });
                 }
@@ -137,7 +133,7 @@ namespace Scripts
     
     public interface ILevelManager
     {
-        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, IStarProgressBarController starProgressBarController, ILevelDataCreator levelDataCreator);
+        void Initialize(ILevelTracker levelTracker, IResultManager resultManager, IGameSaveService gameSaveService, ILifeBarController lifeBarController, ILevelDataCreator levelDataCreator);
         event EventHandler<LevelEndEventArgs> LevelEnd;
         int GetRemainingGuessCount();
         bool IsGameOver();

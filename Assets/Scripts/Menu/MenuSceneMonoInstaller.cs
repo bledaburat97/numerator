@@ -16,8 +16,7 @@ namespace Scripts
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IActiveLevelIdController>().To<ActiveLevelIdController>().AsSingle();
-            Container.Bind<ILevelSelectionTableController>().To<LevelSelectionTableController>().AsSingle()
-                .WithArguments(levelSelectionTable, canvas);
+            //Container.Bind<ILevelSelectionTableController>().To<LevelSelectionTableController>().AsSingle().WithArguments(levelSelectionTable, canvas);
             Container.Bind<IMenuHeaderController>().To<MenuHeaderController>().AsSingle()
                 .WithArguments(menuHeader);
             Container.Bind<IMenuUIController>().To<MenuUIController>().AsSingle()

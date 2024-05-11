@@ -1,23 +1,25 @@
-﻿using UnityEngine;
+﻿using Game;
+using UnityEngine;
 
 namespace Scripts
 {
     public class BoundaryView : MonoBehaviour, IBoundaryView
     {
         [SerializeField] private RectTransform rectTransform;
-        [SerializeField] private StarImageView starImagePrefab;
-        private StarImageViewFactory _starImageViewFactory;
+        [SerializeField] private CrystalImageView crystalPrefab;
+        //[SerializeField] private StarImageView starImagePrefab;
+        //private StarImageViewFactory _starImageViewFactory;
         
         public void Init(Vector2 localPosition, StarImageViewFactory starImageViewFactory)
         {
             transform.localPosition = localPosition;
             transform.localScale = Vector3.one;
-            _starImageViewFactory = starImageViewFactory;
+            //_starImageViewFactory = starImageViewFactory;
         }
 
-        public IStarImageView CreateStarImage()
+        public CrystalImageView CreateCrystalImage()
         {
-            return _starImageViewFactory.Spawn(transform, starImagePrefab);
+            return Instantiate(crystalPrefab, transform);
         }
 
         public RectTransform GetRectTransform()
@@ -29,7 +31,7 @@ namespace Scripts
     public interface IBoundaryView
     {
         void Init(Vector2 localPosition, StarImageViewFactory starImageViewFactory);
-        IStarImageView CreateStarImage();
+        CrystalImageView CreateCrystalImage();
         RectTransform GetRectTransform();
     }
 }

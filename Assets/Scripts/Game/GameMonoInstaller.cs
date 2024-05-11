@@ -12,7 +12,7 @@ namespace Scripts
         [SerializeField] private InitialCardAreaView initialCardAreaView;
         [SerializeField] private FadePanelView fadePanelView;
         [SerializeField] private FadePanelView nonGlowFadePanelView;
-        [SerializeField] private StarProgressBarView starProgressBarView;
+        [SerializeField] private LifeBarView lifeBarView;
         [SerializeField] private GameClockView gameClockView;
         [SerializeField] private GameUIView gameUI;
         public override void InstallBindings()
@@ -29,8 +29,8 @@ namespace Scripts
             Container.Bind<ICardHolderModelCreator>().To<CardHolderModelCreator>().AsSingle();
             Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
-            Container.Bind<IStarProgressBarController>().To<StarProgressBarController>().AsSingle()
-                .WithArguments(starProgressBarView);
+            Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()
+                .WithArguments(lifeBarView);
             Container.Bind<ILevelManager>().To<LevelManager>().AsSingle();
             Container.Bind<IBoardAreaController>().To<BoardAreaController>().AsSingle().WithArguments(boardAreaView);
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();

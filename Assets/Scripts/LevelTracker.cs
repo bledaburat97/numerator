@@ -7,25 +7,30 @@ namespace Scripts
 {
     public class LevelTracker : MonoBehaviour, ILevelTracker
     {
-        private int _starCount;
-        private int _wildCardCount;
-        private int _blueStarCount;
+        private int _blueCrystalCount;
+        private int _redCrystalCount;
+        private int _yellowCrystalCount;
+        private int _revealingPowerUpCount;
+        private int _lifePowerUpCount;
+        private int _hintPowerUpCount;
         private IGameSaveService _gameSaveService;
-        private List<int> _starCountOfCompletedLevels;
         private int _levelId;
         private GameOption _gameOption;
         private Difficulty _multiplayerLevelDifficulty;
         private LevelSaveData _levelSaveData;
+        
         
         public void Initialize(IGameSaveService gameSaveService)
         {
             _gameOption = (GameOption)PlayerPrefs.GetInt("game_option", 0);
             _gameSaveService = gameSaveService;
             _levelId = PlayerPrefs.GetInt("level_id", 0);
-            _starCount = PlayerPrefs.GetInt("star_count", 0);
-            _blueStarCount = PlayerPrefs.GetInt("blue_star_count", 0);
-            _wildCardCount = PlayerPrefs.GetInt("wild_card_count", 0);
-            _starCountOfCompletedLevels = JsonConvert.DeserializeObject<List<int>>(PlayerPrefs.GetString("star_count_of_levels", "")) ?? new List<int>();
+            _blueCrystalCount = PlayerPrefs.GetInt("blue_crystal_count", 0);
+            _redCrystalCount = PlayerPrefs.GetInt("red_crystal_count", 0);
+            _yellowCrystalCount = PlayerPrefs.GetInt("yellow_crystal_count", 0);
+            _revealingPowerUpCount = PlayerPrefs.GetInt("revealing_power_up_count", 0);
+            _lifePowerUpCount = PlayerPrefs.GetInt("life_power_up_count", 0);
+            _hintPowerUpCount = PlayerPrefs.GetInt("hint_power_up_count", 0);
             _multiplayerLevelDifficulty = (Difficulty)PlayerPrefs.GetInt("multiplayer_level_difficulty", 2);
         }
 
@@ -63,10 +68,12 @@ namespace Scripts
 
         public void ClearPlayerPrefs()
         {
-            PlayerPrefs.DeleteKey("level_id");
-            PlayerPrefs.DeleteKey("star_count");
-            PlayerPrefs.DeleteKey("wild_card_count");
-            PlayerPrefs.DeleteKey("star_count_of_levels");
+            PlayerPrefs.DeleteKey("blue_crystal_count");
+            PlayerPrefs.DeleteKey("red_crystal_count");
+            PlayerPrefs.DeleteKey("yellow_crystal_count");
+            PlayerPrefs.DeleteKey("revealing_power_up_count");
+            PlayerPrefs.DeleteKey("life_power_up_count");
+            PlayerPrefs.DeleteKey("hint_power_up_count");
         }
 
         public bool IsFirstLevelTutorial()
@@ -81,7 +88,8 @@ namespace Scripts
 
         public bool IsWildCardTutorial()
         {
-            return _wildCardCount > 0 && PlayerPrefs.GetInt("wild_card_tutorial_completed", 0) == 0;
+            return false;
+            //return _wildCardCount > 0 && PlayerPrefs.GetInt("wild_card_tutorial_completed", 0) == 0;
         }
 
         public void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
@@ -201,60 +209,77 @@ namespace Scripts
             PlayerPrefs.SetInt("level_id", levelId);
         }
 
-        public List<int> GetStarCountOfLevels()
+        public void IncrementLevelId()
         {
-            return _starCountOfCompletedLevels;
-        }
-
-        public void IncrementLevelId(int starCount)
-        {
-            if (_levelId == _starCountOfCompletedLevels.Count)
-            {
-                _starCountOfCompletedLevels.Add(starCount);
-                _levelId++;
-            }
-            else
-            {
-                if (starCount > _starCountOfCompletedLevels[_levelId])
-                {
-                    _starCountOfCompletedLevels[_levelId] = starCount;
-                }
-            }
-            
+            _levelId++;
             PlayerPrefs.SetInt("level_id", _levelId);
-            string data = JsonConvert.SerializeObject(_starCountOfCompletedLevels);
-            PlayerPrefs.SetString("star_count_of_levels", data);
         }
 
-        public void AddStar(int addedStarCount, int addedBlueStarCount)
+        public void AddCrystals(int crystalCount)
         {
-            if (_blueStarCount % 6 + addedBlueStarCount >= 6) _wildCardCount += 1;
-            PlayerPrefs.SetInt("wild_card_count", _wildCardCount);
-            _starCount += addedStarCount;
-            PlayerPrefs.SetInt("star_count", _starCount);
-            _blueStarCount += addedBlueStarCount;
-            PlayerPrefs.SetInt("blue_star_count", _blueStarCount);
+            if (crystalCount > 2)
+            {
+                _yellowCrystalCount += 1;
+                PlayerPrefs.SetInt("yellow_crystal_count", _yellowCrystalCount);
+            }
+            if (crystalCount > 1)
+            {
+                _redCrystalCount += 1;
+                PlayerPrefs.SetInt("red_crystal_count", _redCrystalCount);
+            }
+            if (crystalCount > 0)
+            {
+                _blueCrystalCount += 1;
+                PlayerPrefs.SetInt("blue_crystal_count", _blueCrystalCount);
+            }
         }
 
-        public int GetStarCount()
+        public int GetBlueCrystalCount()
         {
-            return _starCount;
+            return _blueCrystalCount;
+        }
+        
+        public int GetRedCrystalCount()
+        {
+            return _redCrystalCount;
+        }
+        
+        public int GetYellowCrystalCount()
+        {
+            return _yellowCrystalCount;
+        }
+        
+        public int GetRevealingPowerUpCount()
+        {
+            return _revealingPowerUpCount;
         }
 
-        public int GetBlueStarCount()
+        public int GetLifePowerUpCount()
         {
-            return _blueStarCount;
+            return _lifePowerUpCount;
         }
 
-        public int GetWildCardCount()
+        public int GetHintPowerUpCount()
         {
-            return _wildCardCount;
+            return _hintPowerUpCount;
         }
 
-        public void DecreaseWildCardCount()
+        public void DecreaseRevealingPowerUpCount()
         {
-            PlayerPrefs.SetInt("wild_card_count", _wildCardCount - 1);
-            _wildCardCount -= 1;
+            _revealingPowerUpCount -= 1;
+            PlayerPrefs.SetInt("revealing_power_up_count", _revealingPowerUpCount);
+        }
+        
+        public void DecreaseLifePowerUpCount()
+        {
+            _lifePowerUpCount -= 1;
+            PlayerPrefs.SetInt("life_power_up_count", _lifePowerUpCount);
+        }
+        
+        public void DecreaseHintPowerUpCount()
+        {
+            _hintPowerUpCount -= 1;
+            PlayerPrefs.SetInt("hint_power_up_count", _hintPowerUpCount);
         }
     }
 
@@ -263,14 +288,8 @@ namespace Scripts
         void Initialize(IGameSaveService gameSaveService);
         LevelSaveData GetLevelSaveData();
         int GetLevelId();
-        void IncrementLevelId(int starCount);
-        void AddStar(int addedStarCount, int addedBlueStarCount);
-        int GetStarCount();
-        int GetBlueStarCount();
-        int GetWildCardCount();
-        void DecreaseWildCardCount();
+        void IncrementLevelId();
         void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
-        List<int> GetStarCountOfLevels();
         void SetLevelId(int levelId);
         void SetGameOption(GameOption gameOption);
         GameOption GetGameOption();
@@ -278,6 +297,16 @@ namespace Scripts
         bool IsFirstLevelTutorial();
         bool IsCardInfoTutorial();
         bool IsWildCardTutorial();
+        void AddCrystals(int crystalCount);
+        int GetBlueCrystalCount();
+        int GetRedCrystalCount();
+        int GetYellowCrystalCount();
+        int GetRevealingPowerUpCount();
+        int GetLifePowerUpCount();
+        int GetHintPowerUpCount();
+        void DecreaseRevealingPowerUpCount();
+        void DecreaseLifePowerUpCount();
+        void DecreaseHintPowerUpCount();
     }
 
     public class LevelData

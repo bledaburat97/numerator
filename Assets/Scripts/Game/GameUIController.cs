@@ -48,10 +48,22 @@ namespace Scripts
                 _baseButtonControllerFactory.Create(_view.GetSettingsButton());
             settingsButtonController.Initialize(OnClickSettings);
 
+            IBaseButtonController revealingPowerUpButtonController =
+                _baseButtonControllerFactory.Create(_view.GetRevealingPowerUpButton());
+            revealingPowerUpButtonController.Initialize(OnClickRevealingPowerUp);
+            
+            IBaseButtonController lifePowerUpButtonController =
+                _baseButtonControllerFactory.Create(_view.GetLifePowerUpButton());
+            lifePowerUpButtonController.Initialize(OnClickLifePowerUp);
+            
+            IBaseButtonController hintPowerUpButtonController =
+                _baseButtonControllerFactory.Create(_view.GetHintPowerUpButton());
+            hintPowerUpButtonController.Initialize(OnClickHintPowerUp);
+            
             if (_levelTracker.GetLevelId() > 8)
             {
                 _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton());
-                _cardInfoButtonController.Initialize(_tutorialAbilityManager, OnCardInfoButton);
+                _cardInfoButtonController.Initialize(_tutorialAbilityManager, OnClickCardInfoButton);
             }
             else
             {
@@ -85,10 +97,25 @@ namespace Scripts
             OpenSettings?.Invoke(this,  null);
         }
 
-        private void OnCardInfoButton(bool isCardInfoToggleOn)
+        private void OnClickCardInfoButton(bool isCardInfoToggleOn)
         {
             _hapticController.Vibrate(HapticType.ButtonClick);
             CardInfoToggleChanged?.Invoke(this, isCardInfoToggleOn);
+        }
+
+        private void OnClickRevealingPowerUp()
+        {
+            
+        }
+
+        private void OnClickLifePowerUp()
+        {
+            
+        }
+
+        private void OnClickHintPowerUp()
+        {
+            
         }
 
         public RectTransform GetCheckButtonRectTransform()

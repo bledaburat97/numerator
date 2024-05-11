@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
-
+/*
 namespace Scripts
 {
     public class CircleProgressBarController : ICircleProgressBarController
@@ -140,3 +140,4 @@ namespace Scripts
         Sequence MoveCircleProgressBar(float duration);
     }
 }
+*/

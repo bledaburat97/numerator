@@ -1,5 +1,5 @@
 ﻿using Factory;
-
+/*
 namespace Scripts
 {
     public class LevelEndPopupControllerFactory : BaseClassFactory<LevelEndPopupController, ILevelEndPopupController>
@@ -10,3 +10,4 @@ namespace Scripts
         }
     }
 }
+*/

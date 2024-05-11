@@ -11,7 +11,7 @@
 
         public void Initialize(ILevelTracker levelTracker)
         {
-            _view.Init(levelTracker.GetStarCount(), levelTracker.GetWildCardCount());
+            _view.Init(0, 0);
         }
     }
 

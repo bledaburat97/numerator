@@ -1,10 +1,10 @@
 ﻿using System;
 using UnityEngine;
 using DG.Tweening;
-/*
+
 namespace Scripts
 {
-    public class StarProgressBarView : MonoBehaviour, IStarProgressBarView
+    public class LifeBarView : MonoBehaviour, ILifeBarView
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private BoundaryView boundaryPrefab;
@@ -55,7 +55,7 @@ namespace Scripts
         }
     }
 
-    public interface IStarProgressBarView
+    public interface ILifeBarView
     {
         void Init(BoundaryViewFactory boundaryViewFactory);
         RectTransform GetRectTransform();
@@ -65,4 +65,3 @@ namespace Scripts
         void DisableStarProgressBar();
     }
 }
-*/

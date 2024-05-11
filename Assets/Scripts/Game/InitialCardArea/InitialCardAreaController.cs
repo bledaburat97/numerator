@@ -66,7 +66,7 @@ namespace Scripts
         
         private void CreateCardItemsData()
         {
-            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
+            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetRevealingPowerUpCount() : 0;
             int numOfBoardCardHolder = _levelDataCreator.GetLevelData().NumOfBoardHolders;
             int numOfWildCard = numOfTotalWildCards > numOfBoardCardHolder ? numOfBoardCardHolder : numOfTotalWildCards;
             for (int j = 0; j < numOfWildCard; j++)
@@ -124,7 +124,7 @@ namespace Scripts
         
         private void SetLockedCardController(LockedCardInfo lockedCardInfo)
         {
-            _levelTracker.DecreaseWildCardCount();
+            _levelTracker.DecreaseRevealingPowerUpCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
             normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfBoardHolder(lockedCardInfo.boardHolderIndex));
             normalCardItemController.GetView().InitLocalScale();

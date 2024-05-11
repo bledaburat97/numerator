@@ -11,6 +11,9 @@ namespace Scripts
         [SerializeField] private BaseButtonView resetButton;
         [SerializeField] private BaseButtonView settingsButton;
         [SerializeField] private CardInfoButtonView cardInfoButton;
+        [SerializeField] private BaseButtonView revealingPowerUpButton;
+        [SerializeField] private BaseButtonView lifePowerUpButton;
+        [SerializeField] private BaseButtonView hintPowerUpButton;
         public void SetLevelId(string text)
         {
             levelIdText.SetText(text);
@@ -46,6 +49,21 @@ namespace Scripts
         {
             return cardInfoButton;
         }
+        
+        public IBaseButtonView GetRevealingPowerUpButton()
+        {
+            return revealingPowerUpButton;
+        }
+        
+        public IBaseButtonView GetLifePowerUpButton()
+        {
+            return lifePowerUpButton;
+        }
+        
+        public IBaseButtonView GetHintPowerUpButton()
+        {
+            return hintPowerUpButton;
+        }
     }
 
     public interface IGameUIView
@@ -57,5 +75,8 @@ namespace Scripts
         IBaseButtonView GetResetButton();
         IBaseButtonView GetSettingsButton();
         ICardInfoButtonView GetCardInfoButton();
+        IBaseButtonView GetRevealingPowerUpButton();
+        IBaseButtonView GetLifePowerUpButton();
+        IBaseButtonView GetHintPowerUpButton();
     }
 }

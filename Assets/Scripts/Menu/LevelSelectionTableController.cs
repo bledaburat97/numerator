@@ -5,6 +5,7 @@ using Menu;
 using UnityEngine;
 using Zenject;
 
+/*
 namespace Scripts
 {
     public class LevelSelectionTableController : ILevelSelectionTableController
@@ -254,3 +255,4 @@ namespace Scripts
         Backward
     }
 }
+*/

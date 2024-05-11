@@ -1,21 +1,21 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using Game;
 using UnityEngine;
-/*
+
 namespace Scripts
 {
-    public class StarProgressBarController : IStarProgressBarController
+    public class LifeBarController : ILifeBarController
     {
-        private IStarProgressBarView _view;
+        private ILifeBarView _view;
         private int _maxNumOfTries;
         private List<IBoundaryController> _boundaryControllerList;
-        private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
+        private Vector2 _localPositionOfCrystal = new Vector2(0f, 9.15f);
         private ILevelManager _levelManager;
         private int _activeStarCount;
         private List<int> _indexesContainsStar = new List<int>();
-        private int _blueStarCount;
-        public StarProgressBarController(IStarProgressBarView view)
+        public LifeBarController(ILifeBarView view)
         {
             _view = view;
         }
@@ -29,11 +29,6 @@ namespace Scripts
         {
             _view.Init(new BoundaryViewFactory());
             _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
-            int maxBlueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
-            int oldStarCount = levelTracker.GetLevelId() < levelTracker.GetStarCountOfLevels().Count
-                ? levelTracker.GetStarCountOfLevels()[levelTracker.GetLevelId()]
-                : 0;
-            _blueStarCount = maxBlueStarCount < 3 - oldStarCount ? maxBlueStarCount : 3 - oldStarCount;
             _boundaryControllerList = new List<IBoundaryController>();
             CreateBoundaries();
             CreateStars();
@@ -77,7 +72,7 @@ namespace Scripts
             SetIndexesContainsStar();
             for (int i = 0; i < _indexesContainsStar.Count; i++)
             {
-                _boundaryControllerList[_indexesContainsStar[i]].AddStarImage(_localPositionOfStar, _blueStarCount < _indexesContainsStar.Count - i);
+                _boundaryControllerList[_indexesContainsStar[i]].AddCrystalImage(_localPositionOfCrystal, (CrystalType)i);
             }
         }
 
@@ -89,7 +84,7 @@ namespace Scripts
             {
                 if (indexOfDeletedStar != -1)
                 {
-                    onStartAction += _boundaryControllerList[indexOfDeletedStar].RemoveStar;
+                    onStartAction += _boundaryControllerList[indexOfDeletedStar].RemoveCrystalImage;
                 }
             }
 
@@ -98,7 +93,7 @@ namespace Scripts
         
     }
 
-    public interface IStarProgressBarController
+    public interface ILifeBarController
     {
         void Initialize(ILevelDataCreator levelDataCreator, ILevelTracker levelTracker);
 
@@ -110,4 +105,3 @@ namespace Scripts
         void DisableStarProgressBar();
     }
 }
-*/

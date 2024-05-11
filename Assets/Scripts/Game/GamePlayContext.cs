@@ -12,7 +12,7 @@ namespace Scripts
         [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
         [Inject] private IResultAreaController _resultAreaController;
         [Inject] private IResultManager _resultManager;
-        [Inject] private IStarProgressBarController _starProgressBarController;
+        [Inject] private ILifeBarController _lifeBarController;
         [Inject] private ILevelManager _levelManager;
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private ICardItemInfoManager _cardItemInfoManager;
@@ -96,24 +96,24 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _starProgressBarController.Initialize(_levelDataCreator, _levelTracker);
+                _lifeBarController.Initialize(_levelDataCreator, _levelTracker);
             }
             else
             {
-                _starProgressBarController.DisableStarProgressBar();
+                _lifeBarController.DisableStarProgressBar();
             }
         }
 
         private void InitializeLevelManager()
         {
-            _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _starProgressBarController, _levelDataCreator);
+            _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _lifeBarController, _levelDataCreator);
         }
         
         private void InitializeCardHolderModelCreator()
         {
             _cardHolderModelCreator.Initialize();
             _cardHolderModelCreator.AddBoardCardHolderModelList(_levelDataCreator.GetLevelData().NumOfBoardHolders);
-            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _levelTracker.GetWildCardCount() : 0;
+            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? 0 : 0;
             _cardHolderModelCreator.AddInitialCardHolderModelList(_levelDataCreator.GetLevelData().NumOfCards, numOfTotalWildCards > 0);
         }
         

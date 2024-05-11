@@ -39,10 +39,11 @@ namespace Scripts
         [SerializeField] private MessagePopupView messagePopupPrefab;
         [SerializeField] private HandTutorialView handTutorialPrefab;
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
+        [SerializeField] private LevelFinishPopupView levelFinishPopupPrefab;
         
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
-        private LevelEndPopupControllerFactory _levelEndPopupControllerFactory;
+        //private LevelEndPopupControllerFactory _levelEndPopupControllerFactory;
         private LevelEndPopupViewFactory _levelEndPopupViewFactory;
         private SettingsPopupControllerFactory _settingsPopupControllerFactory;
         private SettingsPopupViewFactory _settingsPopupViewFactory;
@@ -74,7 +75,7 @@ namespace Scripts
 
         public void Initialize()
         {
-            _levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
+            //_levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
             _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
@@ -176,10 +177,15 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(true);
             _fadePanelController.SetFadeImageAlpha(0f);
+            /*
             ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
             levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, SetGlowSystemStatus, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
+            */
+            LevelFinishPopupController levelFinishPopupController = new LevelFinishPopupController();
+            LevelFinishPopupView levelFinishPopupView = Instantiate(levelFinishPopupPrefab, transform);
+            levelFinishPopupController.Initialize(levelFinishPopupView, args, _fadePanelController, _hapticController, _baseButtonControllerFactory);
         }
 
         private void SetGlowSystemStatus(bool status)

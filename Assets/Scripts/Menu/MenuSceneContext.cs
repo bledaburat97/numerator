@@ -10,7 +10,6 @@ namespace Scripts
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private IActiveLevelIdController _activeLevelIdController;
-        [Inject] private ILevelSelectionTableController _levelSelectionTableController;
         [Inject] private IMenuHeaderController _menuHeaderController;
         [Inject] private IMenuUIController _menuUIController;
         [Inject] private IHapticController _hapticController;
@@ -35,7 +34,6 @@ namespace Scripts
             _levelTracker.Initialize(_gameSaveService);
             InitializeHapticController();
             CreateActiveLevelIdController();
-            CreateLevelTable();
             CreateMenuUI();
             CreateMenuHeader();
         }
@@ -50,10 +48,6 @@ namespace Scripts
             _activeLevelIdController.Initialize(_levelTracker, _gameSaveService);
         }
         
-        private void CreateLevelTable()
-        {
-            _levelSelectionTableController.Initialize(_activeLevelIdController, _levelTracker);
-        }
 
         private void CreateMenuUI()
         {
