@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
-using Game;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;

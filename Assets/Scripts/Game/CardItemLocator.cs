@@ -139,6 +139,23 @@ namespace Scripts
             return null;
         }
 
+        public LockedCardInfo OnRevealingPowerUpUsed(int boardIndex)
+        {
+            int targetCardIndex = _boardAreaManager.SetWildCardOnBoard(boardIndex);
+            TryResetCardIndexOnBoard(targetCardIndex);
+            _cardIndexesOnBoardHolders[boardIndex] = targetCardIndex;
+            return new LockedCardInfo()
+            {
+                boardHolderIndex = boardIndex,
+                targetCardIndex = targetCardIndex,
+            };
+        }
+
+        public int[] GetCardIndexesOnBoardHolders()
+        {
+            return _cardIndexesOnBoardHolders;
+        }
+
         private int GetClosestCardHolderIndex(Vector2 cardItemPosition)
         {
             for (int i = 0; i < _cardIndexesOnBoardHolders.Length; i++)
@@ -177,6 +194,8 @@ namespace Scripts
         void ResetBoard();
         void PlaceCardByClick(int cardIndex, int boardHolderIndex);
         int GetEmptyBoardHolderIndex();
+        LockedCardInfo OnRevealingPowerUpUsed(int boardIndex);
+        int[] GetCardIndexesOnBoardHolders();
         event EventHandler CardDragStartedEvent;
         event EventHandler CardPlacedBoardEvent;
         event EventHandler CardReturnedToInitialEvent;

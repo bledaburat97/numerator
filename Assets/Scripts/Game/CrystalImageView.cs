@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game
+namespace Scripts
 {
     public class CrystalImageView : MonoBehaviour
     {

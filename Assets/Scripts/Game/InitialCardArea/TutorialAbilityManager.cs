@@ -1,4 +1,6 @@
-﻿namespace Scripts
+﻿using System.Collections.Generic;
+
+namespace Scripts
 {
     public class TutorialAbilityManager : ITutorialAbilityManager
     {
@@ -39,7 +41,7 @@
         public bool IsBoardIndexClickable(int boardIndex)
         {
             if (!_isTutorialLevel) return true;
-            return _currentTutorialAbility.clickableBoardIndex == boardIndex;
+            return _currentTutorialAbility.clickableBoardIndexes.Contains(boardIndex);
         }
 
         public bool IsSelectedCardIndexChangeable()
@@ -119,7 +121,7 @@
         public int pressableHolderButtonIndex{ get; set; }
         public int pressableProbabilityButtonIndex{ get; set; }
         public bool isSelectedCardIndexChangeable{ get; set; }
-        public int clickableBoardIndex{ get; set; }
+        public List<int> clickableBoardIndexes{ get; set; }
 
         public TutorialAbility()
         {
@@ -132,7 +134,7 @@
             pressableHolderButtonIndex = -1;
             pressableProbabilityButtonIndex = -1;
             isSelectedCardIndexChangeable = true;
-            clickableBoardIndex = -1;
+            clickableBoardIndexes = new List<int>();
         }
         
     }

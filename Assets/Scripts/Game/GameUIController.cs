@@ -19,6 +19,7 @@ namespace Scripts
         public event EventHandler ResetNumbers;
         public event EventHandler OpenSettings;
         public event EventHandler<bool> CardInfoToggleChanged;
+        public event EventHandler<PowerUpClickedEventArgs> PowerUpClickedEvent;
         
         public GameUIController(IGameUIView view)
         {
@@ -27,6 +28,7 @@ namespace Scripts
 
         public void Initialize()
         {
+            _view.Init();
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
                 _view.SetLevelId("Level " + (_levelTracker.GetLevelId() + 1));
@@ -105,17 +107,17 @@ namespace Scripts
 
         private void OnClickRevealingPowerUp()
         {
-            
+            PowerUpClickedEvent?.Invoke(this, new PowerUpClickedEventArgs(_view.GetPowerUpModel(0)));
         }
 
         private void OnClickLifePowerUp()
         {
-            
+            PowerUpClickedEvent?.Invoke(this, new PowerUpClickedEventArgs(_view.GetPowerUpModel(1)));
         }
 
         private void OnClickHintPowerUp()
         {
-            
+            PowerUpClickedEvent?.Invoke(this, new PowerUpClickedEventArgs(_view.GetPowerUpModel(2)));
         }
 
         public RectTransform GetCheckButtonRectTransform()
@@ -146,5 +148,23 @@ namespace Scripts
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
         RectTransform GetCardInfoButtonRectTransform();
+        event EventHandler<PowerUpClickedEventArgs> PowerUpClickedEvent;
+    }
+
+    public class PowerUpClickedEventArgs : EventArgs
+    {
+        public PowerUpModel powerUpModel;
+
+        public PowerUpClickedEventArgs(PowerUpModel powerUpModel)
+        {
+            this.powerUpModel = powerUpModel;
+        }
+    }
+
+    public enum PowerUpType
+    {
+        Revealing,
+        Life,
+        Hint
     }
 }

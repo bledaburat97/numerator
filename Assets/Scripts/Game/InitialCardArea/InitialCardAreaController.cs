@@ -107,10 +107,12 @@ namespace Scripts
         {
             if (cardItemData.cardItemType == CardItemType.Wild)
             {
+                /*
                 WildCardItemControllerFactory wildCardItemControllerFactory = new WildCardItemControllerFactory();
                 IWildCardItemView wildCardItemView = _view.CreateWildCardItemView(cardItemData.parent);
                 IWildCardItemController wildCardItemController = wildCardItemControllerFactory.Spawn();
                 wildCardItemController.Initialize(wildCardItemView, cardItemData, _cardItemLocator, SetLockedCardController, SlideNormalCardHolders, BackSlideNormalCardHolder, _view.GetCamera(), _hapticController);
+                */
             }
             else
             {
@@ -122,7 +124,7 @@ namespace Scripts
             }
         }
         
-        private void SetLockedCardController(LockedCardInfo lockedCardInfo)
+        public void SetLockedCardController(LockedCardInfo lockedCardInfo)
         {
             _levelTracker.DecreaseRevealingPowerUpCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
@@ -230,6 +232,7 @@ namespace Scripts
         void DeselectCard(int cardIndex);
         void SetCardAnimation(int cardIndex, bool status);
         IInvisibleClickHandler GetInvisibleClickHandler();
+        void SetLockedCardController(LockedCardInfo lockedCardInfo);
         void Unsubscribe();
     }
     

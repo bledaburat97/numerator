@@ -40,6 +40,7 @@ namespace Scripts
         [SerializeField] private HandTutorialView handTutorialPrefab;
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
         [SerializeField] private LevelFinishPopupView levelFinishPopupPrefab;
+        [SerializeField] private PowerUpMessagePopupView powerUpMessagePopupView;
         
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
@@ -72,6 +73,7 @@ namespace Scripts
         private IMessagePopupView _newGameOfferPopup;
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
+        private PowerUpMessageController _powerUpMessageController;
 
         public void Initialize()
         {
@@ -92,6 +94,7 @@ namespace Scripts
             _gameUIController.OpenSettings += CreateSettingsPopup;
             _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
             _turnOrderDeterminer.LocalTurnEvent += ChangeLocalTurn;
+            _gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _gameSaveService.Save : null;
             _deleteSaveAction += _gameSaveService.DeleteSave;
@@ -100,6 +103,7 @@ namespace Scripts
             _openWaitingOpponentPopup += OnPlayerReady;
             _isLocalReady = false;
             _closeWaitingOpponentPopup += OnPlayerUnready;
+            _powerUpMessageController = new PowerUpMessageController(_unmaskServiceAreaView, powerUpMessagePopupView, _cardItemLocator, _initialCardAreaController, _hapticController, _boardAreaController);
             if (_levelTracker.IsFirstLevelTutorial())
             {
                 _tutorialAbilityManager.SetTutorialLevel(true);
@@ -133,6 +137,29 @@ namespace Scripts
 
                 IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
                 wildCardTutorialController.Initialize(_unmaskServiceAreaView, tutorialMessagePopupView);
+            }
+        }
+
+        private void OnPowerUpClicked(object sender, PowerUpClickedEventArgs args)
+        {
+            if (!_powerUpMessageController.IsOpen())
+            {
+                _unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
+                _powerUpMessageController.SetPowerUpMessagePopup(args.powerUpModel, _baseButtonControllerFactory);
+                _powerUpMessageController.StartBoardClickAnimation(_tutorialAbilityManager, _cardHolderModelCreator);
+            }
+            else
+            {
+                if (_powerUpMessageController.GetPowerUpType() == args.powerUpModel.type)
+                {
+                    _powerUpMessageController.DeactivatePopup();
+                }
+                else
+                {
+                    _unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
+                    _powerUpMessageController.SetPowerUpMessagePopup(args.powerUpModel, _baseButtonControllerFactory);
+                    _powerUpMessageController.StartBoardClickAnimation(_tutorialAbilityManager, _cardHolderModelCreator);
+                }
             }
         }
         

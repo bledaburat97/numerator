@@ -8,12 +8,13 @@ namespace Scripts
 {
     public class BaseButtonView : MonoBehaviour, IBaseButtonView, IPointerDownHandler, IPointerUpHandler
     {
+        [SerializeField] private RectTransform rectTransform;
         [SerializeField] private TMP_Text text;
         [SerializeField] private Button button;
         [SerializeField] private Image outerBg;
         [SerializeField] private Image shadow;
         [SerializeField] private Image innerBg;
-        [SerializeField] private Image image;
+        [SerializeField] protected Image image;
         private Vector2 innerBgOffsetMin;
         private Vector2 innerBgOffsetMax;
 
@@ -81,6 +82,10 @@ namespace Scripts
         {
             return outerBg.rectTransform;
         }
+        public RectTransform GetButtonRectTransform()
+        {
+            return rectTransform;
+        }
     }
     
     public interface IBaseButtonView
@@ -94,6 +99,7 @@ namespace Scripts
         void SetButtonEnable(bool status);
         void SetColorOfImage(Color color);
         RectTransform GetRectTransform();
+        RectTransform GetButtonRectTransform();
     }
     
 }

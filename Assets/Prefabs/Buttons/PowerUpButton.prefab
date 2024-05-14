@@ -162,7 +162,7 @@ GameObject:
   - component: {fileID: 6069396304529938930}
   - component: {fileID: 4320079865916837562}
   - component: {fileID: 1649020578268489864}
-  - component: {fileID: 8951931672773067025}
+  - component: {fileID: 7018206741392226425}
   m_Layer: 0
   m_Name: PowerUpButton
   m_TagString: Untagged
@@ -244,7 +244,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &8951931672773067025
+--- !u!114 &7018206741392226425
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -253,7 +253,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6220172970286902014}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32847b611c0240c7b6fc17b551784498, type: 3}
+  m_Script: {fileID: 11500000, guid: 51aeaa4834484ebb89ab208ba0d923c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 0}
@@ -261,7 +261,7 @@ MonoBehaviour:
   outerBg: {fileID: 8545061432815099753}
   shadow: {fileID: 973956136946900593}
   innerBg: {fileID: 1415303746478214184}
-  image: {fileID: 0}
+  image: {fileID: 4431620355779069582}
 --- !u!1 &7085626905434036219
 GameObject:
   m_ObjectHideFlags: 0

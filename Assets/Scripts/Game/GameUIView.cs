@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace Scripts
@@ -11,9 +12,18 @@ namespace Scripts
         [SerializeField] private BaseButtonView resetButton;
         [SerializeField] private BaseButtonView settingsButton;
         [SerializeField] private CardInfoButtonView cardInfoButton;
-        [SerializeField] private BaseButtonView revealingPowerUpButton;
-        [SerializeField] private BaseButtonView lifePowerUpButton;
-        [SerializeField] private BaseButtonView hintPowerUpButton;
+        [SerializeField] private PowerUpButtonView revealingPowerUpButton;
+        [SerializeField] private PowerUpButtonView lifePowerUpButton;
+        [SerializeField] private PowerUpButtonView hintPowerUpButton;
+        [SerializeField] private List<PowerUpModel> powerUpModels;
+
+        public void Init()
+        {
+            revealingPowerUpButton.SetImage(powerUpModels[0].sprite);
+            lifePowerUpButton.SetImage(powerUpModels[1].sprite);
+            hintPowerUpButton.SetImage(powerUpModels[2].sprite);
+        }
+        
         public void SetLevelId(string text)
         {
             levelIdText.SetText(text);
@@ -64,10 +74,16 @@ namespace Scripts
         {
             return hintPowerUpButton;
         }
+
+        public PowerUpModel GetPowerUpModel(int index)
+        {
+            return powerUpModels[index];
+        }
     }
 
     public interface IGameUIView
     {
+        void Init();
         void SetLevelId(string text);
         void DisableLevelId();
         void IncreaseSizeAndPositionOfScrollArea(float sizeOfResultBlock);
@@ -78,5 +94,6 @@ namespace Scripts
         IBaseButtonView GetRevealingPowerUpButton();
         IBaseButtonView GetLifePowerUpButton();
         IBaseButtonView GetHintPowerUpButton();
+        PowerUpModel GetPowerUpModel(int index);
     }
 }

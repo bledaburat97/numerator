@@ -24,7 +24,7 @@ namespace Scripts
         {
             _gameOption = (GameOption)PlayerPrefs.GetInt("game_option", 0);
             _gameSaveService = gameSaveService;
-            _levelId = PlayerPrefs.GetInt("level_id", 0);
+            _levelId = 20;//PlayerPrefs.GetInt("level_id", 0);
             _blueCrystalCount = PlayerPrefs.GetInt("blue_crystal_count", 0);
             _redCrystalCount = PlayerPrefs.GetInt("red_crystal_count", 0);
             _yellowCrystalCount = PlayerPrefs.GetInt("yellow_crystal_count", 0);

@@ -3,9 +3,9 @@
 namespace Scripts
 {
     [CreateAssetMenu()]
-    public class CrystalModel : ScriptableObject
+    public class PowerUpModel : ScriptableObject
     {
-        public CrystalType type;
+        public PowerUpType type;
         public Sprite sprite;
     }
 }

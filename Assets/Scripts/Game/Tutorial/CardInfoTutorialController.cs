@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Scripts
@@ -103,7 +104,7 @@ namespace Scripts
             Vector2 position = _boardAreaController.GetBoardHolderPositionAtIndex(boardHolderIndex);
             _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
             {
-                clickableBoardIndex = boardHolderIndex,
+                clickableBoardIndexes = new List<int>{boardHolderIndex},
             });
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, _sizeOfBoardHolder);
             _handTutorialView.StartClickAnimation(position);

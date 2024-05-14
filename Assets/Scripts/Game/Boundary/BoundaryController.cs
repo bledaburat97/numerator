@@ -1,5 +1,4 @@
-﻿using Game;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Scripts
 {
