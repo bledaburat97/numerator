@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-
+/*
 namespace Scripts
 {
     public class LevelFinishPopupView : MonoBehaviour
@@ -66,3 +66,4 @@ namespace Scripts
         }
     }
 }
+*/

@@ -9,10 +9,11 @@ namespace Scripts
         private ILifeBarView _view;
         private int _maxNumOfTries;
         private List<IBoundaryController> _boundaryControllerList;
-        private Vector2 _localPositionOfCrystal = new Vector2(0f, 9.15f);
+        private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
         private ILevelManager _levelManager;
         private int _activeStarCount;
         private List<int> _indexesContainsStar = new List<int>();
+        private int _blueStarCount;
         public LifeBarController(ILifeBarView view)
         {
             _view = view;
@@ -27,6 +28,7 @@ namespace Scripts
         {
             _view.Init(new BoundaryViewFactory());
             _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
+            _blueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
             _boundaryControllerList = new List<IBoundaryController>();
             CreateBoundaries();
             CreateStars();
@@ -40,10 +42,9 @@ namespace Scripts
             float spacing = progressBarSize.x / _maxNumOfTries - boundarySize.x;
             boundaryLocalPositionList = boundaryLocalPositionList.GetLocalPositionList(_maxNumOfTries - 1, spacing, boundarySize, 0);
 
-            BoundaryControllerFactory boundaryControllerFactory = new BoundaryControllerFactory();
             foreach (Vector2 boundaryLocalPos in boundaryLocalPositionList)
             {
-                IBoundaryController boundaryController = boundaryControllerFactory.Spawn();
+                IBoundaryController boundaryController = new BoundaryController();
                 IBoundaryView boundaryView = _view.CreateBoundaryView();
                 boundaryController.Initialize(boundaryView, new BoundaryModel()
                 {
@@ -70,7 +71,7 @@ namespace Scripts
             SetIndexesContainsStar();
             for (int i = 0; i < _indexesContainsStar.Count; i++)
             {
-                _boundaryControllerList[_indexesContainsStar[i]].AddCrystalImage(_localPositionOfCrystal, (CrystalType)i);
+                _boundaryControllerList[_indexesContainsStar[i]].AddStarImage(_localPositionOfStar, _blueStarCount < _indexesContainsStar.Count - i);
             }
         }
 
@@ -82,7 +83,7 @@ namespace Scripts
             {
                 if (indexOfDeletedStar != -1)
                 {
-                    onStartAction += _boundaryControllerList[indexOfDeletedStar].RemoveCrystalImage;
+                    onStartAction += _boundaryControllerList[indexOfDeletedStar].RemoveStar;
                 }
             }
 

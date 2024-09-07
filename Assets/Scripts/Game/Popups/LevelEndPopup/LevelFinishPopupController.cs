@@ -5,7 +5,7 @@ using DG.Tweening;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
+/*
 namespace Scripts
 {
     public class LevelFinishPopupController
@@ -118,3 +118,4 @@ namespace Scripts
         }
     }
 }
+*/

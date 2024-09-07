@@ -7,9 +7,8 @@ namespace Scripts
 {
     public class LevelTracker : MonoBehaviour, ILevelTracker
     {
-        private int _blueCrystalCount;
-        private int _redCrystalCount;
-        private int _yellowCrystalCount;
+        private int _starCount;
+        private int _giftStarCount;
         private int _revealingPowerUpCount;
         private int _lifePowerUpCount;
         private int _hintPowerUpCount;
@@ -24,10 +23,9 @@ namespace Scripts
         {
             _gameOption = (GameOption)PlayerPrefs.GetInt("game_option", 0);
             _gameSaveService = gameSaveService;
-            _levelId = 20;//PlayerPrefs.GetInt("level_id", 0);
-            _blueCrystalCount = PlayerPrefs.GetInt("blue_crystal_count", 0);
-            _redCrystalCount = PlayerPrefs.GetInt("red_crystal_count", 0);
-            _yellowCrystalCount = PlayerPrefs.GetInt("yellow_crystal_count", 0);
+            _levelId = PlayerPrefs.GetInt("level_id", 0);
+            _starCount = PlayerPrefs.GetInt("star_count", 0);
+            _giftStarCount = PlayerPrefs.GetInt("gift_star_count", 0);
             _revealingPowerUpCount = PlayerPrefs.GetInt("revealing_power_up_count", 0);
             _lifePowerUpCount = PlayerPrefs.GetInt("life_power_up_count", 0);
             _hintPowerUpCount = PlayerPrefs.GetInt("hint_power_up_count", 0);
@@ -68,9 +66,8 @@ namespace Scripts
 
         public void ClearPlayerPrefs()
         {
-            PlayerPrefs.DeleteKey("blue_crystal_count");
-            PlayerPrefs.DeleteKey("red_crystal_count");
-            PlayerPrefs.DeleteKey("yellow_crystal_count");
+            PlayerPrefs.DeleteKey("star_count");
+            PlayerPrefs.DeleteKey("gift_star_count");
             PlayerPrefs.DeleteKey("revealing_power_up_count");
             PlayerPrefs.DeleteKey("life_power_up_count");
             PlayerPrefs.DeleteKey("hint_power_up_count");
@@ -209,44 +206,34 @@ namespace Scripts
             PlayerPrefs.SetInt("level_id", levelId);
         }
 
-        public void IncrementLevelId()
+        public void IncrementLevelId(int starCount, int giftStarCount)
         {
             _levelId++;
             PlayerPrefs.SetInt("level_id", _levelId);
+            _starCount += starCount;
+            PlayerPrefs.SetInt("star_count", _starCount);
+            _giftStarCount = (_giftStarCount + giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
         }
 
-        public void AddCrystals(int crystalCount)
+        public void RevertIncrementingLevelId(int starCount, int giftStarCount)
         {
-            if (crystalCount > 2)
-            {
-                _yellowCrystalCount += 1;
-                PlayerPrefs.SetInt("yellow_crystal_count", _yellowCrystalCount);
-            }
-            if (crystalCount > 1)
-            {
-                _redCrystalCount += 1;
-                PlayerPrefs.SetInt("red_crystal_count", _redCrystalCount);
-            }
-            if (crystalCount > 0)
-            {
-                _blueCrystalCount += 1;
-                PlayerPrefs.SetInt("blue_crystal_count", _blueCrystalCount);
-            }
+            _levelId--;
+            PlayerPrefs.SetInt("level_id", _levelId);
+            _starCount -= starCount;
+            PlayerPrefs.SetInt("star_count", _starCount);
+            _giftStarCount = (_giftStarCount + ConstantValues.NUM_OF_STARS_FOR_WILD - giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
         }
 
-        public int GetBlueCrystalCount()
+        public int GetGiftStarCount()
         {
-            return _blueCrystalCount;
+            return _giftStarCount;
         }
         
-        public int GetRedCrystalCount()
+        public int GetStarCount()
         {
-            return _redCrystalCount;
-        }
-        
-        public int GetYellowCrystalCount()
-        {
-            return _yellowCrystalCount;
+            return _starCount;
         }
         
         public int GetRevealingPowerUpCount()
@@ -288,7 +275,6 @@ namespace Scripts
         void Initialize(IGameSaveService gameSaveService);
         LevelSaveData GetLevelSaveData();
         int GetLevelId();
-        void IncrementLevelId();
         void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
         void SetLevelId(int levelId);
         void SetGameOption(GameOption gameOption);
@@ -297,16 +283,16 @@ namespace Scripts
         bool IsFirstLevelTutorial();
         bool IsCardInfoTutorial();
         bool IsWildCardTutorial();
-        void AddCrystals(int crystalCount);
-        int GetBlueCrystalCount();
-        int GetRedCrystalCount();
-        int GetYellowCrystalCount();
+        void IncrementLevelId(int starCount, int giftStarCount);
+        int GetGiftStarCount();
+        int GetStarCount();
         int GetRevealingPowerUpCount();
         int GetLifePowerUpCount();
         int GetHintPowerUpCount();
         void DecreaseRevealingPowerUpCount();
         void DecreaseLifePowerUpCount();
         void DecreaseHintPowerUpCount();
+        void RevertIncrementingLevelId(int starCount, int giftStarCount);
     }
 
     public class LevelData

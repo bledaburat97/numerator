@@ -5,7 +5,7 @@ using DG.Tweening;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-/*
+
 namespace Scripts
 {
     public class LevelEndPopupController : ILevelEndPopupController
@@ -35,23 +35,20 @@ namespace Scripts
             _glowingView.Init(new StarImageViewFactory());
             _glowingView.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             int maxBlueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
-            int blueStarCount = maxBlueStarCount < 3 - args.oldStarCount ? maxBlueStarCount : 3 - args.oldStarCount;
-
+            int numOfBlueStars = maxBlueStarCount - 3 + args.starCount > 0 ? maxBlueStarCount - 3 + args.starCount : 0;
+            
             CreateCircleProgressBarController();
             if (args.isLevelCompleted)
             {
-                int oldStarCount = args.oldStarCount > args.starCount ? args.starCount : args.oldStarCount;
-                CreateStars(args.starCount, oldStarCount, blueStarCount);
-                int addedBlueStarCount =
-                    blueStarCount - 3 + args.starCount > 0 ? blueStarCount - 3 + args.starCount : 0;
-                _levelTracker.AddStar(args.starCount - oldStarCount, addedBlueStarCount);
-                CreatePlayButton(args.oldStarCount == 0, () => setGlowStatus(false));
+                CreateStars(args.starCount, numOfBlueStars);
+                _levelTracker.IncrementLevelId(args.starCount, numOfBlueStars);
+                CreatePlayButton(() => setGlowStatus(false));
             }
-            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, args.oldStarCount == 0, () => setGlowStatus(false));
-            Animation(blueStarCount, args.oldStarCount, setGlowStatus);
+            if(args.starCount < 3) CreateRetryButton(args.isLevelCompleted, () => setGlowStatus(false), () => _levelTracker.RevertIncrementingLevelId(args.starCount, numOfBlueStars));
+            Animation(numOfBlueStars, setGlowStatus);
         }
 
-        private void Animation(int blueStarCount, int oldStarCount, Action<bool> setGlowStatus)
+        private void Animation(int numOfBlueStars, Action<bool> setGlowStatus)
         {
             List<IStarImageView> starImageViewList = _view.GetStarImageViewList();
             GlowingEndGameAnimationModel glowingModel = _glowingView.GetGlowingAnimationModel();
@@ -65,11 +62,11 @@ namespace Scripts
                 .AppendInterval(0.2f)
                 .Append(_levelTracker.GetLevelId() > 10 ? _circleProgressBarController.MoveCircleProgressBar(0.8f) : DOTween.Sequence())
                 .AppendInterval(0.1f)
-                .Append(AnimateStarCreation(starImageViewList, glowingModel.starImageViewList, blueStarCount)).Play()
+                .Append(AnimateStarCreation(starImageViewList, glowingModel.starImageViewList, numOfBlueStars)).Play()
                 .AppendInterval(0.5f)
                 .Append(_glowingView.GetTitle().DOScale(1f, 0.5f))
                 .AppendInterval(0.3f)
-                .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList, blueStarCount, oldStarCount))
+                .Append(_circleProgressBarController.AddNewStars(glowingModel.starImageViewList, numOfBlueStars))
                 .AppendInterval(0.2f)
                 .Append(TryCreateWildCard());
         }
@@ -145,43 +142,38 @@ namespace Scripts
             _circleProgressBarController.CreateInitialStars();
         }
         
-        private void CreateStars(int numOfStars, int numOfOldStars, int blueStarCount)
+        private void CreateStars(int numOfStars, int numOfBlueStars)
         {
             Vector2[] starsPosition = new Vector2[numOfStars];
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
                 ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
             starsPosition = starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size, 0);
             
-            for (int i = 0; i < numOfOldStars; i++)
+            for (int i = 0; i < numOfStars; i++)
             {
-                _view.CreateStarImage(starsPosition[i], size);
-            }
-            
-            for (int i = numOfOldStars; i < numOfStars; i++)
-            {
-                _glowingView.CreateStarImage(starsPosition[i], size, blueStarCount < 3 - i);
+                _glowingView.CreateStarImage(starsPosition[i], size, numOfBlueStars < 3 - i);
             }
 
             _view.CreateParticles(starsPosition.ToList());
         }
         
-        private void CreatePlayButton(bool isNewGame, Action deactivateGlow)
+        private void CreatePlayButton(Action deactivateGlow)
         {
             Action onNewGameClick = () => NetworkManager.Singleton.StartHost();
             onNewGameClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             onNewGameClick += () => deactivateGlow?.Invoke();
 
             _playButtonController = _fadeButtonControllerFactory.Create(_view.GetFadeButton());
-            _playButtonController.Initialize(isNewGame ? onNewGameClick : () => SceneManager.LoadScene("Menu"));
-            _playButtonController.SetText(isNewGame ? "LEVEL " + (_levelTracker.GetLevelId() + 1) : "MENU");
+            _playButtonController.Initialize(onNewGameClick);
+            _playButtonController.SetText("LEVEL " + _levelTracker.GetLevelId());
             _playButtonController.SetLocalPosition(new Vector2(0, -170f));
             _playButtonController.SetAlpha(0f);
         }
-
-        private void CreateRetryButton(bool isLevelCompleted, bool isNewLevel, Action deactivateGlow)
+        
+        private void CreateRetryButton(bool isLevelCompleted, Action deactivateGlow, Action revertIncrementingLevel)
         {
             Action onClick = null;
-            onClick += isLevelCompleted && isNewLevel ? () => _levelTracker.SetLevelId(_levelTracker.GetLevelId() - 1) : null;
+            onClick += isLevelCompleted ? revertIncrementingLevel : null;
             onClick += () => NetworkManager.Singleton.StartHost();
             onClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
             onClick += () => deactivateGlow?.Invoke();
@@ -209,4 +201,3 @@ namespace Scripts
         void Initialize(ILevelEndPopupView view, IGlowingLevelEndPopupView glowingView, LevelEndEventArgs args, IFadePanelController fadePanelController, Action<bool> setGlowStatus, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator);
     }
 }
-*/

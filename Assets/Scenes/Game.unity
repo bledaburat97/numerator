@@ -240,7 +240,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 447050215}
-  - {fileID: 1256676160}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &44400225
@@ -1439,6 +1438,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1391204194}
+  - {fileID: 1283340694}
   m_Father: {fileID: 44400224}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &503385417
@@ -2134,8 +2134,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cf57cb0963946f1944583c9640db8c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  starHolder: {fileID: 0}
-  starImagePrefab: {fileID: 0}
+  starHolder: {fileID: 876802449}
+  starImagePrefab: {fileID: 9201243238752170526, guid: 942eaa5968ed2f34db94179d1166d0bd, type: 3}
   glowingCircleProgressBar: {fileID: 1242604047}
   title: {fileID: 1809931826}
   starGroup: {fileID: 1831037113}
@@ -3063,9 +3063,9 @@ MonoBehaviour:
   lifePowerUpButton: {fileID: 1422517102}
   hintPowerUpButton: {fileID: 299123715}
   powerUpModels:
-  - {fileID: 11400000, guid: b78598d34a730264abbab326eaaf7afa, type: 2}
-  - {fileID: 11400000, guid: e374b01c06e12a245a69fdb55eaed62f, type: 2}
-  - {fileID: 11400000, guid: 43dcc11ca322d844183ec0e4d631cef4, type: 2}
+  - {fileID: 11400000, guid: 0ce43f3c926f5d24cbed9e2292fe5f24, type: 2}
+  - {fileID: 11400000, guid: ce46ef97c5482db4fadd72adb40f31b3, type: 2}
+  - {fileID: 11400000, guid: 9e51573fb1159ef41b4fe5059e802c97, type: 2}
 --- !u!224 &1119310796
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3544,38 +3544,6 @@ MonoBehaviour:
   rectTransform: {fileID: 1242604045}
   starImagePrefab: {fileID: 9201243238752170526, guid: 942eaa5968ed2f34db94179d1166d0bd, type: 3}
   starHolder: {fileID: 130257473}
---- !u!1 &1256676159
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1256676160}
-  m_Layer: 0
-  m_Name: GlowServiceArea
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1256676160
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1256676159}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1283340694}
-  m_Father: {fileID: 44400224}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1272283638
 GameObject:
   m_ObjectHideFlags: 0
@@ -3919,7 +3887,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1283340694
 Transform:
   m_ObjectHideFlags: 0
@@ -3928,7 +3896,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1283340693}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3936,7 +3904,7 @@ Transform:
   - {fileID: 761021603}
   - {fileID: 988737035}
   - {fileID: 1600259877}
-  m_Father: {fileID: 1256676160}
+  m_Father: {fileID: 447050215}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!224 &1320229602 stripped
 RectTransform:
@@ -5032,9 +5000,8 @@ MonoBehaviour:
   messagePopupPrefab: {fileID: 1794011495472088801, guid: b6a52420f49a4804ba861b8007091243, type: 3}
   handTutorialPrefab: {fileID: 6016333092749220106, guid: 9844bfe245f971a4d806b6e75c10d3c4, type: 3}
   tutorialMessagePopupPrefab: {fileID: 1522502369497219775, guid: b9b8962c1b01e57469fb97f65b3fff1c, type: 3}
-  levelFinishPopupPrefab: {fileID: 8834857095940407520, guid: 511b4a56b1183d046a9694ee929a74e6, type: 3}
   powerUpMessagePopupView: {fileID: 189912891}
-  glowSystem: {fileID: 1256676159}
+  glowSystem: {fileID: 1283340693}
   glowingLevelEndPopup: {fileID: 797455563}
   safeAreaRectTransform: {fileID: 962908610}
   canvasRectTransform: {fileID: 2064828891}

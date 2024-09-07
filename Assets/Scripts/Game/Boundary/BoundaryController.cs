@@ -6,7 +6,7 @@ namespace Scripts
     {
         private IBoundaryView _view;
         private BoundaryModel _model;
-        private CrystalImageView _crystalImageView;
+        private IStarImageView _starImageView;
         
         public void Initialize(IBoundaryView view, BoundaryModel model)
         {
@@ -15,26 +15,25 @@ namespace Scripts
             _view.Init(_model.localPosition, new StarImageViewFactory());
         }
 
-        public void AddCrystalImage(Vector2 localPosition, CrystalType crystalType)
+        public void AddStarImage(Vector2 starLocalPosition, bool isOriginal)
         {
-            _crystalImageView = _view.CreateCrystalImage();
-            _crystalImageView.Init();
-            _crystalImageView.SetLocalPosition(localPosition);
-            _crystalImageView.SetLocalScale(Vector3.one);
-            _crystalImageView.SetCrystalImage(crystalType);
+            _starImageView = _view.CreateStarImage();
+            _starImageView.SetLocalPosition(starLocalPosition);
+            _starImageView.SetLocalScale(Vector3.one);
+            _starImageView.SetColor(isOriginal);
         }
 
-        public void RemoveCrystalImage()
+        public void RemoveStar()
         {
-            _crystalImageView.SetStatus(false);
+            _starImageView.SetStarStatus(false);
         }
     }
 
     public interface IBoundaryController
     {
         void Initialize(IBoundaryView view, BoundaryModel model);
-        void AddCrystalImage(Vector2 localPosition, CrystalType crystalType);
-        void RemoveCrystalImage();
+        void AddStarImage(Vector2 starLocalPosition, bool isOriginal);
+        void RemoveStar();
     }
 
     public class BoundaryModel

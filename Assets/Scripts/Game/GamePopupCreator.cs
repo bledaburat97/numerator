@@ -39,7 +39,7 @@ namespace Scripts
         [SerializeField] private MessagePopupView messagePopupPrefab;
         [SerializeField] private HandTutorialView handTutorialPrefab;
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
-        [SerializeField] private LevelFinishPopupView levelFinishPopupPrefab;
+        //[SerializeField] private LevelFinishPopupView levelFinishPopupPrefab;
         [SerializeField] private PowerUpMessagePopupView powerUpMessagePopupView;
         
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
@@ -204,15 +204,15 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(true);
             _fadePanelController.SetFadeImageAlpha(0f);
-            /*
-            ILevelEndPopupController levelEndPopupController = _levelEndPopupControllerFactory.Spawn();
+            ILevelEndPopupController levelEndPopupController = new LevelEndPopupController();
             ILevelEndPopupView levelEndPopupView =
                 _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
             levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, SetGlowSystemStatus, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
-            */
+            /*
             LevelFinishPopupController levelFinishPopupController = new LevelFinishPopupController();
             LevelFinishPopupView levelFinishPopupView = Instantiate(levelFinishPopupPrefab, transform);
             levelFinishPopupController.Initialize(levelFinishPopupView, args, _fadePanelController, _hapticController, _baseButtonControllerFactory);
+            */
         }
 
         private void SetGlowSystemStatus(bool status)

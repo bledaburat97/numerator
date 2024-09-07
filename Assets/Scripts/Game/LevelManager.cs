@@ -59,7 +59,6 @@ namespace Scripts
                 {
                     _gameSaveService.DeleteSave();
                     _isGameOver = true;
-                    _levelTracker.IncrementLevelId();
                     CardsBackFlipped.Invoke(this, new BackFlipCardsEventArgs()
                     {
                         finalCardNumbers = _finalCardNumbers,
@@ -120,7 +119,6 @@ namespace Scripts
         public bool isLevelCompleted;
         public ILevelTracker levelTracker;
         public int starCount;
-        public int oldStarCount;
     }
     
     public class BackFlipCardsEventArgs : EventArgs

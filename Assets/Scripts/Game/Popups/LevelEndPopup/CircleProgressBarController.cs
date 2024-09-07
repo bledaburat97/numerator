@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
-/*
+
 namespace Scripts
 {
     public class CircleProgressBarController : ICircleProgressBarController
@@ -20,7 +20,7 @@ namespace Scripts
             _glowingView.Init(new StarImageViewFactory());
             _starFrameViewList = new List<IStarImageView>();
             _glowingStarImageViewList = new List<IStarImageView>();
-            _currentStarCount = levelTracker.GetBlueStarCount() % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            _currentStarCount = levelTracker.GetGiftStarCount();
             _hapticController = hapticController;
             CreateStarFrames();
             _view.SetLocalPosition(new Vector2(0,510f));
@@ -81,12 +81,12 @@ namespace Scripts
             }
         }
 
-        public Sequence AddNewStars(List<IStarImageView> newStars, int blueStarCount, int oldStarCount)
+        public Sequence AddNewStars(List<IStarImageView> newStars, int numOfBlueStars)
         {
             return DOTween.Sequence()
-                .Append(GetNewStarAnimation(newStars.Count >= 1 && oldStarCount >= 3 - blueStarCount ? newStars[0] : null))
-                    .Append(GetNewStarAnimation(newStars.Count >= 2 && oldStarCount >= 2 - blueStarCount ? newStars[1] : null))
-                    .Append(GetNewStarAnimation(newStars.Count == 3 && oldStarCount >= 1 - blueStarCount ? newStars[2] : null));
+                .Append(GetNewStarAnimation(newStars.Count >= 1 && numOfBlueStars > 2 ? newStars[0] : null))
+                    .Append(GetNewStarAnimation(newStars.Count >= 2 && numOfBlueStars > 1 ? newStars[1] : null))
+                    .Append(GetNewStarAnimation(newStars.Count == 3 && numOfBlueStars > 0 ? newStars[2] : null));
         }
 
         public Sequence MoveCircleProgressBar(float duration)
@@ -135,9 +135,8 @@ namespace Scripts
     {
         void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker, IHapticController hapticController);
         void CreateInitialStars();
-        Sequence AddNewStars(List<IStarImageView> newStars, int blueStarCount, int oldStarCount);
+        Sequence AddNewStars(List<IStarImageView> newStars, int numOfBlueStars);
         int GetCurrentStarCount();
         Sequence MoveCircleProgressBar(float duration);
     }
 }
-*/
