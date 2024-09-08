@@ -15,16 +15,18 @@ namespace Scripts
         [SerializeField] private Image frame;
         [SerializeField] private Button button;
         private Camera _cam;
+
+        public void SetCamera(Camera cam)
+        {
+            _cam = cam;
+        }
         
-        private PossibleHolderIndicatorViewFactory _possibleHolderIndicatorViewFactory;
-        public void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory, Camera cam)
+        public void Init(CardHolderModel model)
         {
             transform.localScale = Vector3.one;
-            _cam = cam;
             SetLocalPosition(model.localPosition);
             transform.localPosition = model.localPosition;
             rectTransform.sizeDelta = model.size;
-            _possibleHolderIndicatorViewFactory = possibleHolderIndicatorViewFactory;
             if (model.cardHolderType == CardHolderType.Board)
             {
                 frame.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
@@ -54,7 +56,7 @@ namespace Scripts
         
         public IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView()
         {
-            return _possibleHolderIndicatorViewFactory.Spawn(possibleHolderIndicatorHolderTransform, possibleHolderIndicatorPrefab);
+            return Instantiate(possibleHolderIndicatorPrefab, possibleHolderIndicatorHolderTransform);
         }
 
         public Vector3 GetPosition()
@@ -90,7 +92,8 @@ namespace Scripts
 
     public interface ICardHolderView
     {
-        void Init(CardHolderModel model, PossibleHolderIndicatorViewFactory possibleHolderIndicatorViewFactory, Camera cam);
+        void SetCamera(Camera cam);
+        void Init(CardHolderModel model);
         Vector3 GetPosition();
         Vector3 GetSize();
         RectTransform GetRectTransform();

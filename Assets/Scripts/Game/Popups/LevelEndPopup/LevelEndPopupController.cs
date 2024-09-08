@@ -19,7 +19,6 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private ICircleProgressBarController _circleProgressBarController;
         private IFadePanelController _fadePanelController;
-        private IWildCardItemView _wildCardItemView;
         private IHapticController _hapticController;
         private int _earnedStarCount;
 
@@ -36,8 +35,7 @@ namespace Scripts
             InitButtons();
             if(!args.isLevelCompleted) _hapticController.Vibrate(HapticType.Failure);
             _view.gameObject.SetActive(true);
-            _view.Init(new WildCardItemViewFactory());
-            //_glowingView.Init(new StarImageViewFactory());
+            _view.Init();
             _view.SetTitle(args.isLevelCompleted ? "Well Done!" : "Try Again!");
             int maxBlueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
             int numOfBlueStars = maxBlueStarCount - 3 + args.starCount > 0 ? maxBlueStarCount - 3 + args.starCount : 0;
@@ -121,11 +119,11 @@ namespace Scripts
                 return DOTween.Sequence().Append(AnimateButtons());
             }
             
-            _wildCardItemView = _view.CreateWildCardImage();
-            _wildCardItemView.SetLocalScale(Vector3.zero);
-            _wildCardItemView.SetLocalPosition(Vector3.zero);
-            Action onClickClaim = _wildCardItemView.Destroy;
-            onClickClaim += () => DOTween.Sequence().AppendInterval(0.2f)
+            //_wildCardItemView = _view.CreateWildCardImage();
+            //_wildCardItemView.SetLocalScale(Vector3.zero);
+            //_wildCardItemView.SetLocalPosition(Vector3.zero);
+            //Action onClickClaim = _wildCardItemView.Destroy;
+            Action onClickClaim = () => DOTween.Sequence().AppendInterval(0.2f)
                 .AppendCallback(() => _circleProgressBarController.CreateInitialStars())
                 .AppendCallback(() => _view.SetStarGroupStatus(true))
                 //.AppendCallback(() => _glowingView.SetStarGroupStatus(true))
@@ -133,13 +131,12 @@ namespace Scripts
             
             SetClaimButton(onClickClaim);
             return DOTween.Sequence()
-                .Append(DOTween.Sequence().AppendInterval(0.4f)
-                    .Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5 / 3f, 1.6f))).SetEase(Ease.OutQuad)
-                .Join(DOTween.Sequence().AppendInterval(1f)
-                    .Append(DOTween.Sequence().Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)).OnComplete(() => _hapticController.Vibrate(HapticType.Success))))
+                .Append(DOTween.Sequence().AppendInterval(0.4f).SetEase(Ease.OutQuad))
+                    //.Append(_wildCardItemView.GetRectTransform().DOScale(Vector3.one * 5 / 3f, 1.6f))).SetEase(Ease.OutQuad)
+                .Join(DOTween.Sequence().AppendInterval(1f))
+                    //.Append(DOTween.Sequence().Append(_wildCardItemView.GetRectTransform().DOLocalMoveY(-190f, 1f)).OnComplete(() => _hapticController.Vibrate(HapticType.Success))))
                 .Join(DOTween.Sequence().AppendCallback(_view.ActivateWildParticle))
                 .Join(_view.GetStarGroup().DOFade(0f, 0.6f))
-                //.Join(_glowingView.GetStarGroup().DOFade(0f, 0.6f))
                 .AppendInterval(0.5f)
                 .Append(_claimButtonController.GetCanvasGroup().DOFade(1f, 0.3f));
         }

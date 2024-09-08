@@ -8,11 +8,14 @@ namespace Scripts
         private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
 
-        public void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam, ICardItemInfoManager cardItemInfoManager)
+        public InitialCardHolderController(ICardHolderView cardHolderView, Camera cam) : base(cardHolderView, cam)
         {
-            _view = cardHolderView;
+        }
+
+        public void Initialize(CardHolderModel model, ICardItemInfoManager cardItemInfoManager)
+        {
             _model = model;
-            _view.Init(model, new PossibleHolderIndicatorViewFactory(), cam);
+            _view.Init(model);
             CreatePossibleHolderIndicators();
             CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[model.index];
             SetHolderIndicatorListStatus(cardItemInfo.possibleCardHolderIndicatorIndexes);
@@ -75,8 +78,7 @@ namespace Scripts
 
     public interface IInitialCardHolderController : IBaseCardHolderController
     {
-        void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam,
-            ICardItemInfoManager cardItemInfoManager);
+        void Initialize(CardHolderModel model, ICardItemInfoManager cardItemInfoManager);
         void SetLocalPosition(Vector2 localXPos);
         List<int> GetActiveHolderIndicatorIndexes();
         void SetText(string cardNumber);

@@ -5,22 +5,14 @@ namespace Scripts
     public class InitialCardAreaView : MonoBehaviour, IInitialCardAreaView
     {
         [SerializeField] private CardHolderView cardHolderPrefab;
-        [SerializeField] private NormalCardItemView _normalCardItemPrefab;
+        [SerializeField] private NormalCardItemView normalCardItemPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
         [SerializeField] private InvisibleClickHandler invisibleClickHandler;
-        [SerializeField] private WildCardItemView wildCardItemPrefab;
         [SerializeField] private Camera cam;
         
-        private NormalCardItemViewFactory _normalCardItemViewFactory;
-        private CardHolderFactory _cardHolderFactory;
-        private WildCardItemViewFactory _wildCardItemViewFactory;
-        
-        public void Init(CardHolderFactory cardHolderFactory, NormalCardItemViewFactory normalCardItemViewFactory, WildCardItemViewFactory wildCardItemViewFactory)
+        public void Init()
         {
             transform.localScale = Vector3.one;
-            _cardHolderFactory = cardHolderFactory;
-            _normalCardItemViewFactory = normalCardItemViewFactory;
-            _wildCardItemViewFactory = wildCardItemViewFactory;
         }
 
         public Camera GetCamera()
@@ -35,31 +27,25 @@ namespace Scripts
         
         public ICardHolderView CreateCardHolderView()
         {
-            return _cardHolderFactory.Spawn(transform, cardHolderPrefab);
+            return Instantiate(cardHolderPrefab, transform);
         }
 
         public INormalCardItemView CreateCardItemView(Transform parent)
         {
-            return _normalCardItemViewFactory.Spawn(parent, _normalCardItemPrefab);
+            return Instantiate(normalCardItemPrefab, parent);
         }
 
         public RectTransform GetTempRectTransform()
         {
             return tempParentRectTransform;
         }
-
-        public IWildCardItemView CreateWildCardItemView(Transform parent)
-        {
-            return _wildCardItemViewFactory.Spawn(parent, wildCardItemPrefab);
-        }
     }
     
     public interface IInitialCardAreaView
     {
-        void Init(CardHolderFactory cardHolderFactory, NormalCardItemViewFactory normalCardItemViewFactory, WildCardItemViewFactory wildCardItemViewFactory);
+        void Init();
         ICardHolderView CreateCardHolderView();
         INormalCardItemView CreateCardItemView(Transform parent);
-        IWildCardItemView CreateWildCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();
         Camera GetCamera();

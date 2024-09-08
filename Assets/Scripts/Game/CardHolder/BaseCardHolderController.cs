@@ -9,11 +9,10 @@ namespace Scripts
         protected ICardHolderView _view;
         protected CardHolderModel _model;
 
-        public virtual void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam)
+        public BaseCardHolderController(ICardHolderView cardHolderView, Camera cam)
         {
             _view = cardHolderView;
-            _model = model;
-            _view.Init(model, new PossibleHolderIndicatorViewFactory(), cam);
+            _view.SetCamera(cam);
         }
         
         public ICardHolderView GetView()
@@ -29,7 +28,6 @@ namespace Scripts
 
     public interface IBaseCardHolderController
     {
-        void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam);
         ICardHolderView GetView();
         Vector3 GetPositionOfCardHolder();
     }
@@ -40,7 +38,6 @@ namespace Scripts
         public Vector3 localPosition;
         public Vector2 size;
         public List<Vector2> possibleHolderIndicatorLocalPositionList;
-        public CardItemType cardItemType;
         public Action onClickAction;
         public CardHolderType cardHolderType;
     }

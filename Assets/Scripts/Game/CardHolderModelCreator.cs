@@ -83,7 +83,6 @@ namespace Scripts
                     localPosition = localPositions[i],
                     size = cardHolderSize,
                     possibleHolderIndicatorLocalPositionList = wildCardExistence && i == 0 ? new List<Vector2>() : possibleIndicatorLocalPositionList,
-                    cardItemType = wildCardExistence && i == 0 ? CardItemType.Wild : CardItemType.Normal,
                     cardHolderType = CardHolderType.Initial
                 });
             }
@@ -94,16 +93,6 @@ namespace Scripts
             if (cardHolderType == CardHolderType.Board) return _boardCardHolderModelList;
             return _initialCardHolderModelList;
         }
-
-        public List<Vector2> GetLocalPositionsOfFirstLine()
-        {
-            return _localPositionsOfFirstLine;
-        }
-        
-        public List<Vector2> GetLocalPositionsOfFirstLineWhenWildRemoved()
-        {
-            return _localPositionsOfFirstLineWithoutWild;
-        }
     }
 
     public interface ICardHolderModelCreator
@@ -112,8 +101,6 @@ namespace Scripts
         void AddBoardCardHolderModelList(int numOfCardHolders);
         void AddInitialCardHolderModelList(int numOfCardHolders, bool wildCardExistence);
         List<CardHolderModel> GetCardHolderModelList(CardHolderType cardHolderType);
-        List<Vector2> GetLocalPositionsOfFirstLine();
-        List<Vector2> GetLocalPositionsOfFirstLineWhenWildRemoved();
     }
 
     public enum CardHolderType

@@ -4,9 +4,13 @@ namespace Scripts
 {
     public class BoardCardHolderController : BaseCardHolderController, IBoardCardHolderController
     {
-        public override void Initialize(ICardHolderView cardHolderView, CardHolderModel model, Camera cam)
+        public BoardCardHolderController(ICardHolderView cardHolderView, Camera cam) : base(cardHolderView, cam)
         {
-            base.Initialize(cardHolderView, model, cam);
+        }
+
+        public void Initialize(CardHolderModel model)
+        {
+            _view.Init(model);
             _view.SetOnClick(model.onClickAction);
         }
     
@@ -23,6 +27,7 @@ namespace Scripts
 
     public interface IBoardCardHolderController : IBaseCardHolderController
     {
+        void Initialize(CardHolderModel model);
         int GetIndex();
         void SetHighlightStatus(bool status);
     }

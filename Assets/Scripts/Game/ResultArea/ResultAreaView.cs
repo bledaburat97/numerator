@@ -64,7 +64,15 @@ namespace Scripts
             {
                 finalNumber += resultBlockModel.finalNumbers[i] * ((int) Math.Pow(10, i));
             }
-            AddResultBlockServerRpc(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
+
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                AddNewResultBlock(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
+            }
+            else
+            {
+                AddResultBlockServerRpc(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
+            }
         }
 
         [ServerRpc (RequireOwnership = false)]
@@ -75,6 +83,11 @@ namespace Scripts
         
         [ClientRpc]
         private void AddResultBlockClientRpc(int finalNumber, int correctPosCount, int wrongPosCount)
+        {
+            AddNewResultBlock(finalNumber, correctPosCount, wrongPosCount);
+        }
+
+        private void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
         {
             IResultBlockController resultBlockController = _resultBlockControllerFactory.Spawn();
             IResultBlockView resultBlockView = CreateResultBlock();

@@ -12,8 +12,6 @@ namespace Scripts
         [SerializeField] private ParticleSystem wildParticle;
         [SerializeField] private CanvasGroup starGroup;
         [SerializeField] private RectTransform wildCardHolder;
-        [SerializeField] private WildCardItemView wildCardItemPrefab;
-        private WildCardItemViewFactory _wildCardItemViewFactory;
         [SerializeField] private FadeButtonView continueButtonView;
         [SerializeField] private FadeButtonView retryButtonView;
         [SerializeField] private FadeButtonView claimButtonView;
@@ -22,11 +20,10 @@ namespace Scripts
         //[SerializeField] private GlowingCircleProgressBarView glowingCircleProgressBar;
         [SerializeField] private TMP_Text title;
         
-        public void Init(WildCardItemViewFactory wildCardItemViewFactory)
+        public void Init()
         {
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
-            _wildCardItemViewFactory = wildCardItemViewFactory;
         }
 
         public FadeButtonView GetContinueButton()
@@ -75,11 +72,6 @@ namespace Scripts
             return starGroup;
         }
         
-        public IWildCardItemView CreateWildCardImage()
-        {
-            return _wildCardItemViewFactory.Spawn(wildCardHolder, wildCardItemPrefab);
-        }
-        
         public void SetTitle(string text)
         {
             title.SetText(text);
@@ -94,12 +86,11 @@ namespace Scripts
     
     public interface ILevelEndPopupView
     {
-        void Init(WildCardItemViewFactory wildCardItemViewFactory);
+        void Init();
         ICircleProgressBarView CreateCircleProgressBar();
         void ActivateWildParticle();
         void SetStarGroupStatus(bool status);
         CanvasGroup GetStarGroup();
-        IWildCardItemView CreateWildCardImage();
         void SetTitle(string text);
         RectTransform GetTitle();
         FadeButtonView GetContinueButton();

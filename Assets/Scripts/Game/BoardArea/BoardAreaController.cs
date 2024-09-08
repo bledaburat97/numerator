@@ -21,20 +21,18 @@ namespace Scripts
         
         public void Initialize()
         {
-            _view.Init(new CardHolderFactory());
             _boardHolderControllerList = new List<IBoardCardHolderController>();
             CreateBoardCardHolders();
         }
         
         private void CreateBoardCardHolders()
         {
-            BoardCardHolderControllerFactory cardHolderControllerFactory = new BoardCardHolderControllerFactory();
             foreach (CardHolderModel boardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
-                IBoardCardHolderController boardHolderController = cardHolderControllerFactory.Spawn();
                 ICardHolderView boardHolderView = _view.CreateCardHolderView();
+                IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
                 boardHolderModel.onClickAction = () => BoardHolderClickedEvent?.Invoke(this, boardHolderModel.index);
-                boardHolderController.Initialize(boardHolderView, boardHolderModel, _view.GetCamera());
+                boardHolderController.Initialize(boardHolderModel);
                 _boardHolderControllerList.Add(boardHolderController);
             }
             
