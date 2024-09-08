@@ -184,8 +184,7 @@ namespace Scripts
         
         private void SetContinueButton()
         {
-            Action onNewGameClick = () => NetworkManager.Singleton.StartHost();
-            onNewGameClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+            Action onNewGameClick = () => SceneManager.LoadScene("Game");
 
             _view.GetContinueButton().gameObject.SetActive(true);
             _continueButtonController = _fadeButtonControllerFactory.Create(_view.GetContinueButton());
@@ -199,8 +198,7 @@ namespace Scripts
         {
             Action onClick = null;
             onClick += isLevelCompleted ? revertIncrementingLevel : null;
-            onClick += () => NetworkManager.Singleton.StartHost();
-            onClick += () => NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+            onClick += () => SceneManager.LoadScene("Game");
 
             _view.GetRetryButton().gameObject.SetActive(true);
             _retryButtonController = _fadeButtonControllerFactory.Create(_view.GetRetryButton());

@@ -136,7 +136,7 @@ namespace Scripts
                 LevelData levelData = levelDataCreator.GetLevelData();
                 Debug.Log(levelData.LevelId);
                 _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
+                targetNumberCreator.CreateMultiplayerTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
             }
 
         }

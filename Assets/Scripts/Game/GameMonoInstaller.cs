@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -47,6 +48,8 @@ namespace Scripts
             Container.Bind<IGameUIController>().To<GameUIController>().AsSingle()
                 .WithArguments(gameUI);
             Container.Bind<IUnmaskServiceAreaView>().To<UnmaskServiceAreaView>().FromComponentInHierarchy().AsSingle();
+            Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
+                .AsSingle();
         }
     }
 }

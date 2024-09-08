@@ -51,8 +51,7 @@ namespace Scripts
         private void OnRetryButtonClick(Action deleteSaveAction)
         {
             deleteSaveAction.Invoke();
-            NetworkManager.Singleton.StartHost();
-            NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+            SceneManager.LoadScene("Game");
         }
         
         private void OnMenuButtonClick(Action saveGameAction)

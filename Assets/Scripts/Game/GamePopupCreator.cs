@@ -6,7 +6,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class GamePopupCreator : NetworkBehaviour, IGamePopupCreator
+    public class GamePopupCreator : MonoBehaviour, IGamePopupCreator
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         [Inject] private FadeButtonControllerFactory _fadeButtonControllerFactory;
@@ -16,8 +16,6 @@ namespace Scripts
         [Inject] private IFadePanelController _fadePanelController;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private ILevelTracker _levelTracker;
-        [Inject] private IUserReady _userReady;
-        [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameUIController _gameUIController;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private ICardItemLocator _cardItemLocator;
@@ -32,21 +30,17 @@ namespace Scripts
         [Inject] private IBoardAreaController _boardAreaController;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
-        //[SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         [SerializeField] private WaitingOpponentPopupView waitingOpponentPopupPrefab;
         [SerializeField] private MessagePopupView messagePopupPrefab;
         [SerializeField] private HandTutorialView handTutorialPrefab;
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
-        //[SerializeField] private LevelFinishPopupView levelFinishPopupPrefab;
         [SerializeField] private PowerUpMessagePopupView powerUpMessagePopupView;
         [SerializeField] private LevelEndPopupView levelEndPopupView;
 
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
-        //private LevelEndPopupControllerFactory _levelEndPopupControllerFactory;
-        private LevelEndPopupViewFactory _levelEndPopupViewFactory;
         private SettingsPopupControllerFactory _settingsPopupControllerFactory;
         private SettingsPopupViewFactory _settingsPopupViewFactory;
         private DisconnectionPopupControllerFactory _disconnectionPopupControllerFactory;
@@ -57,20 +51,9 @@ namespace Scripts
 
         private Action _saveGameAction = null;
         private Action _deleteSaveAction = null;
-        //[SerializeField] private GameObject glowSystem;
-        //[SerializeField] private GlowingLevelEndPopupView glowingLevelEndPopup;
         [SerializeField] private RectTransform safeAreaRectTransform;
         [SerializeField] private RectTransform canvasRectTransform;
-
-        private Dictionary<ulong, bool> _playerSuccessDictionary;
-        private bool _isLocalGameEnd = false;
-        private NetworkVariable<bool> _isGameEnd = new NetworkVariable<bool>(false);
-        private Dictionary<ulong, bool> _playerReadyDictionary;
-        private bool _isLocalReady;
-        private NetworkVariable<bool> _isAnyReady = new NetworkVariable<bool>(false);
-
-        private Action _openWaitingOpponentPopup;
-        private Action _closeWaitingOpponentPopup;
+        
         private IMessagePopupView _newGameOfferPopup;
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
@@ -78,8 +61,6 @@ namespace Scripts
 
         public void Initialize()
         {
-            //_levelEndPopupControllerFactory = new LevelEndPopupControllerFactory();
-            _levelEndPopupViewFactory = new LevelEndPopupViewFactory();
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
             _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
@@ -91,19 +72,12 @@ namespace Scripts
             _messagePopupViewFactory = new MessagePopupViewFactory();
             
             _levelManager.LevelEnd += CreateLevelEndPopup;
-            _levelManager.MultiplayerLevelEndEvent += OnMultiplayerLevelEnd;
             _gameUIController.OpenSettings += CreateSettingsPopup;
-            _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
-            _turnOrderDeterminer.LocalTurnEvent += ChangeLocalTurn;
+            
             _gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _gameSaveService.Save : null;
             _deleteSaveAction += _gameSaveService.DeleteSave;
-            _playerSuccessDictionary = new Dictionary<ulong, bool>();
-            _playerReadyDictionary = new Dictionary<ulong, bool>();
-            _openWaitingOpponentPopup += OnPlayerReady;
-            _isLocalReady = false;
-            _closeWaitingOpponentPopup += OnPlayerUnready;
+            
             _powerUpMessageController = new PowerUpMessageController(_unmaskServiceAreaView, powerUpMessagePopupView, _cardItemLocator, _initialCardAreaController, _hapticController, _boardAreaController);
             if (_levelTracker.IsFirstLevelTutorial())
             {
@@ -164,7 +138,7 @@ namespace Scripts
             }
         }
         
-        private void CreateNotAbleToMovePopup(object sender, EventArgs e)
+        public void CreateNotAbleToMovePopup()
         {
             void OnClose() => _notAbleToMovePopup = null;
             _notAbleToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
@@ -173,7 +147,7 @@ namespace Scripts
             _notAbleToMovePopup.Animate(1f, OnClose);
         }
 
-        private void CreateAbleToMovePopup()
+        public void CreateAbleToMovePopup()
         {
             void OnClose() => _ableToMovePopup = null;
             _ableToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
@@ -181,23 +155,67 @@ namespace Scripts
             _ableToMovePopup.SetColor(ConstantValues.ABLE_TO_MOVE_TEXT_COLOR);
             _ableToMovePopup.Animate(3f, OnClose);
         }
-        
-        private void ChangeLocalTurn(object sender, bool isLocalTurn)
+
+        public void CreateWaitingOpponentPopup(Action onPlayerUnReady)
         {
-            if (isLocalTurn)
+            IWaitingOpponentPopupController waitingOpponentPopupController =
+                _waitingOpponentPopupControllerFactory.Spawn();
+            IWaitingOpponentPopupView waitingOpponentPopupView =
+                _waitingOpponentPopupViewFactory.Spawn(transform, waitingOpponentPopupPrefab);
+            waitingOpponentPopupController.Initialize(waitingOpponentPopupView, onPlayerUnReady, _baseButtonControllerFactory);
+        }
+
+        public void CreateNewGameOfferPopup()
+        {
+            _newGameOfferPopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
+            _hapticController.Vibrate(HapticType.CardRelease);
+            _newGameOfferPopup.Init("Opponent offers a new game.", 1f, new Vector2(0,200));
+        }
+        
+        public void CreateMultiplayerLevelEnd(bool isSuccess, IUserReady userReady, Action onPlayerReady)
+        {
+            _fadePanelController.SetFadeImageStatus(true);
+            _fadePanelController.SetFadeImageAlpha(0f);
+            IMultiplayerLevelEndPopupController multiplayerLevelEndPopupController =
+                _multiplayerLevelEndPopupControllerFactory.Spawn();
+            IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
+                _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
+            if(!isSuccess) _hapticController.Vibrate(HapticType.Failure);
+            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, userReady, onPlayerReady, _baseButtonControllerFactory, _fadePanelController);
+        }
+        
+        public void CreateDisconnectionPopup()
+        {
+            _fadePanelController.SetFadeImageStatus(true);
+            IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
+            IDisconnectionPopupView disconnectionPopupView =
+                _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
+            _hapticController.Vibrate(HapticType.Warning);
+            disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
+            disconnectionPopupController.SetText("Opponent is disconnected!");
+        }
+        
+        public void CloseNotAbleToMovePopup()
+        {
+            if (_notAbleToMovePopup != null)
             {
-                if (_notAbleToMovePopup != null)
-                {
-                    _notAbleToMovePopup.Close();
-                }
-                CreateAbleToMovePopup();
+                _notAbleToMovePopup.Close();
             }
-            
-            else{
-                if (_ableToMovePopup != null)
-                {
-                    _ableToMovePopup.Close();
-                }
+        }
+        
+        public void CloseAbleToMovePopup()
+        {
+            if (_ableToMovePopup != null)
+            {
+                _ableToMovePopup.Close();
+            }
+        }
+
+        public void CloseNewGameOfferPopup()
+        {
+            if (_newGameOfferPopup != null)
+            {
+                _newGameOfferPopup.Close();
             }
         }
 
@@ -207,123 +225,6 @@ namespace Scripts
             _fadePanelController.SetFadeImageAlpha(0f);
             ILevelEndPopupController levelEndPopupController = new LevelEndPopupController();
             levelEndPopupController.Initialize(levelEndPopupView, args, _fadePanelController, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
-            /*
-            LevelFinishPopupController levelFinishPopupController = new LevelFinishPopupController();
-            LevelFinishPopupView levelFinishPopupView = Instantiate(levelFinishPopupPrefab, transform);
-            levelFinishPopupController.Initialize(levelFinishPopupView, args, _fadePanelController, _hapticController, _baseButtonControllerFactory);
-            */
-        }
-        /*
-        private void SetGlowSystemStatus(bool status)
-        {
-            glowSystem.SetActive(status);
-            _fadePanelController.SetNonGlowFadeImageStatus(status);
-        }
-        */
-        
-        public override void OnNetworkSpawn()
-        {
-            _isGameEnd.OnValueChanged += CreateMultiplayerLevelLostPopup;
-            _isAnyReady.OnValueChanged += CheckNewGameOfferPopup;
-        }
-
-        private void CreateWaitingOpponentPopup()
-        {
-            if (_isAnyReady.Value) return;
-            IWaitingOpponentPopupController waitingOpponentPopupController =
-                _waitingOpponentPopupControllerFactory.Spawn();
-            IWaitingOpponentPopupView waitingOpponentPopupView =
-                _waitingOpponentPopupViewFactory.Spawn(transform, waitingOpponentPopupPrefab);
-            waitingOpponentPopupController.Initialize(waitingOpponentPopupView, _closeWaitingOpponentPopup, _baseButtonControllerFactory);
-        }
-
-        private void CheckNewGameOfferPopup(bool previousValue, bool newValue)
-        {
-            if (!_isLocalReady && _isAnyReady.Value)
-            {
-                _newGameOfferPopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-                _hapticController.Vibrate(HapticType.CardRelease);
-                _newGameOfferPopup.Init("Opponent offers a new game.", 1f, new Vector2(0,200));
-            }
-
-            if (!_isAnyReady.Value)
-            {
-                if (_newGameOfferPopup != null)
-                {
-                    _newGameOfferPopup.Close();
-                }
-            }
-        }
-
-        private void CreateMultiplayerLevelLostPopup(bool previousValue, bool newValue)
-        {
-            if (!_isLocalGameEnd)
-            {
-                CreateMultiplayerLevelEnd(false);
-            }
-        }
-
-        private void OnMultiplayerLevelEnd(object sender, EventArgs args)
-        {
-            _isLocalGameEnd = true;
-            ChangeMultiplayerLevelEndStateServerRpc();
-            CreateMultiplayerLevelEnd(true);
-        }
-
-        private void OnPlayerReady()
-        {
-            _isLocalReady = true;
-            CreateWaitingOpponentPopup();
-            TryChangeReadinessStatusServerRpc(true);
-        }
-
-        private void OnPlayerUnready()
-        {
-            _userReady.SetPlayerUnready();
-            _isLocalReady = false;
-            TryChangeReadinessStatusServerRpc(false);
-        }
-        
-        [ServerRpc (RequireOwnership = false)]
-        private void ChangeMultiplayerLevelEndStateServerRpc(ServerRpcParams serverRpcParams = default)
-        {
-            _playerSuccessDictionary[serverRpcParams.Receive.SenderClientId] = true;
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                if (_playerSuccessDictionary.ContainsKey(clientId) && _playerSuccessDictionary[clientId])
-                {
-                    _isGameEnd.Value = true;
-                    return;
-                }
-            }
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void TryChangeReadinessStatusServerRpc(bool readinessStatus, ServerRpcParams serverRpcParams = default)
-        {
-            _playerReadyDictionary[serverRpcParams.Receive.SenderClientId] = readinessStatus;
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                if (_playerReadyDictionary.ContainsKey(clientId) && _playerReadyDictionary[clientId])
-                {
-                    _isAnyReady.Value = true;
-                    return;
-                }
-            }
-
-            _isAnyReady.Value = false;
-        }
-        
-        private void CreateMultiplayerLevelEnd(bool isSuccess)
-        {
-            _fadePanelController.SetFadeImageStatus(true);
-            _fadePanelController.SetFadeImageAlpha(0f);
-            IMultiplayerLevelEndPopupController multiplayerLevelEndPopupController =
-                _multiplayerLevelEndPopupControllerFactory.Spawn();
-            IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
-                _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
-            if(!isSuccess) _hapticController.Vibrate(HapticType.Failure);
-            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, _userReady, _openWaitingOpponentPopup, _baseButtonControllerFactory, _fadePanelController);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)
@@ -338,37 +239,20 @@ namespace Scripts
         {
             _fadePanelController.SetFadeImageStatus(false);
         }
-        
-        private void OnClientDisconnectCallback(ulong clientId)
-        {
-            if((IsHost && clientId != 0) || (!IsHost && clientId == 0))
-            {
-                CreateDisconnectionPopup();
-            }
-        }
-
-        private void CreateDisconnectionPopup()
-        {
-            _fadePanelController.SetFadeImageStatus(true);
-            IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
-            IDisconnectionPopupView disconnectionPopupView =
-                _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
-            _hapticController.Vibrate(HapticType.Warning);
-            disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
-            disconnectionPopupController.SetText("Opponent is disconnected!");
-        }
-
-        private new void OnDestroy()
-        {
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
-            }
-        }
     }
 
     public interface IGamePopupCreator
     {
         void Initialize();
+        void CreateNotAbleToMovePopup();
+        void CreateAbleToMovePopup();
+        void CreateWaitingOpponentPopup(Action onPlayerUnReady);
+        void CreateMultiplayerLevelEnd(bool isSuccess, IUserReady userReady, Action onPlayerReady);
+        void CreateNewGameOfferPopup();
+        void CreateDisconnectionPopup();
+        void CloseNotAbleToMovePopup();
+        void CloseAbleToMovePopup();
+        void CloseNewGameOfferPopup();
+
     }
 }

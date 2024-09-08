@@ -24,7 +24,7 @@ namespace Scripts
                 PlayerPrefs.SetInt("wild_card_count", 0);
                 PlayerPrefs.SetString("star_count_of_levels", "");
                 _levelTracker.SetGameOption(GameOption.SinglePlayer);
-                SceneManager.LoadScene("LoadingScene");
+                SceneManager.LoadScene("Game");
             }
         }
         

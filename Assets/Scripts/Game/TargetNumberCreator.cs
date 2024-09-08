@@ -28,7 +28,11 @@ namespace Scripts
 
         private void SetTargetNumber(int oldValue, int newValue)
         {
-            int targetNumber = _targetNumber.Value;
+            SetTargetCardsList(_targetNumber.Value);
+        }
+
+        private void SetTargetCardsList(int targetNumber)
+        {
             List<int> targetCardsList = new List<int>();
             while (targetNumber != 0)
             {
@@ -36,7 +40,6 @@ namespace Scripts
                 targetCardsList.Add(a);
                 targetNumber /= 10;
             }
-
             _targetCardsList = targetCardsList;
         }
 
@@ -45,7 +48,7 @@ namespace Scripts
             _targetCardsList = targetCardsList;
         }
         
-        public void CreateTargetNumber(int numOfCards, int numOfBoardHolders)
+        public void CreateMultiplayerTargetNumber(int numOfCards, int numOfBoardHolders)
         {
             if (IsServer)
             {
@@ -53,8 +56,18 @@ namespace Scripts
             }
         }
         
+        public void CreateTargetNumber(int numOfCards, int numOfBoardHolders)
+        {
+            SetTargetCardsList(GetTargetNumber(numOfCards, numOfBoardHolders));
+        }
+        
         [ServerRpc (RequireOwnership = false)]
         private void CreateTargetNumberServerRpc(int numOfCards, int numOfBoardHolders)
+        {
+            _targetNumber.Value = GetTargetNumber(numOfCards, numOfBoardHolders);
+        }
+
+        private int GetTargetNumber(int numOfCards, int numOfBoardHolders)
         {
             List<int> cards = Enumerable.Range(1, numOfCards).ToList();
             Random random = new Random();
@@ -77,7 +90,7 @@ namespace Scripts
                 targetNumber += targetCardsList[i] * ((int) Math.Pow(10, i));
             }
 
-            _targetNumber.Value = targetNumber;
+            return targetNumber;
         }
         
     }
@@ -85,6 +98,7 @@ namespace Scripts
     public interface ITargetNumberCreator
     {
         void Initialize();
+        void CreateMultiplayerTargetNumber(int numOfCards, int numOfBoardHolders);
         void CreateTargetNumber(int numOfCards, int numOfBoardHolders);
         List<int> GetTargetCardsList();
         void SetSavedTargetCardList(List<int> targetCardsList);

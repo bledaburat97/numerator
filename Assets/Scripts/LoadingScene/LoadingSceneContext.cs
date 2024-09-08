@@ -8,8 +8,9 @@ namespace Scripts
     {
         void Start()
         {
-            NetworkManager.Singleton.StartHost();
-            NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
+            SceneManager.LoadScene("Game");
+            //NetworkManager.Singleton.StartHost();
+            //NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
         }
     }
 }
