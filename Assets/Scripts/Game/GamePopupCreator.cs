@@ -32,7 +32,7 @@ namespace Scripts
         [Inject] private IBoardAreaController _boardAreaController;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
-        [SerializeField] private LevelEndPopupView levelEndPopupPrefab;
+        //[SerializeField] private LevelEndPopupView levelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         [SerializeField] private WaitingOpponentPopupView waitingOpponentPopupPrefab;
@@ -41,7 +41,8 @@ namespace Scripts
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
         //[SerializeField] private LevelFinishPopupView levelFinishPopupPrefab;
         [SerializeField] private PowerUpMessagePopupView powerUpMessagePopupView;
-        
+        [SerializeField] private LevelEndPopupView levelEndPopupView;
+
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
         //private LevelEndPopupControllerFactory _levelEndPopupControllerFactory;
@@ -56,8 +57,8 @@ namespace Scripts
 
         private Action _saveGameAction = null;
         private Action _deleteSaveAction = null;
-        [SerializeField] private GameObject glowSystem;
-        [SerializeField] private GlowingLevelEndPopupView glowingLevelEndPopup;
+        //[SerializeField] private GameObject glowSystem;
+        //[SerializeField] private GlowingLevelEndPopupView glowingLevelEndPopup;
         [SerializeField] private RectTransform safeAreaRectTransform;
         [SerializeField] private RectTransform canvasRectTransform;
 
@@ -205,22 +206,21 @@ namespace Scripts
             _fadePanelController.SetFadeImageStatus(true);
             _fadePanelController.SetFadeImageAlpha(0f);
             ILevelEndPopupController levelEndPopupController = new LevelEndPopupController();
-            ILevelEndPopupView levelEndPopupView =
-                _levelEndPopupViewFactory.Spawn(transform, levelEndPopupPrefab);
-            levelEndPopupController.Initialize(levelEndPopupView, glowingLevelEndPopup, args, _fadePanelController, SetGlowSystemStatus, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
+            levelEndPopupController.Initialize(levelEndPopupView, args, _fadePanelController, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
             /*
             LevelFinishPopupController levelFinishPopupController = new LevelFinishPopupController();
             LevelFinishPopupView levelFinishPopupView = Instantiate(levelFinishPopupPrefab, transform);
             levelFinishPopupController.Initialize(levelFinishPopupView, args, _fadePanelController, _hapticController, _baseButtonControllerFactory);
             */
         }
-
+        /*
         private void SetGlowSystemStatus(bool status)
         {
             glowSystem.SetActive(status);
             _fadePanelController.SetNonGlowFadeImageStatus(status);
         }
-
+        */
+        
         public override void OnNetworkSpawn()
         {
             _isGameEnd.OnValueChanged += CreateMultiplayerLevelLostPopup;

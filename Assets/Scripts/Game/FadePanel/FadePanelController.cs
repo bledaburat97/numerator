@@ -1,74 +1,65 @@
 ﻿using DG.Tweening;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Scripts
 {
     public class FadePanelController : IFadePanelController
     {
         private IFadePanelView _view;
-        private IFadePanelView _nonGlowView;
 
-        public FadePanelController(IFadePanelView view, IFadePanelView nonGlowView)
+        public FadePanelController(IFadePanelView view)
         {
             _view = view;
-            _nonGlowView = nonGlowView;
-        }
-        
-        public void Initialize()
-        {
-            _view.SetFadeImageStatus(false);
-            //_view.SetTutorialFadeImageStatus(false);
-            _nonGlowView.SetFadeImageStatus(false);
         }
 
         public void SetFadeImageStatus(bool status)
         {
-            _view.SetFadeImageStatus(status);
+            _view.GetFadeImage().gameObject.SetActive(status);
         }
-
-        public void SetNonGlowFadeImageStatus(bool status)
+        
+        public void SetTutorialFadeImageStatus(bool status)
         {
-            _nonGlowView.SetFadeImageStatus(status);
+            _view.GetTutorialFadeImage().gameObject.SetActive(status);
         }
-
-        public Image GetFadeImage()
+        
+        public Sequence AnimateFade(float finalAlpha, float duration)
         {
-            return _view.GetFadeImage();
+            return DOTween.Sequence().Append(_view.GetFadeImage().DOFade(finalAlpha, duration));
+        }
+        
+        public void AnimateTutorialFade(float finalAlpha, float duration)
+        {
+            DOTween.Sequence().Append(_view.GetTutorialFadeImage().DOFade(finalAlpha, duration));
         }
 
         public void SetFadeImageAlpha(float alpha)
         {
-            _view.SetAlpha(alpha);
+            Color color = _view.GetFadeImage().color;
+            color.a = alpha;
+            _view.GetFadeImage().color = color;
+        }
+
+        public void SetTutorialFadeImageAlpha(float alpha)
+        {
+            Color color = _view.GetTutorialFadeImage().color;
+            color.a = alpha;
+            _view.GetTutorialFadeImage().color = color;
         }
         
         public void InitMaskSystem(IUnmaskServiceView unmaskService, float fade)
         {
             unmaskService.Init(_view.GetTutorialFadeImage(), Color.black, fade);
         }
-        
-        public void OpenTutorialFade()
-        {
-            _view.SetTutorialFadeImageStatus(true);
-            _view.SetTutorialFadeAlpha(0f);
-        }
-        
-        public void CloseTutorialFade(float duration)
-        {
-            _view.AnimateTutorialFade(0f, duration);
-            _view.SetTutorialFadeImageStatus(false);
-        }
     }
 
     public interface IFadePanelController
     {
-        void Initialize();
         void SetFadeImageStatus(bool status);
-        Image GetFadeImage();
+        void SetTutorialFadeImageStatus(bool status);
         void SetFadeImageAlpha(float alpha);
+        void SetTutorialFadeImageAlpha(float alpha);
         void InitMaskSystem(IUnmaskServiceView unmaskService, float fade);
-        void OpenTutorialFade();
-        void CloseTutorialFade(float duration);
-        void SetNonGlowFadeImageStatus(bool status);
+        Sequence AnimateFade(float finalAlpha, float duration);
+        void AnimateTutorialFade(float finalAlpha, float duration);
     }
 }

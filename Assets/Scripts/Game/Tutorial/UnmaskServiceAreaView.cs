@@ -24,13 +24,15 @@ namespace Scripts
         
         public void InstantiateTutorialFade()
         {
-            _fadePanelController.OpenTutorialFade();
+            _fadePanelController.SetTutorialFadeImageStatus(true);
+            _fadePanelController.SetTutorialFadeImageAlpha(0f);
             CreateMaskSystem(_fadeDuration);
         }
 
         public void CloseTutorialFade()
         {
-            _fadePanelController.CloseTutorialFade(_fadeDuration);
+            _fadePanelController.AnimateTutorialFade(0f, _fadeDuration);
+            _fadePanelController.SetTutorialFadeImageStatus(false);
         }
         
         private void CreateMaskSystem(float duration)

@@ -144,7 +144,7 @@ namespace Scripts
 
         private void InitializeFadePanelController()
         {
-            _fadePanelController.Initialize();
+            _fadePanelController.SetFadeImageStatus(false);
         }
         
         private void InitializeUnmaskServiceAreaView()

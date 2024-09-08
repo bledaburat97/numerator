@@ -7,26 +7,45 @@ namespace Scripts
     public class CircleProgressBarController : ICircleProgressBarController
     {
         private ICircleProgressBarView _view;
-        private IGlowingCircleProgressBarView _glowingView;
         private int _currentStarCount;
         private List<IStarImageView> _starFrameViewList;
         private List<IStarImageView> _glowingStarImageViewList;
         private IHapticController _hapticController;
-        public void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker, IHapticController hapticController)
+        private float _currentPercentage;
+        public void Initialize(ICircleProgressBarView view, ILevelTracker levelTracker, IHapticController hapticController)
         {
             _view = view;
-            _glowingView = glowingView;
-            _view.Init(new StarImageViewFactory());
-            _glowingView.Init(new StarImageViewFactory());
+            SetPercentageOfCircle(0f);
             _starFrameViewList = new List<IStarImageView>();
             _glowingStarImageViewList = new List<IStarImageView>();
             _currentStarCount = levelTracker.GetGiftStarCount();
             _hapticController = hapticController;
             CreateStarFrames();
-            _view.SetLocalPosition(new Vector2(0,510f));
-            _glowingView.SetLocalPosition(new Vector2(0,510f));
+            SetLocalPositionOfCircle(new Vector2(0,510f));
+        }
+
+        private void SetLocalPositionOfCircle(Vector2 localPosition)
+        {
+            _view.GetRectTransform().localPosition = localPosition;
         }
         
+        private void SetPercentageOfCircle(float targetPercentage)
+        {
+            _currentPercentage = targetPercentage;
+            _view.GetImage().fillAmount = targetPercentage;
+        }
+
+        private Tween GetProgressTween(float targetPercentage, float duration)
+        {
+            return DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
+                .Pause().SetEase(Ease.OutQuad)
+                .OnUpdate(() => { _view.GetImage().fillAmount = _currentPercentage; })
+                .OnComplete(() =>
+                {
+                    _currentPercentage = targetPercentage;
+                });
+        }
+
         private void CreateStarFrames()
         {
             for (int i = 0; i < ConstantValues.NUM_OF_STARS_FOR_WILD; i++)
@@ -38,7 +57,7 @@ namespace Scripts
                 float x = radius * Mathf.Cos(radians);
                 float y = radius * Mathf.Sin(radians);
                 
-                IStarImageView starImageView = _view.CreateStarImage();
+                IStarImageView starImageView = _view.CreateStarImage(new StarImageViewFactory());
                 starImageView.SetLocalPosition(new Vector3(x, y, 0f));
                 starImageView.SetLocalScale(Vector3.one);
                 starImageView.SetSize(new Vector2(25f, 25f));
@@ -63,7 +82,7 @@ namespace Scripts
             
             for (int i = 0; i < _currentStarCount; i++)
             {
-                IStarImageView glowingStarImageView = _glowingView.CreateStarImage();
+                IStarImageView glowingStarImageView = _view.CreateStarImage(new StarImageViewFactory());
                 glowingStarImageView.SetLocalPosition(_starFrameViewList[i].GetRectTransform().localPosition);
                 glowingStarImageView.SetLocalScale(Vector3.one);
                 glowingStarImageView.SetSize(new Vector2(25f, 25f));
@@ -73,32 +92,32 @@ namespace Scripts
 
             if (_currentStarCount >= 2)
             {
-                _view.SetProgress((float)(_currentStarCount - 1) / ConstantValues.NUM_OF_STARS_FOR_WILD);
+                SetPercentageOfCircle((float)(_currentStarCount - 1) / ConstantValues.NUM_OF_STARS_FOR_WILD);
             }
             else
             {
-                _view.SetProgress(0f);
+                SetPercentageOfCircle(0f);
             }
         }
 
-        public Sequence AddNewStars(List<IStarImageView> newStars, int numOfBlueStars)
+        public Sequence AddNewStars(StarImageView[] newStars, int numOfBlueStars, int earnedStarCount)
         {
             return DOTween.Sequence()
-                .Append(GetNewStarAnimation(newStars.Count >= 1 && numOfBlueStars > 2 ? newStars[0] : null))
-                    .Append(GetNewStarAnimation(newStars.Count >= 2 && numOfBlueStars > 1 ? newStars[1] : null))
-                    .Append(GetNewStarAnimation(newStars.Count == 3 && numOfBlueStars > 0 ? newStars[2] : null));
+                .Append(GetNewStarAnimation(earnedStarCount >= 1 && numOfBlueStars > 2 ? newStars[0] : null))
+                    .Append(GetNewStarAnimation(earnedStarCount >= 2 && numOfBlueStars > 1 ? newStars[1] : null))
+                    .Append(GetNewStarAnimation(earnedStarCount == 3 && numOfBlueStars > 0 ? newStars[2] : null));
         }
 
         public Sequence MoveCircleProgressBar(float duration)
         {
-            return DOTween.Sequence().Append(_view.GetRectTransform().DOLocalMoveY(250f, duration)).SetEase(Ease.InQuad)
-                .Join(_glowingView.GetRectTransform().DOLocalMoveY(250f, duration)).SetEase(Ease.InQuad);
+            return DOTween.Sequence().Append(_view.GetRectTransform().DOLocalMoveY(150f, duration))
+                .SetEase(Ease.InQuad);
         }
 
         private Sequence GetNewStarAnimation(IStarImageView newStar)
         {
             if (newStar == null) return DOTween.Sequence();
-            IStarImageView animatedStar = _glowingView.CreateStarImage();
+            IStarImageView animatedStar = _view.CreateStarImage(new StarImageViewFactory());
             
             animatedStar.SetParent(newStar.GetRectTransform());
             animatedStar.SetLocalPosition(Vector2.zero);
@@ -111,7 +130,7 @@ namespace Scripts
             float scaleRatio = targetInCircle.sizeDelta.x / animatedStarTransform.sizeDelta.x;
             
             return DOTween.Sequence().AppendCallback(() => animatedStar.SetLocalScale(Vector3.one))
-                .AppendCallback(() => animatedStar.SetParent(_glowingView.GetRectTransform()))
+                .AppendCallback(() => animatedStar.SetParent(_view.GetRectTransform()))
                 .AppendCallback(() => newStar.SetColor(true))
                 .Append(animatedStarTransform.DOScale(Vector3.one * scaleRatio, 0.5f)
                     .SetEase(animatedStar.GetCurvedAnimationPreset().scaleCurve))
@@ -121,11 +140,11 @@ namespace Scripts
                     .SetEase(animatedStar.GetCurvedAnimationPreset().verticalPositionCurve))
                 .Join(_currentStarCount > ConstantValues.NUM_OF_STARS_FOR_WILD
                     ? DOTween.Sequence()
-                    : _view.GetProgressTween(
+                    : GetProgressTween(
                         (float)((_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD) / ConstantValues.NUM_OF_STARS_FOR_WILD, 0.5f))
                 .AppendCallback(() => _hapticController.Vibrate(HapticType.Success))
                 .Append(_currentStarCount == ConstantValues.NUM_OF_STARS_FOR_WILD
-                    ? _view.GetProgressTween(1f, 0.1f)
+                    ? GetProgressTween(1f, 0.1f)
                     : DOTween.Sequence());
         }
         
@@ -133,9 +152,9 @@ namespace Scripts
 
     public interface ICircleProgressBarController
     {
-        void Initialize(ICircleProgressBarView view, IGlowingCircleProgressBarView glowingView, ILevelTracker levelTracker, IHapticController hapticController);
+        void Initialize(ICircleProgressBarView view, ILevelTracker levelTracker, IHapticController hapticController);
         void CreateInitialStars();
-        Sequence AddNewStars(List<IStarImageView> newStars, int numOfBlueStars);
+        Sequence AddNewStars(StarImageView[] newStars, int numOfBlueStars, int earnedStarCount);
         int GetCurrentStarCount();
         Sequence MoveCircleProgressBar(float duration);
     }

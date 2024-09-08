@@ -45,7 +45,7 @@ namespace Scripts
         private void Animation()
         {
             DOTween.Sequence().AppendInterval(0.4f)
-                .Append(_fadePanelController.GetFadeImage().DOFade(1f, 0.5f));
+                .Append(_fadePanelController.AnimateFade(1f, 0.5f));
         }
     }
 
