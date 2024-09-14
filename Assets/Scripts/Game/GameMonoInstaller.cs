@@ -44,7 +44,7 @@ namespace Scripts
             Container.Bind<ITutorialAbilityManager>().To<TutorialAbilityManager>().AsSingle();
             Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView);
             Container.Bind<IGamePopupCreator>().To<GamePopupCreator>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<ICardItemLocator>().To<CardItemLocator>().AsSingle().WithArguments(canvas);
+            Container.Bind<ICardItemLocator>().To<CardItemLocator>().AsSingle();
             Container.Bind<ITargetNumberCreator>().To<TargetNumberCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IGameUIController>().To<GameUIController>().AsSingle()
                 .WithArguments(gameUI);

@@ -88,7 +88,7 @@ namespace Scripts
             });
             _unmaskServiceAreaView.CreateUnmaskCardItem(cardHolderPosition, _sizeOfInitialHolder);
             _unmaskServiceAreaView.CreateUnmaskCardItem(boardHolderPosition, _sizeOfBoardHolder);
-            _cardItemLocator.CardDragStartedEvent += StopDragAnimation;
+            _initialCardAreaController.OnCardDragStartedEvent += StopDragAnimation;
 
             if (!isReversed)
             {
@@ -118,7 +118,7 @@ namespace Scripts
             void CloseDragAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _cardItemLocator.CardDragStartedEvent -= StopDragAnimation;
+                _initialCardAreaController.OnCardDragStartedEvent -= StopDragAnimation;
                 if (!isReversed)
                 {
                     _cardItemLocator.CardReturnedToInitialEvent -= RestartDragAnimation;
@@ -144,7 +144,7 @@ namespace Scripts
             _tutorialMessagePopupView.SetText("You can click the card.");
             _initialCardAreaController.OnCardClickedEvent += CloseClickAnimation;
             
-            void CloseClickAnimation(object sender, int args)
+            void CloseClickAnimation(object sender, CardClickedEventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
                 _initialCardAreaController.OnCardClickedEvent -= CloseClickAnimation;

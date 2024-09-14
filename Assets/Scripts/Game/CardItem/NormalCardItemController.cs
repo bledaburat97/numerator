@@ -10,16 +10,15 @@ namespace Scripts
         private bool _isDragStart;
         private Action<int> _onDragStart;
         private Func<int, int> _onDragComplete;
-        private Action<int, int> _onPlaceByClick;
-        private Action<int> _onCardClicked;
-        private bool _isSelectable;
+        private Action<int, bool> _onCardClicked;
+        private bool _isLocked;
         private Camera _cam;
         private IHapticController _hapticController;
         private bool _isSelected;
         private bool _isAlreadySelected;
         private ITutorialAbilityManager _tutorialAbilityManager;
         private IBoardAreaController _boardAreaController;
-        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaController boardAreaController)
+        public void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaController boardAreaController, Action<int> onDragStart)
         {
             _view = cardItemView;
             _cam = cam;
@@ -34,10 +33,9 @@ namespace Scripts
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(OnPointerUp);
             _view.SetSize(cardItemData.parent.sizeDelta);
-            SetOnDragStart(cardItemLocator.OnDragStart);
+            SetOnDragStart(onDragStart);
             SetOnDragContinue(cardItemLocator.OnDragContinue);
             SetOnDragComplete(cardItemLocator.OnDragComplete);
-            SetOnPlaceByClick(cardItemLocator.PlaceCardByClick);
             SetOnCardClicked(_cardItemData.onCardClicked);
             CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[_cardItemData.cardItemIndex];
             SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)cardItemInfo.probabilityType]);
@@ -59,7 +57,7 @@ namespace Scripts
             return _view;
         }
 
-        private void SetOnCardClicked(Action<int> action)
+        private void SetOnCardClicked(Action<int, bool> action)
         {
             _onCardClicked += action;
         }
@@ -72,11 +70,6 @@ namespace Scripts
         private void SetOnDragComplete(Func<int, int> func)
         {
             _onDragComplete += func;
-        }
-
-        private void SetOnPlaceByClick(Action<int, int> action)
-        {
-            _onPlaceByClick += action;
         }
 
         private void OnDrag(PointerEventData data)
@@ -111,18 +104,18 @@ namespace Scripts
         {
             if (!_isDragStart)
             {
-                if (_isSelectable && _tutorialAbilityManager.IsCardSelectable(_cardItemData.cardItemIndex))
+                if (_tutorialAbilityManager.IsCardSelectable(_cardItemData.cardItemIndex))
                 {
                     if (!_isSelected)
                     {
 
                         _hapticController.Vibrate(HapticType.ButtonClick);
                         _isSelected = true;
-                        _onCardClicked.Invoke(_cardItemData.cardItemIndex);
+                        _onCardClicked.Invoke(_cardItemData.cardItemIndex, _isLocked);
                     }
                     else
                     {
-                        _onCardClicked.Invoke(-1);
+                        _onCardClicked.Invoke(-1, _isLocked);
                     }
                 }
             }
@@ -153,7 +146,6 @@ namespace Scripts
         public void MoveCardByClick(int boardCardHolderIndex)
         {
             _onDragStart.Invoke(_cardItemData.cardItemIndex);
-            _onPlaceByClick(_cardItemData.cardItemIndex, boardCardHolderIndex);
             RectTransform cardHolderTransform = _boardAreaController.GetRectTransformOfBoardHolder(boardCardHolderIndex);
             _view.SetParent(_cardItemData.tempParent);
             _view.InitLocalScale();
@@ -186,7 +178,7 @@ namespace Scripts
         private void SetLockStatus(bool isLocked)
         {
             _view.SetLockImageStatus(isLocked);
-            _isSelectable = !isLocked;
+            _isLocked = isLocked;
         }
 
         public void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
@@ -208,7 +200,7 @@ namespace Scripts
 
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaController boardAreaController);
+        void Initialize(INormalCardItemView cardItemView, CardItemData cardItemData, ICardItemLocator cardItemLocator, Camera cam, ICardItemInfoManager cardItemInfoManager, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaController boardAreaController, Action<int> onDragStart);
         void ResetPosition();
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Game;
 using UnityEngine;
 using Zenject;
 
@@ -7,6 +8,8 @@ namespace Scripts
 {
     public class ResultManager : IResultManager
     {
+        [Inject] private IGameInitializer _gameInitializer;
+        [Inject] private IBoardAreaController _boardAreaController;
         private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
         private int _numOfBoardHolders;
@@ -17,6 +20,7 @@ namespace Scripts
             _numOfBoardHolders = levelDataCreator.GetLevelData().NumOfBoardHolders;
             _targetCards = targetNumberCreator.GetTargetCardsList();
             _triedCardsList = levelTracker.GetLevelSaveData().TriedCardsList;
+            _gameInitializer.CheckFinalNumbers += CheckFinalCards;
             foreach (List<int> triedCards in _triedCardsList)
             {
                 CalculatePositionCounts(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
@@ -52,8 +56,10 @@ namespace Scripts
             }
         }
 
-        public void CheckFinalCards(List<int> finalCards)
+        private void CheckFinalCards(object sender, EventArgs args)
         {
+            if (_boardAreaController.GetEmptyBoardHolderIndexList().Count != 0) return;
+            List<int> finalCards = _boardAreaController.GetFinalNumbers();
             if (finalCards.Count != _targetCards.Count)
             {
                 Debug.LogError("Final number size and target number size are not equal.");
@@ -109,6 +115,13 @@ namespace Scripts
         {
             return _targetCards;
         }
+
+        private struct CardsAndResult
+        {
+            public List<int> triedCards;
+            public int correctCount;
+            public int wrongCount;
+        }
     }
     
     public class NumberGuessedEventArgs : EventArgs
@@ -122,7 +135,6 @@ namespace Scripts
     {
         void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
         int GetTargetCardAtIndex(int index);
-        void CheckFinalCards(List<int> finalCards);
         event EventHandler<ResultBlockModel> ResultBlockAddition;
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         List<List<int>> GetTriedCardsList();

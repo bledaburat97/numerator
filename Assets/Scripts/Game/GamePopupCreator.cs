@@ -30,6 +30,7 @@ namespace Scripts
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private IGameInitializer _gameInitializer;
+        [Inject] private IResultManager _resultManager;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -81,7 +82,7 @@ namespace Scripts
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? _gameSaveService.Save : null;
             _deleteSaveAction += _gameSaveService.DeleteSave;
             
-            _powerUpMessageController = new PowerUpMessageController(_unmaskServiceAreaView, powerUpMessagePopupView, _cardItemLocator, _initialCardAreaController, _hapticController, _boardAreaController);
+            _powerUpMessageController = new PowerUpMessageController(_unmaskServiceAreaView, powerUpMessagePopupView, _cardItemLocator, _initialCardAreaController, _hapticController, _boardAreaController, _resultManager);
             if (_levelTracker.IsFirstLevelTutorial())
             {
                 _tutorialAbilityManager.SetTutorialLevel(true);

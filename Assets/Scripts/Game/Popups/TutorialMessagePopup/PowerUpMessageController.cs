@@ -13,10 +13,11 @@ namespace Scripts
         private IInitialCardAreaController _initialCardAreaController;
         private IHapticController _hapticController;
         private IBoardAreaController _boardAreaController;
+        private IResultManager _resultManager;
         private bool _isOpen = false;
         private GameUIButtonType _powerUpType;
 
-        public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, PowerUpMessagePopupView powerUpMessagePopupView, ICardItemLocator cardItemLocator, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoardAreaController boardAreaController)
+        public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, PowerUpMessagePopupView powerUpMessagePopupView, ICardItemLocator cardItemLocator, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoardAreaController boardAreaController, IResultManager resultManager)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _powerUpMessagePopupView = powerUpMessagePopupView;
@@ -24,6 +25,7 @@ namespace Scripts
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
             _boardAreaController = boardAreaController;
+            _resultManager = resultManager;
         }
 
         public void SetPowerUpMessagePopup(GameUIButtonType powerUpType, BaseButtonControllerFactory baseButtonControllerFactory)
@@ -74,14 +76,8 @@ namespace Scripts
         
         public void StartBoardClickAnimation(ITutorialAbilityManager tutorialAbilityManager, ICardHolderModelCreator cardHolderModelCreator)
         {
-            List<int> clickableBoardIndexes = new List<int>();
-            for (int i = 0; i < _cardItemLocator.GetCardIndexesOnBoardHolders().Length; i++)
-            {
-                if (_cardItemLocator.GetCardIndexesOnBoardHolders()[i] == -1)
-                {
-                    clickableBoardIndexes.Add(i);
-                }
-            }
+            List<int> clickableBoardIndexes = _boardAreaController.GetEmptyBoardHolderIndexList();
+
             tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
             {
                 clickableBoardIndexes = clickableBoardIndexes,
@@ -95,11 +91,14 @@ namespace Scripts
             _boardAreaController.BoardHolderClickedEvent += OnBoardClicked;
         }
 
-        private void OnBoardClicked(object sender, int boardIndex)
+        private void OnBoardClicked(object sender, int boardHolderIndex)
         {
             _unmaskServiceAreaView.ClearAllUnmaskCardItems();
             _hapticController.Vibrate(HapticType.CardRelease);
-            LockedCardInfo lockedCardInfo = _cardItemLocator.OnRevealingPowerUpUsed(boardIndex);
+            int cardNumber = _resultManager.GetTargetCardAtIndex(boardHolderIndex);
+            int cardIndex = cardNumber - 1;
+            _boardAreaController.SetCardIndex(boardHolderIndex, cardIndex);
+            LockedCardInfo lockedCardInfo = new LockedCardInfo(){boardHolderIndex = boardHolderIndex, targetCardIndex = cardIndex};
             _initialCardAreaController.SetLockedCardController(lockedCardInfo);
             DeactivatePopup();
             _boardAreaController.BoardHolderClickedEvent -= OnBoardClicked;

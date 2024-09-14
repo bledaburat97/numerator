@@ -45,6 +45,7 @@ namespace Scripts
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
             InitializeGame();
+            InitializeCardItemLocator();
             InitializeStarProgressBar();
             InitializeLevelManager();
             InitializeCardHolderModelCreator();
@@ -92,6 +93,11 @@ namespace Scripts
         {
             _gameInitializer.Initialize();
         }
+
+        private void InitializeCardItemLocator()
+        {
+            _cardItemLocator.Initialize();
+        }
         
         private void InitializeStarProgressBar()
         {
@@ -113,14 +119,14 @@ namespace Scripts
         private void InitializeCardHolderModelCreator()
         {
             _cardHolderModelCreator.Initialize();
-            _cardHolderModelCreator.AddBoardCardHolderModelList(_levelDataCreator.GetLevelData().NumOfBoardHolders);
             int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? 0 : 0;
-            _cardHolderModelCreator.AddInitialCardHolderModelList(_levelDataCreator.GetLevelData().NumOfCards, numOfTotalWildCards > 0);
+            _cardHolderModelCreator.SetBoardCardHolderModelList(_levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _cardHolderModelCreator.SetInitialCardHolderModelList(_levelDataCreator.GetLevelData().NumOfCards, numOfTotalWildCards > 0);
         }
         
         private void InitializeBoardArea()
         {
-            _boardAreaController.Initialize();
+            _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders);
         }
 
         private void InitializeCardItemInfoManager()

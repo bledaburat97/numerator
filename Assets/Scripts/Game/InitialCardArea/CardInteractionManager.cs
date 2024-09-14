@@ -18,7 +18,7 @@ namespace Scripts
         public void Initialize()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked += OnInvisibleClicked;
-            _cardItemLocator.CardDragStartedEvent += RemoveSelection;
+            _initialCardAreaController.OnCardDragStartedEvent += RemoveSelection;
             _gameInitializer.CheckFinalNumbers += RemoveSelection;
             _gameInitializer.NotAbleToCheck += RemoveSelection;
             _gameInitializer.ResetNumbers += RemoveSelection;
@@ -46,15 +46,23 @@ namespace Scripts
             SetSelectedIndex(-1);
         }
 
-        private void OnCardClicked(object sender, int cardIndex)
+        private void OnCardClicked(object sender, CardClickedEventArgs args)
         {
             if (_isCardItemInfoPopupToggleOn)
             {
-                SetSelectedIndex(cardIndex);
+                if (!args.isLocked)
+                {
+                    SetSelectedIndex(args.cardIndex);
+                }
             }
             else
             {
-                _initialCardAreaController.TryMoveCardToBoard(cardIndex);
+                if (_boardAreaController.GetEmptyBoardHolderIndexList().Count > 0)
+                {
+                    int boardCardHolderIndex = _boardAreaController.GetEmptyBoardHolderIndexList()[0];
+                    _initialCardAreaController.TryMoveCardToBoard(args.cardIndex, boardCardHolderIndex);
+                    _boardAreaController.SetCardIndex(boardCardHolderIndex, args.cardIndex);
+                }
             }
         }
         
@@ -86,7 +94,7 @@ namespace Scripts
         public void Unsubscribe()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked -= OnInvisibleClicked;
-            _cardItemLocator.CardDragStartedEvent -= RemoveSelection;
+            _initialCardAreaController.OnCardDragStartedEvent -= RemoveSelection;
             _gameInitializer.CheckFinalNumbers -= RemoveSelection;
             _gameInitializer.NotAbleToCheck -= RemoveSelection;
             _gameInitializer.ResetNumbers -= RemoveSelection;

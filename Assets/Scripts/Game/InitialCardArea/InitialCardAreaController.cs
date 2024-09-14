@@ -23,7 +23,8 @@ namespace Scripts
         private IInitialCardAreaView _view;
         private List<IInitialCardHolderController> _normalCardHolderControllerList;
         private List<INormalCardItemController> _normalCardItemControllerList;
-        public event EventHandler<int> OnCardClickedEvent;
+        public event EventHandler<CardClickedEventArgs> OnCardClickedEvent;
+        public event EventHandler OnCardDragStartedEvent;
         public InitialCardAreaController(IInitialCardAreaView view)
         {
             _view = view;
@@ -68,9 +69,9 @@ namespace Scripts
             }
         }
 
-        private void OnCardClicked(int cardIndex)
+        private void OnCardClicked(int cardIndex, bool isLocked)
         {
-            OnCardClickedEvent?.Invoke(this, cardIndex);
+            OnCardClickedEvent?.Invoke(this, new CardClickedEventArgs(){cardIndex = cardIndex, isLocked = isLocked});
         }
         
         private void CreateCardItem(CardItemData cardItemData)
@@ -78,8 +79,14 @@ namespace Scripts
             NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
             INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
             INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-            normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController, _tutorialAbilityManager, _boardAreaController);
+            normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController, _tutorialAbilityManager, _boardAreaController, CardDragStartCallback);
             _normalCardItemControllerList.Add(normalCardItemController);
+        }
+
+        private void CardDragStartCallback(int cardIndex)
+        {
+            OnCardDragStartedEvent?.Invoke(this, EventArgs.Empty);
+            _boardAreaController.TryResetCardIndexOnBoard(cardIndex);
         }
         
         public void SetLockedCardController(LockedCardInfo lockedCardInfo)
@@ -115,23 +122,21 @@ namespace Scripts
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
-            _cardItemLocator.ResetBoard();
             foreach (INormalCardItemController cardItemController in _normalCardItemControllerList)
             {
                 cardItemController.ResetPosition();
             }
         }
         
-        public void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1)
+        public void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex)
         {
-            if(boardCardHolderIndex == -1) boardCardHolderIndex =  _cardItemLocator.GetEmptyBoardHolderIndex();
-            
             _normalCardItemControllerList[cardIndex].DeselectCard();
 
             if (cardIndex != -1 && boardCardHolderIndex != -1)
             {
                 _normalCardItemControllerList[cardIndex].MoveCardByClick(boardCardHolderIndex);
             }
+            
         }
         
         public Vector3 GetNormalCardHolderPositionAtIndex(int index)
@@ -163,7 +168,7 @@ namespace Scripts
     
     public interface IInitialCardAreaController
     {
-        event EventHandler<int> OnCardClickedEvent;
+        event EventHandler<CardClickedEventArgs> OnCardClickedEvent;
         void Initialize();
         void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1);
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
@@ -172,6 +177,13 @@ namespace Scripts
         IInvisibleClickHandler GetInvisibleClickHandler();
         void SetLockedCardController(LockedCardInfo lockedCardInfo);
         void Unsubscribe();
+        event EventHandler OnCardDragStartedEvent;
+    }
+    
+    public class CardClickedEventArgs : EventArgs
+    {
+        public int cardIndex;
+        public bool isLocked;
     }
     
     public class CardItemData
@@ -179,7 +191,7 @@ namespace Scripts
         public RectTransform parent;
         public RectTransform tempParent;
         public int cardItemIndex;
-        public Action<int> onCardClicked;
+        public Action<int, bool> onCardClicked;
         public int cardNumber;
     }
 }

@@ -14,8 +14,8 @@ namespace Scripts
             _boardCardHolderModelList = new List<CardHolderModel>();
             _initialCardHolderModelList = new List<CardHolderModel>();
         }
-
-        public void AddBoardCardHolderModelList(int numOfBoardCardHolders)
+        
+        public void SetBoardCardHolderModelList(int numOfBoardCardHolders)
         {
             Vector2[] localPositions = new Vector2[numOfBoardCardHolders];
             float spacing = ConstantValues.SPACING_BETWEEN_BOARD_CARDS;
@@ -35,7 +35,7 @@ namespace Scripts
             }
         }
 
-        public void AddInitialCardHolderModelList(int numOfNormalCards, bool wildCardExistence)
+        public void SetInitialCardHolderModelList(int numOfNormalCards, bool wildCardExistence)
         {
             const float maxNumOfCardInOneLine = 5;
             const float maxNumOfCardsInTotal = 10;
@@ -98,8 +98,8 @@ namespace Scripts
     public interface ICardHolderModelCreator
     {
         void Initialize();
-        void AddBoardCardHolderModelList(int numOfCardHolders);
-        void AddInitialCardHolderModelList(int numOfCardHolders, bool wildCardExistence);
+        void SetBoardCardHolderModelList(int numOfBoardCardHolders);
+        void SetInitialCardHolderModelList(int numOfCardHolders, bool wildCardExistence);
         List<CardHolderModel> GetCardHolderModelList(CardHolderType cardHolderType);
     }
 

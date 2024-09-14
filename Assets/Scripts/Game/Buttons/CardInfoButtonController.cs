@@ -14,6 +14,7 @@ namespace Scripts
             _view = view;
             _isCardInfoToggleOn = false;
             _cardInfoTogglePressed = cardInfoTogglePressed;
+            _isButtonClickable = true;
             _view.Init(ChangeCardInfoToggle);
             _view.SetCardInfoToggleStatus(_isCardInfoToggleOn, 0f);
         }
