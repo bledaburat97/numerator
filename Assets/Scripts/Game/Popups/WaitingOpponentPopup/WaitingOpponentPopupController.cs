@@ -11,8 +11,7 @@ namespace Scripts
             _view = view;
             _closeWaitingOpponentPopup = closeWaitingOpponentPopup;
             _view.Init();
-            IBaseButtonController closeButtonController = baseButtonControllerFactory.Create(_view.GetCloseButton());
-            closeButtonController.Initialize(OnCloseButtonClick);
+            IBaseButtonController closeButtonController = baseButtonControllerFactory.Create(_view.GetCloseButton(), OnCloseButtonClick);
         }
 
         private void OnCloseButtonClick()

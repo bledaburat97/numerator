@@ -18,8 +18,7 @@ namespace Scripts
         {
             lobbyMessagePopup.Init();
             IBaseButtonController closeButtonController =
-                _baseButtonControllerFactory.Create(lobbyMessagePopup.GetCloseButton());
-            closeButtonController.Initialize(() => SceneManager.LoadScene("Menu"));
+                _baseButtonControllerFactory.Create(lobbyMessagePopup.GetCloseButton(), () => SceneManager.LoadScene("Menu"));
             
             MultiplayerManager.Instance.OnFailedToJoinGame += OnFailedToJoinGame;
             PlayerLobby.Instance.OnCreateLobbyStarted += OnCreateLobbyStarted;

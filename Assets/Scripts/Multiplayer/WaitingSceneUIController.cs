@@ -21,12 +21,10 @@ namespace Scripts
             Lobby lobby = PlayerLobby.Instance.GetLobby();
             _view.SetLobbyNameText(lobby.Name);
             _view.SetLobbyCodeText(lobby.LobbyCode);
-            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
-            menuButtonController.Initialize(OnMenuButtonClick);
+            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton(), OnMenuButtonClick);
             menuButtonController.SetText("MENU");
 
-            IBaseButtonController readyButtonController = _baseButtonControllerFactory.Create(_view.GetReadyButton());
-            readyButtonController.Initialize(OnReadyButtonClick);
+            IBaseButtonController readyButtonController = _baseButtonControllerFactory.Create(_view.GetReadyButton(), OnReadyButtonClick);
             readyButtonController.SetText("READY");
         }
         

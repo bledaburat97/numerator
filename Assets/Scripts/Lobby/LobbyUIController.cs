@@ -18,22 +18,18 @@ namespace Scripts
         {
             _lobbyPopupCreator = lobbyPopupCreator;
             IBaseButtonController createLobbyButtonController =
-                _baseButtonControllerFactory.Create(_view.GetCreateLobbyButton());
-            createLobbyButtonController.Initialize(OnCreateLobbyButtonClick);
+                _baseButtonControllerFactory.Create(_view.GetCreateLobbyButton(), OnCreateLobbyButtonClick);
             createLobbyButtonController.SetText("CREATE LOBBY");
 
             IBaseButtonController quickJoinButtonController =
-                _baseButtonControllerFactory.Create(_view.GetQuickJoinButton());
-            quickJoinButtonController.Initialize(OnQuickJoinButtonClick);
+                _baseButtonControllerFactory.Create(_view.GetQuickJoinButton(), OnQuickJoinButtonClick);
             quickJoinButtonController.SetText("QUICK JOIN");
 
             IBaseButtonController joinWithCodeButtonController =
-                _baseButtonControllerFactory.Create(_view.GetJoinWithCodeButton());
-            joinWithCodeButtonController.Initialize(OnJoinWithCodeButtonClick);
+                _baseButtonControllerFactory.Create(_view.GetJoinWithCodeButton(), OnJoinWithCodeButtonClick);
             joinWithCodeButtonController.SetText("JOIN");
 
-            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton());
-            menuButtonController.Initialize(OnMenuButtonClick);
+            IBaseButtonController menuButtonController = _baseButtonControllerFactory.Create(_view.GetMenuButton(), OnMenuButtonClick);
             menuButtonController.SetText("MENU");
 
             _view.InitPlayerNameInputField(MultiplayerManager.Instance.GetPlayerName(), OnPlayerNameChanged);

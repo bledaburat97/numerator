@@ -8,16 +8,39 @@ namespace Scripts
     {
         [Inject] private IHapticController _hapticController;
         private IBaseButtonView _view;
-
-        public BaseButtonController(IBaseButtonView view)
+        private bool _isButtonClickable;
+        private Action _onClick;
+        public BaseButtonController(IBaseButtonView view, Action onClick)
         {
             _view = view;
+            _view.Init();
+            _onClick = onClick;
+            _isButtonClickable = true;
+            _view.SetOnPointerDownCallBack(OnPointerDown);
+            _view.SetOnPointerUpCallBack(OnPointerUp);
         }
 
-        public void Initialize(Action onClick)
+        public void SetButtonClickable(bool isClickable)
         {
-            onClick += () => _hapticController.Vibrate(HapticType.ButtonClick);
-            _view.Init(onClick);
+            _isButtonClickable = isClickable;
+        }
+
+        private void OnPointerDown()
+        {
+            if (_isButtonClickable)
+            {
+                _hapticController.Vibrate(HapticType.ButtonClick);
+                _onClick?.Invoke();
+                _view.SetButtonDown();
+            }
+        }
+        
+        private void OnPointerUp()
+        {
+            if (_isButtonClickable)
+            {
+                _view.SetButtonUp();
+            }
         }
 
         public void SetText(string text)
@@ -45,11 +68,6 @@ namespace Scripts
             _view.SetButtonStatus(status);
         }
 
-        public void SetButtonEnable(bool status)
-        {
-            _view.SetButtonEnable(status);
-        }
-
         public void SetColor(Color color)
         {
             _view.SetColorOfImage(color);
@@ -63,18 +81,17 @@ namespace Scripts
 
     public interface IBaseButtonController
     {
-        void Initialize(Action onClick);
         void SetText(string text);
         void SetLocalPosition(Vector2 localPos);
         void SetImageStatus(bool status);
         void SetTextStatus(bool status);
         void SetButtonStatus(bool status);
-        void SetButtonEnable(bool status);
         void SetColor(Color color);
         IBaseButtonView GetView();
+        void SetButtonClickable(bool isClickable);
     }
     
-    public class BaseButtonControllerFactory : PlaceholderFactory<IBaseButtonView, IBaseButtonController>
+    public class BaseButtonControllerFactory : PlaceholderFactory<IBaseButtonView, Action, IBaseButtonController>
     {
             
     }

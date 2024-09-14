@@ -5,7 +5,7 @@ namespace Scripts
     [CreateAssetMenu()]
     public class PowerUpModel : ScriptableObject
     {
-        public PowerUpType type;
+        public GameUIButtonType type;
         public Sprite sprite;
     }
 }

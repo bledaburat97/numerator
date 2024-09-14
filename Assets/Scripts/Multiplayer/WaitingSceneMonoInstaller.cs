@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -11,7 +12,7 @@ namespace Scripts
 
         public override void InstallBindings()
         {
-            Container.BindFactory<IBaseButtonView, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
+            Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IWaitingSceneUIController>().To<WaitingSceneUIController>().AsSingle()
                 .WithArguments(waitingSceneUI);

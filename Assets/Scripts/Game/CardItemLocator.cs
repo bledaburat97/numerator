@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Game;
 using UnityEngine;
 using Zenject;
 
@@ -10,7 +11,7 @@ namespace Scripts
         [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
         [Inject] private IResultManager _resultManager;
         [Inject] private ILevelDataCreator _levelDataCreator;
-        [Inject] private IGameUIController _gameUIController;
+        [Inject] private IGameInitializer _gameInitializer;
 
         private int[] _cardIndexesOnBoardHolders;
         private int _activeCardIndex;
@@ -38,7 +39,7 @@ namespace Scripts
                 _cardIndexesOnBoardHolders[i] = -1;
             }
 
-            _boardAreaManager = new BoardAreaManager(_levelDataCreator, _resultManager, _gameUIController);
+            _boardAreaManager = new BoardAreaManager(_levelDataCreator, _resultManager, _gameInitializer);
             _activeCardIndex = -1;
             _probableBoardHolderIndex = -1;
         }

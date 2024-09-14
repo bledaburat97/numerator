@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Linq;
+using Game;
+
 namespace Scripts
 {
     public class BoardAreaManager : IBoardAreaManager
     {
         private int[] _numbersList;
         private IResultManager _resultManager;
-        public BoardAreaManager(ILevelDataCreator levelDataCreator, IResultManager resultManager, IGameUIController gameUIController)
+        public BoardAreaManager(ILevelDataCreator levelDataCreator, IResultManager resultManager, IGameInitializer gameInitializer)
         {
             _numbersList = new int[levelDataCreator.GetLevelData().NumOfBoardHolders];
             _resultManager = resultManager;
-            gameUIController.CheckFinalNumbers += CheckFinalNumbers;
+            gameInitializer.CheckFinalNumbers += CheckFinalNumbers;
         }
 
         public void SetCardNumber(int index, int numberOfCard)

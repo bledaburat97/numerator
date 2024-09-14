@@ -125,19 +125,17 @@ namespace Scripts
             RectTransform cardInfoButtonRectTransform = _gameUIController.GetCardInfoButtonRectTransform();
             Vector2 position = cardInfoButtonRectTransform.position;
             Vector2 size = new Vector2(cardInfoButtonRectTransform.rect.width, cardInfoButtonRectTransform.rect.height);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                isCardInfoButtonActive = true
-            });
+            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility());
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the number info button. It will help you to play.");
-            _gameUIController.CardInfoToggleChanged += CloseClickButtonAnimation;
-            
+            _gameInitializer.CardInfoToggleChanged += CloseClickButtonAnimation;
+            _gameUIController.SetAllButtonsUnclickable();
+            _gameUIController.SetButtonClickable(true, GameUIButtonType.CardInfo);
             void CloseClickButtonAnimation(object sender, bool args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _gameUIController.CardInfoToggleChanged -= CloseClickButtonAnimation;
+                _gameInitializer.CardInfoToggleChanged -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }

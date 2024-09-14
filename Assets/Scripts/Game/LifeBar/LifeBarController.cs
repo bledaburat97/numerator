@@ -26,7 +26,7 @@ namespace Scripts
         
         public void Initialize(ILevelDataCreator levelDataCreator, ILevelTracker levelTracker)
         {
-            _view.Init(new BoundaryViewFactory());
+            _view.Init();
             _maxNumOfTries = levelDataCreator.GetLevelData().MaxNumOfTries;
             _blueStarCount = levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
             _boundaryControllerList = new List<IBoundaryController>();

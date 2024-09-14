@@ -10,7 +10,8 @@ namespace Scripts
 
         public void Init(Action onClick)
         {
-            baseButton.Init(onClick);
+            baseButton.Init();
+            baseButton.SetOnPointerDownCallBack(onClick);
         }
         
         public void SetAlpha(float alpha)

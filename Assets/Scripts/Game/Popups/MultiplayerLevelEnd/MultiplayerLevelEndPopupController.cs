@@ -16,12 +16,10 @@ namespace Scripts
             _userReady = userReady;
             _fadePanelController = fadePanelController;
             IBaseButtonController playAgainButtonController =
-                baseButtonControllerFactory.Create(_view.GetPlayAgainButton());
-            playAgainButtonController.Initialize(() => OnPlayAgainButtonClick(openWaitingOpponentPopup));
+                baseButtonControllerFactory.Create(_view.GetPlayAgainButton(), () => OnPlayAgainButtonClick(openWaitingOpponentPopup));
             playAgainButtonController.SetText("PLAY AGAIN");
 
-            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButton());
-            menuButtonController.Initialize(OnMenuButtonClick);
+            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButton(), OnMenuButtonClick);
             menuButtonController.SetText("MENU");
             _view.Init(isSuccess);
             Animation();

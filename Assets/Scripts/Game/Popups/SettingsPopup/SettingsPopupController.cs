@@ -15,30 +15,26 @@ namespace Scripts
             _levelTracker = levelTracker;
             _view.Init();
             IBaseButtonController closeButtonController =
-                baseButtonControllerFactory.Create(_view.GetCloseButton());
-            closeButtonController.Initialize(() => OnCloseButtonClick(onCloseAction));
-
-            IBaseButtonController retryButtonController = baseButtonControllerFactory.Create(_view.GetRetryButton());
-            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButton());
+                baseButtonControllerFactory.Create(_view.GetCloseButton(), () => OnCloseButtonClick(onCloseAction));
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                retryButtonController.Initialize(() => OnRetryButtonClick(deleteSaveAction));
+                IBaseButtonController retryButtonController = baseButtonControllerFactory.Create(_view.GetRetryButton(), () => OnRetryButtonClick(deleteSaveAction));
                 retryButtonController.SetText("RETRY");
                 retryButtonController.SetLocalPosition(new Vector2(0, 30f));
                 
-                menuButtonController.Initialize(() => OnMenuButtonClick(saveGameAction));
+                IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButton(), () => OnMenuButtonClick(saveGameAction));
+
                 menuButtonController.SetText("MENU");
                 menuButtonController.SetLocalPosition(new Vector2(0,-60f));
             }
 
             else if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
-                menuButtonController.Initialize(() => OnMenuButtonClick(null));
+                IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButton(), () => OnMenuButtonClick(null));
                 menuButtonController.SetText("MENU");
                 menuButtonController.SetLocalPosition(new Vector2(0,-10f));
                 
-                retryButtonController.SetButtonStatus(false);
             }
         }
 

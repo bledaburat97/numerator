@@ -6,7 +6,8 @@ namespace Scripts
 {
     public class GameUIView : MonoBehaviour, IGameUIView
     {
-        [SerializeField] private TMP_Text levelIdText;
+        [SerializeField] private TMP_Text userText;
+        [SerializeField] private TMP_Text opponentText;
         [SerializeField] private RectTransform scrollAreaRectTransform;
         [SerializeField] private BaseButtonView checkButton;
         [SerializeField] private BaseButtonView resetButton;
@@ -16,28 +17,30 @@ namespace Scripts
         [SerializeField] private PowerUpButtonView lifePowerUpButton;
         [SerializeField] private PowerUpButtonView hintPowerUpButton;
         [SerializeField] private List<PowerUpModel> powerUpModels;
+        [SerializeField] private GameObject opponentInfo;
 
-        public void Init()
+        public void SetImagesOfPowerUpButtons()
         {
             revealingPowerUpButton.SetImage(powerUpModels[0].sprite);
             lifePowerUpButton.SetImage(powerUpModels[1].sprite);
             hintPowerUpButton.SetImage(powerUpModels[2].sprite);
         }
         
-        public void SetLevelId(string text)
+        public void SetUserText(string text)
         {
-            levelIdText.SetText(text);
+            userText.gameObject.SetActive(true);
+            userText.SetText(text);
+        }
+        
+        public void SetOpponentText(string text)
+        {
+            opponentText.gameObject.SetActive(true);
+            opponentText.SetText(text);
         }
 
-        public void DisableLevelId()
+        public void SetOpponentInfoStatus(bool status)
         {
-            levelIdText.gameObject.SetActive(false);
-        }
-
-        public void IncreaseSizeAndPositionOfScrollArea(float sizeOfResultBlock)
-        {
-            scrollAreaRectTransform.localPosition = new Vector2(0, scrollAreaRectTransform.localPosition.y + sizeOfResultBlock / 2);
-            scrollAreaRectTransform.sizeDelta = new Vector2(scrollAreaRectTransform.sizeDelta.x,scrollAreaRectTransform.sizeDelta.y + sizeOfResultBlock);
+            opponentInfo.SetActive(status);
         }
 
         public IBaseButtonView GetCheckButton()
@@ -83,10 +86,9 @@ namespace Scripts
 
     public interface IGameUIView
     {
-        void Init();
-        void SetLevelId(string text);
-        void DisableLevelId();
-        void IncreaseSizeAndPositionOfScrollArea(float sizeOfResultBlock);
+        void SetImagesOfPowerUpButtons();
+        void SetUserText(string text);
+        void SetOpponentText(string text);
         IBaseButtonView GetCheckButton();
         IBaseButtonView GetResetButton();
         IBaseButtonView GetSettingsButton();
@@ -95,5 +97,6 @@ namespace Scripts
         IBaseButtonView GetLifePowerUpButton();
         IBaseButtonView GetHintPowerUpButton();
         PowerUpModel GetPowerUpModel(int index);
+        void SetOpponentInfoStatus(bool status);
     }
 }

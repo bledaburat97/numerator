@@ -11,7 +11,6 @@ namespace Game
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private IUserReady _userReady;
         [Inject] private ILevelManager _levelManager;
-        [Inject] private IGameUIController _gameUIController;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
 
         private NetworkVariable<bool> _isGameEnd = new NetworkVariable<bool>(false);
@@ -25,7 +24,6 @@ namespace Game
         {
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             _levelManager.MultiplayerLevelEndEvent += OnMultiplayerLevelEnd;
-            _gameUIController.NotAbleToCheck += ((sender, args) => _gamePopupCreator.CreateNotAbleToMovePopup());
             _turnOrderDeterminer.LocalTurnEvent += ChangeLocalTurn;
             _isLocalReady = false;
             _playerSuccessDictionary = new Dictionary<ulong, bool>();

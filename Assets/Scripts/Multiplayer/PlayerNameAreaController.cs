@@ -49,14 +49,13 @@ namespace Scripts
                         IPlayerNameView playerNameView = _view.CreatePlayerNameView();
                         playerNameView.Init(playerIndex, OnKickButtonClicked);
 
+                        int currentPlayerIndex = playerIndex;
                         IBaseButtonController kickButtonController =
-                            _baseButtonControllerFactory.Create(playerNameView.GetKickButton());
+                            _baseButtonControllerFactory.Create(playerNameView.GetKickButton(), () => OnKickButtonClicked(currentPlayerIndex));
                         
                         kickButtonController.SetButtonStatus(false);
-                        int currentPlayerIndex = playerIndex;
                         if (currentPlayerIndex != 0) //TODO: may check with host id instead of 0.
                         {
-                            kickButtonController.Initialize(() => OnKickButtonClicked(currentPlayerIndex));
                             kickButtonController.SetButtonStatus(NetworkManager.Singleton.IsServer);
                         }
                         

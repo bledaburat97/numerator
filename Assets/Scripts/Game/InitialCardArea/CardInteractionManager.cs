@@ -1,4 +1,5 @@
 ﻿using System;
+using Game;
 using Zenject;
 
 namespace Scripts
@@ -6,7 +7,7 @@ namespace Scripts
     public class CardInteractionManager : ICardInteractionManager
     {
         [Inject] private ICardItemLocator _cardItemLocator;
-        [Inject] private IGameUIController _gameUIController;
+        [Inject] private IGameInitializer _gameInitializer;
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
@@ -18,10 +19,10 @@ namespace Scripts
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked += OnInvisibleClicked;
             _cardItemLocator.CardDragStartedEvent += RemoveSelection;
-            _gameUIController.CheckFinalNumbers += RemoveSelection;
-            _gameUIController.NotAbleToCheck += RemoveSelection;
-            _gameUIController.ResetNumbers += RemoveSelection;
-            _gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
+            _gameInitializer.CheckFinalNumbers += RemoveSelection;
+            _gameInitializer.NotAbleToCheck += RemoveSelection;
+            _gameInitializer.ResetNumbers += RemoveSelection;
+            _gameInitializer.CardInfoToggleChanged += OnCardInfoToggleChanged;
             _boardAreaController.BoardHolderClickedEvent += MoveSelectedCard;
             _initialCardAreaController.OnCardClickedEvent += OnCardClicked;
         }
@@ -86,10 +87,10 @@ namespace Scripts
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked -= OnInvisibleClicked;
             _cardItemLocator.CardDragStartedEvent -= RemoveSelection;
-            _gameUIController.CheckFinalNumbers -= RemoveSelection;
-            _gameUIController.NotAbleToCheck -= RemoveSelection;
-            _gameUIController.ResetNumbers -= RemoveSelection;
-            _gameUIController.CardInfoToggleChanged -= OnCardInfoToggleChanged;
+            _gameInitializer.CheckFinalNumbers -= RemoveSelection;
+            _gameInitializer.NotAbleToCheck -= RemoveSelection;
+            _gameInitializer.ResetNumbers -= RemoveSelection;
+            _gameInitializer.CardInfoToggleChanged -= OnCardInfoToggleChanged;
             _boardAreaController.BoardHolderClickedEvent -= MoveSelectedCard;
             _initialCardAreaController.OnCardClickedEvent -= OnCardClicked;
         }

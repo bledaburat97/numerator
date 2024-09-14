@@ -67,24 +67,6 @@ namespace Scripts
             if (!_isTutorialLevel) return true;
             return _currentTutorialAbility.pressableProbabilityButtonIndex == probabilityButtonIndex;
         }
-        
-        public bool IsCheckButtonClickable()
-        {
-            if (!_isTutorialLevel) return true;
-            return _currentTutorialAbility.isCheckButtonActive;
-        }
-        
-        public bool IsResetButtonClickable()
-        {
-            if (!_isTutorialLevel) return true;
-            return _currentTutorialAbility.isResetButtonActive;
-        }
-        
-        public bool IsCardInfoButtonClickable()
-        {
-            if (!_isTutorialLevel) return true;
-            return _currentTutorialAbility.isCardInfoButtonActive;
-        }
 
         public bool IsSettingsButtonClickable()
         {
@@ -104,10 +86,6 @@ namespace Scripts
         bool IsBoardIndexDraggable(int boardIndex);
         bool IsHolderIndicatorButtonClickable(int holderIndicatorButtonIndex);
         bool IsProbabilityButtonClickable(int probabilityButtonIndex);
-        bool IsCheckButtonClickable();
-        bool IsResetButtonClickable();
-        bool IsCardInfoButtonClickable();
-        bool IsSettingsButtonClickable();
     }
 
     public class TutorialAbility
@@ -115,9 +93,6 @@ namespace Scripts
         public int draggableBoardIndex { get; set; }
         public int draggableCardIndex { get; set; }
         public int selectableCardIndex{ get; set; }
-        public bool isCheckButtonActive{ get; set; }
-        public bool isResetButtonActive{ get; set; }
-        public bool isCardInfoButtonActive{ get; set; }
         public int pressableHolderButtonIndex{ get; set; }
         public int pressableProbabilityButtonIndex{ get; set; }
         public bool isSelectedCardIndexChangeable{ get; set; }
@@ -128,9 +103,6 @@ namespace Scripts
             draggableBoardIndex = -1;
             draggableCardIndex = -1;
             selectableCardIndex = -1;
-            isCheckButtonActive = false;
-            isResetButtonActive = false;
-            isCardInfoButtonActive = false;
             pressableHolderButtonIndex = -1;
             pressableProbabilityButtonIndex = -1;
             isSelectedCardIndexChangeable = true;

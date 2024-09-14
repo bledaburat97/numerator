@@ -10,20 +10,46 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private TMP_Text text;
-        [SerializeField] private Button button;
         [SerializeField] private Image outerBg;
         [SerializeField] private Image shadow;
         [SerializeField] private Image innerBg;
         [SerializeField] protected Image image;
         private Vector2 innerBgOffsetMin;
         private Vector2 innerBgOffsetMax;
+        private Action _onPointerDown;
+        private Action _onPointerUp;
 
-        public void Init(Action onClick)
+        public void Init()
         {
             transform.localScale = Vector3.one;
             innerBgOffsetMin = innerBg.rectTransform.offsetMin;
             innerBgOffsetMax = innerBg.rectTransform.offsetMax;
-            button.onClick.AddListener(() => onClick?.Invoke());
+        }
+
+        public void SetOnPointerDownCallBack(Action onPointerDown)
+        {
+            _onPointerDown = onPointerDown;
+        }
+        
+        public void SetOnPointerUpCallBack(Action onPointerUp)
+        {
+            _onPointerUp = onPointerUp;
+        }
+
+        public void SetButtonDown()
+        {
+            outerBg.enabled = false;
+            shadow.enabled = false;
+            innerBg.rectTransform.offsetMin = Vector2.zero;
+            innerBg.rectTransform.offsetMax = Vector2.zero;
+        }
+
+        public void SetButtonUp()
+        {
+            outerBg.enabled = true;
+            shadow.enabled = true;
+            innerBg.rectTransform.offsetMin = innerBgOffsetMin;
+            innerBg.rectTransform.offsetMax = innerBgOffsetMax;
         }
         
         public void SetText(string newText)
@@ -50,11 +76,6 @@ namespace Scripts
         {
             gameObject.SetActive(status);
         }
-
-        public void SetButtonEnable(bool status)
-        {
-            button.enabled = status;
-        }
         
         public void SetColorOfImage(Color color)
         {
@@ -64,18 +85,12 @@ namespace Scripts
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            outerBg.enabled = false;
-            shadow.enabled = false;
-            innerBg.rectTransform.offsetMin = Vector2.zero;
-            innerBg.rectTransform.offsetMax = Vector2.zero;
+            _onPointerDown?.Invoke();
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            outerBg.enabled = true;
-            shadow.enabled = true;
-            innerBg.rectTransform.offsetMin = innerBgOffsetMin;
-            innerBg.rectTransform.offsetMax = innerBgOffsetMax;
+            _onPointerUp?.Invoke();
         }
 
         public RectTransform GetRectTransform()
@@ -90,16 +105,19 @@ namespace Scripts
     
     public interface IBaseButtonView
     {
-        void Init(Action onClick);
+        void Init();
         void SetText(string newText);
         void SetLocalPosition(Vector2 localPos);
         void SetImageStatus(bool status);
         void SetTextStatus(bool status);
         void SetButtonStatus(bool status);
-        void SetButtonEnable(bool status);
         void SetColorOfImage(Color color);
         RectTransform GetRectTransform();
         RectTransform GetButtonRectTransform();
+        void SetOnPointerDownCallBack(Action onPointerDown);
+        void SetOnPointerUpCallBack(Action onPointerUp);
+        void SetButtonDown();
+        void SetButtonUp();
     }
     
 }

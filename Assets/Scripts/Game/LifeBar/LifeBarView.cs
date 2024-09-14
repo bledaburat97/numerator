@@ -10,13 +10,11 @@ namespace Scripts
         [SerializeField] private BoundaryView boundaryPrefab;
         [SerializeField] private SlicedFilledImage image;
         
-        private BoundaryViewFactory _boundaryViewFactory;
         private Tween _currentTween;
         private float _currentPercentage;
 
-        public void Init(BoundaryViewFactory boundaryViewFactory)
+        public void Init()
         {
-            _boundaryViewFactory = boundaryViewFactory;
             _currentPercentage = 1f;
             image.fillAmount = _currentPercentage;
         }
@@ -33,7 +31,7 @@ namespace Scripts
 
         public IBoundaryView CreateBoundaryView()
         {
-            return _boundaryViewFactory.Spawn(transform, boundaryPrefab);
+            return Instantiate(boundaryPrefab, transform);
         }
 
         public RectTransform GetBoundaryRectTransform()
@@ -57,7 +55,7 @@ namespace Scripts
 
     public interface ILifeBarView
     {
-        void Init(BoundaryViewFactory boundaryViewFactory);
+        void Init();
         RectTransform GetRectTransform();
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();

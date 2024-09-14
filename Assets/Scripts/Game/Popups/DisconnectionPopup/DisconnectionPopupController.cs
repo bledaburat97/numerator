@@ -11,8 +11,7 @@ namespace Scripts
         {
             _view = view;
             _view.Init();
-            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButtonView());
-            menuButtonController.Initialize(OnMenuButtonClick);
+            IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButtonView(), OnMenuButtonClick);
             menuButtonController.SetText("MENU");
         }
 

@@ -14,7 +14,7 @@ namespace Scripts
         private IHapticController _hapticController;
         private IBoardAreaController _boardAreaController;
         private bool _isOpen = false;
-        private PowerUpType _powerUpType;
+        private GameUIButtonType _powerUpType;
 
         public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, PowerUpMessagePopupView powerUpMessagePopupView, ICardItemLocator cardItemLocator, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoardAreaController boardAreaController)
         {
@@ -26,39 +26,33 @@ namespace Scripts
             _boardAreaController = boardAreaController;
         }
 
-        public void SetPowerUpMessagePopup(PowerUpModel powerUpModel, BaseButtonControllerFactory baseButtonControllerFactory)
+        public void SetPowerUpMessagePopup(GameUIButtonType powerUpType, BaseButtonControllerFactory baseButtonControllerFactory)
         {
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _powerUpMessagePopupView.gameObject.SetActive(true);
             _powerUpMessagePopupView.Init();
-            _powerUpMessagePopupView.SetSprite(powerUpModel.sprite);
-            switch (powerUpModel.type)
+            //_powerUpMessagePopupView.SetSprite(powerUpModel.sprite);
+            switch (powerUpType)
             {
-                case PowerUpType.Revealing:
+                case GameUIButtonType.RevealingPowerUp:
                     _powerUpMessagePopupView.SetSize(false);
                     _powerUpMessagePopupView.SetTitle("Revealing Power Up");
                     _powerUpMessagePopupView.SetText("Select the place you want to reveal.");
                     break;
-                case PowerUpType.Life:
+                case GameUIButtonType.LifePowerUp:
                     _powerUpMessagePopupView.SetSize(true);
                     _powerUpMessagePopupView.SetTitle("Extra Life Power Up");
                     _powerUpMessagePopupView.SetText("Press button to get 2 extra lives.");
-                    BaseButtonView lifeButtonView = _powerUpMessagePopupView.GetBaseButtonView();
-                    IBaseButtonController lifeButtonController = baseButtonControllerFactory.Create(lifeButtonView);
-                    lifeButtonController.Initialize(DeactivatePopup);
                     break;
-                case PowerUpType.Hint:
+                case GameUIButtonType.HintPowerUp:
                     _powerUpMessagePopupView.SetSize(true);
                     _powerUpMessagePopupView.SetTitle("Hint Power Up");
                     _powerUpMessagePopupView.SetText("Press button to get suggested number.");
-                    BaseButtonView hintButtonView = _powerUpMessagePopupView.GetBaseButtonView();
-                    IBaseButtonController hintButtonController = baseButtonControllerFactory.Create(hintButtonView);
-                    hintButtonController.Initialize(DeactivatePopup);
                     break;
             }
 
             _isOpen = true;
-            _powerUpType = powerUpModel.type;
+            _powerUpType = powerUpType;
         }
 
         public bool IsOpen()
@@ -66,7 +60,7 @@ namespace Scripts
             return _isOpen;
         }
 
-        public PowerUpType GetPowerUpType()
+        public GameUIButtonType GetPowerUpType()
         {
             return _powerUpType;
         }

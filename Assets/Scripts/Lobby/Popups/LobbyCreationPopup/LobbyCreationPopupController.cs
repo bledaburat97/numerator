@@ -15,16 +15,13 @@ namespace Scripts
             _levelTracker = levelTracker;
             _view.Init();
             _baseButtonControllerFactory = baseButtonControllerFactory;
-            IBaseButtonController closeButtonController = _baseButtonControllerFactory.Create(_view.GetCloseButton());
-            closeButtonController.Initialize(_view.Hide);
+            IBaseButtonController closeButtonController = _baseButtonControllerFactory.Create(_view.GetCloseButton(), _view.Hide);
 
-            IBaseButtonController publicButtonController = _baseButtonControllerFactory.Create(_view.GetPublicButton());
-            publicButtonController.Initialize(() => OnClickButton(false));
+            IBaseButtonController publicButtonController = _baseButtonControllerFactory.Create(_view.GetPublicButton(), () => OnClickButton(false));
             publicButtonController.SetText("PUBLIC");
 
             IBaseButtonController privateButtonController =
-                _baseButtonControllerFactory.Create(_view.GetPrivateButton());
-            privateButtonController.Initialize(() => OnClickButton(true));
+                _baseButtonControllerFactory.Create(_view.GetPrivateButton(), () => OnClickButton(true));
             privateButtonController.SetText("PRIVATE");
             
             CreateDifficultyButtons();
@@ -37,8 +34,7 @@ namespace Scripts
             {
                 int difficultyIndex = i;
                 IBaseButtonView difficultyButtonView = _view.GetDifficultyButtonViewByIndex(difficultyIndex);
-                IBaseButtonController difficultyButtonController = _baseButtonControllerFactory.Create(difficultyButtonView);
-                difficultyButtonController.Initialize(() => OnDifficultyButtonClicked(difficultyIndex));
+                IBaseButtonController difficultyButtonController = _baseButtonControllerFactory.Create(difficultyButtonView, () => OnDifficultyButtonClicked(difficultyIndex));
                 difficultyButtonController.SetImageStatus(difficultyIndex == (int)Difficulty.Hard);
                 _difficultyButtonControllers.Add(difficultyIndex, difficultyButtonController);
             }

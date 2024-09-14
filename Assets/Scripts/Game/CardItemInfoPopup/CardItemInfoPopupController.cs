@@ -77,8 +77,7 @@ namespace Scripts
             foreach (CardHolderModel boardCardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
             {
                 IBaseButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
-                IBaseButtonController cardHolderIndicatorButtonController = _baseButtonControllerFactory.Create(cardHolderIndicatorButtonView);
-                cardHolderIndicatorButtonController.Initialize(() => OnCardHolderIndicatorButtonClicked(boardCardHolderModel.index));
+                IBaseButtonController cardHolderIndicatorButtonController = _baseButtonControllerFactory.Create(cardHolderIndicatorButtonView, () => OnCardHolderIndicatorButtonClicked(boardCardHolderModel.index));
                 cardHolderIndicatorButtonController.SetText(ConstantValues.HOLDER_ID_LIST[boardCardHolderModel.index]);
                 cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(boardCardHolderModel.localPosition.x, 0));
                 _cardHolderIndicatorButtonControllers.Add(cardHolderIndicatorButtonController);
@@ -99,8 +98,7 @@ namespace Scripts
                 int probabilityIndex = i;
                 IBaseButtonView probabilityButtonView = _view.GetProbabilityButtonViewByIndex(i);
                 IBaseButtonController probabilityButtonController =
-                    _baseButtonControllerFactory.Create(probabilityButtonView);
-                probabilityButtonController.Initialize(() => OnProbabilityButtonClicked(probabilityIndex));
+                    _baseButtonControllerFactory.Create(probabilityButtonView, () => OnProbabilityButtonClicked(probabilityIndex));
                 probabilityButtonController.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[probabilityIndex]);
                 _probabilityButtonControllers.Add(probabilityIndex, probabilityButtonController);
             }

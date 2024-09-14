@@ -20,13 +20,11 @@ namespace Menu
             _levelTracker = levelTracker;
             activeLevelIdController.LevelSelectionChanged += OnLevelChange;
             
-            _singlePlayerButtonController = _baseButtonControllerFactory.Create(_view.GetSinglePlayerButton());
-            _singlePlayerButtonController.Initialize(OnSinglePlayerButtonClick);
+            _singlePlayerButtonController = _baseButtonControllerFactory.Create(_view.GetSinglePlayerButton(), OnSinglePlayerButtonClick);
             _singlePlayerButtonController.SetText(GetLevelText(activeLevelIdController.GetActiveLevelId(), activeLevelIdController.IsNewGame()));
 
             IBaseButtonController multiplayerButtonController =
-                _baseButtonControllerFactory.Create(_view.GetMultiplayerButton());
-            multiplayerButtonController.Initialize(OnMultiplayerButtonClick);
+                _baseButtonControllerFactory.Create(_view.GetMultiplayerButton(), OnMultiplayerButtonClick);
             multiplayerButtonController.SetText("MULTIPLAYER");
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using Game;
 using UnityEngine;
 using Zenject;
 
@@ -16,9 +17,9 @@ namespace Scripts
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private ILevelManager _levelManager;
         [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
-        [Inject] private IGameUIController _gameUIController;
+        [Inject] private IGameInitializer _gameInitializer;
         [Inject] private IBoardAreaController _boardAreaController;
-
+        
         private IInitialCardAreaView _view;
         private List<IInitialCardHolderController> _normalCardHolderControllerList;
         private List<INormalCardItemController> _normalCardItemControllerList;
@@ -33,7 +34,7 @@ namespace Scripts
             _normalCardHolderControllerList = new List<IInitialCardHolderController>();
             _normalCardItemControllerList = new List<INormalCardItemController>();
             _levelManager.CardsBackFlipped += BackFlipCards;
-            _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
+            _gameInitializer.ResetNumbers += ResetPositionsOfCardItems;
             _view.Init();
             CreateCardHolders();
             CreateCardItemsData();
@@ -156,7 +157,7 @@ namespace Scripts
         public void Unsubscribe()
         {
             _levelManager.CardsBackFlipped -= BackFlipCards;
-            _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
+            _gameInitializer.ResetNumbers -= ResetPositionsOfCardItems;
         }
     }
     

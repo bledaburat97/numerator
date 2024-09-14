@@ -1,4 +1,5 @@
 ﻿using System;
+using Game;
 using Unity.Netcode;
 using UnityEngine;
 using Zenject;
@@ -28,8 +29,8 @@ namespace Scripts
         [Inject] private IGameClockController _gameClockController;
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private IHapticController _hapticController;
-        [Inject] private IGameUIController _gameUIController;
         [Inject] private IUnmaskServiceAreaView _unmaskServiceAreaView;
+        [Inject] private IGameInitializer _gameInitializer;
         void Start()
         {
             _gameSaveService.Initialize(_levelTracker);
@@ -43,7 +44,7 @@ namespace Scripts
             InitializeResultManager();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
-            InitializeGameUI();
+            InitializeGame();
             InitializeStarProgressBar();
             InitializeLevelManager();
             InitializeCardHolderModelCreator();
@@ -87,9 +88,9 @@ namespace Scripts
             }
         }
         
-        private void InitializeGameUI()
+        private void InitializeGame()
         {
-            _gameUIController.Initialize();
+            _gameInitializer.Initialize();
         }
         
         private void InitializeStarProgressBar()
