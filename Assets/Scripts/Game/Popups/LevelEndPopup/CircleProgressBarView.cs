@@ -9,7 +9,6 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private Image circleImage;
         [SerializeField] private StarImageView starImagePrefab;
-        
         public IStarImageView CreateStarImage(StarImageViewFactory starImageViewFactory)
         {
             return starImageViewFactory.Spawn(circleImage.rectTransform, starImagePrefab);

@@ -19,7 +19,7 @@ namespace Scripts
         public static float POSSIBLE_HOLDER_INDICATOR_HEIGHT = 14f;
         public static List<string> HOLDER_ID_LIST = new List<string>(){ "A", "B", "C", "D",  "E" };
         public static float SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS = 10f;
-        public static float SIZE_OF_STARS_ON_LEVEL_SUCCESS = 70f;
+        public static float SIZE_OF_STARS_ON_LEVEL_SUCCESS = 60f;
         public static Color BOARD_CARD_HOLDER_COLOR = HexToColor("#D65865");
         public static Color INITIAL_CARD_HOLDER_COLOR = HexToColor("#6B6DCC");
         public static Color ABLE_TO_MOVE_TEXT_COLOR = HexToColor("#52C567");

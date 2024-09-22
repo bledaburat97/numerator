@@ -55,6 +55,60 @@ namespace Scripts
                 }
             }
         }
+        
+        private void CalculateEstimationPercent(List<CardsAndResult> cardsAndResultList, int numberOfCards, int numberOfBoardHolders)
+        {
+            List<List<int>> possibilities = new List<List<int>>();
+            for (int i = 0; i < numberOfBoardHolders; i++)
+            {
+                List<int> possibleCards = new List<int>();
+                for (int j = 0; j < numberOfCards; j++)
+                {
+                    possibleCards.Add(j);
+                }
+                possibilities.Add(possibleCards);
+            }
+
+            for (int i = 0; i < cardsAndResultList.Count; i++)
+            {
+                CardsAndResult cardsAndResult = cardsAndResultList[i];
+                if (cardsAndResult.wrongCount > 0 && cardsAndResult.correctCount == 0)
+                {
+                    for (int j = 0; j < cardsAndResult.triedCards.Count; j++)
+                    {
+                        possibilities[j].Remove(cardsAndResult.triedCards[j]);
+                    }
+                }
+                
+                else if (cardsAndResult.wrongCount == 0 && cardsAndResult.correctCount > 0)
+                {
+                    for (int j = 0; j < cardsAndResult.triedCards.Count; j++)
+                    {
+                        for (int k = 0; k < cardsAndResult.triedCards.Count; k++)
+                        {
+                            if (j != k)
+                            {
+                                possibilities[j].Remove(cardsAndResult.triedCards[k]);
+                            } 
+                        }
+                    }
+                }
+                
+                else if (cardsAndResult.wrongCount == 0 && cardsAndResult.correctCount == 0)
+                {
+                    for (int j = 0; j < cardsAndResult.triedCards.Count; j++)
+                    {
+                        for (int k = 0; k < cardsAndResult.triedCards.Count; k++)
+                        {
+                            possibilities[j].Remove(cardsAndResult.triedCards[k]);
+                        }
+                    }
+                }
+                
+                
+            }
+            
+        }
 
         private void CheckFinalCards(object sender, EventArgs args)
         {

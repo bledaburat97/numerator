@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using Zenject;
+/*
 namespace Scripts
 {
+    //Duties:
+    //kaç hak kaldığını tutacak
+    //LifeBarStarInfo listesi tutacak.
+    //maksimum hak sayısını tutacak.
+    /*
     public class LevelManager : ILevelManager
     {
+        [Inject] private ILevelFinishController _levelFinishController;
         private ILevelTracker _levelTracker;
         private int _maxNumOfTries;
         private int _remainingGuessCount;
@@ -13,6 +20,10 @@ namespace Scripts
         private ILifeBarController _lifeBarController;
         private List<int> _finalCardNumbers;
         private List<int> _targetCardNumbers;
+        
+        private List<int> _indexesContainsStar = new List<int>();
+        private int _blueStarCount;
+        
         public event EventHandler<LevelEndEventArgs> LevelEnd;
         public event EventHandler MultiplayerLevelEndEvent;
         public event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
@@ -59,17 +70,13 @@ namespace Scripts
                 {
                     _gameSaveService.DeleteSave();
                     _isGameOver = true;
-                    CardsBackFlipped.Invoke(this, new BackFlipCardsEventArgs()
+
+                    _levelFinishController.LevelFinish(new LevelFinishInfo()
                     {
-                        finalCardNumbers = _finalCardNumbers,
-                        targetCardNumbers = _targetCardNumbers,
-                        isGuessRight = true,
-                        onComplete = () => LevelEnd?.Invoke(this, new LevelEndEventArgs()
-                        {
-                            isLevelCompleted = true,
-                            levelTracker = _levelTracker,
-                            starCount = _numOfStars,
-                        })
+                        isSuccess = true,
+                        newRewardStarCount = 0,
+                        starCount = _numOfStars,
+                        targetNumbers = _targetCardNumbers
                     });
                 }
 
@@ -114,11 +121,13 @@ namespace Scripts
         }
     }
     
-    public class LevelEndEventArgs : EventArgs
+    public class LevelFinishEventArgs : EventArgs
     {
-        public bool isLevelCompleted;
-        public ILevelTracker levelTracker;
+        public bool isCircleProgressBarVisible;
+        public bool isSuccess;
         public int starCount;
+        public int newRewardStarCount;
+        public int currentRewardStarCount;
     }
     
     public class BackFlipCardsEventArgs : EventArgs
@@ -128,6 +137,8 @@ namespace Scripts
         public Action onComplete;
         public bool isGuessRight;
     }
+
+
     
     public interface ILevelManager
     {
@@ -139,3 +150,4 @@ namespace Scripts
         event EventHandler<BackFlipCardsEventArgs> CardsBackFlipped;
     }
 }
+*/

@@ -14,7 +14,7 @@ namespace Scripts
         [Inject] private IResultAreaController _resultAreaController;
         [Inject] private IResultManager _resultManager;
         [Inject] private ILifeBarController _lifeBarController;
-        [Inject] private ILevelManager _levelManager;
+        [Inject] private IGuessManager _guessManager;
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private ICardItemInfoManager _cardItemInfoManager;
         [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
@@ -47,7 +47,7 @@ namespace Scripts
             InitializeGame();
             InitializeCardItemLocator();
             InitializeStarProgressBar();
-            InitializeLevelManager();
+            InitializeGuessManager();
             InitializeCardHolderModelCreator();
             InitializeBoardArea();
             InitializeCardItemInfoManager();
@@ -57,7 +57,7 @@ namespace Scripts
             InitializeFadePanelController();
             InitializeUnmaskServiceAreaView();
             InitializeGamePopupCreator();
-            _gameSaveService.Set(_resultManager, _levelManager, _cardItemInfoManager);
+            _gameSaveService.Set(_resultManager, _guessManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
         }
 
@@ -78,7 +78,7 @@ namespace Scripts
         
         private void InitializeGameClock()
         {
-            _gameClockController.Initialize(_levelManager);
+            _gameClockController.Initialize();
         }
         
         private void InitializeTurnOrderDeterminer()
@@ -103,7 +103,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _lifeBarController.Initialize(_levelDataCreator, _levelTracker);
+                _lifeBarController.Initialize();
             }
             else
             {
@@ -111,9 +111,9 @@ namespace Scripts
             }
         }
 
-        private void InitializeLevelManager()
+        private void InitializeGuessManager()
         {
-            _levelManager.Initialize(_levelTracker, _resultManager, _gameSaveService, _lifeBarController, _levelDataCreator);
+            _guessManager.Initialize();
         }
         
         private void InitializeCardHolderModelCreator()

@@ -120,6 +120,11 @@ namespace Scripts
 
             return -1;
         }
+
+        public int[] GetCardIndexesOnBoard()
+        {
+            return _boardCardIndexManager.GetCardIndexesOnBoard();
+        }
     }
 
     public interface IBoardAreaController
@@ -134,5 +139,6 @@ namespace Scripts
         void TryResetCardIndexOnBoard(int cardIndex);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         List<int> GetFinalNumbers();
+        int[] GetCardIndexesOnBoard();
     }
 }

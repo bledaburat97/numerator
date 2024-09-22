@@ -15,7 +15,6 @@ namespace Scripts
         [Inject] private ICardItemInfoManager _cardItemInfoManager;
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private ILevelTracker _levelTracker;
-        [Inject] private ILevelManager _levelManager;
         [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
         [Inject] private IGameInitializer _gameInitializer;
         [Inject] private IBoardAreaController _boardAreaController;
@@ -34,7 +33,6 @@ namespace Scripts
         {
             _normalCardHolderControllerList = new List<IInitialCardHolderController>();
             _normalCardItemControllerList = new List<INormalCardItemController>();
-            _levelManager.CardsBackFlipped += BackFlipCards;
             _gameInitializer.ResetNumbers += ResetPositionsOfCardItems;
             _view.Init();
             CreateCardHolders();
@@ -100,26 +98,6 @@ namespace Scripts
             _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardHolderIndex);
         }
         
-        private void BackFlipCards(object sender, BackFlipCardsEventArgs args)
-        {
-            DOTween.Sequence()
-                .AppendCallback(() => 
-                {
-                    for (int i = 0; i < args.finalCardNumbers.Count; i++)
-                    {
-                        int cardIndex = args.finalCardNumbers[i] - 1;
-                        float delay = 0.3f * i;
-
-                        if (cardIndex >= 0 && cardIndex < _normalCardItemControllerList.Count)
-                        {
-                            _normalCardItemControllerList[cardIndex].BackFlipAnimation(delay, args.isGuessRight, args.targetCardNumbers[i].ToString());
-                        }
-                    }
-                })
-                .AppendInterval(1.2f + 0.3f * args.finalCardNumbers.Count)
-                .AppendCallback(() => args.onComplete.Invoke());
-        }
-        
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
             foreach (INormalCardItemController cardItemController in _normalCardItemControllerList)
@@ -135,8 +113,8 @@ namespace Scripts
             if (cardIndex != -1 && boardCardHolderIndex != -1)
             {
                 _normalCardItemControllerList[cardIndex].MoveCardByClick(boardCardHolderIndex);
+                _boardAreaController.SetCardIndex(boardCardHolderIndex, cardIndex);
             }
-            
         }
         
         public Vector3 GetNormalCardHolderPositionAtIndex(int index)
@@ -159,9 +137,13 @@ namespace Scripts
             return _view.GetInvisibleClickHandler();
         }
 
+        public INormalCardItemController GetCardItemController(int cardIndex)
+        {
+            return _normalCardItemControllerList[cardIndex];
+        }
+
         public void Unsubscribe()
         {
-            _levelManager.CardsBackFlipped -= BackFlipCards;
             _gameInitializer.ResetNumbers -= ResetPositionsOfCardItems;
         }
     }
@@ -178,6 +160,7 @@ namespace Scripts
         void SetLockedCardController(LockedCardInfo lockedCardInfo);
         void Unsubscribe();
         event EventHandler OnCardDragStartedEvent;
+        INormalCardItemController GetCardItemController(int cardIndex);
     }
     
     public class CardClickedEventArgs : EventArgs

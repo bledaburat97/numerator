@@ -10,7 +10,6 @@ namespace Game
     {
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private IUserReady _userReady;
-        [Inject] private ILevelManager _levelManager;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
 
         private NetworkVariable<bool> _isGameEnd = new NetworkVariable<bool>(false);
@@ -23,7 +22,7 @@ namespace Game
         public void Initialize()
         {
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
-            _levelManager.MultiplayerLevelEndEvent += OnMultiplayerLevelEnd;
+            //_levelManager.MultiplayerLevelEndEvent += OnMultiplayerLevelEnd;
             _turnOrderDeterminer.LocalTurnEvent += ChangeLocalTurn;
             _isLocalReady = false;
             _playerSuccessDictionary = new Dictionary<ulong, bool>();
@@ -138,6 +137,12 @@ namespace Game
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
             }
         }
+    }
+    
+    public class MultiplayerLevelFinishEventArgs : EventArgs
+    {
+        public bool isSuccess;
+        public int currentRewardStarCount;
     }
 
     public interface IMultiplayerGameController

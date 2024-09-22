@@ -10,10 +10,9 @@ namespace Scripts
     public class GamePopupCreator : MonoBehaviour, IGamePopupCreator
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-        [Inject] private FadeButtonControllerFactory _fadeButtonControllerFactory;
+        //[Inject] private FadeButtonControllerFactory _fadeButtonControllerFactory;
         [Inject] private IHapticController _hapticController;
 
-        [Inject] private ILevelManager _levelManager;
         [Inject] private IFadePanelController _fadePanelController;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private ILevelTracker _levelTracker;
@@ -74,7 +73,6 @@ namespace Scripts
             _waitingOpponentPopupViewFactory = new WaitingOpponentPopupViewFactory();
             _messagePopupViewFactory = new MessagePopupViewFactory();
             
-            _levelManager.LevelEnd += CreateLevelEndPopup;
             _gameInitializer.OpenSettings += CreateSettingsPopup;
             
             _gameInitializer.PowerUpClickedEvent += OnPowerUpClicked;
@@ -221,14 +219,6 @@ namespace Scripts
             {
                 _newGameOfferPopup.Close();
             }
-        }
-
-        private void CreateLevelEndPopup(object sender, LevelEndEventArgs args)
-        {
-            _fadePanelController.SetFadeImageStatus(true);
-            _fadePanelController.SetFadeImageAlpha(0f);
-            ILevelEndPopupController levelEndPopupController = new LevelEndPopupController();
-            levelEndPopupController.Initialize(levelEndPopupView, args, _fadePanelController, _fadeButtonControllerFactory, _hapticController, _levelDataCreator);
         }
         
         private void CreateSettingsPopup(object sender, EventArgs args)

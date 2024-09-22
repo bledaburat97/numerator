@@ -17,9 +17,10 @@ namespace Scripts
         [SerializeField] private LifeBarView lifeBarView;
         [SerializeField] private GameClockView gameClockView;
         [SerializeField] private GameUIView gameUI;
+        [SerializeField] private LevelFinishPopupView levelFinishPopup;
         public override void InstallBindings()
         {
-            Container.BindFactory<IFadeButtonView, IFadeButtonController, FadeButtonControllerFactory>().To<FadeButtonController>();
+            //Container.BindFactory<IFadeButtonView, IFadeButtonController, FadeButtonControllerFactory>().To<FadeButtonController>();
             Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
@@ -33,7 +34,7 @@ namespace Scripts
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
             Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()
                 .WithArguments(lifeBarView);
-            Container.Bind<ILevelManager>().To<LevelManager>().AsSingle();
+            Container.Bind<IGuessManager>().To<GuessManager>().AsSingle();
             Container.Bind<IBoardAreaController>().To<BoardAreaController>().AsSingle().WithArguments(boardAreaView);
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();
             Container.Bind<ICardItemInfoPopupController>().To<CardItemInfoPopupController>().AsSingle()
@@ -52,7 +53,7 @@ namespace Scripts
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
             Container.Bind<IGameInitializer>().To<GameInitializer>().AsSingle();
-
+            Container.Bind<ILevelFinishController>().To<LevelFinishController>().AsSingle().WithArguments(levelFinishPopup);
         }
     }
 }

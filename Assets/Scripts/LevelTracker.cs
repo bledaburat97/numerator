@@ -17,7 +17,7 @@ namespace Scripts
         private GameOption _gameOption;
         private Difficulty _multiplayerLevelDifficulty;
         private LevelSaveData _levelSaveData;
-        
+        private RewardType _currentRewardType;
         
         public void Initialize(IGameSaveService gameSaveService)
         {
@@ -30,6 +30,7 @@ namespace Scripts
             _lifePowerUpCount = PlayerPrefs.GetInt("life_power_up_count", 0);
             _hintPowerUpCount = PlayerPrefs.GetInt("hint_power_up_count", 0);
             _multiplayerLevelDifficulty = (Difficulty)PlayerPrefs.GetInt("multiplayer_level_difficulty", 2);
+            _currentRewardType = (RewardType)PlayerPrefs.GetInt("reward_type", 0);
         }
 
         public void SetGameOption(GameOption gameOption)
@@ -47,6 +48,11 @@ namespace Scripts
         {
             PlayerPrefs.SetInt("multiplayer_level_difficulty", (int)difficulty);
             _multiplayerLevelDifficulty = difficulty;
+        }
+
+        public RewardType GetCurrentRewardType()
+        {
+            return _currentRewardType;
         }
 
         private int GetNumberOfBoardCardsInMultiplayer()
@@ -212,8 +218,15 @@ namespace Scripts
             PlayerPrefs.SetInt("level_id", _levelId);
             _starCount += starCount;
             PlayerPrefs.SetInt("star_count", _starCount);
+            if (_giftStarCount + giftStarCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
+            {
+                int newRewardType = ((int)_currentRewardType + 1) % 3;
+                PlayerPrefs.SetInt("reward_type", newRewardType);
+                _currentRewardType = (RewardType)newRewardType;
+            }
             _giftStarCount = (_giftStarCount + giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
             PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
+            
         }
 
         public void RevertIncrementingLevelId(int starCount, int giftStarCount)
@@ -293,6 +306,7 @@ namespace Scripts
         void DecreaseLifePowerUpCount();
         void DecreaseHintPowerUpCount();
         void RevertIncrementingLevelId(int starCount, int giftStarCount);
+        RewardType GetCurrentRewardType();
     }
 
     public class LevelData

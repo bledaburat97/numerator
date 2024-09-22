@@ -5,7 +5,7 @@ using DG.Tweening;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
+/*
 namespace Scripts
 {
     public class LevelEndPopupController : ILevelEndPopupController
@@ -223,3 +223,4 @@ namespace Scripts
         void Initialize(LevelEndPopupView view, LevelEndEventArgs args, IFadePanelController fadePanelController, FadeButtonControllerFactory fadeButtonControllerFactory, IHapticController hapticController, ILevelDataCreator levelDataCreator);
     }
 }
+*/

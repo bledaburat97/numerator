@@ -1,23 +1,30 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-/*
+using UnityEngine.UI;
+
 namespace Scripts
 {
-    public class LevelFinishPopupView : MonoBehaviour
+    public class LevelFinishPopupView : MonoBehaviour, ILevelFinishPopupView
     {
-        [SerializeField] private RectTransform crystalHolder;
-        [SerializeField] private CrystalImageView crystalPrefab;
-        [SerializeField] private List<ParticleSystem> crystalParticles;
-        [SerializeField] private BaseButtonView button;
-        [SerializeField] private TMP_Text title;
-        private List<CrystalImageView> _crystalList;
+        [SerializeField] private TMP_Text text;
+        [SerializeField] private List<LevelFinishButtonModel> buttonModels;
+        [SerializeField] private StarImageView[] starList;
+        [SerializeField] private ParticleSystem[] starParticleList;
+        [SerializeField] private CircleProgressBarView circleProgressBarView;
+        [SerializeField] private Image rewardItem;
+        [SerializeField] private ParticleSystem rewardParticle;
+        [SerializeField] private CanvasGroup topArea;
+        [SerializeField] private CanvasGroup scrollArea;
+        [SerializeField] private CanvasGroup boardArea;
+        [SerializeField] private CanvasGroup bottomArea;
+        [SerializeField] private CanvasGroup buttonArea;
+        [SerializeField] private CanvasGroup starCanvasGroup;
 
         public void Init()
         {
             transform.localScale = Vector3.one;
-            transform.localPosition = Vector3.zero;
-            _crystalList = new List<CrystalImageView>();
         }
 
         public void SetStatus(bool status)
@@ -25,45 +32,116 @@ namespace Scripts
             gameObject.SetActive(status);
         }
 
-        public IBaseButtonView GetButton()
+        public IFadeButtonView GetButton(LevelFinishButtonType buttonType)
         {
-            return button;
-        }
-        
-        public void CreateParticles(List<Vector2> localPositions)
-        {
-            for (int i = 0; i < localPositions.Count; i++)
+            foreach (LevelFinishButtonModel model in buttonModels)
             {
-                crystalParticles[i].transform.localPosition = localPositions[i];
+                if (model.buttonType == buttonType)
+                {
+                    return model.buttonView;
+                }
             }
-        }
-        
-        public void ActivateParticle(int index)
-        {
-            crystalParticles[index].gameObject.SetActive(true);
-            crystalParticles[index].Play();
-        }
-        
-        public void CreateCrystal(Vector2 localPosition, Vector2 size, CrystalType crystalType)
-        {
-            CrystalImageView crystalImage = Instantiate(crystalPrefab, crystalHolder);
-            crystalImage.Init();
-            crystalImage.SetLocalPosition(localPosition);
-            crystalImage.SetSize(size);
-            crystalImage.SetLocalScale(Vector2.zero);
-            crystalImage.SetCrystalImage(crystalType);
-            _crystalList.Add(crystalImage);
-        }
-        
-        public void SetTitle(string text)
-        {
-            title.SetText(text);
+            
+            return null;
         }
 
-        public List<CrystalImageView> GetCrystalList()
+        public StarImageView[] GetStarList()
         {
-            return _crystalList;
+            return starList;
+        }
+
+        public ParticleSystem[] GetStarParticleList()
+        {
+            return starParticleList;
+        }
+        
+        public ICircleProgressBarView GetCircleProgressBar()
+        {
+            return circleProgressBarView;
+        }
+
+        public ParticleSystem GetRewardParticle()
+        {
+            return rewardParticle;
+        }
+        
+        public void SetText(string text)
+        {
+            this.text.SetText(text);
+        }
+
+        public Image GetRewardItem()
+        {
+            return rewardItem;
+        }
+
+        public CanvasGroup GetStarCanvasGroup()
+        {
+            return starCanvasGroup;
+        }
+        
+        public CanvasGroup GetTopArea()
+        {
+            return topArea;
+        }
+
+        public CanvasGroup GetScrollArea()
+        {
+            return scrollArea;
+        }
+
+        public CanvasGroup GetBoardArea()
+        {
+            return boardArea;
+        }
+        
+        public CanvasGroup GetBottomArea()
+        {
+            return bottomArea;
+        }
+        
+        public CanvasGroup GetButtonArea()
+        {
+            return buttonArea;
+        }
+        
+        public TMP_Text GetText()
+        {
+            return text;
         }
     }
+
+    public interface ILevelFinishPopupView
+    {
+        void Init();
+        IFadeButtonView GetButton(LevelFinishButtonType buttonType);
+        StarImageView[] GetStarList();
+        ParticleSystem[] GetStarParticleList();
+        ICircleProgressBarView GetCircleProgressBar();
+        ParticleSystem GetRewardParticle();
+        void SetText(string text);
+        Image GetRewardItem();
+        CanvasGroup GetStarCanvasGroup();
+        CanvasGroup GetTopArea();
+        CanvasGroup GetScrollArea();
+        CanvasGroup GetBoardArea();
+        CanvasGroup GetBottomArea();
+        CanvasGroup GetButtonArea();
+        TMP_Text GetText();
+        void SetStatus(bool status);
+    }
+    
+    public enum LevelFinishButtonType
+    {
+        Game,
+        Menu,
+        Claim
+    }
+
+    [Serializable]
+    public class LevelFinishButtonModel
+    {
+        public LevelFinishButtonType buttonType;
+        public FadeButtonView buttonView;
+    }
 }
-*/

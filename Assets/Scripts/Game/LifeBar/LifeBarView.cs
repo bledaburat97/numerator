@@ -39,12 +39,17 @@ namespace Scripts
             return boundaryPrefab.GetRectTransform();
         }
 
-        public void SetProgress(float targetPercentage, float duration, Action onComplete, Action onStart)
+        public void InitProgress(float targetPercentage)
+        {
+            _currentPercentage = targetPercentage;
+            image.fillAmount = _currentPercentage;
+        }
+
+        public void SetProgress(float targetPercentage, float duration, Action onComplete)
         {
             DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
                 .SetEase(Ease.OutQuad)
                 .OnUpdate(() => { image.fillAmount = _currentPercentage; })
-                .OnStart(() => onStart?.Invoke())
                 .OnComplete(() =>
                 {
                     _currentPercentage = targetPercentage;
@@ -59,7 +64,8 @@ namespace Scripts
         RectTransform GetRectTransform();
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
-        void SetProgress(float targetPercentage, float duration, Action onComplete, Action onStart);
+        void SetProgress(float targetPercentage, float duration, Action onComplete);
         void DisableStarProgressBar();
+        void InitProgress(float targetPercentage);
     }
 }

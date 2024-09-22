@@ -1,4 +1,5 @@
 ﻿using System;
+using Game;
 using Zenject;
 
 namespace Scripts
@@ -6,18 +7,19 @@ namespace Scripts
     public class GameClockController : IGameClockController
     {
         [Inject] private IHapticController _hapticController;
+        [Inject] private IGuessManager _guessManager;
+        
         private IGameClockView _view;
-        private ILevelManager _levelManager;
         public GameClockController(IGameClockView view)
         {
             _view = view;
         }
 
-        public void Initialize(ILevelManager levelManager)
+        public void Initialize()
         {
             _view.Init(() => _hapticController.Vibrate(HapticType.CardGrab));
             RemoveTimer();
-            levelManager.CardsBackFlipped += OnLevelEnd;
+            //levelManager.CardsBackFlipped += OnLevelEnd;
         }
 
         private void OnLevelEnd(object sender, EventArgs e)
@@ -40,6 +42,6 @@ namespace Scripts
     {
         void StartTimer(Action onTimerEnd);
         void RemoveTimer();
-        void Initialize(ILevelManager levelManager);
+        void Initialize();
     }
 }

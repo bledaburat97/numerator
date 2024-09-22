@@ -74,5 +74,10 @@ namespace Game
 
             return finalNumbers;
         }
+
+        public int[] GetCardIndexesOnBoard()
+        {
+            return _cardIndexesOnBoardHolders;
+        }
     }
 }

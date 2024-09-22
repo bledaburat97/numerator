@@ -40,9 +40,9 @@ namespace Scripts
             _view.SetText(text);
         }
 
-        public void SetLocalPosition(Vector2 localPos)
+        public void SetButtonStatus(bool status)
         {
-            _view.SetLocalPosition(localPos);
+            _view.SetButtonStatus(status);
         }
     }
 
@@ -53,7 +53,7 @@ namespace Scripts
         CanvasGroup GetCanvasGroup();
         void Destroy();
         void SetText(string text);
-        void SetLocalPosition(Vector2 localPos);
+        void SetButtonStatus(bool status);
     }
     
     public class FadeButtonControllerFactory : PlaceholderFactory<IFadeButtonView, IFadeButtonController>

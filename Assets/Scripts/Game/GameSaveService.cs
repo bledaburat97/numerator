@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Game;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -10,21 +11,21 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private IResultManager _resultManager;
         private IInitialCardAreaController _initialCardAreaController;
-        private ILevelManager _levelManager;
+        private IGuessManager _guessManager;
         private ICardItemInfoManager _cardItemInfoManager;
 
         public void Initialize(ILevelTracker levelTracker)
         {
             _levelTracker = levelTracker;
             _resultManager = new ResultManager();
-            _levelManager = new LevelManager();
+            _guessManager = new GuessManager();
             _cardItemInfoManager = new CardItemInfoManager();
         }
         
-        public void Set(IResultManager resultManager, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager)
+        public void Set(IResultManager resultManager, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager)
         {
             _resultManager = resultManager;
-            _levelManager = levelManager;
+            _guessManager = guessManager;
             _cardItemInfoManager = cardItemInfoManager;
         }
         
@@ -49,13 +50,13 @@ namespace Scripts
         public void Save()
         {
             if (_resultManager.GetTriedCardsList().Count == 0) return;
-            if (_levelManager.IsGameOver()) return;
+            if (_guessManager.IsGameOver()) return;
             LevelSaveData levelSaveData = new LevelSaveData()
             {
                 LevelId = _levelTracker.GetLevelId(),
                 TriedCardsList = _resultManager.GetTriedCardsList(),
                 TargetCards = _resultManager.GetTargetCards(),
-                RemainingGuessCount = _levelManager.GetRemainingGuessCount(),
+                RemainingGuessCount = _guessManager.GetRemainingGuessCount(),
                 CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList()
             };
             
@@ -71,7 +72,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save();
-        void Set(IResultManager resultManager, ILevelManager levelManager, ICardItemInfoManager cardItemInfoManager);
+        void Set(IResultManager resultManager, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager);
         bool HasSavedGame();
     }
 
