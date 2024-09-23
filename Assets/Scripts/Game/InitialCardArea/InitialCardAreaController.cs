@@ -95,7 +95,7 @@ namespace Scripts
             normalCardItemController.GetView().InitLocalScale();
             normalCardItemController.GetView().SetLocalPosition(Vector3.zero);
             normalCardItemController.GetView().SetSize(_boardAreaController.GetRectTransformOfBoardHolder(lockedCardInfo.boardHolderIndex).sizeDelta);
-            _cardItemInfoManager.LockCardItem(lockedCardInfo.targetCardIndex, lockedCardInfo.boardHolderIndex);
+            _cardItemInfoManager.MakeCardCertain(lockedCardInfo.targetCardIndex, lockedCardInfo.boardHolderIndex);
         }
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)

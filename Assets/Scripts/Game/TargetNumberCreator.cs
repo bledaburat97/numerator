@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Game;
 using Unity.Netcode;
 using UnityEngine;
 using Random = System.Random;
@@ -70,12 +71,7 @@ namespace Scripts
         private int GetTargetNumber(int numOfCards, int numOfBoardHolders)
         {
             List<int> cards = Enumerable.Range(1, numOfCards).ToList();
-            Random random = new Random();
-            for (int i = numOfCards - 1; i > 0; i--)
-            {
-                int j = random.Next(0, i + 1);
-                (cards[i], cards[j]) = (cards[j], cards[i]);
-            }
+            ListRandomizer.Randomize(cards);
 
             for (int i = 0; i < numOfBoardHolders; i++)
             {

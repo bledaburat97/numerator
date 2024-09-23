@@ -20,12 +20,27 @@ namespace Scripts
             return _cardItemInfoList;
         }
 
-        public void LockCardItem(int cardIndex, int correctBoardCardHolderIndex)
+        public void MakeCardNotExisted(int cardIndex)
+        {
+            CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
+            cardItemInfo.isLocked = true;
+            cardItemInfo.probabilityType = ProbabilityType.NotExisted;
+            cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
+            ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
+                { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex, isLocked = true});
+            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
+            {
+                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
+                cardIndex = cardIndex
+            });
+        }
+
+        public void MakeCardCertain(int cardIndex, int correctBoardHolderIndex)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             cardItemInfo.isLocked = true;
             cardItemInfo.probabilityType = ProbabilityType.Certain;
-            cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>() { correctBoardCardHolderIndex };
+            cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>() { correctBoardHolderIndex };
             ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
                 { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex, isLocked = true});
             HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
@@ -136,7 +151,8 @@ namespace Scripts
         event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
 
         List<CardItemInfo> GetCardItemInfoList();
-        void LockCardItem(int cardIndex, int correctBoardCardHolderIndex);
+        void MakeCardCertain(int cardIndex, int correctBoardHolderIndex);
+        void MakeCardNotExisted(int cardIndex);
     }
 
 

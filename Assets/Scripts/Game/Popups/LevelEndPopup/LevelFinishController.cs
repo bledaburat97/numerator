@@ -199,7 +199,7 @@ namespace Scripts
             for (int i = 0; i < cardItemList.Count; i++)
             {
                 float delay = 0.3f * i;
-                cardItemList[i].BackFlipAnimation(delay, isSuccess, (targetCardIndexList[i] + 1).ToString());
+                cardItemList[i].BackFlipAnimation(delay, isSuccess, targetCardIndexList[i].ToString());
             }
         }
         

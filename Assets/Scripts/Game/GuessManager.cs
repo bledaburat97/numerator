@@ -11,6 +11,7 @@ namespace Game
         [Inject] private ILifeBarController _lifeBarController;
         [Inject] private ILevelFinishController _levelFinishController;
         [Inject] private IResultManager _resultManager;
+        [Inject] private IHintProvider _hintProvider;
         
         private int _remainingGuessCount;
         private List<LifeBarStarInfo> _lifeBarStarInfoList;
@@ -86,6 +87,19 @@ namespace Game
                 {
                     _lifeBarStarInfoList[i].isActive = false;
                     _lifeBarController.RemoveStar(_lifeBarStarInfoList[i].lifeBarIndex);
+                    if (!_lifeBarStarInfoList[i].isOriginal)
+                    {
+                        if (i == 2)
+                        {
+                            _hintProvider.SetRedCardItem();
+                        }
+                        
+                        else if (i == 1)
+                        {
+                            _hintProvider.SetGreenCardItem();
+                        }
+                    }
+
                     break;
                 }
             }

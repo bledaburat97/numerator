@@ -54,6 +54,7 @@ namespace Scripts
                 .AsSingle();
             Container.Bind<IGameInitializer>().To<GameInitializer>().AsSingle();
             Container.Bind<ILevelFinishController>().To<LevelFinishController>().AsSingle().WithArguments(levelFinishPopup);
+            Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
         }
     }
 }
