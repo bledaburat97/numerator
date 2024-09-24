@@ -10,91 +10,48 @@ namespace Game
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IHapticController _hapticController;
+        [Inject] private IResultAreaController _resultAreaController;
+        [Inject] private IResultManager _resultManager;
+        [Inject] private ITargetNumberCreator _targetNumberCreator;
+        [Inject] private ILevelDataCreator _levelDataCreator;
+        [Inject] private ICardItemLocator _cardItemLocator;
+        [Inject] private IGuessManager _guessManager;
+        [Inject] private ILifeBarController _lifeBarController;
+        [Inject] private IBoardAreaController _boardAreaController;
+        [Inject] private ICardItemInfoManager _cardItemInfoManager;
+        [Inject] private IInitialCardAreaController _initialCardAreaController;
+        [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
+        [Inject] private IFadePanelController _fadePanelController;
+        [Inject] private IUnmaskServiceAreaView _unmaskServiceAreaView;
+        [Inject] private IGamePopupCreator _gamePopupCreator;
         
-        public event EventHandler CheckFinalNumbers;
-        public event EventHandler NotAbleToCheck;
-        public event EventHandler ResetNumbers;
-        public event EventHandler OpenSettings;
-        public event EventHandler<GameUIButtonType> PowerUpClickedEvent;
-        public event EventHandler<bool> CardInfoToggleChanged;
+        private ICardHolderModelCreator _cardHolderModelCreator;
+        
+        public GameInitializer()
+        {
+            _cardHolderModelCreator = new CardHolderModelCreator();
+        }
 
         public void Initialize()
         {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                _gameUIController.SetUserText("Level " + (_levelTracker.GetLevelId() + 1));
-                _gameUIController.SetOpponentInfoStatus(false);
-            }
-
-            else
-            {
-                _gameUIController.SetUserText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).playerName.ToString());
-                _gameUIController.SetOpponentText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).playerName.ToString());
-                _gameUIController.SetOpponentInfoStatus(true);
-            }
-            _gameUIController.SetPowerUpImages();
-            _gameUIController.CreateGameUiButtons(OnButtonClick);
-            
-            if (_levelTracker.GetLevelId() > 8)
-            {
-                _gameUIController.CreateCardInfoButton(OnCardInfoButtonClick);
-            }
-            else
-            {
-                _gameUIController.SetCardInfoButtonStatus(false);
-            }
-        }
-
-        private void OnButtonClick(GameUIButtonType buttonType)
-        {
-            switch (buttonType)
-            {
-                case GameUIButtonType.Check:
-                    if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
-                    {
-                        CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
-                    }
-                    else
-                    {
-                        NotAbleToCheck?.Invoke(this, EventArgs.Empty);
-                    }
-                    break;
-                case GameUIButtonType.Reset:
-                    ResetNumbers?.Invoke(this,  EventArgs.Empty);
-                    break;
-                case GameUIButtonType.Settings:
-                    OpenSettings?.Invoke(this,  EventArgs.Empty);
-                    break;
-                case GameUIButtonType.RevealingPowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.RevealingPowerUp);
-                    break;
-                case GameUIButtonType.LifePowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.LifePowerUp);
-                    break;
-                case GameUIButtonType.HintPowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.HintPowerUp);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void OnCardInfoButtonClick(bool isCardInfoToggleOn)
-        {
-            _hapticController.Vibrate(HapticType.ButtonClick);
-            CardInfoToggleChanged?.Invoke(this, isCardInfoToggleOn);
+            _gameUIController.Initialize();
+            _resultAreaController.Initialize();
+            _resultManager.Initialize(_levelTracker.GetLevelSaveData().TriedCardsList, _targetNumberCreator.GetTargetCardsList(), _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _cardItemLocator.Initialize();
+            _guessManager.Initialize(_levelDataCreator.GetLevelData().MaxNumOfTries, _levelTracker.GetLevelSaveData().RemainingGuessCount, _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _cardHolderModelCreator.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _levelDataCreator.GetLevelData().NumOfCards);
+            _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board));
+            _cardItemInfoManager.Initialize(_levelTracker.GetLevelSaveData().CardItemInfoList, _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _initialCardAreaController.Initialize(_cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial));
+            _cardItemInfoPopupController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board));
+            _fadePanelController.SetFadeImageStatus(false);
+            _unmaskServiceAreaView.Initialize(_fadePanelController);
+            _gamePopupCreator.Initialize(_cardHolderModelCreator);
         }
     }
 
     public interface IGameInitializer
     {
         void Initialize();
-        event EventHandler CheckFinalNumbers;
-        event EventHandler NotAbleToCheck;
-        event EventHandler ResetNumbers;
-        event EventHandler OpenSettings;
-        event EventHandler<GameUIButtonType> PowerUpClickedEvent;
-        event EventHandler<bool> CardInfoToggleChanged;
-
     }
 }

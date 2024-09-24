@@ -129,13 +129,13 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the number info button. It will help you to play.");
-            _gameInitializer.CardInfoToggleChanged += CloseClickButtonAnimation;
+            _gameUIController.CardInfoToggleChanged += CloseClickButtonAnimation;
             _gameUIController.SetAllButtonsUnclickable();
             _gameUIController.SetButtonClickable(true, GameUIButtonType.CardInfo);
             void CloseClickButtonAnimation(object sender, bool args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _gameInitializer.CardInfoToggleChanged -= CloseClickButtonAnimation;
+                _gameUIController.CardInfoToggleChanged -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.VisualScripting;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
@@ -48,6 +49,11 @@ namespace Scripts
             return _nonDraggableCardItemViewFactory.Spawn(cardsHolder, nonDraggableCardItemPrefab);
         }
 
+        public void Destroy()
+        {
+            Destroy(gameObject);
+        }
+
         public RectTransform GetRectTransform()
         {
             return rectTransform;
@@ -61,6 +67,6 @@ namespace Scripts
         void SetResultHolderLocalPosition();
         void SetCardsHolderLocalPosition();
         INonDraggableCardItemView CreateCardItem();
-        RectTransform GetRectTransform();
+        void Destroy();
     }
 }

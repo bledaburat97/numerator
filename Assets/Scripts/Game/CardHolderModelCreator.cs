@@ -7,23 +7,29 @@ namespace Scripts
     {
         private List<CardHolderModel> _boardCardHolderModelList;
         private List<CardHolderModel> _initialCardHolderModelList;
-        private List<Vector2> _localPositionsOfFirstLine;
-        private List<Vector2> _localPositionsOfFirstLineWithoutWild;
-        public void Initialize()
+
+        public CardHolderModelCreator()
         {
             _boardCardHolderModelList = new List<CardHolderModel>();
             _initialCardHolderModelList = new List<CardHolderModel>();
         }
         
-        public void SetBoardCardHolderModelList(int numOfBoardCardHolders)
+        public void Initialize(int numOfBoardHolders, int numOfCards)
         {
-            Vector2[] localPositions = new Vector2[numOfBoardCardHolders];
+            SetBoardCardHolderModelList(numOfBoardHolders);
+            SetInitialCardHolderModelList(numOfCards);
+        }
+        
+        private void SetBoardCardHolderModelList(int numOfBoardHolders)
+        {
+            _boardCardHolderModelList.Clear();
+            Vector2[] localPositions = new Vector2[numOfBoardHolders];
             float spacing = ConstantValues.SPACING_BETWEEN_BOARD_CARDS;
             Vector2 cardHolderSize = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT);
             float verticalLocalPos = 0f;
             localPositions = localPositions.GetLocalPositions(spacing, cardHolderSize, verticalLocalPos);
             
-            for (int i = 0; i < numOfBoardCardHolders; i++)
+            for (int i = 0; i < numOfBoardHolders; i++)
             {
                 _boardCardHolderModelList.Add(new CardHolderModel()
                 {
@@ -35,14 +41,13 @@ namespace Scripts
             }
         }
 
-        public void SetInitialCardHolderModelList(int numOfNormalCards, bool wildCardExistence)
+        private void SetInitialCardHolderModelList(int numOfCards)
         {
+            _initialCardHolderModelList.Clear();
             const float maxNumOfCardInOneLine = 5;
             const float maxNumOfCardsInTotal = 10;
             
-            int numOfCards = wildCardExistence ? numOfNormalCards + 1 : numOfNormalCards;
-            _localPositionsOfFirstLine = new List<Vector2>();
-            _localPositionsOfFirstLineWithoutWild = new List<Vector2>();
+            List<Vector2> localPositionsOfFirstLine = new List<Vector2>();
             List<Vector2> localPositionsOfSecondLine = new List<Vector2>();
             float spacing = ConstantValues.SPACING_BETWEEN_INITIAL_CARDS;
             Vector2 cardHolderSize = new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT);
@@ -52,19 +57,17 @@ namespace Scripts
             
             if (numOfCards <= maxNumOfCardInOneLine)
             {
-                _localPositionsOfFirstLine = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards, spacing, cardHolderSize, firstLineYPos);
-                _localPositionsOfFirstLineWithoutWild = _localPositionsOfFirstLineWithoutWild.GetLocalPositionList(numOfCards - 1, spacing, cardHolderSize, firstLineYPos);
+                localPositionsOfFirstLine = localPositionsOfFirstLine.GetLocalPositionList(numOfCards, spacing, cardHolderSize, firstLineYPos);
             }
             else if (numOfCards <= maxNumOfCardsInTotal)
             {
                 int numOfCardsAtSecondLine = numOfCards / 2;
-                _localPositionsOfFirstLine = _localPositionsOfFirstLine.GetLocalPositionList(numOfCards - numOfCardsAtSecondLine, spacing, cardHolderSize, firstLineYPos);
-                _localPositionsOfFirstLineWithoutWild = _localPositionsOfFirstLineWithoutWild.GetLocalPositionList(numOfCards - numOfCardsAtSecondLine - 1, spacing, cardHolderSize, firstLineYPos);
+                localPositionsOfFirstLine = localPositionsOfFirstLine.GetLocalPositionList(numOfCards - numOfCardsAtSecondLine, spacing, cardHolderSize, firstLineYPos);
                 localPositionsOfSecondLine = localPositionsOfSecondLine.GetLocalPositionList(numOfCardsAtSecondLine, spacing, cardHolderSize, secondLineYPos);
             }
             
             List<Vector2> localPositions = new List<Vector2>();
-            localPositions.AddRange(_localPositionsOfFirstLine);
+            localPositions.AddRange(localPositionsOfFirstLine);
             localPositions.AddRange(localPositionsOfSecondLine);
             
             List<Vector2> possibleIndicatorLocalPositionList = new List<Vector2>();
@@ -79,10 +82,10 @@ namespace Scripts
             {
                 _initialCardHolderModelList.Add(new CardHolderModel()
                 {
-                    index = wildCardExistence ? i - 1 : i,
+                    index = i,
                     localPosition = localPositions[i],
                     size = cardHolderSize,
-                    possibleHolderIndicatorLocalPositionList = wildCardExistence && i == 0 ? new List<Vector2>() : possibleIndicatorLocalPositionList,
+                    possibleHolderIndicatorLocalPositionList = possibleIndicatorLocalPositionList,
                     cardHolderType = CardHolderType.Initial
                 });
             }
@@ -97,9 +100,7 @@ namespace Scripts
 
     public interface ICardHolderModelCreator
     {
-        void Initialize();
-        void SetBoardCardHolderModelList(int numOfBoardCardHolders);
-        void SetInitialCardHolderModelList(int numOfCardHolders, bool wildCardExistence);
+        void Initialize(int numOfBoardHolders, int numOfCards);
         List<CardHolderModel> GetCardHolderModelList(CardHolderType cardHolderType);
     }
 

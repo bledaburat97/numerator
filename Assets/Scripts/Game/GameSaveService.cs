@@ -9,24 +9,10 @@ namespace Scripts
     {
         private readonly string _saveGameKey = "saved_game_key";
         private ILevelTracker _levelTracker;
-        private IResultManager _resultManager;
-        private IInitialCardAreaController _initialCardAreaController;
-        private IGuessManager _guessManager;
-        private ICardItemInfoManager _cardItemInfoManager;
 
         public void Initialize(ILevelTracker levelTracker)
         {
             _levelTracker = levelTracker;
-            _resultManager = new ResultManager();
-            _guessManager = new GuessManager();
-            _cardItemInfoManager = new CardItemInfoManager();
-        }
-        
-        public void Set(IResultManager resultManager, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager)
-        {
-            _resultManager = resultManager;
-            _guessManager = guessManager;
-            _cardItemInfoManager = cardItemInfoManager;
         }
         
         public LevelSaveData GetSavedLevel()
@@ -47,17 +33,17 @@ namespace Scripts
             PlayerPrefs.DeleteKey(_saveGameKey);
         }
         
-        public void Save()
+        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager)
         {
-            if (_resultManager.GetTriedCardsList().Count == 0) return;
-            if (_guessManager.IsGameOver()) return;
+            if (resultManager.GetTriedCardsList().Count == 0) return;
+            if (guessManager.IsGameOver()) return;
             LevelSaveData levelSaveData = new LevelSaveData()
             {
                 LevelId = _levelTracker.GetLevelId(),
-                TriedCardsList = _resultManager.GetTriedCardsList(),
-                TargetCards = _resultManager.GetTargetCards(),
-                RemainingGuessCount = _guessManager.GetRemainingGuessCount(),
-                CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList()
+                TriedCardsList = resultManager.GetTriedCardsList(),
+                TargetCards = targetNumberCreator.GetTargetCardsList(),
+                RemainingGuessCount = guessManager.GetRemainingGuessCount(),
+                CardItemInfoList = cardItemInfoManager.GetCardItemInfoList()
             };
             
             string data = JsonConvert.SerializeObject(levelSaveData);
@@ -71,8 +57,8 @@ namespace Scripts
         void Initialize(ILevelTracker levelTracker);
         LevelSaveData GetSavedLevel();
         void DeleteSave();
-        void Save();
-        void Set(IResultManager resultManager, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager);
+        void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager,
+            ICardItemInfoManager cardItemInfoManager);
         bool HasSavedGame();
     }
 

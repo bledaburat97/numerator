@@ -8,34 +8,37 @@ namespace Scripts
 {
     public class ResultManager : IResultManager
     {
-        [Inject] private IGameInitializer _gameInitializer;
-        [Inject] private IBoardAreaController _boardAreaController;
+        private IBoardAreaController _boardAreaController;
+        private IResultAreaController _resultAreaController;
+
         private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
         private int _numOfBoardHolders;
-        public event EventHandler<ResultBlockModel> ResultBlockAddition;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
-        public void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
+
+        [Inject]
+        public ResultManager(IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultAreaController resultAreaController)
         {
-            _numOfBoardHolders = levelDataCreator.GetLevelData().NumOfBoardHolders;
-            _targetCards = targetNumberCreator.GetTargetCardsList();
-            _triedCardsList = levelTracker.GetLevelSaveData().TriedCardsList;
-            _gameInitializer.CheckFinalNumbers += CheckFinalCards;
+            gameUIController.CheckFinalNumbers += CheckFinalCards;
+            _boardAreaController = boardAreaController;
+            _resultAreaController = resultAreaController;
+        }
+        
+        public void Initialize(List<List<int>> triedCardsList, List<int> targetCards, int numOfBoardHolders)
+        {
+            _numOfBoardHolders = numOfBoardHolders;
+            _targetCards = targetCards;
+            _triedCardsList = triedCardsList;
             foreach (List<int> triedCards in _triedCardsList)
             {
                 CalculatePositionCounts(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
-                ResultBlockAddition?.Invoke(this, new ResultBlockModel()
+                _resultAreaController.AddResultBlock(new ResultBlockModel()
                 {
                     finalNumbers = triedCards,
                     correctPosCount = numOfCorrectPos,
                     wrongPosCount = numOfWrongPos
                 });
             }
-        }
-
-        public int GetTargetCardAtIndex(int index)
-        {
-            return _targetCards[index];
         }
 
         private void CalculatePositionCounts(List<int> finalCards, out int numOfCorrectPos, out int numOfWrongPos)
@@ -54,60 +57,6 @@ namespace Scripts
                     }
                 }
             }
-        }
-        
-        private void CalculateEstimationPercent(List<CardsAndResult> cardsAndResultList, int numberOfCards, int numberOfBoardHolders)
-        {
-            List<List<int>> possibilities = new List<List<int>>();
-            for (int i = 0; i < numberOfBoardHolders; i++)
-            {
-                List<int> possibleCards = new List<int>();
-                for (int j = 0; j < numberOfCards; j++)
-                {
-                    possibleCards.Add(j);
-                }
-                possibilities.Add(possibleCards);
-            }
-
-            for (int i = 0; i < cardsAndResultList.Count; i++)
-            {
-                CardsAndResult cardsAndResult = cardsAndResultList[i];
-                if (cardsAndResult.wrongCount > 0 && cardsAndResult.correctCount == 0)
-                {
-                    for (int j = 0; j < cardsAndResult.triedCards.Count; j++)
-                    {
-                        possibilities[j].Remove(cardsAndResult.triedCards[j]);
-                    }
-                }
-                
-                else if (cardsAndResult.wrongCount == 0 && cardsAndResult.correctCount > 0)
-                {
-                    for (int j = 0; j < cardsAndResult.triedCards.Count; j++)
-                    {
-                        for (int k = 0; k < cardsAndResult.triedCards.Count; k++)
-                        {
-                            if (j != k)
-                            {
-                                possibilities[j].Remove(cardsAndResult.triedCards[k]);
-                            } 
-                        }
-                    }
-                }
-                
-                else if (cardsAndResult.wrongCount == 0 && cardsAndResult.correctCount == 0)
-                {
-                    for (int j = 0; j < cardsAndResult.triedCards.Count; j++)
-                    {
-                        for (int k = 0; k < cardsAndResult.triedCards.Count; k++)
-                        {
-                            possibilities[j].Remove(cardsAndResult.triedCards[k]);
-                        }
-                    }
-                }
-                
-                
-            }
-            
         }
 
         private void CheckFinalCards(object sender, EventArgs args)
@@ -128,53 +77,23 @@ namespace Scripts
 
         private void DetermineAction(List<int> finalCards, int numOfCorrectPos, int numOfWrongPos)
         {
-            if (numOfCorrectPos == _numOfBoardHolders)
+            _resultAreaController.AddResultBlock(new ResultBlockModel()
             {
-                ResultBlockAddition?.Invoke(this, new ResultBlockModel()
-                {
-                    finalNumbers = finalCards,
-                    correctPosCount = numOfCorrectPos,
-                    wrongPosCount = numOfWrongPos
-                });
-                NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
-                {
-                    finalCardNumbers = finalCards,
-                    targetCardNumbers = _targetCards,
-                    isGuessRight = true,
-                });
-            }
-            else
+                finalNumbers = finalCards,
+                correctPosCount = numOfCorrectPos,
+                wrongPosCount = numOfWrongPos
+            });
+            NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
             {
-                ResultBlockAddition?.Invoke(this, new ResultBlockModel()
-                {
-                    finalNumbers = finalCards,
-                    correctPosCount = numOfCorrectPos,
-                    wrongPosCount = numOfWrongPos
-                });
-                NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
-                {
-                    finalCardNumbers = finalCards,
-                    targetCardNumbers = _targetCards,
-                    isGuessRight = false,
-                });
-            }
+                finalCardNumbers = finalCards,
+                targetCardNumbers = _targetCards,
+                isGuessRight = numOfCorrectPos == _numOfBoardHolders,
+            });
         }
         
         public List<List<int>> GetTriedCardsList()
         {
             return _triedCardsList;
-        }
-
-        public List<int> GetTargetCards()
-        {
-            return _targetCards;
-        }
-
-        private struct CardsAndResult
-        {
-            public List<int> triedCards;
-            public int correctCount;
-            public int wrongCount;
         }
     }
     
@@ -187,11 +106,8 @@ namespace Scripts
 
     public interface IResultManager
     {
-        void Initialize(ILevelTracker levelTracker, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
-        int GetTargetCardAtIndex(int index);
-        event EventHandler<ResultBlockModel> ResultBlockAddition;
+        void Initialize(List<List<int>> triedCardsList, List<int> targetCards, int numOfBoardHolders);
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         List<List<int>> GetTriedCardsList();
-        List<int> GetTargetCards();
     }
 }

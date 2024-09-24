@@ -6,29 +6,51 @@ namespace Game
 {
     public class GuessManager : IGuessManager
     {
-        [Inject] private ILevelTracker _levelTracker;
-        [Inject] private ILevelDataCreator _levelDataCreator;
-        [Inject] private ILifeBarController _lifeBarController;
-        [Inject] private ILevelFinishController _levelFinishController;
-        [Inject] private IResultManager _resultManager;
-        [Inject] private IHintProvider _hintProvider;
+        private ILevelTracker _levelTracker;
+        private ILifeBarController _lifeBarController;
+        private ILevelFinishController _levelFinishController;
+        private IHintProvider _hintProvider;
         
         private int _remainingGuessCount;
         private List<LifeBarStarInfo> _lifeBarStarInfoList;
         private int _maxGuessCount;
         private bool _isGameOver;
-        
-        public void Initialize()
+        private int _numOfBoardHolders;
+
+        [Inject]
+        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController, ILevelFinishController levelFinishController, IHintProvider hintProvider)
         {
-            _maxGuessCount = _levelDataCreator.GetLevelData().MaxNumOfTries;
-            _remainingGuessCount = _levelTracker.GetLevelSaveData().RemainingGuessCount;
+            resultManager.NumberGuessed += CheckGameIsOver;
+            _levelTracker = levelTracker;
+            _lifeBarController = lifeBarController;
+            _levelFinishController = levelFinishController;
+            _hintProvider = hintProvider;
+        }
+        
+        public void Initialize(int maxGuessCount, int remainingGuessCount, int numOfBoardHolders)
+        {
+            _maxGuessCount = maxGuessCount;
+            _remainingGuessCount = remainingGuessCount;
+            _numOfBoardHolders = numOfBoardHolders;
             _lifeBarStarInfoList = new List<LifeBarStarInfo>();
             CreateLifeBarStarInfoList();
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                InitializeLifeBarController();
+            }
+            else
+            {
+                _lifeBarController.DisableStarProgressBar();
+            }
+            _isGameOver = false;
+        }
+
+        private void InitializeLifeBarController()
+        {
+            _lifeBarController.Initialize();
             _lifeBarController.CreateBoundaries(_maxGuessCount);
             _lifeBarController.CreateStars(_lifeBarStarInfoList);
             _lifeBarController.InitProgressBar((float) _remainingGuessCount / _maxGuessCount);
-            _resultManager.NumberGuessed += CheckGameIsOver;
-            _isGameOver = false;
         }
         
         private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
@@ -111,7 +133,7 @@ namespace Game
         private void CreateLifeBarStarInfoList()
         {
             List<int> lifeBarStarIndexes = new List<int>(){0, (_maxGuessCount - 2) / 4, (_maxGuessCount - 2) / 2};
-            int rewardStarCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
+            int rewardStarCount = _numOfBoardHolders - 2;
 
             for (int i = 0; i < lifeBarStarIndexes.Count; i++)
             {
@@ -143,7 +165,7 @@ namespace Game
 
     public interface IGuessManager
     {
-        void Initialize();
+        void Initialize(int maxGuessCount, int remainingGuessCount, int numOfBoardHolders);
         bool IsGameOver();
         int GetRemainingGuessCount();
     }

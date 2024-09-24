@@ -11,7 +11,8 @@ namespace Game
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private IUserReady _userReady;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
-
+        [Inject] private IResultAreaController _resultAreaController;
+        
         private NetworkVariable<bool> _isGameEnd = new NetworkVariable<bool>(false);
         private NetworkVariable<bool> _isAnyReady = new NetworkVariable<bool>(false);
         private Dictionary<ulong, bool> _playerSuccessDictionary;
@@ -129,6 +130,23 @@ namespace Game
                 _gamePopupCreator.CreateDisconnectionPopup();
             }
         }
+
+        public void AddResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
+        {
+            AddResultBlockServerRpc(finalNumber, correctPosCount, wrongPosCount);
+        }
+        
+        [ServerRpc (RequireOwnership = false)]
+        private void AddResultBlockServerRpc(int finalNumber, int correctPosCount, int wrongPosCount)
+        {
+            AddResultBlockClientRpc(finalNumber, correctPosCount, wrongPosCount);
+        }
+        
+        [ClientRpc]
+        private void AddResultBlockClientRpc(int finalNumber, int correctPosCount, int wrongPosCount)
+        {
+            _resultAreaController.AddNewResultBlock(finalNumber, correctPosCount, wrongPosCount);
+        }
         
         private new void OnDestroy()
         {
@@ -148,5 +166,7 @@ namespace Game
     public interface IMultiplayerGameController
     {
         void Initialize();
+
+        void AddResultBlock(int finalNumber, int correctPosCount, int wrongPosCount);
     }
 }

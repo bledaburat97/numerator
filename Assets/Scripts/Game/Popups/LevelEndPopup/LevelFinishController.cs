@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using Game;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
@@ -15,6 +16,7 @@ namespace Scripts
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private IGameInitializer _gameInitializer;
         
         private ILevelFinishPopupView _view;
         private ICircleProgressBarController _circleProgressBarController;
@@ -41,7 +43,16 @@ namespace Scripts
                 }
             }
             _view.Init();
-            InitButton(LevelFinishButtonType.Game, () => SceneManager.LoadScene("Game"), true);
+            InitButton(LevelFinishButtonType.Game, () =>
+            {
+                _view.SetStatus(false);
+                _view.GetTopArea().alpha = 1f;
+                _view.GetScrollArea().alpha = 1f;
+                _view.GetBoardArea().alpha = 1f;
+                _view.GetButtonArea().alpha = 1f;
+                _view.GetBottomArea().alpha = 1f;
+                _gameInitializer.Initialize();
+            }, true);
             InitButton(LevelFinishButtonType.Menu, () => SceneManager.LoadScene("Menu"), true);
             if (levelFinishInfo.isSuccess)
             {

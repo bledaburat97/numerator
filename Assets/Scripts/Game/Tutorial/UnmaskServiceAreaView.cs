@@ -11,6 +11,7 @@ namespace Scripts
         private IUnmaskServiceView _unmaskServiceView;
         private float _anchorMaxYOfSafeArea;
         private float _heightOfCanvas;
+        
         public void Initialize(IFadePanelController fadePanelController)
         {
             _fadePanelController = fadePanelController;

@@ -7,40 +7,75 @@ namespace Scripts
 {
     public class GameUIController : IGameUIController
     {
-        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-        
+        private BaseButtonControllerFactory _baseButtonControllerFactory;
+        private ILevelTracker _levelTracker;
+        private ITurnOrderDeterminer _turnOrderDeterminer;
+        private IHapticController _hapticController;
         private IGameUIView _view;
         private ICardInfoButtonController _cardInfoButtonController;
 
         private Dictionary<GameUIButtonType, IBaseButtonController> _buttonDictionary;
         
-        public GameUIController(IGameUIView view)
+        public event EventHandler CheckFinalNumbers;
+        public event EventHandler NotAbleToCheck;
+        public event EventHandler ResetNumbers;
+        public event EventHandler OpenSettings;
+        public event EventHandler<GameUIButtonType> PowerUpClickedEvent;
+        public event EventHandler<bool> CardInfoToggleChanged;
+        
+        [Inject]
+        public GameUIController(BaseButtonControllerFactory baseButtonControllerFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController, IGameUIView view)
         {
             _view = view;
             _buttonDictionary = new Dictionary<GameUIButtonType, IBaseButtonController>();
+            _baseButtonControllerFactory = baseButtonControllerFactory;
+            _levelTracker = levelTracker;
+            _turnOrderDeterminer = turnOrderDeterminer;
+            _hapticController = hapticController;
+            CreateGameUiButtons(OnButtonClick);
         }
 
-        public void SetUserText(string text)
+        public void Initialize()
+        {
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                SetUserText("Level " + (_levelTracker.GetLevelId() + 1));
+                SetOpponentInfoStatus(false);
+            }
+
+            else
+            {
+                SetUserText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).playerName.ToString());
+                SetOpponentText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).playerName.ToString());
+                SetOpponentInfoStatus(true);
+            }
+            
+            if (_levelTracker.GetLevelId() > 8)
+            {
+                CreateCardInfoButton(OnCardInfoButtonClick);
+            }
+            else
+            {
+                SetCardInfoButtonStatus(false);
+            }
+        }
+
+        private void SetUserText(string text)
         {
             _view.SetUserText(text);
         }
 
-        public void SetOpponentText(string text)
+        private void SetOpponentText(string text)
         {
             _view.SetOpponentText(text);
         }
 
-        public void SetOpponentInfoStatus(bool status)
+        private void SetOpponentInfoStatus(bool status)
         {
             _view.SetOpponentInfoStatus(status);
         }
-        
-        public void SetPowerUpImages()
-        {
-            _view.SetImagesOfPowerUpButtons();
-        }
 
-        public void CreateGameUiButtons(Action<GameUIButtonType> buttonClickAction)
+        private void CreateGameUiButtons(Action<GameUIButtonType> buttonClickAction)
         {
             CreateButtonController(_view.GetCheckButton(), GameUIButtonType.Check, buttonClickAction);
             CreateButtonController(_view.GetResetButton(), GameUIButtonType.Reset, buttonClickAction);
@@ -50,18 +85,20 @@ namespace Scripts
             CreateButtonController(_view.GetHintPowerUpButton(), GameUIButtonType.HintPowerUp, buttonClickAction);
         }
 
-        public void CreateCardInfoButton(Action<bool> onClickAction)
+        private void CreateCardInfoButton(Action<bool> onClickAction)
         {
+            if(_cardInfoButtonController != null) return;
             _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton(), onClickAction);
         }
 
-        public void SetCardInfoButtonStatus(bool status)
+        private void SetCardInfoButtonStatus(bool status)
         {
             _view.GetCardInfoButton().SetActive(status);
         }
 
         private void CreateButtonController(IBaseButtonView baseButtonView, GameUIButtonType buttonType, Action<GameUIButtonType> onClickAction)
         {
+            if (_buttonDictionary.ContainsKey(buttonType)) return;
             IBaseButtonController buttonController = _baseButtonControllerFactory.Create(baseButtonView, () => onClickAction(buttonType));
             _buttonDictionary.Add(buttonType, buttonController);
         }
@@ -101,6 +138,46 @@ namespace Scripts
         {
             return _view.GetCardInfoButton().GetRectTransform();
         }
+        
+        private void OnButtonClick(GameUIButtonType buttonType)
+        {
+            switch (buttonType)
+            {
+                case GameUIButtonType.Check:
+                    if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
+                    {
+                        CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
+                    }
+                    else
+                    {
+                        NotAbleToCheck?.Invoke(this, EventArgs.Empty);
+                    }
+                    break;
+                case GameUIButtonType.Reset:
+                    ResetNumbers?.Invoke(this,  EventArgs.Empty);
+                    break;
+                case GameUIButtonType.Settings:
+                    OpenSettings?.Invoke(this,  EventArgs.Empty);
+                    break;
+                case GameUIButtonType.RevealingPowerUp:
+                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.RevealingPowerUp);
+                    break;
+                case GameUIButtonType.LifePowerUp:
+                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.LifePowerUp);
+                    break;
+                case GameUIButtonType.HintPowerUp:
+                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.HintPowerUp);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void OnCardInfoButtonClick(bool isCardInfoToggleOn)
+        {
+            _hapticController.Vibrate(HapticType.ButtonClick);
+            CardInfoToggleChanged?.Invoke(this, isCardInfoToggleOn);
+        }
     }
     
     public enum GameUIButtonType
@@ -116,17 +193,17 @@ namespace Scripts
 
     public interface IGameUIController
     {
-        void SetPowerUpImages();
-        void CreateGameUiButtons(Action<GameUIButtonType> buttonClickAction);
-        void CreateCardInfoButton(Action<bool> onClickAction);
-        void SetCardInfoButtonStatus(bool status);
+        void Initialize();
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
         RectTransform GetCardInfoButtonRectTransform();
-        void SetUserText(string text);
-        void SetOpponentText(string text);
         void SetAllButtonsUnclickable();
         void SetButtonClickable(bool isClickable, GameUIButtonType type);
-        void SetOpponentInfoStatus(bool status);
+        event EventHandler CheckFinalNumbers;
+        event EventHandler NotAbleToCheck;
+        event EventHandler ResetNumbers;
+        event EventHandler OpenSettings;
+        event EventHandler<GameUIButtonType> PowerUpClickedEvent;
+        event EventHandler<bool> CardInfoToggleChanged;
     }
 }

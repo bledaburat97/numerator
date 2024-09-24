@@ -10,7 +10,6 @@ namespace Scripts
     {
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private ILevelTracker _levelTracker;
-        [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
         [Inject] private IResultAreaController _resultAreaController;
         [Inject] private IResultManager _resultManager;
         [Inject] private ILifeBarController _lifeBarController;
@@ -57,7 +56,6 @@ namespace Scripts
             InitializeFadePanelController();
             InitializeUnmaskServiceAreaView();
             InitializeGamePopupCreator();
-            _gameSaveService.Set(_resultManager, _guessManager, _cardItemInfoManager);
             _gameSaveService.DeleteSave();
         }
 
@@ -68,12 +66,12 @@ namespace Scripts
         
         private void InitializeResultArea()
         {
-            _resultAreaController.Initialize(_resultManager, _levelTracker, _turnOrderDeterminer);
+            //_resultAreaController.Initialize(_resultManager, _levelTracker, _turnOrderDeterminer);
         }
         
         private void InitializeResultManager()
         {
-            _resultManager.Initialize(_levelTracker, _targetNumberCreator, _levelDataCreator);
+            //_resultManager.Initialize(_levelTracker, _targetNumberCreator, _levelDataCreator);
         }
         
         private void InitializeGameClock()
@@ -96,11 +94,12 @@ namespace Scripts
 
         private void InitializeCardItemLocator()
         {
-            _cardItemLocator.Initialize();
+            //_cardItemLocator.Initialize();
         }
         
         private void InitializeStarProgressBar()
         {
+            /*
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
                 _lifeBarController.Initialize();
@@ -109,59 +108,61 @@ namespace Scripts
             {
                 _lifeBarController.DisableStarProgressBar();
             }
+            */
         }
 
         private void InitializeGuessManager()
         {
-            _guessManager.Initialize();
+            //_guessManager.Initialize();
         }
         
         private void InitializeCardHolderModelCreator()
         {
+            /*
             _cardHolderModelCreator.Initialize();
-            int numOfTotalWildCards = _levelTracker.GetGameOption() == GameOption.SinglePlayer ? 0 : 0;
             _cardHolderModelCreator.SetBoardCardHolderModelList(_levelDataCreator.GetLevelData().NumOfBoardHolders);
             _cardHolderModelCreator.SetInitialCardHolderModelList(_levelDataCreator.GetLevelData().NumOfCards, numOfTotalWildCards > 0);
+            */
         }
         
         private void InitializeBoardArea()
         {
-            _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders);
+            //_boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders);
         }
 
         private void InitializeCardItemInfoManager()
         {
-            _cardItemInfoManager.Initialize(_levelTracker, _levelDataCreator);
+            //_cardItemInfoManager.Initialize(_levelTracker, _levelDataCreator);
         }
         
         private void InitializeInitialCardArea()
         {
-            _initialCardAreaController.Initialize();
+            //_initialCardAreaController.Initialize();
         }
 
         private void InitializeCardInteractionManager()
         {
-            _cardInteractionManager.Initialize();
+            //_cardInteractionManager.Initialize();
         }
         
         private void InitializeCardItemInfoPopup()
         {
-            _cardItemInfoPopupController.Initialize();
+            //_cardItemInfoPopupController.Initialize();
         }
 
         private void InitializeFadePanelController()
         {
-            _fadePanelController.SetFadeImageStatus(false);
+            //_fadePanelController.SetFadeImageStatus(false);
         }
         
         private void InitializeUnmaskServiceAreaView()
         {
-            _unmaskServiceAreaView.Initialize(_fadePanelController);
+            //_unmaskServiceAreaView.Initialize(_fadePanelController);
         }
 
         private void InitializeGamePopupCreator()
         {
-            _gamePopupCreator.Initialize();
+            //_gamePopupCreator.Initialize();
         }
 
         private void OnDestroy()
@@ -192,7 +193,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _gameSaveService.Save();
+                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager);
             }
             
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR

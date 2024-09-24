@@ -29,7 +29,6 @@ namespace Scripts
             Container.Bind<IHapticController>().To<HapticController>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<ICardHolderModelCreator>().To<CardHolderModelCreator>().AsSingle();
             Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
             Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()

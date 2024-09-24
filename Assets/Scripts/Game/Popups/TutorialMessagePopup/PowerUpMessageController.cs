@@ -13,11 +13,11 @@ namespace Scripts
         private IInitialCardAreaController _initialCardAreaController;
         private IHapticController _hapticController;
         private IBoardAreaController _boardAreaController;
-        private IResultManager _resultManager;
+        private ITargetNumberCreator _targetNumberCreator;
         private bool _isOpen = false;
         private GameUIButtonType _powerUpType;
 
-        public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, PowerUpMessagePopupView powerUpMessagePopupView, ICardItemLocator cardItemLocator, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoardAreaController boardAreaController, IResultManager resultManager)
+        public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, PowerUpMessagePopupView powerUpMessagePopupView, ICardItemLocator cardItemLocator, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _powerUpMessagePopupView = powerUpMessagePopupView;
@@ -25,7 +25,7 @@ namespace Scripts
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
             _boardAreaController = boardAreaController;
-            _resultManager = resultManager;
+            _targetNumberCreator = targetNumberCreator;
         }
 
         public void SetPowerUpMessagePopup(GameUIButtonType powerUpType, BaseButtonControllerFactory baseButtonControllerFactory)
@@ -95,7 +95,7 @@ namespace Scripts
         {
             _unmaskServiceAreaView.ClearAllUnmaskCardItems();
             _hapticController.Vibrate(HapticType.CardRelease);
-            int cardNumber = _resultManager.GetTargetCardAtIndex(boardHolderIndex);
+            int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
             int cardIndex = cardNumber - 1;
             _boardAreaController.SetCardIndex(boardHolderIndex, cardIndex);
             LockedCardInfo lockedCardInfo = new LockedCardInfo(){boardHolderIndex = boardHolderIndex, targetCardIndex = cardIndex};

@@ -22,13 +22,12 @@ namespace Scripts
         protected ITutorialAbilityManager _tutorialAbilityManager;
         protected ICardInteractionManager _cardInteractionManager;
         protected IBoardAreaController _boardAreaController;
-        protected IGameInitializer _gameInitializer;
         protected Vector2 _sizeOfInitialHolder;
         protected Vector2 _sizeOfBoardHolder;
         
         public void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController, IGameInitializer gameInitializer)
+            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _handTutorialView = handTutorialView;
@@ -43,7 +42,6 @@ namespace Scripts
             _tutorialAbilityManager = tutorialAbilityManager;
             _cardInteractionManager = cardInteractionManager;
             _boardAreaController = boardAreaController;
-            _gameInitializer = gameInitializer;
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _tutorialMessagePopupView.Init();
             _tutorialAnimationActions = new Queue<Action>();
@@ -173,13 +171,13 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the check button.");
-            _gameInitializer.CheckFinalNumbers += CloseClickButtonAnimation;
+            _gameUIController.CheckFinalNumbers += CloseClickButtonAnimation;
             _gameUIController.SetAllButtonsUnclickable();
             _gameUIController.SetButtonClickable(true, GameUIButtonType.Check);
             void CloseClickButtonAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _gameInitializer.CheckFinalNumbers -= CloseClickButtonAnimation;
+                _gameUIController.CheckFinalNumbers -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
@@ -194,13 +192,13 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the reset button.");
-            _gameInitializer.ResetNumbers += CloseClickButtonAnimation;
+            _gameUIController.ResetNumbers += CloseClickButtonAnimation;
             _gameUIController.SetAllButtonsUnclickable();
             _gameUIController.SetButtonClickable(true, GameUIButtonType.Reset);
             void CloseClickButtonAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _gameInitializer.ResetNumbers -= CloseClickButtonAnimation;
+                _gameUIController.ResetNumbers -= CloseClickButtonAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
@@ -225,6 +223,6 @@ namespace Scripts
     {
         void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController, IGameInitializer gameInitializer);
+            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController);
     }
 }

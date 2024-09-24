@@ -6,23 +6,33 @@ namespace Scripts
 {
     public class CardInteractionManager : ICardInteractionManager
     {
-        [Inject] private ICardItemLocator _cardItemLocator;
-        [Inject] private IGameInitializer _gameInitializer;
-        [Inject] private IBoardAreaController _boardAreaController;
-        [Inject] private IInitialCardAreaController _initialCardAreaController;
-        [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
+        private IGameUIController _gameUIController;
+        private IBoardAreaController _boardAreaController;
+        private IInitialCardAreaController _initialCardAreaController;
+        private ITutorialAbilityManager _tutorialAbilityManager;
+        
         private int _selectedCardIndex = -1;
         private bool _isCardItemInfoPopupToggleOn = false;
         public event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
 
-        public void Initialize()
+        [Inject]
+        public CardInteractionManager(IGameUIController gameUIController, IBoardAreaController boardAreaController,
+            IInitialCardAreaController initialCardAreaController, ITutorialAbilityManager tutorialAbilityManager)
+        {
+            _gameUIController = gameUIController;
+            _boardAreaController = boardAreaController;
+            _initialCardAreaController = initialCardAreaController;
+            _tutorialAbilityManager = tutorialAbilityManager;
+            Subscribe();
+        }
+        private void Subscribe()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked += OnInvisibleClicked;
             _initialCardAreaController.OnCardDragStartedEvent += RemoveSelection;
-            _gameInitializer.CheckFinalNumbers += RemoveSelection;
-            _gameInitializer.NotAbleToCheck += RemoveSelection;
-            _gameInitializer.ResetNumbers += RemoveSelection;
-            _gameInitializer.CardInfoToggleChanged += OnCardInfoToggleChanged;
+            _gameUIController.CheckFinalNumbers += RemoveSelection;
+            _gameUIController.NotAbleToCheck += RemoveSelection;
+            _gameUIController.ResetNumbers += RemoveSelection;
+            _gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
             _boardAreaController.BoardHolderClickedEvent += MoveSelectedCard;
             _initialCardAreaController.OnCardClickedEvent += OnCardClicked;
         }
@@ -95,10 +105,10 @@ namespace Scripts
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked -= OnInvisibleClicked;
             _initialCardAreaController.OnCardDragStartedEvent -= RemoveSelection;
-            _gameInitializer.CheckFinalNumbers -= RemoveSelection;
-            _gameInitializer.NotAbleToCheck -= RemoveSelection;
-            _gameInitializer.ResetNumbers -= RemoveSelection;
-            _gameInitializer.CardInfoToggleChanged -= OnCardInfoToggleChanged;
+            _gameUIController.CheckFinalNumbers -= RemoveSelection;
+            _gameUIController.NotAbleToCheck -= RemoveSelection;
+            _gameUIController.ResetNumbers -= RemoveSelection;
+            _gameUIController.CardInfoToggleChanged -= OnCardInfoToggleChanged;
             _boardAreaController.BoardHolderClickedEvent -= MoveSelectedCard;
             _initialCardAreaController.OnCardClickedEvent -= OnCardClicked;
         }
@@ -107,7 +117,6 @@ namespace Scripts
     public interface ICardInteractionManager
     {
         event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
-        void Initialize();
         void Unsubscribe();
     }
 }

@@ -8,19 +8,25 @@ namespace Scripts
 {
     public class CardItemLocator : ICardItemLocator
     {
-        [Inject] private IBoardAreaController _boardAreaController;
-        [Inject] private IGameInitializer _gameInitializer;
+        private IBoardAreaController _boardAreaController;
         private int _activeCardIndex;
         private int _probableBoardHolderIndex;
         
         public event EventHandler CardPlacedBoardEvent;
         public event EventHandler CardReturnedToInitialEvent;
 
+
+        [Inject]
+        public CardItemLocator(IBoardAreaController boardAreaController, IGameUIController gameUIController)
+        {
+            _boardAreaController = boardAreaController;
+            gameUIController.ResetNumbers += Reset;
+        }
+        
         public void Initialize()
         {
             _activeCardIndex = -1;
             _probableBoardHolderIndex = -1;
-            _gameInitializer.ResetNumbers += Reset;
         }
 
         private void Reset(object sender, EventArgs args)

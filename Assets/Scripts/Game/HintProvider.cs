@@ -10,10 +10,10 @@ namespace Game
         [Inject] private IResultManager _resultManager;
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private ICardItemInfoManager _cardItemInfoManager;
-        
+        [Inject] private ITargetNumberCreator _targetNumberCreator;
         public void SetRedCardItem()
         {
-            List<int> targetCardNumbers = _resultManager.GetTargetCards();
+            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
             List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<int> cardIndexesShouldBeRed = new List<int>();
@@ -58,7 +58,7 @@ namespace Game
 
         public void SetGreenCardItem()
         {
-            List<int> targetCardNumbers = _resultManager.GetTargetCards();
+            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
             List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
 

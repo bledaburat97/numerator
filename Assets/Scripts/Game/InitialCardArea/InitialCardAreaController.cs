@@ -9,39 +9,48 @@ namespace Scripts
 {
     public class InitialCardAreaController : IInitialCardAreaController
     {
-        [Inject] private IHapticController _hapticController;
-        [Inject] private ICardItemLocator _cardItemLocator;
-        [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
-        [Inject] private ICardItemInfoManager _cardItemInfoManager;
-        [Inject] private ILevelDataCreator _levelDataCreator;
-        [Inject] private ILevelTracker _levelTracker;
-        [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
-        [Inject] private IGameInitializer _gameInitializer;
-        [Inject] private IBoardAreaController _boardAreaController;
+        private IHapticController _hapticController;
+        private ICardItemLocator _cardItemLocator;
+        private ICardItemInfoManager _cardItemInfoManager;
+        private ILevelTracker _levelTracker;
+        private ITutorialAbilityManager _tutorialAbilityManager;
+        private IGameUIController _gameUIController;
+        private IBoardAreaController _boardAreaController;
         
         private IInitialCardAreaView _view;
         private List<IInitialCardHolderController> _normalCardHolderControllerList;
         private List<INormalCardItemController> _normalCardItemControllerList;
         public event EventHandler<CardClickedEventArgs> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
-        public InitialCardAreaController(IInitialCardAreaView view)
+        
+        [Inject]
+        public InitialCardAreaController(IHapticController hapticController, ICardItemLocator cardItemLocator, IInitialCardAreaView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ITutorialAbilityManager tutorialAbilityManager, IGameUIController gameUIController, IBoardAreaController boardAreaController)
         {
             _view = view;
-        }
-        
-        public void Initialize()
-        {
             _normalCardHolderControllerList = new List<IInitialCardHolderController>();
             _normalCardItemControllerList = new List<INormalCardItemController>();
-            _gameInitializer.ResetNumbers += ResetPositionsOfCardItems;
+            _hapticController = hapticController;
+            _cardItemLocator = cardItemLocator;
+            _cardItemInfoManager = cardItemInfoManager;
+            _levelTracker = levelTracker;
+            _tutorialAbilityManager = tutorialAbilityManager;
+            _gameUIController = gameUIController;
+            _boardAreaController = boardAreaController;
+            _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
+        }
+        
+        public void Initialize(List<CardHolderModel> cardHolderModels)
+        {
+            _normalCardHolderControllerList.Clear();
+            _normalCardItemControllerList.Clear();
             _view.Init();
-            CreateCardHolders();
+            CreateCardHolders(cardHolderModels);
             CreateCardItemsData();
         }
         
-        private void CreateCardHolders()
+        private void CreateCardHolders(List<CardHolderModel> cardHolderModels)
         {
-            foreach (CardHolderModel cardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial))
+            foreach (CardHolderModel cardHolderModel in cardHolderModels)
             {
                 ICardHolderView cardHolderView = _view.CreateCardHolderView();
                 IInitialCardHolderController cardHolderController = new InitialCardHolderController(cardHolderView, _view.GetCamera());
@@ -144,14 +153,14 @@ namespace Scripts
 
         public void Unsubscribe()
         {
-            _gameInitializer.ResetNumbers -= ResetPositionsOfCardItems;
+            _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
         }
     }
     
     public interface IInitialCardAreaController
     {
         event EventHandler<CardClickedEventArgs> OnCardClickedEvent;
-        void Initialize();
+        void Initialize(List<CardHolderModel> cardHolderModels);
         void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1);
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
         void DeselectCard(int cardIndex);

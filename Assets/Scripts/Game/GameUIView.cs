@@ -16,15 +16,7 @@ namespace Scripts
         [SerializeField] private PowerUpButtonView revealingPowerUpButton;
         [SerializeField] private PowerUpButtonView lifePowerUpButton;
         [SerializeField] private PowerUpButtonView hintPowerUpButton;
-        [SerializeField] private List<PowerUpModel> powerUpModels;
         [SerializeField] private GameObject opponentInfo;
-
-        public void SetImagesOfPowerUpButtons()
-        {
-            revealingPowerUpButton.SetImage(powerUpModels[0].sprite);
-            lifePowerUpButton.SetImage(powerUpModels[1].sprite);
-            hintPowerUpButton.SetImage(powerUpModels[2].sprite);
-        }
         
         public void SetUserText(string text)
         {
@@ -77,16 +69,10 @@ namespace Scripts
         {
             return hintPowerUpButton;
         }
-
-        public PowerUpModel GetPowerUpModel(int index)
-        {
-            return powerUpModels[index];
-        }
     }
 
     public interface IGameUIView
     {
-        void SetImagesOfPowerUpButtons();
         void SetUserText(string text);
         void SetOpponentText(string text);
         IBaseButtonView GetCheckButton();
@@ -96,7 +82,6 @@ namespace Scripts
         IBaseButtonView GetRevealingPowerUpButton();
         IBaseButtonView GetLifePowerUpButton();
         IBaseButtonView GetHintPowerUpButton();
-        PowerUpModel GetPowerUpModel(int index);
         void SetOpponentInfoStatus(bool status);
     }
 }

@@ -11,27 +11,16 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private ResultBlockView resultBlockPrefab;
-        private ResultBlockViewFactory _resultBlockViewFactory;
         [SerializeField] private ScrollRect scrollRect;
-        private ResultBlockControllerFactory _resultBlockControllerFactory;
-        private ILevelTracker _levelTracker;
-        private ITurnOrderDeterminer _turnOrderDeterminer;
         [SerializeField] private VerticalLayoutGroup verticalLayoutGroup;
         
-        public void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer)
+        public void Init()
         {
-            _resultBlockControllerFactory = new ResultBlockControllerFactory();
-            _resultBlockViewFactory = resultBlockViewFactory;
-            _levelTracker = levelTracker;
-            _turnOrderDeterminer = turnOrderDeterminer;
+
         }
 
-        private void SetScrollPositionToBottom()
+        public void SetScrollPositionToBottom()
         {
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer && !_turnOrderDeterminer.IsLocalTurn())
-            {
-                return;
-            }
             StartCoroutine(ScrollToBottomCoroutine());
         }
         
@@ -52,60 +41,9 @@ namespace Scripts
             scrollRect.verticalNormalizedPosition = targetPosition;
         }
         
-        private IResultBlockView CreateResultBlock()
+        public IResultBlockView CreateResultBlock()
         {
-            return _resultBlockViewFactory.Spawn(transform, resultBlockPrefab);
-        }
-        
-        public void AddResultBlock(object sender, ResultBlockModel resultBlockModel)
-        {
-            int finalNumber = 0;
-            for (int i = 0; i < resultBlockModel.finalNumbers.Count; i++)
-            {
-                finalNumber += resultBlockModel.finalNumbers[i] * ((int) Math.Pow(10, i));
-            }
-
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                AddNewResultBlock(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
-            }
-            else
-            {
-                AddResultBlockServerRpc(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
-            }
-        }
-
-        [ServerRpc (RequireOwnership = false)]
-        private void AddResultBlockServerRpc(int finalNumber, int correctPosCount, int wrongPosCount)
-        {
-            AddResultBlockClientRpc(finalNumber, correctPosCount, wrongPosCount);
-        }
-        
-        [ClientRpc]
-        private void AddResultBlockClientRpc(int finalNumber, int correctPosCount, int wrongPosCount)
-        {
-            AddNewResultBlock(finalNumber, correctPosCount, wrongPosCount);
-        }
-
-        private void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
-        {
-            IResultBlockController resultBlockController = _resultBlockControllerFactory.Spawn();
-            IResultBlockView resultBlockView = CreateResultBlock();
-            List<int> finalNumbers = new List<int>();
-            while (finalNumber != 0)
-            {
-                int a = finalNumber % 10;
-                finalNumbers.Add(a);
-                finalNumber /= 10;
-            }
-
-            resultBlockController.Initialize(resultBlockView, new ResultBlockModel()
-            {
-                finalNumbers = finalNumbers,
-                correctPosCount = correctPosCount,
-                wrongPosCount = wrongPosCount
-            });
-            SetScrollPositionToBottom();
+            return Instantiate(resultBlockPrefab, transform);
         }
 
         public ResultAreaInfo GetResultAreaInfo()
@@ -121,9 +59,10 @@ namespace Scripts
 
     public interface IResultAreaView
     {
-        void Init(ResultBlockViewFactory resultBlockViewFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer);
-        void AddResultBlock(object sender, ResultBlockModel resultBlockModel);
+        void Init();
         ResultAreaInfo GetResultAreaInfo();
+        IResultBlockView CreateResultBlock();
+        void SetScrollPositionToBottom();
     }
 
     public struct ResultAreaInfo

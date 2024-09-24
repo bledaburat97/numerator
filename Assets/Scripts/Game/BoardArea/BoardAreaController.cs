@@ -8,34 +8,34 @@ namespace Scripts
 {
     public class BoardAreaController : IBoardAreaController
     {
-        [Inject] private ICardItemLocator _cardItemLocator;
-        [Inject] private IGameInitializer _gameInitializer;
-        [Inject] private ITutorialAbilityManager _tutorialAbilityManager;
-        [Inject] private ICardHolderModelCreator _cardHolderModelCreator;
+        private ITutorialAbilityManager _tutorialAbilityManager;
         private IBoardAreaView _view;
         private List<IBoardCardHolderController> _boardHolderControllerList;
         private BoardCardIndexManager _boardCardIndexManager;
         private int _numOfBoardHolders;
         public event EventHandler<int> BoardHolderClickedEvent;
 
-        public BoardAreaController(IBoardAreaView view)
+        [Inject]
+        public BoardAreaController(IGameUIController gameUIController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaView view)
         {
+            gameUIController.ResetNumbers += ResetBoard;
+            _tutorialAbilityManager = tutorialAbilityManager;
             _view = view;
+            _boardHolderControllerList = new List<IBoardCardHolderController>();
         }
         
-        public void Initialize(int numOfBoardHolders)
+        public void Initialize(int numOfBoardHolders, List<CardHolderModel> boardCardHolderModels)
         {
-            _boardHolderControllerList = new List<IBoardCardHolderController>();
+            _boardHolderControllerList.Clear();
             _numOfBoardHolders = numOfBoardHolders;
-            CreateBoardHolders();
+            CreateBoardHolders(boardCardHolderModels);
             _boardCardIndexManager = new BoardCardIndexManager(_numOfBoardHolders);
             _boardCardIndexManager.ResetBoard();
-            _gameInitializer.ResetNumbers += ResetBoard;
         }
         
-        private void CreateBoardHolders()
+        private void CreateBoardHolders(List<CardHolderModel> boardCardHolderModels)
         {
-            foreach (CardHolderModel boardHolderModel in _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board))
+            foreach (CardHolderModel boardHolderModel in boardCardHolderModels)
             {
                 ICardHolderView boardHolderView = _view.CreateCardHolderView();
                 IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
@@ -129,7 +129,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
-        void Initialize(int numOfBoardHolders);
+        void Initialize(int numOfBoardHolders, List<CardHolderModel> boardCardHolderModels);
         event EventHandler<int> BoardHolderClickedEvent;
         RectTransform GetRectTransformOfBoardHolder(int boardHolderIndex);
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);

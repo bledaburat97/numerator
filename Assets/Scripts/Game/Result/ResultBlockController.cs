@@ -39,11 +39,17 @@ namespace Scripts
                 cardItemView.MultiplyPixelsPerUnit();
             }
         }
+
+        public void DestroyResultBlock()
+        {
+            _view.Destroy();
+        }
     }
 
     public interface IResultBlockController
     {
         void Initialize(IResultBlockView view, ResultBlockModel model);
+        void DestroyResultBlock();
     }
     
     public enum CardPositionCorrectness
