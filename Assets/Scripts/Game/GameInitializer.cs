@@ -24,7 +24,8 @@ namespace Game
         [Inject] private IFadePanelController _fadePanelController;
         [Inject] private IUnmaskServiceAreaView _unmaskServiceAreaView;
         [Inject] private IGamePopupCreator _gamePopupCreator;
-        
+        [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private IUserReady _userReady;
         private ICardHolderModelCreator _cardHolderModelCreator;
         
         public GameInitializer()
@@ -34,6 +35,12 @@ namespace Game
 
         public void Initialize()
         {
+            _gameSaveService.Initialize(_levelTracker);
+            _levelTracker.Initialize(_gameSaveService);
+            _targetNumberCreator.Initialize();
+            _levelDataCreator.Initialize();
+            _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
+            _userReady.Initialize();
             _gameUIController.Initialize();
             _resultAreaController.Initialize();
             _resultManager.Initialize(_levelTracker.GetLevelSaveData().TriedCardsList, _targetNumberCreator.GetTargetCardsList(), _levelDataCreator.GetLevelData().NumOfBoardHolders);

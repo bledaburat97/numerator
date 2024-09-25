@@ -86,7 +86,7 @@ namespace Scripts
             NormalCardItemControllerFactory normalCardItemControllerFactory = new NormalCardItemControllerFactory();
             INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.parent);
             INormalCardItemController normalCardItemController = normalCardItemControllerFactory.Spawn();
-            normalCardItemController.Initialize(normalCardItemView, cardItemData, _cardItemLocator, _view.GetCamera(), _cardItemInfoManager, _hapticController, _tutorialAbilityManager, _boardAreaController, CardDragStartCallback);
+            normalCardItemController.Initialize(normalCardItemView, _view.GetCamera(), _hapticController, _tutorialAbilityManager, cardItemData, _cardItemLocator, _cardItemInfoManager, _boardAreaController, CardDragStartCallback);
             _normalCardItemControllerList.Add(normalCardItemController);
         }
 
