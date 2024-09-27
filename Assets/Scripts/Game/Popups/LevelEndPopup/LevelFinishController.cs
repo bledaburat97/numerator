@@ -165,7 +165,7 @@ namespace Scripts
             IFadeButtonView buttonView = _view.GetButton(buttonType);
             if (buttonType == LevelFinishButtonType.Game)
             {
-                if(isSuccess) buttonView.SetText("Level " + (_levelTracker.GetLevelId() + 1));
+                if(isSuccess) buttonView.SetText("Level " + (_levelTracker.GetLevelId() + 2));
                 else buttonView.SetText("Retry");
             }
             buttonView.Init(onClick);

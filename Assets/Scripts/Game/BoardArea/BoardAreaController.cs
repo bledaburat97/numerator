@@ -26,11 +26,20 @@ namespace Scripts
         
         public void Initialize(int numOfBoardHolders, List<CardHolderModel> boardCardHolderModels)
         {
-            _boardHolderControllerList.Clear();
+            ClearBoardHolders();
             _numOfBoardHolders = numOfBoardHolders;
             CreateBoardHolders(boardCardHolderModels);
             _boardCardIndexManager = new BoardCardIndexManager(_numOfBoardHolders);
             _boardCardIndexManager.ResetBoard();
+        }
+        
+        private void ClearBoardHolders()
+        {
+            foreach (IBoardCardHolderController boardHolder in _boardHolderControllerList)
+            {
+                boardHolder.DestroyObject();
+            }
+            _boardHolderControllerList.Clear();
         }
         
         private void CreateBoardHolders(List<CardHolderModel> boardCardHolderModels)

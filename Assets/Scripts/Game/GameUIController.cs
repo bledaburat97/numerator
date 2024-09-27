@@ -52,7 +52,7 @@ namespace Scripts
             
             if (_levelTracker.GetLevelId() > 8)
             {
-                CreateCardInfoButton(OnCardInfoButtonClick);
+                InitializeCardInfoButton(OnCardInfoButtonClick);
             }
             else
             {
@@ -85,9 +85,12 @@ namespace Scripts
             CreateButtonController(_view.GetHintPowerUpButton(), GameUIButtonType.HintPowerUp, buttonClickAction);
         }
 
-        private void CreateCardInfoButton(Action<bool> onClickAction)
+        private void InitializeCardInfoButton(Action<bool> onClickAction)
         {
-            if(_cardInfoButtonController != null) return;
+            if (_cardInfoButtonController != null)
+            {
+                _cardInfoButtonController.Initialize();
+            }
             _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton(), onClickAction);
         }
 

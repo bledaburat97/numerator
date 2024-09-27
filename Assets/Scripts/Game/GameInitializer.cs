@@ -26,6 +26,7 @@ namespace Game
         [Inject] private IGamePopupCreator _gamePopupCreator;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private IUserReady _userReady;
+        [Inject] private ICardInteractionManager _cardInteractionManager;
         private ICardHolderModelCreator _cardHolderModelCreator;
         
         public GameInitializer()
@@ -54,6 +55,7 @@ namespace Game
             _fadePanelController.SetFadeImageStatus(false);
             _unmaskServiceAreaView.Initialize(_fadePanelController);
             _gamePopupCreator.Initialize(_cardHolderModelCreator);
+            _cardInteractionManager.Initialize();
         }
     }
 

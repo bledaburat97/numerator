@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Game;
 using Zenject;
 
@@ -10,21 +11,33 @@ namespace Scripts
         private IBoardAreaController _boardAreaController;
         private IInitialCardAreaController _initialCardAreaController;
         private ITutorialAbilityManager _tutorialAbilityManager;
+        private IHapticController _hapticController;
         
         private int _selectedCardIndex = -1;
+        private List<int> _lockedCardIndexList;
         private bool _isCardItemInfoPopupToggleOn = false;
         public event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
 
         [Inject]
         public CardInteractionManager(IGameUIController gameUIController, IBoardAreaController boardAreaController,
-            IInitialCardAreaController initialCardAreaController, ITutorialAbilityManager tutorialAbilityManager)
+            IInitialCardAreaController initialCardAreaController, ITutorialAbilityManager tutorialAbilityManager, IHapticController hapticController)
         {
             _gameUIController = gameUIController;
             _boardAreaController = boardAreaController;
             _initialCardAreaController = initialCardAreaController;
             _tutorialAbilityManager = tutorialAbilityManager;
+            _hapticController = hapticController;
+            _lockedCardIndexList = new List<int>();
             Subscribe();
         }
+
+        public void Initialize()
+        {
+            _selectedCardIndex = -1;
+            _lockedCardIndexList.Clear();
+            _isCardItemInfoPopupToggleOn = false;
+        }
+        
         private void Subscribe()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked += OnInvisibleClicked;
@@ -56,13 +69,18 @@ namespace Scripts
             SetSelectedIndex(-1);
         }
 
-        private void OnCardClicked(object sender, CardClickedEventArgs args)
+        private void OnCardClicked(object sender, int cardIndex)
         {
             if (_isCardItemInfoPopupToggleOn)
             {
-                if (!args.isLocked)
+                if (_selectedCardIndex == cardIndex || _lockedCardIndexList.Contains(cardIndex))
                 {
-                    SetSelectedIndex(args.cardIndex);
+                    SetSelectedIndex(-1);
+                }
+                else
+                {
+                    _hapticController.Vibrate(HapticType.ButtonClick);
+                    SetSelectedIndex(cardIndex);
                 }
             }
             else
@@ -70,8 +88,8 @@ namespace Scripts
                 if (_boardAreaController.GetEmptyBoardHolderIndexList().Count > 0)
                 {
                     int boardCardHolderIndex = _boardAreaController.GetEmptyBoardHolderIndexList()[0];
-                    _initialCardAreaController.TryMoveCardToBoard(args.cardIndex, boardCardHolderIndex);
-                    _boardAreaController.SetCardIndex(boardCardHolderIndex, args.cardIndex);
+                    _initialCardAreaController.TryMoveCardToBoard(cardIndex, boardCardHolderIndex);
+                    _boardAreaController.SetCardIndex(boardCardHolderIndex, cardIndex);
                 }
             }
         }
@@ -88,7 +106,6 @@ namespace Scripts
             if (!_tutorialAbilityManager.IsSelectedCardIndexChangeable()) return;
             if (_selectedCardIndex != -1)
             {
-                _initialCardAreaController.DeselectCard(_selectedCardIndex);
                 _initialCardAreaController.SetCardAnimation(_selectedCardIndex, false);
             }
             
@@ -118,5 +135,6 @@ namespace Scripts
     {
         event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
         void Unsubscribe();
+        void Initialize();
     }
 }

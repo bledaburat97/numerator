@@ -24,12 +24,19 @@ namespace Scripts
         {
             return _view.GetGlobalPosition();
         }
+        
+        public void DestroyObject()
+        {
+            _view.DestroyObject();
+            _view = null;
+        }
     }
 
     public interface IBaseCardHolderController
     {
         ICardHolderView GetView();
         Vector3 GetPositionOfCardHolder();
+        void DestroyObject();
     }
     
     public class CardHolderModel

@@ -7,7 +7,7 @@ namespace Scripts
     {
         private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
-
+        private ICardItemInfoManager _cardItemInfoManager;
         public InitialCardHolderController(ICardHolderView cardHolderView, Camera cam) : base(cardHolderView, cam)
         {
         }
@@ -19,7 +19,8 @@ namespace Scripts
             CreatePossibleHolderIndicators();
             CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[model.index];
             SetHolderIndicatorListStatus(cardItemInfo.possibleCardHolderIndicatorIndexes);
-            cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
+            _cardItemInfoManager = cardItemInfoManager;
+            Subscribe();
         }
         
         private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
@@ -73,6 +74,22 @@ namespace Scripts
         public void SetText(string cardNumber)
         {
             _view.SetText(cardNumber);
+        }
+        
+        public new void DestroyObject()
+        {
+            base.DestroyObject();
+            Unsubscribe();
+        }
+        
+        private void Subscribe()
+        {
+            _cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
+        }
+        
+        private void Unsubscribe()
+        {
+            _cardItemInfoManager.HolderIndicatorListChanged -= OnHolderIndicatorListChanged;
         }
     }
 

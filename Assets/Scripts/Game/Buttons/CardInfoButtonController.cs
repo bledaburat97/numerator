@@ -18,6 +18,13 @@ namespace Scripts
             _view.Init(ChangeCardInfoToggle);
             _view.SetCardInfoToggleStatus(_isCardInfoToggleOn, 0f);
         }
+
+        public void Initialize()
+        {
+            _isCardInfoToggleOn = false;
+            _isButtonClickable = true;
+            _view.SetCardInfoToggleStatus(_isCardInfoToggleOn, 0f);
+        }
         
         public void SetButtonClickable(bool isClickable)
         {
@@ -38,5 +45,6 @@ namespace Scripts
     public interface ICardInfoButtonController
     {
         void SetButtonClickable(bool isClickable);
+        void Initialize();
     }
 }

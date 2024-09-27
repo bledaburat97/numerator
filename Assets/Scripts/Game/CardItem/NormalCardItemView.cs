@@ -54,6 +54,11 @@ namespace Scripts
             innerBGImage.rectTransform.offsetMin = new Vector2(4.8f, 0f);
             innerBGImage.rectTransform.offsetMax = new Vector2(4.8f, 0f);
         }
+
+        public void DestroyObject()
+        {
+            Destroy(gameObject);
+        }
     }
 
     public interface INormalCardItemView : IDraggableCardItemView
@@ -66,5 +71,6 @@ namespace Scripts
         void SetTextStatus(bool status);
         void SetNewAnchoredPositionOfRotatedImage();
         void SetBackText(string text);
+        void DestroyObject();
     }
 }

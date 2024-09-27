@@ -88,6 +88,11 @@ namespace Scripts
         {
             rectTransform.gameObject.SetActive(status);
         }
+
+        public void DestroyObject()
+        {
+            Destroy(gameObject);
+        }
     }
 
     public interface ICardHolderView
@@ -104,5 +109,6 @@ namespace Scripts
         void SetText(string cardNumber);
         void SetOnClick(Action onClick);
         Vector3 GetGlobalPosition();
+        void DestroyObject();
     }
 }

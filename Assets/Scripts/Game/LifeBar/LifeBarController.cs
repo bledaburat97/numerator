@@ -14,17 +14,27 @@ namespace Scripts
         public LifeBarController(ILifeBarView view)
         {
             _view = view;
+            _boundaryControllerList = new List<IBoundaryController>();
         }
         
         public void Initialize()
         {
+            ClearBoundaries();
             _view.Init();
-            _boundaryControllerList = new List<IBoundaryController>();
         }
 
         public void DisableStarProgressBar()
         {
             _view.DisableStarProgressBar();
+        }
+
+        private void ClearBoundaries()
+        {
+            foreach (IBoundaryController boundary in _boundaryControllerList)
+            {
+                boundary.DestroyObject();
+            }
+            _boundaryControllerList = new List<IBoundaryController>();
         }
         
         public void CreateBoundaries(int maxGuessCount)

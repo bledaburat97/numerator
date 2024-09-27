@@ -103,6 +103,11 @@ namespace Scripts
             _view.SetCardAnimation(status);
         }
 
+        public void DestroyObject()
+        {
+            _view.DestroyObject();
+        }
+
     }
 
     public interface ICardViewHandler
@@ -118,5 +123,6 @@ namespace Scripts
         void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         INormalCardItemView GetView();
         void SetCardAnimation(bool status);
+        void DestroyObject();
     }
 }

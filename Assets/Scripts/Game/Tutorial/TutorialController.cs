@@ -142,7 +142,7 @@ namespace Scripts
             _tutorialMessagePopupView.SetText("You can click the card.");
             _initialCardAreaController.OnCardClickedEvent += CloseClickAnimation;
             
-            void CloseClickAnimation(object sender, CardClickedEventArgs args)
+            void CloseClickAnimation(object sender, int cardIndex)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
                 _initialCardAreaController.OnCardClickedEvent -= CloseClickAnimation;

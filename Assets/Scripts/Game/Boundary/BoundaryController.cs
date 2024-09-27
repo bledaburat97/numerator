@@ -27,6 +27,11 @@ namespace Scripts
         {
             _starImageView.SetStarStatus(false);
         }
+
+        public void DestroyObject()
+        {
+            _view.DestroyObject();
+        }
     }
 
     public interface IBoundaryController
@@ -34,6 +39,7 @@ namespace Scripts
         void Initialize(IBoundaryView view, BoundaryModel model);
         void AddStarImage(Vector2 starLocalPosition, bool isOriginal);
         void RemoveStar();
+        void DestroyObject();
     }
 
     public class BoundaryModel

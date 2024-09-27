@@ -8,8 +8,8 @@ namespace Scripts
     {
         private ICardMoveHandler _cardMoveHandler;
         private ICardViewHandler _cardViewHandler;
-        private ICardClickHandler _cardClickHandler;
         private ICardReleaseHandler _cardReleaseHandler;
+        private ICardItemInfoManager _cardItemInfoManager;
         
         public void Initialize(INormalCardItemView cardItemView, Camera cam, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager,
             CardItemData cardItemData, ICardItemLocator cardItemLocator, ICardItemInfoManager cardItemInfoManager, IBoardAreaController boardAreaController,
@@ -18,17 +18,14 @@ namespace Scripts
             _cardViewHandler = new CardViewHandler(cardItemView, cam, cardItemInfoManager, hapticController);
             _cardMoveHandler = new CardMoveHandler(hapticController, tutorialAbilityManager, _cardViewHandler,
                 boardAreaController, () => onDragStart(cardItemData.cardItemIndex), cardItemLocator.OnDragContinue);
-            _cardClickHandler = new CardClickHandler(hapticController, tutorialAbilityManager, _cardViewHandler,
-                cardItemInfoManager, cardItemData.onCardClicked);
             _cardReleaseHandler = new CardReleaseHandler(hapticController, _cardViewHandler, boardAreaController, cardItemLocator.OnDragComplete);
 
             _cardItemData = cardItemData;
 
-            _cardClickHandler.Initialize(_cardItemData);
             _cardViewHandler.Initialize(_cardMoveHandler, OnPointerUp, _cardItemData);
             _cardMoveHandler.Initialize(_cardItemData);
-
-            cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
+            _cardItemInfoManager = cardItemInfoManager;
+            Subscribe();
         }
         
         private void OnProbabilityChanged(object sender, ProbabilityChangedEventArgs args)
@@ -36,7 +33,6 @@ namespace Scripts
             if (_cardItemData.cardItemIndex == args.cardIndex)
             {
                 _cardViewHandler.SetProbability(args.probabilityType, args.isLocked);
-                _cardClickHandler.SetLockStatus(args.isLocked);
             }
         }
         
@@ -56,7 +52,7 @@ namespace Scripts
         {
             if (!_cardMoveHandler.IsDragStarted())
             {
-                _cardClickHandler.TryClickCard();
+                _cardItemData.onCardClicked(_cardItemData.cardItemIndex);
             }
             else
             {
@@ -68,13 +64,7 @@ namespace Scripts
         {
             _cardMoveHandler.MoveCardToBoard(boardCardHolderIndex, _cardItemData.tempParent);
         }
-
-
-        public void DeselectCard()
-        {
-            _cardClickHandler.DeselectCard();
-        }
-
+        
         public void SetCardAnimation(bool status)
         {
             _cardViewHandler.SetCardAnimation(status);
@@ -83,6 +73,22 @@ namespace Scripts
         public void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
         {
             _cardViewHandler.BackFlipAnimation(delayDuration, isGuessRight, correctNumber);
+        }
+
+        public void DestroyObject()
+        {
+            _cardViewHandler.DestroyObject();
+            Unsubscribe();
+        }
+        
+        private void Subscribe()
+        {
+            _cardItemInfoManager.ProbabilityChanged += OnProbabilityChanged;
+        }
+
+        private void Unsubscribe()
+        {
+            _cardItemInfoManager.ProbabilityChanged -= OnProbabilityChanged;
         }
     }
     public interface INormalCardItemController
@@ -94,7 +100,7 @@ namespace Scripts
         INormalCardItemView GetView();
         void MoveCardByClick(int boardCardHolderIndex);
         void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
-        void DeselectCard();
         void SetCardAnimation(bool status);
+        void DestroyObject();
     }
 }

@@ -20,7 +20,7 @@ namespace Scripts
         private IInitialCardAreaView _view;
         private List<IInitialCardHolderController> _normalCardHolderControllerList;
         private List<INormalCardItemController> _normalCardItemControllerList;
-        public event EventHandler<CardClickedEventArgs> OnCardClickedEvent;
+        public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
         
         [Inject]
@@ -41,11 +41,29 @@ namespace Scripts
         
         public void Initialize(List<CardHolderModel> cardHolderModels)
         {
-            _normalCardHolderControllerList.Clear();
-            _normalCardItemControllerList.Clear();
+            ClearInitialCardHolders();
+            ClearInitialCards();
             _view.Init();
             CreateCardHolders(cardHolderModels);
             CreateCardItemsData();
+        }
+
+        private void ClearInitialCardHolders()
+        {
+            foreach (IInitialCardHolderController cardHolder in _normalCardHolderControllerList)
+            {
+                cardHolder.DestroyObject();
+            }
+            _normalCardHolderControllerList.Clear();
+        }
+        
+        private void ClearInitialCards()
+        {
+            foreach (INormalCardItemController card in _normalCardItemControllerList)
+            {
+                card.DestroyObject();
+            }
+            _normalCardItemControllerList.Clear();
         }
         
         private void CreateCardHolders(List<CardHolderModel> cardHolderModels)
@@ -76,9 +94,11 @@ namespace Scripts
             }
         }
 
-        private void OnCardClicked(int cardIndex, bool isLocked)
+        private void OnCardClicked(int cardIndex)
         {
-            OnCardClickedEvent?.Invoke(this, new CardClickedEventArgs(){cardIndex = cardIndex, isLocked = isLocked});
+            if (!_tutorialAbilityManager.IsCardSelectable(cardIndex)) return;
+
+            OnCardClickedEvent?.Invoke(this, cardIndex);
         }
         
         private void CreateCardItem(CardItemData cardItemData)
@@ -117,8 +137,6 @@ namespace Scripts
         
         public void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex)
         {
-            _normalCardItemControllerList[cardIndex].DeselectCard();
-
             if (cardIndex != -1 && boardCardHolderIndex != -1)
             {
                 _normalCardItemControllerList[cardIndex].MoveCardByClick(boardCardHolderIndex);
@@ -129,11 +147,6 @@ namespace Scripts
         public Vector3 GetNormalCardHolderPositionAtIndex(int index)
         {
             return _normalCardHolderControllerList[index].GetPositionOfCardHolder();
-        }
-
-        public void DeselectCard(int cardIndex)
-        {
-            _normalCardItemControllerList[cardIndex].DeselectCard();
         }
 
         public void SetCardAnimation(int cardIndex, bool status)
@@ -159,11 +172,10 @@ namespace Scripts
     
     public interface IInitialCardAreaController
     {
-        event EventHandler<CardClickedEventArgs> OnCardClickedEvent;
+        event EventHandler<int> OnCardClickedEvent;
         void Initialize(List<CardHolderModel> cardHolderModels);
         void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1);
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
-        void DeselectCard(int cardIndex);
         void SetCardAnimation(int cardIndex, bool status);
         IInvisibleClickHandler GetInvisibleClickHandler();
         void SetLockedCardController(LockedCardInfo lockedCardInfo);
@@ -172,18 +184,12 @@ namespace Scripts
         INormalCardItemController GetCardItemController(int cardIndex);
     }
     
-    public class CardClickedEventArgs : EventArgs
-    {
-        public int cardIndex;
-        public bool isLocked;
-    }
-    
     public class CardItemData
     {
         public RectTransform parent;
         public RectTransform tempParent;
         public int cardItemIndex;
-        public Action<int, bool> onCardClicked;
+        public Action<int> onCardClicked;
         public int cardNumber;
     }
 }

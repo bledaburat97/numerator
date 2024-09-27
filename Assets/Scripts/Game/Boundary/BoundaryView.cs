@@ -24,6 +24,11 @@ namespace Scripts
         {
             return rectTransform;
         }
+
+        public void DestroyObject()
+        {
+            Destroy(gameObject);
+        }
     }
 
     public interface IBoundaryView
@@ -31,5 +36,6 @@ namespace Scripts
         void Init(Vector2 localPosition, StarImageViewFactory starImageViewFactory);
         IStarImageView CreateStarImage();
         RectTransform GetRectTransform();
+        void DestroyObject();
     }
 }
