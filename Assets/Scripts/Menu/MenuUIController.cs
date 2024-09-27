@@ -6,22 +6,26 @@ namespace Menu
 {
     public class MenuUIController : IMenuUIController
     {
-        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-        private IMenuUIView _view;
+        private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ILevelTracker _levelTracker;
+        private IGameSaveService _gameSaveService;
+        private IMenuUIView _view;
         private IBaseButtonController _singlePlayerButtonController;
-        public MenuUIController(IMenuUIView view)
-        {
-            _view = view;
-        }
-
-        public void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker)
+        
+        [Inject]
+        public MenuUIController(ILevelTracker levelTracker, IGameSaveService gameSaveService, BaseButtonControllerFactory baseButtonControllerFactory, IMenuUIView view)
         {
             _levelTracker = levelTracker;
-            activeLevelIdController.LevelSelectionChanged += OnLevelChange;
-            
+            _baseButtonControllerFactory = baseButtonControllerFactory;
+            _view = view;
+            _gameSaveService = gameSaveService;
+            CreateButtons();
+        }
+
+        private void CreateButtons()
+        {
             _singlePlayerButtonController = _baseButtonControllerFactory.Create(_view.GetSinglePlayerButton(), OnSinglePlayerButtonClick);
-            _singlePlayerButtonController.SetText(GetLevelText(activeLevelIdController.GetActiveLevelId(), activeLevelIdController.IsNewGame()));
+            _singlePlayerButtonController.SetText(GetLevelText());
 
             IBaseButtonController multiplayerButtonController =
                 _baseButtonControllerFactory.Create(_view.GetMultiplayerButton(), OnMultiplayerButtonClick);
@@ -40,24 +44,18 @@ namespace Menu
             SceneManager.LoadScene("Lobby");
         }
 
-        private void OnLevelChange(object sender, ActiveLevelChangedEventArgs args)
+        private string GetLevelText()
         {
-            _singlePlayerButtonController.SetText(GetLevelText(args.activeLevelId, args.isNewGame));
-        }
-
-        private string GetLevelText(int activeLevelId, bool isNewLevel)
-        {
-            if (!isNewLevel)
+            if (_gameSaveService.HasSavedGame())
             {
-                return "CONTINUE";
+                return "Continue";
             }
 
-            return "LEVEL " + (activeLevelId + 1);
+            return "Level " + (_levelTracker.GetLevelId() + 1);
         }
     }
 
     public interface IMenuUIController
     {
-        void Initialize(IActiveLevelIdController activeLevelIdController, ILevelTracker levelTracker);
     }
 }

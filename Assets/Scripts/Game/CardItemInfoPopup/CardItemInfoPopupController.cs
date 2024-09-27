@@ -30,15 +30,24 @@ namespace Scripts
             _cardInteractionManager.OpenCardItemInfoPopupEvent += OpenCardItemInfoPopup;
             _cardItemInfoManager = cardItemInfoManager;
             _tutorialAbilityManager = tutorialAbilityManager;
+            CreateProbabilityButtons();
         }
+
         public void Initialize(int numOfBoardHolders, List<CardHolderModel> boardCardHolderModels)
         {
             _numOfBoardHolders = numOfBoardHolders;
-            _cardHolderIndicatorButtonControllers.Clear();
-            _probabilityButtonControllers.Clear();
+            ClearCardHolderIndicatorButtons();
             CreateCardHolderIndicatorButtons(boardCardHolderModels);
-            CreateProbabilityButtons();
             _view.SetStatus(false);
+        }
+
+        private void ClearCardHolderIndicatorButtons()
+        {
+            foreach (IBaseButtonController button in _cardHolderIndicatorButtonControllers)
+            {
+                button.DestroyObject();
+            }
+            _cardHolderIndicatorButtonControllers.Clear();
         }
 
         private void SetCardItemInfoPopupStatus(bool status, int cardIndex)

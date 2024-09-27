@@ -101,6 +101,11 @@ namespace Scripts
         {
             return rectTransform;
         }
+
+        public void DestroyObject()
+        {
+            Destroy(gameObject);
+        }
     }
     
     public interface IBaseButtonView
@@ -118,6 +123,7 @@ namespace Scripts
         void SetOnPointerUpCallBack(Action onPointerUp);
         void SetButtonDown();
         void SetButtonUp();
+        void DestroyObject();
     }
     
 }

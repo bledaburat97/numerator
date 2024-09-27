@@ -13826,10 +13826,6 @@ MonoBehaviour:
   revealingPowerUpButton: {fileID: 659338945}
   lifePowerUpButton: {fileID: 1422517102}
   hintPowerUpButton: {fileID: 299123715}
-  powerUpModels:
-  - {fileID: 11400000, guid: 0ce43f3c926f5d24cbed9e2292fe5f24, type: 2}
-  - {fileID: 11400000, guid: ce46ef97c5482db4fadd72adb40f31b3, type: 2}
-  - {fileID: 11400000, guid: 9e51573fb1159ef41b4fe5059e802c97, type: 2}
   opponentInfo: {fileID: 14637281}
 --- !u!224 &1119310796
 RectTransform:
@@ -15018,7 +15014,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1391204194}
   - component: {fileID: 1391204195}
-  - component: {fileID: 1391204196}
   m_Layer: 0
   m_Name: GamePlayContext
   m_TagString: Untagged
@@ -15054,18 +15049,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b9c8b024666f42f497d1508a80253f33, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1391204196
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1391204193}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc1aceb87b19454c893a4eb4d0c6337e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1410333238

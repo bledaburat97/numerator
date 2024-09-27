@@ -21,13 +21,9 @@ namespace Scripts
         public override void InstallBindings()
         {
             //Container.BindFactory<IFadeButtonView, IFadeButtonController, FadeButtonControllerFactory>().To<FadeButtonController>();
-            Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
-            Container.Bind<IHapticController>().To<HapticController>().AsSingle();
-            Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
@@ -54,6 +50,7 @@ namespace Scripts
             Container.Bind<IGameInitializer>().To<GameInitializer>().AsSingle();
             Container.Bind<ILevelFinishController>().To<LevelFinishController>().AsSingle().WithArguments(levelFinishPopup);
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
+            Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
         }
     }
 }

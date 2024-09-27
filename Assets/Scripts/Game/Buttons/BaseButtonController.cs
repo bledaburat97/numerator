@@ -77,6 +77,12 @@ namespace Scripts
         {
             return _view;
         }
+
+        public void DestroyObject()
+        {
+            _view.DestroyObject();
+            _view = null;
+        }
     }
 
     public interface IBaseButtonController
@@ -89,6 +95,7 @@ namespace Scripts
         void SetColor(Color color);
         IBaseButtonView GetView();
         void SetButtonClickable(bool isClickable);
+        void DestroyObject();
     }
     
     public class BaseButtonControllerFactory : PlaceholderFactory<IBaseButtonView, Action, IBaseButtonController>

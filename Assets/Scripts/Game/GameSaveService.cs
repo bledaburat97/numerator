@@ -8,16 +8,9 @@ namespace Scripts
     public class GameSaveService : IGameSaveService
     {
         private readonly string _saveGameKey = "saved_game_key";
-        private ILevelTracker _levelTracker;
-
-        public void Initialize(ILevelTracker levelTracker)
-        {
-            _levelTracker = levelTracker;
-        }
         
         public LevelSaveData GetSavedLevel()
         {
-            //DeleteSave();
             if (!HasSavedGame()) return null;
             LevelSaveData levelSaveData = JsonConvert.DeserializeObject<LevelSaveData>(PlayerPrefs.GetString(_saveGameKey));
             return levelSaveData;
@@ -39,7 +32,6 @@ namespace Scripts
             if (guessManager.IsGameOver()) return;
             LevelSaveData levelSaveData = new LevelSaveData()
             {
-                LevelId = _levelTracker.GetLevelId(),
                 TriedCardsList = resultManager.GetTriedCardsList(),
                 TargetCards = targetNumberCreator.GetTargetCardsList(),
                 RemainingGuessCount = guessManager.GetRemainingGuessCount(),
@@ -54,7 +46,6 @@ namespace Scripts
 
     public interface IGameSaveService
     {
-        void Initialize(ILevelTracker levelTracker);
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager,
@@ -64,7 +55,6 @@ namespace Scripts
 
     public class LevelSaveData
     {
-        public int LevelId;
         public List<List<int>> TriedCardsList;
         public List<int> TargetCards;
         public List<CardItemInfo> CardItemInfoList;

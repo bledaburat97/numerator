@@ -110,7 +110,7 @@ namespace Scripts
                 ITutorialController cardInfoTutorialController = new CardInfoTutorialController();
                 cardInfoTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _tutorialAbilityManager, _cardInteractionManager, _boardAreaController);
             }
-            
+            /*
             else if (_levelTracker.IsWildCardTutorial())
             {
                 ITutorialMessagePopupView tutorialMessagePopupView =
@@ -119,6 +119,7 @@ namespace Scripts
                 IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
                 wildCardTutorialController.Initialize(_unmaskServiceAreaView, tutorialMessagePopupView);
             }
+            */
         }
 
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)

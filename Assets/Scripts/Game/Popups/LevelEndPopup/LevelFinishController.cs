@@ -52,8 +52,8 @@ namespace Scripts
                 _view.GetButtonArea().alpha = 1f;
                 _view.GetBottomArea().alpha = 1f;
                 _gameInitializer.Initialize();
-            }, true);
-            InitButton(LevelFinishButtonType.Menu, () => SceneManager.LoadScene("Menu"), true);
+            });
+            InitButton(LevelFinishButtonType.Menu, () => SceneManager.LoadScene("Menu"));
             if (levelFinishInfo.isSuccess)
             {
                 _fadePanelController.SetFadeImageStatus(true);
@@ -62,6 +62,7 @@ namespace Scripts
                 int rewardStarCount = _levelTracker.GetGiftStarCount();
                 RewardType rewardType = _levelTracker.GetCurrentRewardType();
                 _levelTracker.IncrementLevelId(levelFinishInfo.starCount, levelFinishInfo.newRewardStarCount);
+                _view.GetButton(LevelFinishButtonType.Game).SetText("Level " + (_levelTracker.GetLevelId() + 1));
                 CreateRewardCircle(rewardStarCount);
                 InitStarsAndParticles(levelFinishInfo.starCount, levelFinishInfo.newRewardStarCount);
                 InitRewardItem(rewardType);
@@ -70,6 +71,7 @@ namespace Scripts
             else
             {
                 InitText("Try Again!");
+                _view.GetButton(LevelFinishButtonType.Game).SetText("Retry");
                 _view.GetStarCanvasGroup().gameObject.SetActive(false);
                 _view.GetRewardItem().gameObject.SetActive(false);
                 _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
@@ -160,14 +162,9 @@ namespace Scripts
 
         }
         
-        private void InitButton(LevelFinishButtonType buttonType, Action onClick, bool isSuccess)
+        private void InitButton(LevelFinishButtonType buttonType, Action onClick)
         {
             IFadeButtonView buttonView = _view.GetButton(buttonType);
-            if (buttonType == LevelFinishButtonType.Game)
-            {
-                if(isSuccess) buttonView.SetText("Level " + (_levelTracker.GetLevelId() + 2));
-                else buttonView.SetText("Retry");
-            }
             buttonView.Init(onClick);
             buttonView.SetButtonStatus(true);
             buttonView.SetAlpha(0f);
@@ -253,8 +250,7 @@ namespace Scripts
                     .Append(AnimateButtons());
             };
             
-            InitButton(LevelFinishButtonType.Claim, onClickClaim, true);
-            
+            InitButton(LevelFinishButtonType.Claim, onClickClaim);
 
             return DOTween.Sequence()
                 .Append(DOTween.Sequence().AppendInterval(0.4f).SetEase(Ease.OutQuad))
@@ -280,11 +276,6 @@ namespace Scripts
             return DOTween.Sequence()
                 .Append(_view.GetButton(LevelFinishButtonType.Game).GetCanvasGroup().DOFade(1f, 0.3f))
                 .Join(_view.GetButton(LevelFinishButtonType.Menu).GetCanvasGroup().DOFade(1f, 0.3f));
-        }
-        
-        private void FailLevel()
-        {
-            
         }
 
         private void SuccessMultiplayerLevel()

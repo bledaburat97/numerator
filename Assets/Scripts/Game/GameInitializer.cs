@@ -27,6 +27,7 @@ namespace Game
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private IUserReady _userReady;
         [Inject] private ICardInteractionManager _cardInteractionManager;
+        [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         private ICardHolderModelCreator _cardHolderModelCreator;
         
         public GameInitializer()
@@ -36,26 +37,25 @@ namespace Game
 
         public void Initialize()
         {
-            _gameSaveService.Initialize(_levelTracker);
-            _levelTracker.Initialize(_gameSaveService);
             _targetNumberCreator.Initialize();
             _levelDataCreator.Initialize();
-            _levelTracker.SetLevelInfo(_targetNumberCreator, _levelDataCreator);
+            _levelSaveDataManager.SetLevelSaveData(_gameSaveService.GetSavedLevel(), _targetNumberCreator, _levelDataCreator, _levelTracker);
             _userReady.Initialize();
             _gameUIController.Initialize();
             _resultAreaController.Initialize();
-            _resultManager.Initialize(_levelTracker.GetLevelSaveData().TriedCardsList, _targetNumberCreator.GetTargetCardsList(), _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _resultManager.Initialize(_levelSaveDataManager.GetLevelSaveData().TriedCardsList, _targetNumberCreator.GetTargetCardsList(), _levelDataCreator.GetLevelData().NumOfBoardHolders);
             _cardItemLocator.Initialize();
-            _guessManager.Initialize(_levelDataCreator.GetLevelData().MaxNumOfTries, _levelTracker.GetLevelSaveData().RemainingGuessCount, _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _guessManager.Initialize(_levelDataCreator.GetLevelData().MaxNumOfTries, _levelSaveDataManager.GetLevelSaveData().RemainingGuessCount, _levelDataCreator.GetLevelData().NumOfBoardHolders);
             _cardHolderModelCreator.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _levelDataCreator.GetLevelData().NumOfCards);
             _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board));
-            _cardItemInfoManager.Initialize(_levelTracker.GetLevelSaveData().CardItemInfoList, _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _cardItemInfoManager.Initialize(_levelSaveDataManager.GetLevelSaveData().CardItemInfoList, _levelDataCreator.GetLevelData().NumOfBoardHolders);
             _initialCardAreaController.Initialize(_cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial));
             _cardItemInfoPopupController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board));
             _fadePanelController.SetFadeImageStatus(false);
             _unmaskServiceAreaView.Initialize(_fadePanelController);
             _gamePopupCreator.Initialize(_cardHolderModelCreator);
             _cardInteractionManager.Initialize();
+            _gameSaveService.DeleteSave();
         }
     }
 

@@ -12,30 +12,45 @@ namespace Scripts
         private int _revealingPowerUpCount;
         private int _lifePowerUpCount;
         private int _hintPowerUpCount;
-        private IGameSaveService _gameSaveService;
         private int _levelId;
-        private GameOption _gameOption;
-        private Difficulty _multiplayerLevelDifficulty;
-        private LevelSaveData _levelSaveData;
         private RewardType _currentRewardType;
         
-        public void Initialize(IGameSaveService gameSaveService)
+        private GameOption _gameOption;
+        private Difficulty _multiplayerLevelDifficulty;
+
+        private void Awake()
         {
-            _gameOption = (GameOption)PlayerPrefs.GetInt("game_option", 0);
-            _gameSaveService = gameSaveService;
             _levelId = PlayerPrefs.GetInt("level_id", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _giftStarCount = PlayerPrefs.GetInt("gift_star_count", 0);
             _revealingPowerUpCount = PlayerPrefs.GetInt("revealing_power_up_count", 0);
             _lifePowerUpCount = PlayerPrefs.GetInt("life_power_up_count", 0);
             _hintPowerUpCount = PlayerPrefs.GetInt("hint_power_up_count", 0);
-            _multiplayerLevelDifficulty = (Difficulty)PlayerPrefs.GetInt("multiplayer_level_difficulty", 2);
             _currentRewardType = (RewardType)PlayerPrefs.GetInt("reward_type", 0);
+        }
+        
+        public void ClearPlayerPrefs()
+        {
+            PlayerPrefs.DeleteKey("star_count");
+            PlayerPrefs.DeleteKey("gift_star_count");
+            PlayerPrefs.DeleteKey("revealing_power_up_count");
+            PlayerPrefs.DeleteKey("life_power_up_count");
+            PlayerPrefs.DeleteKey("hint_power_up_count");
+        }
+        
+        public void SavePlayerPrefs()
+        {
+            PlayerPrefs.SetInt("level_id", _levelId);
+            PlayerPrefs.SetInt("star_count", _starCount);
+            PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
+            PlayerPrefs.SetInt("revealing_power_up_count", _revealingPowerUpCount);
+            PlayerPrefs.SetInt("life_power_up_count", _lifePowerUpCount);
+            PlayerPrefs.SetInt("hint_power_up_count", _hintPowerUpCount);
+            PlayerPrefs.SetInt("reward_type", (int)_currentRewardType);
         }
 
         public void SetGameOption(GameOption gameOption)
         {
-            PlayerPrefs.SetInt("game_option", (int)gameOption);
             _gameOption = gameOption;
         }
 
@@ -46,16 +61,10 @@ namespace Scripts
 
         public void SetMultiplayerLevelDifficulty(Difficulty difficulty)
         {
-            PlayerPrefs.SetInt("multiplayer_level_difficulty", (int)difficulty);
             _multiplayerLevelDifficulty = difficulty;
         }
-
-        public RewardType GetCurrentRewardType()
-        {
-            return _currentRewardType;
-        }
-
-        private int GetNumberOfBoardCardsInMultiplayer()
+        
+        public int GetNumberOfBoardCardsInMultiplayer()
         {
             switch (_multiplayerLevelDifficulty)
             {
@@ -69,174 +78,52 @@ namespace Scripts
                     return 5;
             } 
         }
-
-        public void ClearPlayerPrefs()
+        
+        public void IncrementLevelId(int starCount, int giftStarCount)
         {
-            PlayerPrefs.DeleteKey("star_count");
-            PlayerPrefs.DeleteKey("gift_star_count");
-            PlayerPrefs.DeleteKey("revealing_power_up_count");
-            PlayerPrefs.DeleteKey("life_power_up_count");
-            PlayerPrefs.DeleteKey("hint_power_up_count");
-        }
-
-        public bool IsFirstLevelTutorial()
-        {
-            return _levelId == 0 && PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0;
-        }
-
-        public bool IsCardInfoTutorial()
-        {
-            return _levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
-        }
-
-        public bool IsWildCardTutorial()
-        {
-            return false;
-            //return _wildCardCount > 0 && PlayerPrefs.GetInt("wild_card_tutorial_completed", 0) == 0;
-        }
-
-        public void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
-        {
-            if (_gameOption == GameOption.SinglePlayer)
+            _levelId++;
+            _starCount += starCount;
+            if (_giftStarCount + giftStarCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
-                levelDataCreator.SetSinglePlayerLevelData(_levelId);
-                LevelData levelData = levelDataCreator.GetLevelData();
-                LevelSaveData levelSaveData = _gameSaveService.GetSavedLevel();
-
-                if (IsFirstLevelTutorial())
-                {
-                    _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                    targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
-                    return;
-                }
-                if (IsCardInfoTutorial())
-                {
-                    _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                    targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
-                    return;
-                }
-                
-                if (levelSaveData != null)
-                {
-                    if (_levelId == levelSaveData.LevelId)
-                    {
-                        _levelSaveData = levelSaveData;
-                        targetNumberCreator.SetSavedTargetCardList(_levelSaveData.TargetCards);
-                    }
-                    else
-                    {
-                        _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                        targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
-                    }
-                }
-                else
-                {
-                    _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                    targetNumberCreator.CreateTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
-                }
+                int newRewardType = ((int)_currentRewardType + 1) % 3;
+                _currentRewardType = (RewardType)newRewardType;
             }
-
-            else
-            {
-                levelDataCreator.SetMultiplayerLevelData(GetNumberOfBoardCardsInMultiplayer());
-                LevelData levelData = levelDataCreator.GetLevelData();
-                Debug.Log(levelData.LevelId);
-                _levelSaveData = CreateDefaultLevelSaveData(levelData);
-                targetNumberCreator.CreateMultiplayerTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders);
-            }
-
+            _giftStarCount = (_giftStarCount + giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
         }
         
-        public LevelSaveData GetLevelSaveData()
+        public void IncreaseRevealingPowerUpCount()
         {
-            return _levelSaveData;
-        }
-
-        private LevelSaveData CreateDefaultLevelSaveData(LevelData levelData)
-        {
-            LevelSaveData levelSaveData = new LevelSaveData();
-            levelSaveData.LevelId = levelData.LevelId;
-            levelSaveData.TriedCardsList = new List<List<int>>();
-            levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
-            levelSaveData.CardItemInfoList = new List<CardItemInfo>();
-            for (int i = 0; i < levelData.NumOfCards; i++)
-            {
-                CardItemInfo cardItemInfo = new CardItemInfo()
-                {
-                    possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes(levelData.NumOfBoardHolders),
-                    probabilityType = ProbabilityType.Probable,
-                    isLocked = false
-                };
-                levelSaveData.CardItemInfoList.Add(cardItemInfo);
-            }
-
-            return levelSaveData;
+            _revealingPowerUpCount++;
         }
         
-        private List<int> GetAllPossibleCardHolderIndicatorIndexes(int numOfBoardCardHolders)
+        public void IncreaseLifePowerUpCount()
         {
-            List<int> possibleCardHolderIndexes = new List<int>();
-            for (int i = 0; i < numOfBoardCardHolders; i++)
-            {
-                possibleCardHolderIndexes.Add(i);
-            }
-
-            return possibleCardHolderIndexes;
+            _lifePowerUpCount++;
         }
         
-        private List<int> CreateTargetCards(int numOfCards, int numOfBoardHolders)
+        public void IncreaseHintPowerUpCount()
         {
-            List<int> cards = Enumerable.Range(1, numOfCards).ToList();
-            Random random = new Random();
-            for (int i = numOfCards - 1; i > 0; i--)
-            {
-                int j = random.Next(0, i + 1);
-                (cards[i], cards[j]) = (cards[j], cards[i]);
-            }
-
-            for (int i = 0; i < numOfBoardHolders; i++)
-            {
-                Debug.Log(cards[i]);
-            }
-            
-            return cards.Take(numOfBoardHolders).ToList();
+            _hintPowerUpCount++;
+        }
+        
+        public void DecreaseRevealingPowerUpCount()
+        {
+            _revealingPowerUpCount -= 1;
+        }
+        
+        public void DecreaseLifePowerUpCount()
+        {
+            _lifePowerUpCount -= 1;
+        }
+        
+        public void DecreaseHintPowerUpCount()
+        {
+            _hintPowerUpCount -= 1;
         }
 
         public int GetLevelId()
         {
             return _levelId;
-        }
-
-        public void SetLevelId(int levelId)
-        {
-            PlayerPrefs.SetInt("level_id", levelId);
-        }
-
-        public void IncrementLevelId(int starCount, int giftStarCount)
-        {
-            _levelId++;
-            PlayerPrefs.SetInt("level_id", _levelId);
-            _starCount += starCount;
-            PlayerPrefs.SetInt("star_count", _starCount);
-            if (_giftStarCount + giftStarCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
-            {
-                int newRewardType = ((int)_currentRewardType + 1) % 3;
-                PlayerPrefs.SetInt("reward_type", newRewardType);
-                _currentRewardType = (RewardType)newRewardType;
-            }
-            _giftStarCount = (_giftStarCount + giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
-            PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
-            
-        }
-
-        public void RevertIncrementingLevelId(int starCount, int giftStarCount)
-        {
-            _levelId--;
-            PlayerPrefs.SetInt("level_id", _levelId);
-            _starCount -= starCount;
-            PlayerPrefs.SetInt("star_count", _starCount);
-            _giftStarCount = (_giftStarCount + ConstantValues.NUM_OF_STARS_FOR_WILD - giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
-            PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
         }
 
         public int GetGiftStarCount()
@@ -264,48 +151,45 @@ namespace Scripts
             return _hintPowerUpCount;
         }
 
-        public void DecreaseRevealingPowerUpCount()
+        public RewardType GetCurrentRewardType()
         {
-            _revealingPowerUpCount -= 1;
-            PlayerPrefs.SetInt("revealing_power_up_count", _revealingPowerUpCount);
+            return _currentRewardType;
         }
-        
-        public void DecreaseLifePowerUpCount()
+
+        public bool IsFirstLevelTutorial()
         {
-            _lifePowerUpCount -= 1;
-            PlayerPrefs.SetInt("life_power_up_count", _lifePowerUpCount);
+            return _levelId == 0 && PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0;
         }
-        
-        public void DecreaseHintPowerUpCount()
+
+        public bool IsCardInfoTutorial()
         {
-            _hintPowerUpCount -= 1;
-            PlayerPrefs.SetInt("hint_power_up_count", _hintPowerUpCount);
+            return _levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
         }
     }
 
     public interface ILevelTracker
     {
-        void Initialize(IGameSaveService gameSaveService);
-        LevelSaveData GetLevelSaveData();
-        int GetLevelId();
-        void SetLevelInfo(ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator);
-        void SetLevelId(int levelId);
+        void ClearPlayerPrefs();
+        void SavePlayerPrefs();
         void SetGameOption(GameOption gameOption);
         GameOption GetGameOption();
         void SetMultiplayerLevelDifficulty(Difficulty difficulty);
+        int GetNumberOfBoardCardsInMultiplayer();
         bool IsFirstLevelTutorial();
         bool IsCardInfoTutorial();
-        bool IsWildCardTutorial();
         void IncrementLevelId(int starCount, int giftStarCount);
+        void IncreaseRevealingPowerUpCount();
+        void IncreaseLifePowerUpCount();
+        void IncreaseHintPowerUpCount();
+        void DecreaseRevealingPowerUpCount();
+        void DecreaseLifePowerUpCount();
+        void DecreaseHintPowerUpCount();
+        int GetLevelId();
         int GetGiftStarCount();
         int GetStarCount();
         int GetRevealingPowerUpCount();
         int GetLifePowerUpCount();
         int GetHintPowerUpCount();
-        void DecreaseRevealingPowerUpCount();
-        void DecreaseLifePowerUpCount();
-        void DecreaseHintPowerUpCount();
-        void RevertIncrementingLevelId(int starCount, int giftStarCount);
         RewardType GetCurrentRewardType();
     }
 

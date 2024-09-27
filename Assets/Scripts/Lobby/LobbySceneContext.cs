@@ -13,7 +13,6 @@ namespace Scripts
 
         void Start()
         {
-            _levelTracker.Initialize(null);
             InitializeHapticController();
             InitializeLobbyPopupCreator();
             CreateLobbyUIController();
