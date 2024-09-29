@@ -20,6 +20,11 @@ namespace Scripts
             _view.SetOnPointerUpCallBack(OnPointerUp);
         }
 
+        public void AddAction(Action action)
+        {
+            _onClick += action;
+        }
+
         public void SetButtonClickable(bool isClickable)
         {
             _isButtonClickable = isClickable;
@@ -96,6 +101,7 @@ namespace Scripts
         IBaseButtonView GetView();
         void SetButtonClickable(bool isClickable);
         void DestroyObject();
+        void AddAction(Action action);
     }
     
     public class BaseButtonControllerFactory : PlaceholderFactory<IBaseButtonView, Action, IBaseButtonController>

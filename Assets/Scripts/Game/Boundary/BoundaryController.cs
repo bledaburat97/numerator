@@ -23,9 +23,9 @@ namespace Scripts
             _starImageView.SetColor(isOriginal);
         }
 
-        public void RemoveStar()
+        public void SetStarStatus(bool status)
         {
-            _starImageView.SetStarStatus(false);
+            _starImageView.SetStarStatus(status);
         }
 
         public void DestroyObject()
@@ -38,7 +38,7 @@ namespace Scripts
     {
         void Initialize(IBoundaryView view, BoundaryModel model);
         void AddStarImage(Vector2 starLocalPosition, bool isOriginal);
-        void RemoveStar();
+        void SetStarStatus(bool status);
         void DestroyObject();
     }
 

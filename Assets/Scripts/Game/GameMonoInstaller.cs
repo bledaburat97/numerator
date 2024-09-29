@@ -18,9 +18,9 @@ namespace Scripts
         [SerializeField] private GameClockView gameClockView;
         [SerializeField] private GameUIView gameUI;
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
+        [SerializeField] private PowerUpMessagePopupView powerUpMessagePopup;
         public override void InstallBindings()
         {
-            //Container.BindFactory<IFadeButtonView, IFadeButtonController, FadeButtonControllerFactory>().To<FadeButtonController>();
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
@@ -51,6 +51,8 @@ namespace Scripts
             Container.Bind<ILevelFinishController>().To<LevelFinishController>().AsSingle().WithArguments(levelFinishPopup);
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
+            Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
+                .WithArguments(powerUpMessagePopup);
         }
     }
 }

@@ -1,107 +1,104 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using System.Collections.Generic;
+using Game;
+using Zenject;
 
 namespace Scripts
 {
-    public class PowerUpMessageController
+    public class PowerUpMessageController : IPowerUpMessageController
     {
         private IUnmaskServiceAreaView _unmaskServiceAreaView;
-        private PowerUpMessagePopupView _powerUpMessagePopupView;
-        private ICardItemLocator _cardItemLocator;
+        private IPowerUpMessagePopupView _view;
         private IInitialCardAreaController _initialCardAreaController;
         private IHapticController _hapticController;
         private IBoardAreaController _boardAreaController;
         private ITargetNumberCreator _targetNumberCreator;
+        private IGamePopupCreator _gamePopupCreator;
+        private ITutorialAbilityManager _tutorialAbilityManager;
+        private ICardHolderModelCreator _cardHolderModelCreator;
+        private IGuessManager _guessManager;
+        private BaseButtonControllerFactory _baseButtonControllerFactory;
+        
         private bool _isOpen = false;
-        private GameUIButtonType _powerUpType;
+        private GameUIButtonType _activePowerUpType;
+        private Dictionary<GameUIButtonType, BasePowerUpController> _powerUps;
+        private IBaseButtonController _continueButton;
 
-        public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, PowerUpMessagePopupView powerUpMessagePopupView, ICardItemLocator cardItemLocator, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator)
+        [Inject]
+        public PowerUpMessageController(IUnmaskServiceAreaView unmaskServiceAreaView, IInitialCardAreaController initialCardAreaController, IHapticController hapticController, 
+            IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IGamePopupCreator gamePopupCreator, 
+            ITutorialAbilityManager tutorialAbilityManager, IGameUIController gameUIController, IGuessManager guessManager, BaseButtonControllerFactory baseButtonControllerFactory, IPowerUpMessagePopupView view)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
-            _powerUpMessagePopupView = powerUpMessagePopupView;
-            _cardItemLocator = cardItemLocator;
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
             _boardAreaController = boardAreaController;
             _targetNumberCreator = targetNumberCreator;
+            _gamePopupCreator = gamePopupCreator;
+            _tutorialAbilityManager = tutorialAbilityManager;
+            _guessManager = guessManager;
+            _baseButtonControllerFactory = baseButtonControllerFactory;
+            _view = view;
+            gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
+            CreateButtons();
+            CreatePowerUps();
         }
 
-        public void SetPowerUpMessagePopup(GameUIButtonType powerUpType, BaseButtonControllerFactory baseButtonControllerFactory)
+        public void Initialize(ICardHolderModelCreator cardHolderModelCreator)
         {
-            _unmaskServiceAreaView.InstantiateTutorialFade();
-            _powerUpMessagePopupView.gameObject.SetActive(true);
-            _powerUpMessagePopupView.Init();
-            //_powerUpMessagePopupView.SetSprite(powerUpModel.sprite);
-            switch (powerUpType)
+            _cardHolderModelCreator = cardHolderModelCreator;
+        }
+        
+        private void CreateButtons()
+        {
+            _continueButton = _baseButtonControllerFactory.Create(_view.GetContinueButton(), DeactivatePopup);
+            IBaseButtonController closeButton = _baseButtonControllerFactory.Create(_view.GetCloseButton(), DeactivatePopup);
+        }
+
+        private void CreatePowerUps()
+        {
+            _powerUps = new Dictionary<GameUIButtonType, BasePowerUpController>();
+            _powerUps.Add(GameUIButtonType.RevealingPowerUp, new RevealingPowerUpController(_hapticController, DeactivatePopup));
+            _powerUps.Add(GameUIButtonType.LifePowerUp, new LifePowerUpController(_hapticController, DeactivatePopup));
+            _powerUps.Add(GameUIButtonType.HintPowerUp, new HintPowerUpController(_hapticController, DeactivatePopup));
+        }
+        
+        private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
+        {
+            if (!_isOpen)
             {
-                case GameUIButtonType.RevealingPowerUp:
-                    _powerUpMessagePopupView.SetSize(false);
-                    _powerUpMessagePopupView.SetTitle("Revealing Power Up");
-                    _powerUpMessagePopupView.SetText("Select the place you want to reveal.");
-                    break;
-                case GameUIButtonType.LifePowerUp:
-                    _powerUpMessagePopupView.SetSize(true);
-                    _powerUpMessagePopupView.SetTitle("Extra Life Power Up");
-                    _powerUpMessagePopupView.SetText("Press button to get 2 extra lives.");
-                    break;
-                case GameUIButtonType.HintPowerUp:
-                    _powerUpMessagePopupView.SetSize(true);
-                    _powerUpMessagePopupView.SetTitle("Hint Power Up");
-                    _powerUpMessagePopupView.SetText("Press button to get suggested number.");
-                    break;
+                _powerUps[powerUpType].Activate(_unmaskServiceAreaView, _gamePopupCreator, _tutorialAbilityManager, 
+                    _cardHolderModelCreator, _boardAreaController, _targetNumberCreator, _initialCardAreaController, _guessManager, _continueButton);
+                _powerUps[powerUpType].SetPowerUpMessagePopup(_view);
+                _isOpen = true;
+                _activePowerUpType = powerUpType;
             }
-
-            _isOpen = true;
-            _powerUpType = powerUpType;
+            else
+            {
+                if (_activePowerUpType == powerUpType)
+                {
+                    DeactivatePopup();
+                }
+                else
+                {
+                    _powerUps[powerUpType].Activate(_unmaskServiceAreaView, _gamePopupCreator, _tutorialAbilityManager, 
+                        _cardHolderModelCreator, _boardAreaController, _targetNumberCreator, _initialCardAreaController, _guessManager, _continueButton);
+                    _powerUps[powerUpType].SetPowerUpMessagePopup(_view);
+                    _isOpen = true;
+                    _activePowerUpType = powerUpType;
+                }
+            }
         }
 
-        public bool IsOpen()
+        private void DeactivatePopup()
         {
-            return _isOpen;
-        }
-
-        public GameUIButtonType GetPowerUpType()
-        {
-            return _powerUpType;
-        }
-
-        public void DeactivatePopup()
-        {
-            _powerUpMessagePopupView.gameObject.SetActive(false);
+            _view.SetStatus(false);
             _unmaskServiceAreaView.CloseTutorialFade();
             _isOpen = false;
         }
-        
-        public void StartBoardClickAnimation(ITutorialAbilityManager tutorialAbilityManager, ICardHolderModelCreator cardHolderModelCreator)
-        {
-            List<int> clickableBoardIndexes = _boardAreaController.GetEmptyBoardHolderIndexList();
+    }
 
-            tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                clickableBoardIndexes = clickableBoardIndexes,
-            });
-            Vector2 sizeOfBoardHolder = cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size + Vector2.one;
-            foreach (int boardIndex in clickableBoardIndexes)
-            {
-                Vector2 position = _boardAreaController.GetBoardHolderPositionAtIndex(boardIndex);
-                _unmaskServiceAreaView.CreateUnmaskCardItem(position, sizeOfBoardHolder);
-            }
-            _boardAreaController.BoardHolderClickedEvent += OnBoardClicked;
-        }
-
-        private void OnBoardClicked(object sender, int boardHolderIndex)
-        {
-            _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-            _hapticController.Vibrate(HapticType.CardRelease);
-            int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
-            int cardIndex = cardNumber - 1;
-            _boardAreaController.SetCardIndex(boardHolderIndex, cardIndex);
-            LockedCardInfo lockedCardInfo = new LockedCardInfo(){boardHolderIndex = boardHolderIndex, targetCardIndex = cardIndex};
-            _initialCardAreaController.SetLockedCardController(lockedCardInfo);
-            DeactivatePopup();
-            _boardAreaController.BoardHolderClickedEvent -= OnBoardClicked;
-        }
+    public interface IPowerUpMessageController
+    {
+        void Initialize(ICardHolderModelCreator cardHolderModelCreator);
     }
 }

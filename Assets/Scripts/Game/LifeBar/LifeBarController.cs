@@ -64,7 +64,7 @@ namespace Scripts
                 _boundaryControllerList[lifeBarStarInfoList[i].lifeBarIndex].AddStarImage(_localPositionOfStar, lifeBarStarInfoList[i].isOriginal);
                 if (!lifeBarStarInfoList[i].isActive)
                 {
-                    _boundaryControllerList[lifeBarStarInfoList[i].lifeBarIndex].RemoveStar();
+                    _boundaryControllerList[lifeBarStarInfoList[i].lifeBarIndex].SetStarStatus(false);
                 }
             }
         }
@@ -79,9 +79,9 @@ namespace Scripts
             _view.SetProgress(targetPercentage, animationDuration, levelFailedAction);
         }
 
-        public void RemoveStar(int boundaryIndex)
+        public void SetStarStatus(bool status, int boundaryIndex)
         {
-            _boundaryControllerList[boundaryIndex].RemoveStar();
+            _boundaryControllerList[boundaryIndex].SetStarStatus(status);
         }
     }
 
@@ -93,6 +93,6 @@ namespace Scripts
         void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList);
         void InitProgressBar(float targetPercentage);
         void UpdateProgressBar(float targetPercentage, float animationDuration, Action levelFailedAction);
-        void RemoveStar(int boundaryIndex);
+        void SetStarStatus(bool status, int boundaryIndex);
     }
 }

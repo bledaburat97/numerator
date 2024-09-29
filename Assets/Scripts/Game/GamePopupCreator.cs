@@ -62,7 +62,6 @@ namespace Scripts
         private IMessagePopupView _newGameOfferPopup;
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
-        private PowerUpMessageController _powerUpMessageController;
 
         public void Initialize(ICardHolderModelCreator cardHolderModelCreator)
         {
@@ -79,12 +78,10 @@ namespace Scripts
             
             _gameUIController.OpenSettings += CreateSettingsPopup;
             
-            _gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
             _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
             _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? () => _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager) : null;
             _deleteSaveAction += _gameSaveService.DeleteSave;
             
-            _powerUpMessageController = new PowerUpMessageController(_unmaskServiceAreaView, powerUpMessagePopupView, _cardItemLocator, _initialCardAreaController, _hapticController, _boardAreaController, _targetNumberCreator);
             if (_levelTracker.IsFirstLevelTutorial())
             {
                 _tutorialAbilityManager.SetTutorialLevel(true);
@@ -122,27 +119,14 @@ namespace Scripts
             */
         }
 
-        private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
+        public RectTransform GetSafeAreaRectTransform()
         {
-            if (!_powerUpMessageController.IsOpen())
-            {
-                _unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
-                _powerUpMessageController.SetPowerUpMessagePopup(powerUpType, _baseButtonControllerFactory);
-                _powerUpMessageController.StartBoardClickAnimation(_tutorialAbilityManager, _cardHolderModelCreator);
-            }
-            else
-            {
-                if (_powerUpMessageController.GetPowerUpType() == powerUpType)
-                {
-                    _powerUpMessageController.DeactivatePopup();
-                }
-                else
-                {
-                    _unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
-                    _powerUpMessageController.SetPowerUpMessagePopup(powerUpType, _baseButtonControllerFactory);
-                    _powerUpMessageController.StartBoardClickAnimation(_tutorialAbilityManager, _cardHolderModelCreator);
-                }
-            }
+            return safeAreaRectTransform;
+        }
+
+        public RectTransform GetCanvasRectTransform()
+        {
+            return canvasRectTransform;
         }
         
         private void CreateNotAbleToMovePopup(object sender, EventArgs args)
@@ -251,6 +235,7 @@ namespace Scripts
         void CloseNotAbleToMovePopup();
         void CloseAbleToMovePopup();
         void CloseNewGameOfferPopup();
-
+        RectTransform GetSafeAreaRectTransform();
+        RectTransform GetCanvasRectTransform();
     }
 }

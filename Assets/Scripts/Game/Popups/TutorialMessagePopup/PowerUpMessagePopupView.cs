@@ -1,16 +1,18 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class PowerUpMessagePopupView : MonoBehaviour
+    public class PowerUpMessagePopupView : MonoBehaviour, IPowerUpMessagePopupView
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private Image powerUpImage;
         [SerializeField] private TMP_Text title;
         [SerializeField] private TMP_Text text;
-        [SerializeField] private BaseButtonView baseButtonView;
+        [SerializeField] private BaseButtonView continueButton;
+        [SerializeField] private BaseButtonView closeButton;
         [SerializeField] private RectTransform leftSide;
         private float borderHeight = 14f;
 
@@ -19,6 +21,11 @@ namespace Scripts
             transform.localScale = Vector3.one;
         }
 
+        public void SetStatus(bool status)
+        {
+            rectTransform.gameObject.SetActive(status);
+        }
+        /*
         public void SetSize(bool hasButton)
         {
             float buttonHeight = hasButton ? baseButtonView.GetButtonRectTransform().rect.height : 0;
@@ -29,6 +36,7 @@ namespace Scripts
             title.rectTransform.anchoredPosition = new Vector3(0f, 0f);
             text.rectTransform.pivot = new Vector2(0.5f, 1f);
             text.rectTransform.anchoredPosition = new Vector3(0f, - title.rectTransform.sizeDelta.y);
+            
             if (hasButton)
             {
                 baseButtonView.GetButtonRectTransform().pivot = new Vector2(0.5f, 1f);
@@ -39,16 +47,16 @@ namespace Scripts
             {
                 baseButtonView.gameObject.SetActive(false);
             }
-        }
+        }*/
 
-        public BaseButtonView GetBaseButtonView()
+        public BaseButtonView GetContinueButton()
         {
-            return baseButtonView;
+            return continueButton;
         }
-
-        public void Destroy()
+        
+        public BaseButtonView GetCloseButton()
         {
-            Destroy(gameObject);
+            return closeButton;
         }
 
         public void SetTitle(string text)
@@ -65,5 +73,16 @@ namespace Scripts
         {
             powerUpImage.sprite = sprite;
         }
+    }
+
+    public interface IPowerUpMessagePopupView
+    {
+        void Init();
+        void SetStatus(bool status);
+        BaseButtonView GetContinueButton();
+        BaseButtonView GetCloseButton();
+        void SetTitle(string text);
+        void SetText(string text);
+        void SetSprite(Sprite sprite);
     }
 }
