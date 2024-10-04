@@ -1,67 +1,58 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Game;
-using UnityEngine;
+using Scripts;
 
-namespace Scripts
+public class RevealingPowerUpController : BasePowerUpController
 {
-    public class RevealingPowerUpController : BasePowerUpController
+    private IUnmaskServiceAreaView _unmaskServiceAreaView;
+    private IBoardAreaController _boardAreaController;
+    private ITargetNumberCreator _targetNumberCreator;
+    private IInitialCardAreaController _initialCardAreaController;
+
+    private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
+
+    public RevealingPowerUpController(IHapticController hapticController, IPowerUpMessagePopupView powerUpMessagePopupView, IFadePanelController fadePanelController) : base(hapticController, powerUpMessagePopupView, fadePanelController)
     {
-        private IUnmaskServiceAreaView _unmaskServiceAreaView;
-        private IBoardAreaController _boardAreaController;
-        private ITargetNumberCreator _targetNumberCreator;
-        private IInitialCardAreaController _initialCardAreaController;
-        
-        public RevealingPowerUpController(IHapticController hapticController, Action closePopup) : base(hapticController, closePopup)
-        {
-            _hapticController = hapticController;
-            _closePopupAction = closePopup;
-        }
-        
-        public override void Activate(IUnmaskServiceAreaView unmaskServiceAreaView, IGamePopupCreator gamePopupCreator, ITutorialAbilityManager tutorialAbilityManager, 
-            ICardHolderModelCreator cardHolderModelCreator, IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator,
-            IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController continueButton)
-        {
-            continueButton.SetButtonStatus(false);
-            unmaskServiceAreaView.Init(gamePopupCreator.GetSafeAreaRectTransform().anchorMax.y, gamePopupCreator.GetCanvasRectTransform().rect.height);
-            unmaskServiceAreaView.InstantiateTutorialFade();
-            List<int> clickableBoardIndexes = boardAreaController.GetEmptyBoardHolderIndexList();
+        _shinyBoardCardHolderControllers = new List<IBoardCardHolderController>();
+    }
 
-            tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                clickableBoardIndexes = clickableBoardIndexes,
-            });
-            Vector2 sizeOfBoardHolder = cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size + Vector2.one;
-            foreach (int boardIndex in clickableBoardIndexes)
-            {
-                Vector2 position = boardAreaController.GetBoardHolderPositionAtIndex(boardIndex);
-                unmaskServiceAreaView.CreateUnmaskCardItem(position, sizeOfBoardHolder);
-            }
-            boardAreaController.BoardHolderClickedEvent += OnBoardClicked;
-            _unmaskServiceAreaView = unmaskServiceAreaView;
-            _boardAreaController = boardAreaController;
-            _targetNumberCreator = targetNumberCreator;
-            _initialCardAreaController = initialCardAreaController;
+    public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController closeButton, IBaseButtonController continueButton)
+    {
+        base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, closeButton, continueButton);
+        continueButton.SetButtonStatus(false);
+        closeButton.SetAction(Close);
+        _shinyBoardCardHolderControllers = boardAreaController.GetEmptyBoardHolders();
+        foreach (IBoardCardHolderController boardCardHolder in _shinyBoardCardHolderControllers)
+        {
+            boardCardHolder.GetView().SetupTutorialMode();
         }
+        boardAreaController.BoardHolderClickedEvent += OnBoardClicked;
+        _powerUpMessagePopupView.SetTitle("Revealing Power Up");
+        _powerUpMessagePopupView.SetText("Select the place you want to reveal.");
+        _boardAreaController = boardAreaController;
+        _targetNumberCreator = targetNumberCreator;
+        _initialCardAreaController = initialCardAreaController;
+    }
 
-        public override void SetPowerUpMessagePopup(IPowerUpMessagePopupView view)
+    protected override void Close()
+    {
+        base.Close();
+
+        foreach (IBoardCardHolderController boardCardHolder in _shinyBoardCardHolderControllers)
         {
-            base.SetPowerUpMessagePopup(view);
-            view.SetTitle("Revealing Power Up");
-            view.SetText("Select the place you want to reveal.");
+            boardCardHolder.GetView().CleanupTutorialMode();
         }
-        
-        private void OnBoardClicked(object sender, int boardHolderIndex)
-        {
-            _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-            _hapticController.Vibrate(HapticType.CardRelease);
-            int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
-            int cardIndex = cardNumber - 1;
-            _boardAreaController.SetCardIndex(boardHolderIndex, cardIndex);
-            LockedCardInfo lockedCardInfo = new LockedCardInfo(){boardHolderIndex = boardHolderIndex, targetCardIndex = cardIndex};
-            _initialCardAreaController.SetLockedCardController(lockedCardInfo);
-            _closePopupAction?.Invoke();
-            _boardAreaController.BoardHolderClickedEvent -= OnBoardClicked;
-        }
+    }
+
+    private void OnBoardClicked(object sender, int boardHolderIndex)
+    {
+        _hapticController.Vibrate(HapticType.CardRelease);
+        int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
+        int cardIndex = cardNumber - 1;
+        _boardAreaController.SetCardIndex(boardHolderIndex, cardIndex);
+        LockedCardInfo lockedCardInfo = new LockedCardInfo(){boardHolderIndex = boardHolderIndex, targetCardIndex = cardIndex};
+        _initialCardAreaController.SetLockedCardController(lockedCardInfo);
+        Close();
+        _boardAreaController.BoardHolderClickedEvent -= OnBoardClicked;
     }
 }

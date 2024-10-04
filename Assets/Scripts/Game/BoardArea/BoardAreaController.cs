@@ -103,6 +103,17 @@ namespace Scripts
             return _boardHolderControllerList[boardHolderIndex].GetPositionOfCardHolder();
         }
 
+        public List<IBoardCardHolderController> GetEmptyBoardHolders()
+        {
+            List<IBoardCardHolderController> boardCardHolderControllers = new List<IBoardCardHolderController>();
+            foreach(int i in _boardCardIndexManager.GetEmptyBoardHolderIndexList())
+            {
+                boardCardHolderControllers.Add(_boardHolderControllerList[i]);
+            }
+
+            return boardCardHolderControllers;
+        }
+
         public List<int> GetFinalNumbers()
         {
             return _boardCardIndexManager.GetFinalNumbers();
@@ -149,5 +160,6 @@ namespace Scripts
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         List<int> GetFinalNumbers();
         int[] GetCardIndexesOnBoard();
+        List<IBoardCardHolderController> GetEmptyBoardHolders();
     }
 }

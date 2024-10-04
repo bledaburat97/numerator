@@ -14,6 +14,8 @@ namespace Scripts
         [SerializeField] private Image shadow;
         [SerializeField] private Image innerBg;
         [SerializeField] protected Image image;
+        private Canvas tutorialCanvas;
+        private GraphicRaycaster tutorialRaycaster;
         private Vector2 innerBgOffsetMin;
         private Vector2 innerBgOffsetMax;
         private Action _onPointerDown;
@@ -106,6 +108,27 @@ namespace Scripts
         {
             Destroy(gameObject);
         }
+        
+        public void SetupTutorialMode()
+        {
+            tutorialCanvas = gameObject.AddComponent<Canvas>();
+            tutorialCanvas.overrideSorting = true;
+            tutorialCanvas.sortingOrder = 2;
+
+            tutorialRaycaster = gameObject.AddComponent<GraphicRaycaster>();
+        }
+
+        public void CleanupTutorialMode()
+        {
+            if( tutorialCanvas != null )
+            {
+                Destroy( tutorialCanvas );
+            }
+            if( tutorialRaycaster != null )
+            {
+                Destroy( tutorialRaycaster );
+            }
+        }
     }
     
     public interface IBaseButtonView
@@ -124,6 +147,8 @@ namespace Scripts
         void SetButtonDown();
         void SetButtonUp();
         void DestroyObject();
+        void SetupTutorialMode();
+        void CleanupTutorialMode();
     }
     
 }

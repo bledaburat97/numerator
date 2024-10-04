@@ -5,27 +5,27 @@ namespace Scripts
 {
     public class LifePowerUpController : BasePowerUpController
     {
-        public LifePowerUpController(IHapticController hapticController, Action closePopup) : base(hapticController, closePopup)
+        private IGuessManager _guessManager;
+        public LifePowerUpController(IHapticController hapticController, IPowerUpMessagePopupView powerUpMessagePopupView, IFadePanelController fadePanelController) : base(hapticController, powerUpMessagePopupView, fadePanelController)
         {
-            _hapticController = hapticController;
-            _closePopupAction = closePopup;
         }
 
-        public override void Activate(IUnmaskServiceAreaView unmaskServiceAreaView, IGamePopupCreator gamePopupCreator,
-            ITutorialAbilityManager tutorialAbilityManager,
-            ICardHolderModelCreator cardHolderModelCreator, IBoardAreaController boardAreaController,
-            ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController continueButton)
+        public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, 
+            IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController closeButton, IBaseButtonController continueButton)
         {
+            base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, closeButton, continueButton);
             continueButton.SetButtonStatus(true);
-            continueButton.AddAction(() => guessManager.AddExtraLives(3));
-            unmaskServiceAreaView.InstantiateTutorialFade();
+            continueButton.SetAction(Continue);
+            closeButton.SetAction(Close);
+            _guessManager = guessManager;
+            _powerUpMessagePopupView.SetTitle("Extra Life Power Up");
+            _powerUpMessagePopupView.SetText("Press button to get 3 extra lives.");
         }
-
-        public override void SetPowerUpMessagePopup(IPowerUpMessagePopupView view)
+        
+        private void Continue()
         {
-            base.SetPowerUpMessagePopup(view);
-            view.SetTitle("Extra Life Power Up");
-            view.SetText("Press button to get 3 extra lives.");
+            Close();
+            _guessManager.AddExtraLives(3);
         }
 
     }

@@ -49,12 +49,12 @@ namespace Scripts
             }
         }*/
 
-        public BaseButtonView GetContinueButton()
+        public IBaseButtonView GetContinueButton()
         {
             return continueButton;
         }
         
-        public BaseButtonView GetCloseButton()
+        public IBaseButtonView GetCloseButton()
         {
             return closeButton;
         }
@@ -79,8 +79,8 @@ namespace Scripts
     {
         void Init();
         void SetStatus(bool status);
-        BaseButtonView GetContinueButton();
-        BaseButtonView GetCloseButton();
+        IBaseButtonView GetContinueButton();
+        IBaseButtonView GetCloseButton();
         void SetTitle(string text);
         void SetText(string text);
         void SetSprite(Sprite sprite);

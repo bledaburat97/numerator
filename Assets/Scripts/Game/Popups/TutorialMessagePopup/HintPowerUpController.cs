@@ -5,25 +5,24 @@ namespace Scripts
 {
     public class HintPowerUpController : BasePowerUpController
     {
-        public HintPowerUpController(IHapticController hapticController, Action closePopup) : base(hapticController, closePopup)
+        public HintPowerUpController(IHapticController hapticController, IPowerUpMessagePopupView powerUpMessagePopupView, IFadePanelController fadePanelController) : base(hapticController, powerUpMessagePopupView, fadePanelController)
         {
-            _hapticController = hapticController;
-            _closePopupAction = closePopup;
         }
         
-        public override void Activate(IUnmaskServiceAreaView unmaskServiceAreaView, IGamePopupCreator gamePopupCreator,
-            ITutorialAbilityManager tutorialAbilityManager,
-            ICardHolderModelCreator cardHolderModelCreator, IBoardAreaController boardAreaController,
-            ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController continueButton)
+        public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, 
+            IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController closeButton, IBaseButtonController continueButton)
         {
-            unmaskServiceAreaView.InstantiateTutorialFade();
+            base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, closeButton, continueButton);
+            continueButton.SetButtonStatus(true);
+            continueButton.SetAction(Continue);
+            closeButton.SetAction(Close);
+            _powerUpMessagePopupView.SetTitle("Bomb Power Up");
+            _powerUpMessagePopupView.SetText("Press button to get suggested number.");
         }
         
-        public override void SetPowerUpMessagePopup(IPowerUpMessagePopupView view)
+        private void Continue()
         {
-            base.SetPowerUpMessagePopup(view);
-            view.SetTitle("Hint Power Up");
-            view.SetText("Press button to get suggested number.");
+            Close();
         }
     }
 }

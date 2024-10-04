@@ -280,6 +280,8 @@ GameObject:
   - component: {fileID: 2689086186499319326}
   - component: {fileID: 5807579108651850580}
   - component: {fileID: 7642969658505783194}
+  - component: {fileID: 4306062196406110339}
+  - component: {fileID: 7019271253805497377}
   m_Layer: 0
   m_Name: CardHolder
   m_TagString: Untagged
@@ -330,6 +332,8 @@ MonoBehaviour:
   text: {fileID: 3551134613469955369}
   frame: {fileID: 2399474316760076157}
   button: {fileID: 7064041834586233129}
+  tutorialCanvas: {fileID: 4306062196406110339}
+  tutorialRaycaster: {fileID: 7019271253805497377}
 --- !u!222 &7642969658505783194
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -338,6 +342,46 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5538405169638467572}
   m_CullTransparentMesh: 1
+--- !u!223 &4306062196406110339
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5538405169638467572}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 25
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
+  m_TargetDisplay: 0
+--- !u!114 &7019271253805497377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5538405169638467572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1 &6614214458048269381
 GameObject:
   m_ObjectHideFlags: 0

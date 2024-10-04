@@ -14,6 +14,8 @@ namespace Scripts
         [SerializeField] private TMP_Text text;
         [SerializeField] private Image frame;
         [SerializeField] private Button button;
+        [SerializeField] private Canvas tutorialCanvas;
+        [SerializeField] private GraphicRaycaster tutorialRaycaster;
         private Camera _cam;
 
         public void SetCamera(Camera cam)
@@ -93,6 +95,17 @@ namespace Scripts
         {
             Destroy(gameObject);
         }
+        
+        public void SetupTutorialMode()
+        {
+            tutorialCanvas.overrideSorting = true;
+            tutorialCanvas.sortingOrder = 2;
+        }
+
+        public void CleanupTutorialMode()
+        {
+            tutorialCanvas.overrideSorting = false;
+        }
     }
 
     public interface ICardHolderView
@@ -110,5 +123,7 @@ namespace Scripts
         void SetOnClick(Action onClick);
         Vector3 GetGlobalPosition();
         void DestroyObject();
+        void SetupTutorialMode();
+        void CleanupTutorialMode();
     }
 }

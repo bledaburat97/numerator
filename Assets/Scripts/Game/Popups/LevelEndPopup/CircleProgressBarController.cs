@@ -81,19 +81,6 @@ namespace Scripts
         
         public Sequence AddNewStars(StarImageView[] newStars, int numOfBlueStars, int earnedStarCount)
         {
-            //earned star 3 
-            //numOfBlue 1 -> 0 1 sarı 2 mavi
-            //2-> 0 sarı 1 2 mavi
-            //3 -> 0 1 2 mavi
-            
-            //earned 2
-            //0 -> 0 1 sarı
-            //1 -> 0 sarı 1 mavi
-            //2 -> 0 1 mavi
-            
-            //earned 1
-            //0 -> 0 sarı
-            //1 -> 0 mavi
             return DOTween.Sequence()
                 .Append(GetNewStarAnimation(earnedStarCount - numOfBlueStars < 1 && earnedStarCount > 0 ? newStars[0] : null))
                     .Append(GetNewStarAnimation(earnedStarCount - numOfBlueStars < 2 && earnedStarCount > 1 ? newStars[1] : null))

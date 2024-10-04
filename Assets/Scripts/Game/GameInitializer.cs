@@ -56,7 +56,6 @@ namespace Game
             _unmaskServiceAreaView.Initialize(_fadePanelController);
             _gamePopupCreator.Initialize(_cardHolderModelCreator);
             _cardInteractionManager.Initialize();
-            _powerUpMessageController.Initialize(_cardHolderModelCreator);
             _gameSaveService.DeleteSave();
         }
     }

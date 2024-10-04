@@ -126,6 +126,11 @@ namespace Scripts
                 _buttonDictionary[type].SetButtonClickable(isClickable);
             }
         }
+        
+        public IBaseButtonController GetButton(GameUIButtonType buttonType)
+        {
+            return _buttonDictionary[buttonType];
+        }
 
         public RectTransform GetCheckButtonRectTransform()
         {
@@ -202,6 +207,7 @@ namespace Scripts
         RectTransform GetCardInfoButtonRectTransform();
         void SetAllButtonsUnclickable();
         void SetButtonClickable(bool isClickable, GameUIButtonType type);
+        IBaseButtonController GetButton(GameUIButtonType buttonType);
         event EventHandler CheckFinalNumbers;
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;
