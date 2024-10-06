@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+/*
 namespace Scripts
 {
     public class BaseCardHolderController : IBaseCardHolderController
     {
-        protected ICardHolderView _view;
-        protected CardHolderModel _model;
-
-        public BaseCardHolderController(ICardHolderView cardHolderView, Camera cam)
+        protected IBaseHolderView _view;
+        protected ICardHolderPositionManager _cardHolderPositionManager;
+        public BaseCardHolderController(IBaseHolderView baseHolderView, Camera cam, ICardHolderPositionManager cardHolderPositionManager)
         {
-            _view = cardHolderView;
+            _view = baseHolderView;
+            _cardHolderPositionManager = cardHolderPositionManager;
             _view.SetCamera(cam);
         }
         
-        public ICardHolderView GetView()
+        public IBaseHolderView GetView()
         {
             return _view;
         }
@@ -34,7 +34,7 @@ namespace Scripts
 
     public interface IBaseCardHolderController
     {
-        ICardHolderView GetView();
+        IBaseHolderView GetView();
         Vector3 GetPositionOfCardHolder();
         void DestroyObject();
     }
@@ -49,3 +49,4 @@ namespace Scripts
         public CardHolderType cardHolderType;
     }
 }
+*/

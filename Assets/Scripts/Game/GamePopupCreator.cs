@@ -32,7 +32,6 @@ namespace Scripts
         [Inject] private IResultManager _resultManager;
         [Inject] private IGuessManager _guessManager;
 
-        private ICardHolderModelCreator _cardHolderModelCreator;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -63,9 +62,8 @@ namespace Scripts
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
 
-        public void Initialize(ICardHolderModelCreator cardHolderModelCreator)
+        public void Initialize()
         {
-            _cardHolderModelCreator = cardHolderModelCreator;
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
             _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
@@ -92,7 +90,7 @@ namespace Scripts
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
 
                 ITutorialController firstLevelTutorialController = new FirstLevelTutorialController();
-                firstLevelTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _tutorialAbilityManager, _cardInteractionManager, _boardAreaController);
+                firstLevelTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _tutorialAbilityManager, _cardInteractionManager, _boardAreaController);
             }
             
             else if (_levelTracker.IsCardInfoTutorial())
@@ -105,7 +103,7 @@ namespace Scripts
                     new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
 
                 ITutorialController cardInfoTutorialController = new CardInfoTutorialController();
-                cardInfoTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, cardHolderModelCreator, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _tutorialAbilityManager, _cardInteractionManager, _boardAreaController);
+                cardInfoTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardItemInfoManager, _tutorialAbilityManager, _cardInteractionManager, _boardAreaController);
             }
             /*
             else if (_levelTracker.IsWildCardTutorial())
@@ -226,7 +224,7 @@ namespace Scripts
 
     public interface IGamePopupCreator
     {
-        void Initialize(ICardHolderModelCreator cardHolderModelCreator);
+        void Initialize();
         void CreateAbleToMovePopup();
         void CreateWaitingOpponentPopup(Action onPlayerUnReady);
         void CreateMultiplayerLevelEnd(bool isSuccess, IUserReady userReady, Action onPlayerReady);

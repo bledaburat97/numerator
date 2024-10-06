@@ -23,6 +23,11 @@ namespace Scripts
         {
             return circleImage;
         }
+
+        public void SetStatus(bool status)
+        {
+            gameObject.SetActive(status);
+        }
     }
 
     public interface ICircleProgressBarView
@@ -30,5 +35,6 @@ namespace Scripts
         RectTransform GetRectTransform();
         Image GetImage();
         IStarImageView CreateStarImage(StarImageViewFactory starImageViewFactory);
+        void SetStatus(bool status);
     }
 }

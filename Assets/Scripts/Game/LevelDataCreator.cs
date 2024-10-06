@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Unity.Netcode;
+using Zenject;
 
 namespace Scripts
 {
@@ -9,36 +10,17 @@ namespace Scripts
         private LevelData _levelData;
         private List<LevelData> _startingLevelsDataList;
         private List<LevelData> _loopLevelsDataList;
+        [Inject] private ILevelTracker _levelTracker;
         
-        public void Initialize()
+        public void Awake()
         {
             _startingLevelsDataList = LevelDataGetter.GetStartingLevelsData();
             _loopLevelsDataList = LevelDataGetter.GetLoopLevelsData();
         }
-
-        public override void OnNetworkSpawn()
-        {
-            _numOfBoardHolders.OnValueChanged += UpdateLevelData;
-        }
         
-        private void UpdateLevelData(int oldValue, int newValue)
+        public void SetSinglePlayerLevelData()
         {
-            _levelData = new LevelData()
-            {
-                LevelId = -1,
-                NumOfBoardHolders = _numOfBoardHolders.Value,
-                NumOfCards = 9,
-                MaxNumOfTries = 1000,
-            };
-        }
-        
-        public LevelData GetLevelData()
-        {
-            return _levelData;
-        }
-
-        public void SetSinglePlayerLevelData(int levelId)
-        {
+            int levelId = _levelTracker.GetLevelId();
             if (levelId < 30)
             {
                 _levelData = _startingLevelsDataList.Find(level => level.LevelId == levelId);
@@ -49,8 +31,35 @@ namespace Scripts
             }
         }
 
-        public void SetMultiplayerLevelData(int numOfBoardHolders)
+        public override void OnNetworkSpawn()
         {
+            _numOfBoardHolders.OnValueChanged += UpdateMultiplayerLevelData;
+        }
+        
+        private void UpdateMultiplayerLevelData(int oldValue, int newValue)
+        {
+            _levelData = new LevelData()
+            {
+                LevelId = -1,
+                NumOfBoardHolders = _numOfBoardHolders.Value,
+                NumOfCards = 9,
+                MaxNumOfTries = 1000,
+            };
+        }
+
+        public void DecreaseNumOfBoardHolders()
+        {
+            _levelData.NumOfBoardHolders -= 1;
+        }
+        
+        public LevelData GetLevelData()
+        {
+            return _levelData;
+        }
+
+        public void SetMultiplayerLevelData()
+        {
+            int numOfBoardHolders = _levelTracker.GetNumberOfBoardCardsInMultiplayer();
             if (IsServer)
             {
                 SetMultiplayerLevelDataServerRpc(numOfBoardHolders);
@@ -67,9 +76,9 @@ namespace Scripts
 
     public interface ILevelDataCreator
     {
-        void Initialize();
+        void SetSinglePlayerLevelData();
         LevelData GetLevelData();
-        void SetSinglePlayerLevelData(int levelId);
-        void SetMultiplayerLevelData(int numOfBoardHolders);
+        void SetMultiplayerLevelData();
+        void DecreaseNumOfBoardHolders();
     }
 }

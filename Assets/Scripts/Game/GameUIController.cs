@@ -82,7 +82,7 @@ namespace Scripts
             CreateButtonController(_view.GetSettingsButton(), GameUIButtonType.Settings, buttonClickAction);
             CreateButtonController(_view.GetRevealingPowerUpButton(), GameUIButtonType.RevealingPowerUp, buttonClickAction);
             CreateButtonController(_view.GetLifePowerUpButton(), GameUIButtonType.LifePowerUp, buttonClickAction);
-            CreateButtonController(_view.GetHintPowerUpButton(), GameUIButtonType.HintPowerUp, buttonClickAction);
+            CreateButtonController(_view.GetHintPowerUpButton(), GameUIButtonType.BombPowerUp, buttonClickAction);
         }
 
         private void InitializeCardInfoButton(Action<bool> onClickAction)
@@ -173,8 +173,8 @@ namespace Scripts
                 case GameUIButtonType.LifePowerUp:
                     PowerUpClickedEvent?.Invoke(this, GameUIButtonType.LifePowerUp);
                     break;
-                case GameUIButtonType.HintPowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.HintPowerUp);
+                case GameUIButtonType.BombPowerUp:
+                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.BombPowerUp);
                     break;
                 default:
                     break;
@@ -196,7 +196,7 @@ namespace Scripts
         Reset,
         RevealingPowerUp,
         LifePowerUp,
-        HintPowerUp
+        BombPowerUp
     }
 
     public interface IGameUIController

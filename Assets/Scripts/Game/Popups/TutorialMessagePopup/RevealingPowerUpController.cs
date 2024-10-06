@@ -16,9 +16,9 @@ public class RevealingPowerUpController : BasePowerUpController
         _shinyBoardCardHolderControllers = new List<IBoardCardHolderController>();
     }
 
-    public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController closeButton, IBaseButtonController continueButton)
+    public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IGameInitializer gameInitializer, IBaseButtonController closeButton, IBaseButtonController continueButton)
     {
-        base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, closeButton, continueButton);
+        base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, gameInitializer, closeButton, continueButton);
         continueButton.SetButtonStatus(false);
         closeButton.SetAction(Close);
         _shinyBoardCardHolderControllers = boardAreaController.GetEmptyBoardHolders();

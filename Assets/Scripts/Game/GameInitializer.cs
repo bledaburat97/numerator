@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using Scripts;
+using UnityEngine;
 using Zenject;
 
 namespace Game
@@ -29,39 +31,84 @@ namespace Game
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         [Inject] private IPowerUpMessageController _powerUpMessageController;
-        private ICardHolderModelCreator _cardHolderModelCreator;
-        
-        public GameInitializer()
-        {
-            _cardHolderModelCreator = new CardHolderModelCreator();
-        }
+        [Inject] private ICardHolderPositionManager _cardHolderPositionManager;
 
         public void Initialize()
         {
-            _targetNumberCreator.Initialize();
-            _levelDataCreator.Initialize();
-            _levelSaveDataManager.SetLevelSaveData(_gameSaveService.GetSavedLevel(), _targetNumberCreator, _levelDataCreator, _levelTracker);
-            _userReady.Initialize();
-            _gameUIController.Initialize();
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                _levelDataCreator.SetSinglePlayerLevelData(); //do not call while removing board holder.
+                if (_levelTracker.IsFirstLevelTutorial())
+                {
+                    _levelSaveDataManager.CreateDefaultLevelSaveData();
+                    _targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
+                }
+                else if (_levelTracker.IsCardInfoTutorial())
+                {
+                    _levelSaveDataManager.CreateDefaultLevelSaveData();
+                    _targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
+                }
+                else if (_gameSaveService.GetSavedLevel() != null)
+                {
+                    _levelSaveDataManager.SetLevelSaveDataAsSaved(_gameSaveService.GetSavedLevel());
+                    _targetNumberCreator.SetSavedTargetCardList(_gameSaveService.GetSavedLevel().TargetCards);
+                }
+                else
+                {
+                    _levelSaveDataManager.CreateDefaultLevelSaveData();
+                    _targetNumberCreator.CreateTargetNumber();
+                }
+            }
+
+            else
+            {
+                _levelDataCreator.SetMultiplayerLevelData();
+                _levelSaveDataManager.CreateDefaultLevelSaveData();
+                _targetNumberCreator.CreateMultiplayerTargetNumber();
+                _userReady.Initialize();
+            }
+            
+            _gameUIController.Initialize(); //check which powerup button is pressable
             _resultAreaController.Initialize();
-            _resultManager.Initialize(_levelSaveDataManager.GetLevelSaveData().TriedCardsList, _targetNumberCreator.GetTargetCardsList(), _levelDataCreator.GetLevelData().NumOfBoardHolders);
+            _resultManager.Initialize();
             _cardItemLocator.Initialize();
             _guessManager.Initialize(_levelDataCreator.GetLevelData().MaxNumOfTries, _levelSaveDataManager.GetLevelSaveData().RemainingGuessCount, _levelDataCreator.GetLevelData().NumOfBoardHolders);
-            _cardHolderModelCreator.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _levelDataCreator.GetLevelData().NumOfCards);
-            _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board));
-            _cardItemInfoManager.Initialize(_levelSaveDataManager.GetLevelSaveData().CardItemInfoList, _levelDataCreator.GetLevelData().NumOfBoardHolders);
-            _initialCardAreaController.Initialize(_cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial));
-            _cardItemInfoPopupController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders, _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board));
+            _cardHolderPositionManager.Initialize();
+            _boardAreaController.Initialize();
+            _cardItemInfoManager.Initialize();
+            _initialCardAreaController.Initialize();
+            _cardItemInfoPopupController.Initialize();
             _fadePanelController.SetFadeImageStatus(false);
             _unmaskServiceAreaView.Initialize(_fadePanelController);
-            _gamePopupCreator.Initialize(_cardHolderModelCreator);
+            _gamePopupCreator.Initialize();
             _cardInteractionManager.Initialize();
             _gameSaveService.DeleteSave();
+        }
+
+        public void RemoveLastWagon()
+        {
+            if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                Debug.LogError("You shouldn't have clicked the bomb button");
+                return;
+            }
+            _levelDataCreator.DecreaseNumOfBoardHolders();
+            _levelSaveDataManager.CreateDefaultLevelSaveData();
+            _targetNumberCreator.CreateTargetNumber();
+            _gameUIController.Initialize(); //check which powerup button is pressable
+            _resultManager.Initialize();
+            _cardItemLocator.Initialize();
+            _cardHolderPositionManager.Initialize();
+            _initialCardAreaController.DeleteOneHolderIndicator();
+            _boardAreaController.DeleteOneBoardHolder();
+            _cardItemInfoManager.Initialize();
+            _cardItemInfoPopupController.Initialize();
         }
     }
 
     public interface IGameInitializer
     {
         void Initialize();
+        void RemoveLastWagon();
     }
 }

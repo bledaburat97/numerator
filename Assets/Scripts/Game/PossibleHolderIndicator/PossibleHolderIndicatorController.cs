@@ -23,6 +23,11 @@ namespace Scripts
         {
             return _status;
         }
+
+        public void DestroyObject()
+        {
+            _view.DestroyObject();
+        }
     }
 
     public interface IPossibleHolderIndicatorController
@@ -30,6 +35,7 @@ namespace Scripts
         void Initialize(IPossibleHolderIndicatorView view, PossibleHolderIndicatorModel model);
         void SetStatus(bool status);
         bool GetStatus();
+        void DestroyObject();
     }
 
     public class PossibleHolderIndicatorModel

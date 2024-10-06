@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using DG.Tweening;
 using Scripts;
 using Zenject;
 
@@ -10,6 +11,8 @@ namespace Game
         private ILifeBarController _lifeBarController;
         private ILevelFinishController _levelFinishController;
         private IHintProvider _hintProvider;
+        private ILevelDataCreator _levelDataCreator;
+        private ILevelSaveDataManager _levelSaveDataManager;
         
         private int _remainingGuessCount;
         private List<LifeBarStarInfo> _lifeBarStarInfoList;
@@ -18,7 +21,8 @@ namespace Game
         private int _numOfBoardHolders;
 
         [Inject]
-        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController, ILevelFinishController levelFinishController, IHintProvider hintProvider)
+        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController, ILevelFinishController levelFinishController, 
+            IHintProvider hintProvider)
         {
             resultManager.NumberGuessed += CheckGameIsOver;
             _levelTracker = levelTracker;
@@ -127,25 +131,40 @@ namespace Game
             }
             
             _lifeBarController.UpdateProgressBar((float)_remainingGuessCount / _maxGuessCount, 1f,
-                _remainingGuessCount == 0 ? () => LevelFailed(targetCardNumbers) : null);
+                _remainingGuessCount == 0 ? () => LevelFailed(targetCardNumbers) : null).Play();
         }
 
         public void AddExtraLives(int numOfLives)
         {
             if (_remainingGuessCount + numOfLives > _maxGuessCount) return;
-
+            int lastStarLifeBarIndex = _remainingGuessCount;
+            Sequence sequence = DOTween.Sequence();
             for (int i = 0; i < _lifeBarStarInfoList.Count; i++)
             {
-                if (_lifeBarStarInfoList[i].lifeBarIndex > _remainingGuessCount &&
-                    _lifeBarStarInfoList[i].lifeBarIndex <= _remainingGuessCount + numOfLives)
+                if (_lifeBarStarInfoList[i].lifeBarIndex >= _remainingGuessCount &&
+                    _lifeBarStarInfoList[i].lifeBarIndex < _remainingGuessCount + numOfLives)
                 {
-                    _lifeBarStarInfoList[i].isActive = true;
-                    _lifeBarController.SetStarStatus(true, _lifeBarStarInfoList[i].lifeBarIndex);
+                    int index = i;
+                    sequence.Append(_lifeBarController.UpdateProgressBar(
+                        (float)(_lifeBarStarInfoList[i].lifeBarIndex + 1) / _maxGuessCount,
+                        _lifeBarStarInfoList[i].lifeBarIndex - _remainingGuessCount + 1,
+                        () =>
+                        {
+                            _lifeBarStarInfoList[index].isActive = true;
+                            _lifeBarController.SetStarStatus(true, _lifeBarStarInfoList[index].lifeBarIndex);
+                            lastStarLifeBarIndex = _lifeBarStarInfoList[index].lifeBarIndex;
+                        }));
                 }
             }
 
-            _remainingGuessCount += numOfLives;
-            _lifeBarController.UpdateProgressBar((float)_remainingGuessCount / _maxGuessCount, 1f,  null);
+            sequence.Append(_lifeBarController.UpdateProgressBar(
+                (float)(_remainingGuessCount + numOfLives) / _maxGuessCount,
+                _remainingGuessCount + numOfLives - lastStarLifeBarIndex,
+                () =>
+                {
+                    _remainingGuessCount += numOfLives;
+                }));
+            sequence.Play();
         }
 
         private void CreateLifeBarStarInfoList()

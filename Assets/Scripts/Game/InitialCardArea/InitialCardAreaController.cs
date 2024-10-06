@@ -16,7 +16,7 @@ namespace Scripts
         private ITutorialAbilityManager _tutorialAbilityManager;
         private IGameUIController _gameUIController;
         private IBoardAreaController _boardAreaController;
-        
+        private ICardHolderPositionManager _cardHolderPositionManager;
         private IInitialCardAreaView _view;
         private List<IInitialCardHolderController> _normalCardHolderControllerList;
         private List<INormalCardItemController> _normalCardItemControllerList;
@@ -24,7 +24,7 @@ namespace Scripts
         public event EventHandler OnCardDragStartedEvent;
         
         [Inject]
-        public InitialCardAreaController(IHapticController hapticController, ICardItemLocator cardItemLocator, IInitialCardAreaView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ITutorialAbilityManager tutorialAbilityManager, IGameUIController gameUIController, IBoardAreaController boardAreaController)
+        public InitialCardAreaController(IHapticController hapticController, ICardItemLocator cardItemLocator, IInitialCardAreaView view, ICardItemInfoManager cardItemInfoManager, ILevelTracker levelTracker, ITutorialAbilityManager tutorialAbilityManager, IGameUIController gameUIController, IBoardAreaController boardAreaController, ICardHolderPositionManager cardHolderPositionManager)
         {
             _view = view;
             _normalCardHolderControllerList = new List<IInitialCardHolderController>();
@@ -37,15 +37,34 @@ namespace Scripts
             _gameUIController = gameUIController;
             _boardAreaController = boardAreaController;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
+            _cardHolderPositionManager = cardHolderPositionManager;
         }
         
-        public void Initialize(List<CardHolderModel> cardHolderModels)
+        public void Initialize()
         {
             ClearInitialCardHolders();
             ClearInitialCards();
             _view.Init();
-            CreateCardHolders(cardHolderModels);
+            CreateCardHolders();
             CreateCardItemsData();
+        }
+
+        public void DeleteOneHolderIndicator()
+        {
+            if (_boardAreaController.CheckFirstBoardHolderHasAnyCard(out int cardIndex))
+            {
+                ResetCardItemPosition(cardIndex);
+            }
+            
+            foreach (IInitialCardHolderController initialHolderController in _normalCardHolderControllerList)
+            {
+                initialHolderController.RemoveFirstHolderIndicator();
+            }
+        }
+
+        private void ResetCardItemPosition(int cardIndex)
+        {
+            _normalCardItemControllerList[cardIndex].ResetPosition();
         }
 
         private void ClearInitialCardHolders()
@@ -66,14 +85,14 @@ namespace Scripts
             _normalCardItemControllerList.Clear();
         }
         
-        private void CreateCardHolders(List<CardHolderModel> cardHolderModels)
+        private void CreateCardHolders()
         {
-            foreach (CardHolderModel cardHolderModel in cardHolderModels)
+            for (int i = 0; i < _cardHolderPositionManager.GetHolderPositionList(CardHolderType.Initial).Count; i++)
             {
-                ICardHolderView cardHolderView = _view.CreateCardHolderView();
-                IInitialCardHolderController cardHolderController = new InitialCardHolderController(cardHolderView, _view.GetCamera());
-                cardHolderController.Initialize(cardHolderModel, _cardItemInfoManager);
-                _normalCardHolderControllerList.Add(cardHolderController);
+                IInitialHolderView initialHolderView = _view.CreateCardHolderView();
+                IInitialCardHolderController initialHolderController = new InitialCardHolderController(initialHolderView,  _cardHolderPositionManager);
+                initialHolderController.Initialize(i, _cardItemInfoManager);
+                _normalCardHolderControllerList.Add(initialHolderController);
             }
         }
         
@@ -81,7 +100,6 @@ namespace Scripts
         {
             for (int i = 0; i < _normalCardHolderControllerList.Count ; i++)
             {
-                _normalCardHolderControllerList[i].SetText((i+1).ToString());
                 CardItemData cardItemData = new CardItemData()
                 {
                     parent = _normalCardHolderControllerList[i].GetView().GetRectTransform(),
@@ -173,7 +191,7 @@ namespace Scripts
     public interface IInitialCardAreaController
     {
         event EventHandler<int> OnCardClickedEvent;
-        void Initialize(List<CardHolderModel> cardHolderModels);
+        void Initialize();
         void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1);
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
         void SetCardAnimation(int cardIndex, bool status);
@@ -182,6 +200,7 @@ namespace Scripts
         void Unsubscribe();
         event EventHandler OnCardDragStartedEvent;
         INormalCardItemController GetCardItemController(int cardIndex);
+        void DeleteOneHolderIndicator();
     }
     
     public class CardItemData

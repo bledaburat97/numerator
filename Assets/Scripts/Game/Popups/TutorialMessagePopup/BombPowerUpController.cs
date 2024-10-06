@@ -1,32 +1,28 @@
-﻿using System;
-using Game;
+﻿using Game;
 
 namespace Scripts
 {
-    public class LifePowerUpController : BasePowerUpController
+    public class BombPowerUpController : BasePowerUpController
     {
-        private IGuessManager _guessManager;
-        public LifePowerUpController(IHapticController hapticController, IPowerUpMessagePopupView powerUpMessagePopupView, IFadePanelController fadePanelController) : base(hapticController, powerUpMessagePopupView, fadePanelController)
+        public BombPowerUpController(IHapticController hapticController, IPowerUpMessagePopupView powerUpMessagePopupView, IFadePanelController fadePanelController) : base(hapticController, powerUpMessagePopupView, fadePanelController)
         {
         }
-
+        
         public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, 
             IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IGameInitializer gameInitializer, IBaseButtonController closeButton, IBaseButtonController continueButton)
         {
             base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, gameInitializer, closeButton, continueButton);
             continueButton.SetButtonStatus(true);
-            continueButton.SetAction(Continue);
+            continueButton.SetAction(() => Continue(gameInitializer));
             closeButton.SetAction(Close);
-            _guessManager = guessManager;
-            _powerUpMessagePopupView.SetTitle("Extra Life Power Up");
-            _powerUpMessagePopupView.SetText("Press button to get 3 extra lives.");
+            _powerUpMessagePopupView.SetTitle("Bomb Power Up");
+            _powerUpMessagePopupView.SetText("Press button to destroy last wagon.");
         }
         
-        private void Continue()
+        private void Continue(IGameInitializer gameInitializer)
         {
             Close();
-            _guessManager.AddExtraLives(3);
+            gameInitializer.RemoveLastWagon();
         }
-
     }
 }

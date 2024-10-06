@@ -4,13 +4,13 @@ namespace Scripts
 {
     public class BoardAreaView : MonoBehaviour, IBoardAreaView
     {
-        [SerializeField] private CardHolderView boardCardHolderPrefab;
+        [SerializeField] private BoardHolderView boardHolderPrefab;
         [SerializeField] private Camera cam;
         [SerializeField] private Canvas canvas;
 
-        public ICardHolderView CreateCardHolderView()
+        public IBoardHolderView CreateBoardHolderView()
         {
-            return Instantiate(boardCardHolderPrefab, transform, true);
+            return Instantiate(boardHolderPrefab, transform, true);
         }
 
         public Camera GetCamera()
@@ -26,7 +26,7 @@ namespace Scripts
 
     public interface IBoardAreaView
     {
-        ICardHolderView CreateCardHolderView();
+        IBoardHolderView CreateBoardHolderView();
         Camera GetCamera();
         Canvas GetCanvas();
     }

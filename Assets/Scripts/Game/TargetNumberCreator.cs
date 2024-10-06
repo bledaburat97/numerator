@@ -4,6 +4,7 @@ using System.Linq;
 using Game;
 using Unity.Netcode;
 using UnityEngine;
+using Zenject;
 using Random = System.Random;
 
 namespace Scripts
@@ -12,10 +13,7 @@ namespace Scripts
     {
         private NetworkVariable<int> _targetNumber = new NetworkVariable<int>();
         private List<int> _targetCardsList;
-
-        public void Initialize()
-        {
-        }
+        [Inject] private ILevelDataCreator _levelDataCreator;
         
         public override void OnNetworkSpawn()
         {
@@ -49,17 +47,20 @@ namespace Scripts
             _targetCardsList = targetCardsList;
         }
         
-        public void CreateMultiplayerTargetNumber(int numOfCards, int numOfBoardHolders)
+        public void CreateMultiplayerTargetNumber()
         {
+            LevelData levelData = _levelDataCreator.GetLevelData();
+
             if (IsServer)
             {
-                CreateTargetNumberServerRpc(numOfCards, numOfBoardHolders);
+                CreateTargetNumberServerRpc(levelData.NumOfCards, levelData.NumOfBoardHolders);
             }
         }
         
-        public void CreateTargetNumber(int numOfCards, int numOfBoardHolders)
+        public void CreateTargetNumber()
         {
-            SetTargetCardsList(GetTargetNumber(numOfCards, numOfBoardHolders));
+            LevelData levelData = _levelDataCreator.GetLevelData();
+            SetTargetCardsList(GetTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders));
         }
         
         [ServerRpc (RequireOwnership = false)]
@@ -93,9 +94,8 @@ namespace Scripts
 
     public interface ITargetNumberCreator
     {
-        void Initialize();
-        void CreateMultiplayerTargetNumber(int numOfCards, int numOfBoardHolders);
-        void CreateTargetNumber(int numOfCards, int numOfBoardHolders);
+        void CreateMultiplayerTargetNumber();
+        void CreateTargetNumber();
         List<int> GetTargetCardsList();
         void SetSavedTargetCardList(List<int> targetCardsList);
     }

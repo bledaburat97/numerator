@@ -4,16 +4,25 @@ namespace Game
 {
     public class BoardCardIndexManager
     {
-        private int[] _cardIndexesOnBoardHolders;
+        private List<int> _cardIndexesOnBoardHolders;
 
         public BoardCardIndexManager(int numOfBoardHolders)
         {
-            _cardIndexesOnBoardHolders = new int[numOfBoardHolders];
+            _cardIndexesOnBoardHolders = new List<int>();
+            for (int i = 0; i < numOfBoardHolders; i++)
+            {
+                _cardIndexesOnBoardHolders.Add(-1);
+            }
+        }
+
+        public void DeleteFirstBoardHolder()
+        {
+            _cardIndexesOnBoardHolders.RemoveAt(0);
         }
 
         public void ResetBoard()
         {
-            for(int i = 0; i < _cardIndexesOnBoardHolders.Length; i++)
+            for(int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
             {
                 ResetBoardHolder(i);
             }
@@ -21,7 +30,7 @@ namespace Game
 
         public bool CheckCardIsOnBoard(int checkingCardIndex, out int boardHolderIndex)
         {
-            for(int i = 0; i < _cardIndexesOnBoardHolders.Length; i++)
+            for(int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
             {
                 if (_cardIndexesOnBoardHolders[i] == checkingCardIndex)
                 {
@@ -34,8 +43,9 @@ namespace Game
             return false;
         }
 
-        public bool CheckBoardHolderHasAnyCard(int boardHolderIndex)
+        public bool CheckBoardHolderHasAnyCard(int boardHolderIndex, out int cardIndex)
         {
+            cardIndex = _cardIndexesOnBoardHolders[boardHolderIndex];
             if(_cardIndexesOnBoardHolders[boardHolderIndex] == -1) return false;
             return true;
         }
@@ -53,7 +63,7 @@ namespace Game
         public List<int> GetEmptyBoardHolderIndexList()
         {
             List<int> emptyBoardHolderIndexes = new List<int>();
-            for (int i = 0; i < _cardIndexesOnBoardHolders.Length; i++)
+            for (int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
             {
                 if (_cardIndexesOnBoardHolders[i] == -1)
                 {
@@ -75,7 +85,7 @@ namespace Game
             return finalNumbers;
         }
 
-        public int[] GetCardIndexesOnBoard()
+        public List<int> GetCardIndexesOnBoard()
         {
             return _cardIndexesOnBoardHolders;
         }

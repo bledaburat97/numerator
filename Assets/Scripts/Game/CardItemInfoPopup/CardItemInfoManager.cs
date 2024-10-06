@@ -1,18 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using Game;
 
 namespace Scripts
 {
     public class CardItemInfoManager : ICardItemInfoManager
     {
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
-        private int _numOfBoardCardHolders;
         public event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;
         public event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
-        public void Initialize(List<CardItemInfo> cardItemInfoList, int numOfBoardHolders)
+
+        private ILevelSaveDataManager _levelSaveDataManager;
+        private ILevelDataCreator _levelDataCreator;
+
+        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator)
         {
-            _cardItemInfoList = cardItemInfoList;
-            _numOfBoardCardHolders = numOfBoardHolders;
+            _levelSaveDataManager = levelSaveDataManager;
+            _levelDataCreator = levelDataCreator;
+        }
+        
+        public void Initialize()
+        {
+            _cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
         }
 
         public List<CardItemInfo> GetCardItemInfoList()
@@ -53,7 +62,7 @@ namespace Scripts
         private List<int> GetAllPossibleCardHolderIndicatorIndexes()
         {
             List<int> possibleCardHolderIndexes = new List<int>();
-            for (int i = 0; i < _numOfBoardCardHolders; i++)
+            for (int i = 0; i < _levelDataCreator.GetLevelData().NumOfBoardHolders; i++)
             {
                 possibleCardHolderIndexes.Add(i);
             }
@@ -144,7 +153,7 @@ namespace Scripts
 
     public interface ICardItemInfoManager
     {
-        void Initialize(List<CardItemInfo> cardItemInfoList, int numOfBoardHolders);
+        void Initialize();
         void OnCardHolderIndicatorClicked(int cardIndex, int cardHolderIndicatorIndex);
         void OnProbabilityButtonClicked(int cardIndex, ProbabilityType probabilityType);
         event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;

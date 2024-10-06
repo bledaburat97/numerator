@@ -10,27 +10,57 @@ namespace Scripts
     {
         private ITutorialAbilityManager _tutorialAbilityManager;
         private IBoardAreaView _view;
+        private ILevelDataCreator _levelDataCreator;
+        private ICardHolderPositionManager _cardHolderPositionManager;
         private List<IBoardCardHolderController> _boardHolderControllerList;
         private BoardCardIndexManager _boardCardIndexManager;
         private int _numOfBoardHolders;
         public event EventHandler<int> BoardHolderClickedEvent;
 
         [Inject]
-        public BoardAreaController(IGameUIController gameUIController, ITutorialAbilityManager tutorialAbilityManager, IBoardAreaView view)
+        public BoardAreaController(IGameUIController gameUIController, ITutorialAbilityManager tutorialAbilityManager, ILevelDataCreator levelDataCreator,
+            ICardHolderPositionManager cardHolderPositionManager, IBoardAreaView view)
         {
             gameUIController.ResetNumbers += ResetBoard;
             _tutorialAbilityManager = tutorialAbilityManager;
+            _levelDataCreator = levelDataCreator;
+            _cardHolderPositionManager = cardHolderPositionManager;
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
         }
         
-        public void Initialize(int numOfBoardHolders, List<CardHolderModel> boardCardHolderModels)
+        public void Initialize()
         {
             ClearBoardHolders();
-            _numOfBoardHolders = numOfBoardHolders;
-            CreateBoardHolders(boardCardHolderModels);
+            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders;
+            CreateBoardHolders();
             _boardCardIndexManager = new BoardCardIndexManager(_numOfBoardHolders);
-            _boardCardIndexManager.ResetBoard();
+        }
+
+        public void DeleteOneBoardHolder()
+        {
+            if (_numOfBoardHolders != _cardHolderPositionManager.GetHolderPositionList(CardHolderType.Board).Count + 1)
+            {
+                Debug.LogError("Wrong board holder number");
+                return;
+            }
+
+            _numOfBoardHolders -= 1;
+            IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
+            _boardHolderControllerList.Remove(boardHolderController);
+            boardHolderController.DestroyObject();
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+            {
+                int index = i;
+                _boardHolderControllerList[i].Initialize(index, () => BoardHolderClickCallBack(index));
+            }
+            
+            _boardCardIndexManager.DeleteFirstBoardHolder();
+        }
+
+        public bool CheckFirstBoardHolderHasAnyCard(out int cardIndex)
+        {
+            return _boardCardIndexManager.CheckBoardHolderHasAnyCard(0, out cardIndex);
         }
         
         private void ClearBoardHolders()
@@ -42,14 +72,14 @@ namespace Scripts
             _boardHolderControllerList.Clear();
         }
         
-        private void CreateBoardHolders(List<CardHolderModel> boardCardHolderModels)
+        private void CreateBoardHolders()
         {
-            foreach (CardHolderModel boardHolderModel in boardCardHolderModels)
+            for (int i = 0; i < _numOfBoardHolders; i++)
             {
-                ICardHolderView boardHolderView = _view.CreateCardHolderView();
-                IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
-                boardHolderModel.onClickAction = () => BoardHolderClickCallBack(boardHolderModel.index);
-                boardHolderController.Initialize(boardHolderModel);
+                IBoardHolderView boardHolderView = _view.CreateBoardHolderView();
+                IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera(), _cardHolderPositionManager);
+                int index = i;
+                boardHolderController.Initialize(index, () => BoardHolderClickCallBack(index));
                 _boardHolderControllerList.Add(boardHolderController);
             }
         }
@@ -72,10 +102,8 @@ namespace Scripts
 
         private void BoardHolderClickCallBack(int boardHolderIndex)
         {
-            if (!_boardCardIndexManager.CheckBoardHolderHasAnyCard(boardHolderIndex))
-            {
-                BoardHolderClickedEvent?.Invoke(this, boardHolderIndex);
-            }
+            if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(boardHolderIndex, out int boardHolderCardIndex)) return;
+            BoardHolderClickedEvent?.Invoke(this, boardHolderIndex);
         }
 
         public void SetCardIndex(int boardHolderIndex, int cardIndex)
@@ -88,7 +116,7 @@ namespace Scripts
             _boardHolderControllerList[boardHolderIndex].SetHighlightStatus(highlightStatus);
         }
 
-        private ICardHolderView GetBoardHolderView(int boardHolderIndex)
+        private IBoardHolderView GetBoardHolderView(int boardHolderIndex)
         {
             return _boardHolderControllerList[boardHolderIndex].GetView();
         }
@@ -123,10 +151,10 @@ namespace Scripts
         {
             for (int i = 0; i < _numOfBoardHolders; i++)
             {
-                if(!_tutorialAbilityManager.IsBoardIndexDraggable(i) || _boardCardIndexManager.CheckBoardHolderHasAnyCard(i)) continue;
-                ICardHolderView view = GetBoardHolderView(i);
+                if(!_tutorialAbilityManager.IsBoardIndexDraggable(i) || _boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
+                IBoardHolderView view = GetBoardHolderView(i);
                 Vector2 position = view.GetPosition();
-                Vector2 size = view.GetSize() * _view.GetCanvas().scaleFactor;
+                Vector2 size = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT) * _view.GetCanvas().scaleFactor;
                 if (position.x + size.x / 2 > cardItemPosition.x &&
                     position.x - size.x / 2 < cardItemPosition.x)
                 {
@@ -141,7 +169,7 @@ namespace Scripts
             return -1;
         }
 
-        public int[] GetCardIndexesOnBoard()
+        public List<int> GetCardIndexesOnBoard()
         {
             return _boardCardIndexManager.GetCardIndexesOnBoard();
         }
@@ -149,7 +177,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
-        void Initialize(int numOfBoardHolders, List<CardHolderModel> boardCardHolderModels);
+        void Initialize();
         event EventHandler<int> BoardHolderClickedEvent;
         RectTransform GetRectTransformOfBoardHolder(int boardHolderIndex);
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);
@@ -159,7 +187,9 @@ namespace Scripts
         void TryResetCardIndexOnBoard(int cardIndex);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         List<int> GetFinalNumbers();
-        int[] GetCardIndexesOnBoard();
+        List<int> GetCardIndexesOnBoard();
         List<IBoardCardHolderController> GetEmptyBoardHolders();
+        void DeleteOneBoardHolder();
+        bool CheckFirstBoardHolderHasAnyCard(out int cardIndex);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using Game;
 using UnityEngine;
 
@@ -74,9 +75,9 @@ namespace Scripts
             _view.InitProgress(targetPercentage);
         }
 
-        public void UpdateProgressBar(float targetPercentage, float animationDuration, Action levelFailedAction)
+        public Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete)
         {
-            _view.SetProgress(targetPercentage, animationDuration, levelFailedAction);
+            return _view.SetProgress(targetPercentage, animationDuration, onComplete);
         }
 
         public void SetStarStatus(bool status, int boundaryIndex)
@@ -92,7 +93,7 @@ namespace Scripts
         void CreateBoundaries(int maxGuessCount);
         void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList);
         void InitProgressBar(float targetPercentage);
-        void UpdateProgressBar(float targetPercentage, float animationDuration, Action levelFailedAction);
+        Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
         void SetStarStatus(bool status, int boundaryIndex);
     }
 }

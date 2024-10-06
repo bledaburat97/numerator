@@ -21,21 +21,18 @@ namespace Scripts
         private ILevelFinishPopupView _view;
         private ICircleProgressBarController _circleProgressBarController;
         
-        private bool _isSuccess;
-        private int _starCount;
-        private int _newRewardStarCount;
-
         public LevelFinishController(ILevelFinishPopupView view)
         {
             _view = view;
+            _circleProgressBarController = new CircleProgressBarController(_view.GetCircleProgressBar(), _hapticController);
         }
         
         public void LevelFinish(LevelFinishInfo levelFinishInfo)
         {
             _gameSaveService.DeleteSave();
-            int[] finalCardIndexes = _boardAreaController.GetCardIndexesOnBoard();
+            List<int> finalCardIndexes = _boardAreaController.GetCardIndexesOnBoard();
             List<INormalCardItemController> cards = new List<INormalCardItemController>();
-            for (int i = 0; i < finalCardIndexes.Length; i++)
+            for (int i = 0; i < finalCardIndexes.Count; i++)
             {
                 if (finalCardIndexes[i] != -1)
                 {
@@ -110,8 +107,7 @@ namespace Scripts
         
         private void CreateRewardCircle(int rewardStarCount)
         {
-            _circleProgressBarController = new CircleProgressBarController();
-            _circleProgressBarController.Initialize(_view.GetCircleProgressBar(), _hapticController, rewardStarCount);
+            _circleProgressBarController.Initialize(rewardStarCount);
             _circleProgressBarController.CreateInitialStarImages();
         }
         
@@ -121,9 +117,10 @@ namespace Scripts
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
                 ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
             starsPosition = starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size, 0);
-            for(int i = numOfStars; i < _view.GetStarList().Length; i++)
+            for (int i = 0; i < _view.GetStarList().Length; i++)
             {
-                _view.GetStarList()[i].gameObject.SetActive(false);
+                _view.GetStarList()[i].gameObject.SetActive(i < numOfStars);
+
             }
             
             for (int i = 0; i < numOfStars; i++)

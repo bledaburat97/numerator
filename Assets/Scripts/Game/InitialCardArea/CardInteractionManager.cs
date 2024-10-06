@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Game;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -90,6 +91,10 @@ namespace Scripts
                     int boardCardHolderIndex = _boardAreaController.GetEmptyBoardHolderIndexList()[0];
                     _initialCardAreaController.TryMoveCardToBoard(cardIndex, boardCardHolderIndex);
                     _boardAreaController.SetCardIndex(boardCardHolderIndex, cardIndex);
+                }
+                else
+                {
+                    Debug.Log("Can not find empty board holder.");
                 }
             }
         }

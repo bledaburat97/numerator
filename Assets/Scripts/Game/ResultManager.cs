@@ -10,25 +10,31 @@ namespace Scripts
     {
         private IBoardAreaController _boardAreaController;
         private IResultAreaController _resultAreaController;
-
+        private ILevelSaveDataManager _levelSaveDataManager;
+        private ITargetNumberCreator _targetNumberCreator;
+        private ILevelDataCreator _levelDataCreator;
+        
         private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
         private int _numOfBoardHolders;
         public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
 
         [Inject]
-        public ResultManager(IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultAreaController resultAreaController)
+        public ResultManager(IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultAreaController resultAreaController, ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
         {
             gameUIController.CheckFinalNumbers += CheckFinalCards;
             _boardAreaController = boardAreaController;
             _resultAreaController = resultAreaController;
+            _levelSaveDataManager = levelSaveDataManager;
+            _targetNumberCreator = targetNumberCreator;
+            _levelDataCreator = levelDataCreator;
         }
         
-        public void Initialize(List<List<int>> triedCardsList, List<int> targetCards, int numOfBoardHolders)
+        public void Initialize()
         {
-            _numOfBoardHolders = numOfBoardHolders;
-            _targetCards = targetCards;
-            _triedCardsList = triedCardsList;
+            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders;
+            _targetCards = _targetNumberCreator.GetTargetCardsList();
+            _triedCardsList = _levelSaveDataManager.GetLevelSaveData().TriedCardsList;
             foreach (List<int> triedCards in _triedCardsList)
             {
                 CalculatePositionCounts(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
@@ -106,7 +112,7 @@ namespace Scripts
 
     public interface IResultManager
     {
-        void Initialize(List<List<int>> triedCardsList, List<int> targetCards, int numOfBoardHolders);
+        void Initialize();
         event EventHandler<NumberGuessedEventArgs> NumberGuessed;
         List<List<int>> GetTriedCardsList();
     }

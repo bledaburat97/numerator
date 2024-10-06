@@ -45,16 +45,16 @@ namespace Scripts
             image.fillAmount = _currentPercentage;
         }
 
-        public void SetProgress(float targetPercentage, float duration, Action onComplete)
+        public Tween SetProgress(float targetPercentage, float duration, Action onComplete)
         {
-            DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
+            return DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
                 .SetEase(Ease.OutQuad)
                 .OnUpdate(() => { image.fillAmount = _currentPercentage; })
                 .OnComplete(() =>
                 {
                     _currentPercentage = targetPercentage;
                     onComplete?.Invoke();
-                });
+                }).Pause();
         }
     }
 
@@ -64,7 +64,7 @@ namespace Scripts
         RectTransform GetRectTransform();
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
-        void SetProgress(float targetPercentage, float duration, Action onComplete);
+        Tween SetProgress(float targetPercentage, float duration, Action onComplete);
         void DisableStarProgressBar();
         void InitProgress(float targetPercentage);
     }

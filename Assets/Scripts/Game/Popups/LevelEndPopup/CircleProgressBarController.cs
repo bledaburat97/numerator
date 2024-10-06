@@ -12,14 +12,22 @@ namespace Scripts
         private List<IStarImageView> _starImageViewList;
         private IHapticController _hapticController;
         private float _currentPercentage;
-        public void Initialize(ICircleProgressBarView view, IHapticController hapticController, int rewardStarCount)
+
+        public CircleProgressBarController(ICircleProgressBarView view, IHapticController hapticController)
         {
             _view = view;
-            SetPercentageOfCircle(0f);
+            _hapticController = hapticController;
             _starFrameViewList = new List<IStarImageView>();
             _starImageViewList = new List<IStarImageView>();
+        }
+        
+        public void Initialize(int rewardStarCount)
+        {
+            SetPercentageOfCircle(0f);
+            _starFrameViewList.Clear();
+            _starImageViewList.Clear();
             _currentStarCount = rewardStarCount;
-            _hapticController = hapticController;
+            _view.SetStatus(true);
             CreateStarFrames();
             SetLocalPositionOfCircle(new Vector2(0, 400f));
         }
@@ -154,7 +162,7 @@ namespace Scripts
 
     public interface ICircleProgressBarController
     {
-        void Initialize(ICircleProgressBarView view, IHapticController hapticController, int rewardStarCount);
+        void Initialize(int rewardStarCount);
         void CreateInitialStarImages();
         Sequence AddNewStars(StarImageView[] newStars, int numOfBlueStars, int earnedStarCount);
         Sequence MoveCircleProgressBar(float duration);

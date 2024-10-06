@@ -13,7 +13,7 @@ namespace Scripts
         private ITargetNumberCreator _targetNumberCreator;
         private IGuessManager _guessManager;
         private IFadePanelController _fadePanelController;
-        
+        private IGameInitializer _gameInitializer;
         private Dictionary<GameUIButtonType, BasePowerUpController> _powerUps;
         private IBaseButtonController _closeButton;
         private IBaseButtonController _continueButton;
@@ -21,7 +21,7 @@ namespace Scripts
         [Inject]
         public PowerUpMessageController(IInitialCardAreaController initialCardAreaController, IHapticController hapticController, 
             IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator,
-            IGameUIController gameUIController, IGuessManager guessManager, BaseButtonControllerFactory baseButtonControllerFactory, IFadePanelController fadePanelController, IPowerUpMessagePopupView view)
+            IGameUIController gameUIController, IGuessManager guessManager, BaseButtonControllerFactory baseButtonControllerFactory, IFadePanelController fadePanelController, IGameInitializer gameInitializer, IPowerUpMessagePopupView view)
         {
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
@@ -29,6 +29,7 @@ namespace Scripts
             _targetNumberCreator = targetNumberCreator;
             _guessManager = guessManager;
             _fadePanelController = fadePanelController;
+            _gameInitializer = gameInitializer;
             _view = view;
             gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
             _closeButton = baseButtonControllerFactory.Create(_view.GetCloseButton(), null);
@@ -41,12 +42,12 @@ namespace Scripts
             _powerUps = new Dictionary<GameUIButtonType, BasePowerUpController>();
             _powerUps.Add(GameUIButtonType.RevealingPowerUp, new RevealingPowerUpController(_hapticController, _view, _fadePanelController));
             _powerUps.Add(GameUIButtonType.LifePowerUp, new LifePowerUpController(_hapticController, _view, _fadePanelController));
-            _powerUps.Add(GameUIButtonType.HintPowerUp, new HintPowerUpController(_hapticController, _view, _fadePanelController));
+            _powerUps.Add(GameUIButtonType.BombPowerUp, new BombPowerUpController(_hapticController, _view, _fadePanelController));
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
         {
-            _powerUps[powerUpType].Activate(_boardAreaController, _targetNumberCreator, _initialCardAreaController, _guessManager, _closeButton, _continueButton);
+            _powerUps[powerUpType].Activate(_boardAreaController, _targetNumberCreator, _initialCardAreaController, _guessManager, _gameInitializer, _closeButton, _continueButton);
         }
     }
 

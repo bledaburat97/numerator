@@ -3,29 +3,55 @@ using UnityEngine;
 
 namespace Scripts
 {
-    public class InitialCardHolderController : BaseCardHolderController, IInitialCardHolderController
+    public class InitialCardHolderController : IInitialCardHolderController
     {
-        private List<IPossibleHolderIndicatorController> _possibleHolderIndicatorControllerList = new List<IPossibleHolderIndicatorController>();
+        private List<IPossibleHolderIndicatorView> _holderIndicatorList = new List<IPossibleHolderIndicatorView>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
         private ICardItemInfoManager _cardItemInfoManager;
-        public InitialCardHolderController(ICardHolderView cardHolderView, Camera cam) : base(cardHolderView, cam)
+        private ICardHolderPositionManager _cardHolderPositionManager;
+        private int _index;
+        private IInitialHolderView _view;
+        public InitialCardHolderController(IInitialHolderView initialHolderView, ICardHolderPositionManager cardHolderPositionManager)
         {
+            _view = initialHolderView;
+            _cardHolderPositionManager = cardHolderPositionManager;
         }
 
-        public void Initialize(CardHolderModel model, ICardItemInfoManager cardItemInfoManager)
+        public void Initialize(int index, ICardItemInfoManager cardItemInfoManager)
         {
-            _model = model;
-            _view.Init(model);
-            CreatePossibleHolderIndicators();
-            CardItemInfo cardItemInfo = cardItemInfoManager.GetCardItemInfoList()[model.index];
-            SetHolderIndicatorListStatus(cardItemInfo.possibleCardHolderIndicatorIndexes);
+            _index = index;
+            _view.SetLocalScale();
+            _view.SetLocalPosition(_cardHolderPositionManager.GetHolderPositionList(CardHolderType.Initial)[_index]);
+            _view.SetSize(new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT));
+            _view.SetText(_index + 1);
             _cardItemInfoManager = cardItemInfoManager;
             Subscribe();
+            
+            CreatePossibleHolderIndicators();
+            CardItemInfo cardItemInfo = _cardItemInfoManager.GetCardItemInfoList()[index];
+            SetHolderIndicatorListStatus(cardItemInfo.possibleCardHolderIndicatorIndexes);
+        }
+
+        public void RemoveFirstHolderIndicator()
+        {
+            IPossibleHolderIndicatorView holderIndicator = _holderIndicatorList[0];
+            _holderIndicatorList.Remove(holderIndicator);
+            holderIndicator.DestroyObject();
+            if (_holderIndicatorList.Count != _cardHolderPositionManager.GetHolderIndicatorPositionList().Count)
+            {
+                Debug.LogError("Holder indicator count mismatch");
+                return;
+            }
+            for (int i = 0; i < _cardHolderPositionManager.GetHolderIndicatorPositionList().Count; i++)
+            {
+                _holderIndicatorList[i].SetLocalPosition(_cardHolderPositionManager.GetHolderIndicatorPositionList()[i]);
+                _holderIndicatorList[i].SetText(ConstantValues.HOLDER_ID_LIST[i]);
+            }
         }
         
         private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
         {
-            if (_model.index == args.cardIndex)
+            if (_index == args.cardIndex)
             {
                 SetHolderIndicatorListStatus(args.holderIndicatorIndexList);
             }
@@ -33,31 +59,22 @@ namespace Scripts
         
         private void CreatePossibleHolderIndicators()
         {
-            if(_model.possibleHolderIndicatorLocalPositionList == null) return;
-            PossibleHolderIndicatorControllerFactory holderIndicatorControllerFactory = new PossibleHolderIndicatorControllerFactory();
-            for (int i = 0; i < _model.possibleHolderIndicatorLocalPositionList.Count; i++)
+            for (int i = 0; i < _cardHolderPositionManager.GetHolderIndicatorPositionList().Count; i++)
             {
-                IPossibleHolderIndicatorController holderIndicatorController = holderIndicatorControllerFactory.Spawn();
                 IPossibleHolderIndicatorView possibleHolderIndicatorView = _view.CreatePossibleHolderIndicatorView();
-                
-                holderIndicatorController.Initialize(possibleHolderIndicatorView, new PossibleHolderIndicatorModel()
-                {
-                    text = ConstantValues.HOLDER_ID_LIST[i],
-                    localPosition = _model.possibleHolderIndicatorLocalPositionList[i]
-                });
-                _possibleHolderIndicatorControllerList.Add(holderIndicatorController);
+                possibleHolderIndicatorView.SetLocalScale();
+                possibleHolderIndicatorView.SetLocalPosition(_cardHolderPositionManager.GetHolderIndicatorPositionList()[i]);
+                possibleHolderIndicatorView.SetText(ConstantValues.HOLDER_ID_LIST[i]);
+                _holderIndicatorList.Add(possibleHolderIndicatorView);
             }
         }
     
         private void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList)
         {
             _activeHolderIndicatorIndexes = activeHolderIndicatorIndexList;
-            for (int i = 0; i < _possibleHolderIndicatorControllerList.Count; i++)
+            for (int i = 0; i < _holderIndicatorList.Count; i++)
             {
-                bool status;
-                if (activeHolderIndicatorIndexList.Contains(i)) status = true;
-                else status = false;
-                _possibleHolderIndicatorControllerList[i].SetStatus(status);
+                _holderIndicatorList[i].SetStatus(activeHolderIndicatorIndexList.Contains(i));
             }
         }
     
@@ -70,16 +87,22 @@ namespace Scripts
         {
             return _activeHolderIndicatorIndexes;
         }
-
-        public void SetText(string cardNumber)
+        
+        public void DestroyObject()
         {
-            _view.SetText(cardNumber);
+            _view.DestroyObject();
+            _view = null;
+            Unsubscribe();
         }
         
-        public new void DestroyObject()
+        public IInitialHolderView GetView()
         {
-            base.DestroyObject();
-            Unsubscribe();
+            return _view;
+        }
+        
+        public Vector3 GetPositionOfCardHolder()
+        {
+            return _view.GetGlobalPosition();
         }
         
         private void Subscribe()
@@ -93,12 +116,15 @@ namespace Scripts
         }
     }
 
-    public interface IInitialCardHolderController : IBaseCardHolderController
+    public interface IInitialCardHolderController
     {
-        void Initialize(CardHolderModel model, ICardItemInfoManager cardItemInfoManager);
+        void Initialize(int index, ICardItemInfoManager cardItemInfoManager);
         void SetLocalPosition(Vector2 localXPos);
         List<int> GetActiveHolderIndicatorIndexes();
-        void SetText(string cardNumber);
+        void RemoveFirstHolderIndicator();
+        IInitialHolderView GetView();
+        Vector3 GetPositionOfCardHolder();
+        void DestroyObject();
     }
     
 }

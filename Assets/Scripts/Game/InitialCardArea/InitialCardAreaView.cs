@@ -4,7 +4,7 @@ namespace Scripts
 {
     public class InitialCardAreaView : MonoBehaviour, IInitialCardAreaView
     {
-        [SerializeField] private CardHolderView cardHolderPrefab;
+        [SerializeField] private InitialHolderView initialHolderPrefab;
         [SerializeField] private NormalCardItemView normalCardItemPrefab;
         [SerializeField] private RectTransform tempParentRectTransform;
         [SerializeField] private InvisibleClickHandler invisibleClickHandler;
@@ -25,9 +25,9 @@ namespace Scripts
             return invisibleClickHandler;
         }
         
-        public ICardHolderView CreateCardHolderView()
+        public IInitialHolderView CreateCardHolderView()
         {
-            return Instantiate(cardHolderPrefab, transform);
+            return Instantiate(initialHolderPrefab, transform);
         }
 
         public INormalCardItemView CreateCardItemView(Transform parent)
@@ -44,7 +44,7 @@ namespace Scripts
     public interface IInitialCardAreaView
     {
         void Init();
-        ICardHolderView CreateCardHolderView();
+        IInitialHolderView CreateCardHolderView();
         INormalCardItemView CreateCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();

@@ -53,6 +53,7 @@ namespace Scripts
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
                 .WithArguments(powerUpMessagePopup);
+            Container.Bind<ICardHolderPositionManager>().To<CardHolderPositionManager>().AsSingle();
         }
     }
 }

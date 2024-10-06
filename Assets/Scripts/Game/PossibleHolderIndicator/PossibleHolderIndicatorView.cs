@@ -13,10 +13,19 @@ namespace Scripts
         {
             transform.localScale = Vector3.one;
             transform.localPosition = model.localPosition;
-            SetText(model.text);
         }
 
-        private void SetText(string text)
+        public void SetLocalScale()
+        {
+            transform.localScale = Vector3.one;
+        }
+
+        public void SetLocalPosition(Vector2 localPosition)
+        {
+            transform.localPosition = localPosition;
+        }
+
+        public void SetText(string text)
         {
             imageText.text = text;
         }
@@ -31,6 +40,11 @@ namespace Scripts
         {
             transform.SetParent(parent);
         }
+
+        public void DestroyObject()
+        {
+            Destroy(gameObject);
+        }
     }
 
     public interface IPossibleHolderIndicatorView
@@ -38,5 +52,10 @@ namespace Scripts
         void Init(PossibleHolderIndicatorModel model);
         void SetStatus(bool status);
         void SetParent(RectTransform parent);
+        void DestroyObject();
+        void SetLocalScale();
+        void SetLocalPosition(Vector2 localPosition);
+        void SetText(string text);
+
     }
 }

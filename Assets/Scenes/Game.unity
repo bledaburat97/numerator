@@ -12747,7 +12747,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1872b4a63ec144e089082bcd4acff956, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardHolderPrefab: {fileID: 5807579108651850580, guid: 836b2deab55315a4da13c965777eef4d, type: 3}
+  initialHolderPrefab: {fileID: 6931587440260615381, guid: 60e506c56df635e4ca65e7faeddc6878, type: 3}
   normalCardItemPrefab: {fileID: 8613591124439939394, guid: eef86066a137aa64a93db3892ebd31ab, type: 3}
   tempParentRectTransform: {fileID: 872332907}
   invisibleClickHandler: {fileID: 1942907004}
@@ -14828,7 +14828,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbb9b9c9b87a4a6fbd4a6eca5a1be8de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boardCardHolderPrefab: {fileID: 5807579108651850580, guid: 836b2deab55315a4da13c965777eef4d, type: 3}
+  boardHolderPrefab: {fileID: 3931711573655221494, guid: 836b2deab55315a4da13c965777eef4d, type: 3}
   cam: {fileID: 1272574426}
   canvas: {fileID: 2064828894}
 --- !u!225 &1177125431

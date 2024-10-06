@@ -15,7 +15,6 @@ namespace Scripts
         protected IInitialCardAreaController _initialCardAreaController;
         protected IGameUIController _gameUIController;
         protected Queue<Action> _tutorialAnimationActions;
-        protected ICardHolderModelCreator _cardHolderModelCreator;
         protected IResultAreaController _resultAreaController;
         protected ICardItemInfoPopupController _cardItemInfoPopupController;
         protected ICardItemInfoManager _cardItemInfoManager;
@@ -27,7 +26,7 @@ namespace Scripts
         
         public void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController)
+            ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _handTutorialView = handTutorialView;
@@ -35,7 +34,6 @@ namespace Scripts
             _cardItemLocator = cardItemLocator;
             _initialCardAreaController = initialCardAreaController;
             _gameUIController = gameUIController;
-            _cardHolderModelCreator = cardHolderModelCreator;
             _resultAreaController = resultAreaController;
             _cardItemInfoPopupController = cardItemInfoPopupController;
             _cardItemInfoManager = cardItemInfoManager;
@@ -45,8 +43,8 @@ namespace Scripts
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _tutorialMessagePopupView.Init();
             _tutorialAnimationActions = new Queue<Action>();
-            _sizeOfInitialHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Initial)[0].size + Vector2.one;
-            _sizeOfBoardHolder = _cardHolderModelCreator.GetCardHolderModelList(CardHolderType.Board)[0].size + Vector2.one;
+            _sizeOfInitialHolder = new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT) + Vector2.one;
+            _sizeOfBoardHolder = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT) + Vector2.one;
             InitializeTutorialAnimationActions();
         }
 
@@ -223,6 +221,6 @@ namespace Scripts
     {
         void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, ICardHolderModelCreator cardHolderModelCreator, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController);
+            ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ICardItemInfoManager cardItemInfoManager, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController);
     }
 }
