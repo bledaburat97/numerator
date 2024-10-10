@@ -158,12 +158,12 @@ namespace Scripts
 
         public bool IsFirstLevelTutorial()
         {
-            return _levelId == 0 && PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0;
+            return false; //_levelId == 0 && PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0;
         }
 
         public bool IsCardInfoTutorial()
         {
-            return _levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
+            return false; //_levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
         }
     }
 

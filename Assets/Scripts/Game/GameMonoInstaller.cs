@@ -49,7 +49,6 @@ namespace Scripts
                 .AsSingle();
             Container.Bind<IGameInitializer>().To<GameInitializer>().AsSingle();
             Container.Bind<ILevelFinishController>().To<LevelFinishController>().AsSingle().WithArguments(levelFinishPopup);
-            Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
                 .WithArguments(powerUpMessagePopup);

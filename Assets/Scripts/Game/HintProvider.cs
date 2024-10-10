@@ -6,16 +6,10 @@ namespace Game
 {
     public class HintProvider : IHintProvider
     {
-        [Inject] private IResultManager _resultManager;
-        [Inject] private IBoardAreaController _boardAreaController;
-        [Inject] private ICardItemInfoManager _cardItemInfoManager;
-        [Inject] private ITargetNumberCreator _targetNumberCreator;
-        public void SetRedCardItem()
+        public bool TryGetNonExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers, List<CardItemInfo> cardItemInfoList, out int cardIndex)
         {
-            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
-            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<int> cardIndexesShouldBeRed = new List<int>();
+            cardIndex = -1;
             for (int i = 0; i < finalCardNumbers.Count; i++)
             {
                 if (cardItemInfoList[finalCardNumbers[i] - 1].probabilityType != ProbabilityType.NotExisted &&
@@ -28,8 +22,8 @@ namespace Game
             if (cardIndexesShouldBeRed.Count > 0)
             {
                 ListRandomizer.Randomize(cardIndexesShouldBeRed);
-                _cardItemInfoManager.MakeCardNotExisted(cardIndexesShouldBeRed[0]);
-                return;
+                cardIndex = cardIndexesShouldBeRed[0];
+                return true;
             }
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
@@ -41,9 +35,10 @@ namespace Game
             if (cardIndexesShouldBeRed.Count > 0)
             {
                 ListRandomizer.Randomize(cardIndexesShouldBeRed);
-                _cardItemInfoManager.MakeCardNotExisted(cardIndexesShouldBeRed[0]);
-                return;
+                cardIndex = cardIndexesShouldBeRed[0];
+                return true;
             }
+            
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
                 if (!targetCardNumbers.Contains(i))
@@ -51,20 +46,23 @@ namespace Game
                     cardIndexesShouldBeRed.Add(i);
                 }
             }
-            ListRandomizer.Randomize(cardIndexesShouldBeRed);
-            _cardItemInfoManager.MakeCardNotExisted(cardIndexesShouldBeRed[0]);
+            if (cardIndexesShouldBeRed.Count > 0)
+            {
+                ListRandomizer.Randomize(cardIndexesShouldBeRed);
+                cardIndex = cardIndexesShouldBeRed[0];
+                return true;
+            }
+
+            return false;
         }
 
-        public void SetGreenCardItem()
+        public bool TryGetExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers, List<CardItemInfo> cardItemInfoList, out int cardIndex, out int boardHolderIndex)
         {
-            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
-            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
-
             List<(int, int)> firstList = new List<(int, int)>();
             List<(int, int)> secondList = new List<(int, int)>();
             List<(int, int)> thirdList = new List<(int, int)>();
-
+            cardIndex = -1;
+            boardHolderIndex = -1;
             for (int i = 0; i < targetCardNumbers.Count; i++)
             {
                 if (!(cardItemInfoList[targetCardNumbers[i] - 1].probabilityType == ProbabilityType.Certain &&
@@ -89,28 +87,35 @@ namespace Game
             if (firstList.Count > 0)
             {
                 ListRandomizer.Randomize(firstList);
-                _cardItemInfoManager.MakeCardCertain(firstList[0].Item1, firstList[0].Item2);
-                return;
+                boardHolderIndex = firstList[0].Item2;
+                cardIndex = firstList[0].Item1;
+                return true;
             }
             
             if (secondList.Count > 0)
             {
                 ListRandomizer.Randomize(secondList);
-                _cardItemInfoManager.MakeCardCertain(secondList[0].Item1, secondList[0].Item2);
-                return;
+                boardHolderIndex = secondList[0].Item2;
+                cardIndex = secondList[0].Item1;
+                return true;
             }
 
             if (thirdList.Count > 0)
             {
                 ListRandomizer.Randomize(thirdList);
-                _cardItemInfoManager.MakeCardCertain(thirdList[0].Item1, thirdList[0].Item2);
+                boardHolderIndex = thirdList[0].Item2;
+                cardIndex = thirdList[0].Item1;
+                return true;
             }
+            return false;
         }
     }
     
     public interface IHintProvider
     {
-        void SetRedCardItem();
-        void SetGreenCardItem();
+        bool TryGetNonExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers,
+            List<CardItemInfo> cardItemInfoList, out int cardIndex);
+        bool TryGetExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers,
+            List<CardItemInfo> cardItemInfoList, out int cardIndex, out int boardHolderIndex);
     }
 }

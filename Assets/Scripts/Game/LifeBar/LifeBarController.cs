@@ -84,6 +84,11 @@ namespace Scripts
         {
             _boundaryControllerList[boundaryIndex].SetStarStatus(status);
         }
+
+        public IStarImageView GetStarImage(int boundaryIndex)
+        {
+            return _boundaryControllerList[boundaryIndex].GetStarImage();
+        }
     }
 
     public interface ILifeBarController
@@ -95,5 +100,6 @@ namespace Scripts
         void InitProgressBar(float targetPercentage);
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
         void SetStarStatus(bool status, int boundaryIndex);
+        IStarImageView GetStarImage(int boundaryIndex);
     }
 }

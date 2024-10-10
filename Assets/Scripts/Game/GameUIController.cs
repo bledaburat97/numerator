@@ -52,6 +52,7 @@ namespace Scripts
             
             if (_levelTracker.GetLevelId() > 8)
             {
+                SetCardInfoButtonStatus(true);
                 InitializeCardInfoButton(OnCardInfoButtonClick);
             }
             else

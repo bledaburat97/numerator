@@ -13,6 +13,9 @@ namespace Game
         private IHintProvider _hintProvider;
         private ILevelDataCreator _levelDataCreator;
         private ILevelSaveDataManager _levelSaveDataManager;
+        private IBoardAreaController _boardAreaController;
+        private ITargetNumberCreator _targetNumberCreator;
+        private ICardItemInfoManager _cardItemInfoManager;
         
         private int _remainingGuessCount;
         private List<LifeBarStarInfo> _lifeBarStarInfoList;
@@ -21,14 +24,17 @@ namespace Game
         private int _numOfBoardHolders;
 
         [Inject]
-        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController, ILevelFinishController levelFinishController, 
-            IHintProvider hintProvider)
+        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController, ILevelFinishController levelFinishController,
+            IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager)
         {
             resultManager.NumberGuessed += CheckGameIsOver;
             _levelTracker = levelTracker;
             _lifeBarController = lifeBarController;
             _levelFinishController = levelFinishController;
-            _hintProvider = hintProvider;
+            _hintProvider = new HintProvider();
+            _boardAreaController = boardAreaController;
+            _targetNumberCreator = targetNumberCreator;
+            _cardItemInfoManager = cardItemInfoManager;
         }
         
         public void Initialize(int maxGuessCount, int remainingGuessCount, int numOfBoardHolders)
@@ -117,12 +123,19 @@ namespace Game
                     {
                         if (i == 2)
                         {
-                            _hintProvider.SetRedCardItem();
+                            if(_hintProvider.TryGetNonExistedCardIndex(_targetNumberCreator.GetTargetCardsList(), _boardAreaController.GetFinalNumbers(), _cardItemInfoManager.GetCardItemInfoList(), out int cardIndex))
+                            {
+                                _cardItemInfoManager.MakeCardNotExisted(cardIndex);
+                            }
+
                         }
                         
                         else if (i == 1)
                         {
-                            _hintProvider.SetGreenCardItem();
+                            if(_hintProvider.TryGetExistedCardIndex(_targetNumberCreator.GetTargetCardsList(), _boardAreaController.GetFinalNumbers(), _cardItemInfoManager.GetCardItemInfoList(), out int cardIndex, out int boardHolderIndex))
+                            {
+                                _cardItemInfoManager.MakeCardCertain(cardIndex, boardHolderIndex);
+                            }
                         }
                     }
 
