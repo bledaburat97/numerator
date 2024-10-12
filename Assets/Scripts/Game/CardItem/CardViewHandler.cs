@@ -8,31 +8,27 @@ namespace Scripts
     public class CardViewHandler : ICardViewHandler
     {
         private readonly INormalCardItemView _view;
-        private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IHapticController _hapticController;
         private Camera _cam;
 
-        public CardViewHandler(INormalCardItemView view, Camera cam, ICardItemInfoManager cardItemInfoManager,
-            IHapticController hapticController)
+        public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController)
         {
             _view = view;
             _cam = cam;
-            _cardItemInfoManager = cardItemInfoManager;
             _hapticController = hapticController;
         }
 
         public void Initialize(ICardMoveHandler cardMoveHandler, Action<PointerEventData> onPointerUp,
             CardItemData cardItemData)
         {
-            _view.Init(cardItemData.cardNumber);
+            _view.Init(cardItemData.CardNumber);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero);
             _view.SetOnPointerDown(cardMoveHandler.OnPointerDown);
             _view.SetOnDrag(cardMoveHandler.HandleDrag);
             _view.SetOnPointerUp(onPointerUp);
-            _view.SetSize(cardItemData.parent.sizeDelta);
-            CardItemInfo cardItemInfo = _cardItemInfoManager.GetCardItemInfoList()[cardItemData.cardItemIndex];
-            SetProbability(cardItemInfo.probabilityType, cardItemInfo.isLocked);
+            _view.SetSize(cardItemData.Parent.sizeDelta);
+            SetProbability(cardItemData.InitialProbabilityType, cardItemData.InitialIsLocked);
         }
 
         public void SetProbability(ProbabilityType probabilityType, bool isLocked)
@@ -107,6 +103,18 @@ namespace Scripts
         {
             _view.DestroyObject();
         }
+        
+        public void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked)
+        {
+            DOTween.Sequence().AppendCallback(() =>
+                    _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType]))
+                .AppendCallback(() => _view.SetLockImageStatus(isLocked));
+        }
+
+        public RectTransform GetRectTransform()
+        {
+            return _view.GetRectTransform();
+        }
 
     }
 
@@ -124,5 +132,7 @@ namespace Scripts
         INormalCardItemView GetView();
         void SetCardAnimation(bool status);
         void DestroyObject();
+        void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked);
+        RectTransform GetRectTransform();
     }
 }

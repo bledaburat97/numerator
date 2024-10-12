@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Scripts
@@ -9,6 +10,7 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
         [SerializeField] private Image roundImage;
+        [SerializeField] private MovingRewardItemView movingRewardItemView;
         
         public void SetLocalPosition(Vector2 localPosition)
         {
@@ -52,8 +54,7 @@ namespace Scripts
 
         public void SetColor(bool originalColor)
         {
-            if (originalColor) star.color = ConstantValues.YELLOW_STAR_COLOR;
-            else star.color = ConstantValues.BLUE_STAR_COLOR;
+            star.color = originalColor ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR;
         }
 
         public Image GetRoundImage()

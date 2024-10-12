@@ -1,5 +1,4 @@
-﻿using System;
-using Game;
+﻿using Game;
 using UnityEngine;
 using Zenject;
 
@@ -53,6 +52,7 @@ namespace Scripts
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
                 .WithArguments(powerUpMessagePopup);
             Container.Bind<ICardHolderPositionManager>().To<CardHolderPositionManager>().AsSingle();
+            Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
         }
     }
 }

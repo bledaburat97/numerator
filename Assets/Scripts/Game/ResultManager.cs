@@ -17,7 +17,8 @@ namespace Scripts
         private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
         private int _numOfBoardHolders;
-        public event EventHandler<NumberGuessedEventArgs> NumberGuessed;
+        public event EventHandler LevelSuccessEvent;
+        public event EventHandler WrongGuessEvent;
 
         [Inject]
         public ResultManager(IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultAreaController resultAreaController, ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
@@ -30,9 +31,9 @@ namespace Scripts
             _levelDataCreator = levelDataCreator;
         }
         
-        public void Initialize()
+        public void Initialize(int removedBoardHolderCount)
         {
-            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders;
+            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders - removedBoardHolderCount;
             _targetCards = _targetNumberCreator.GetTargetCardsList();
             _triedCardsList = _levelSaveDataManager.GetLevelSaveData().TriedCardsList;
             foreach (List<int> triedCards in _triedCardsList)
@@ -89,12 +90,14 @@ namespace Scripts
                 correctPosCount = numOfCorrectPos,
                 wrongPosCount = numOfWrongPos
             });
-            NumberGuessed.Invoke(this, new NumberGuessedEventArgs()
+            if (numOfCorrectPos == _numOfBoardHolders)
             {
-                finalCardNumbers = finalCards,
-                targetCardNumbers = _targetCards,
-                isGuessRight = numOfCorrectPos == _numOfBoardHolders,
-            });
+                LevelSuccessEvent?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                WrongGuessEvent?.Invoke(this, EventArgs.Empty);
+            }
         }
         
         public List<List<int>> GetTriedCardsList()
@@ -102,18 +105,12 @@ namespace Scripts
             return _triedCardsList;
         }
     }
-    
-    public class NumberGuessedEventArgs : EventArgs
-    {
-        public List<int> finalCardNumbers;
-        public List<int> targetCardNumbers;
-        public bool isGuessRight;
-    }
 
     public interface IResultManager
     {
-        void Initialize();
-        event EventHandler<NumberGuessedEventArgs> NumberGuessed;
+        void Initialize(int removedBoardHolderCount);
+        event EventHandler LevelSuccessEvent;
+        event EventHandler WrongGuessEvent;
         List<List<int>> GetTriedCardsList();
     }
 }

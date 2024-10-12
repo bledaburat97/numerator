@@ -33,13 +33,13 @@ namespace Scripts
                 Debug.Log("Turn vibration");
                 _hapticController.Vibrate(HapticType.CardRelease);
                 _gameClockController.StartTimer(ChangeTurns);
-                _resultManager.NumberGuessed += OnGuessNumber;
+                _resultManager.WrongGuessEvent += OnWrongGuess;
                 LocalTurnEvent?.Invoke(this, true);
             }
             else
             {
                 _isLocalTurn = false;
-                _resultManager.NumberGuessed -= OnGuessNumber;
+                _resultManager.WrongGuessEvent -= OnWrongGuess;
                 LocalTurnEvent?.Invoke(this, false);
             }
         }
@@ -49,9 +49,9 @@ namespace Scripts
             return _isLocalTurn;
         }
 
-        private void OnGuessNumber(object sender, NumberGuessedEventArgs args)
+        private void OnWrongGuess(object sender, EventArgs args)
         {
-            if(!args.isGuessRight) ChangeTurns();
+            ChangeTurns();
         }
         
         private void ChangeTurns()

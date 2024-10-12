@@ -10,7 +10,6 @@ namespace Scripts
     {
         private ITutorialAbilityManager _tutorialAbilityManager;
         private IBoardAreaView _view;
-        private ILevelDataCreator _levelDataCreator;
         private ICardHolderPositionManager _cardHolderPositionManager;
         private List<IBoardCardHolderController> _boardHolderControllerList;
         private BoardCardIndexManager _boardCardIndexManager;
@@ -23,16 +22,15 @@ namespace Scripts
         {
             gameUIController.ResetNumbers += ResetBoard;
             _tutorialAbilityManager = tutorialAbilityManager;
-            _levelDataCreator = levelDataCreator;
             _cardHolderPositionManager = cardHolderPositionManager;
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
         }
         
-        public void Initialize()
+        public void Initialize(int numOfBoardHolders)
         {
             ClearBoardHolders();
-            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders;
+            _numOfBoardHolders = numOfBoardHolders;
             CreateBoardHolders();
             _boardCardIndexManager = new BoardCardIndexManager(_numOfBoardHolders);
         }
@@ -177,7 +175,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
-        void Initialize();
+        void Initialize(int numOfBoardHolders);
         event EventHandler<int> BoardHolderClickedEvent;
         RectTransform GetRectTransformOfBoardHolder(int boardHolderIndex);
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);

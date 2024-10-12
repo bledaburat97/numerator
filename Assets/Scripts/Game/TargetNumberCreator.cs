@@ -14,6 +14,7 @@ namespace Scripts
         private NetworkVariable<int> _targetNumber = new NetworkVariable<int>();
         private List<int> _targetCardsList;
         [Inject] private ILevelDataCreator _levelDataCreator;
+        [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         
         public override void OnNetworkSpawn()
         {
@@ -57,10 +58,10 @@ namespace Scripts
             }
         }
         
-        public void CreateTargetNumber()
+        public void CreateTargetNumber(int removedBoardHolderCount)
         {
             LevelData levelData = _levelDataCreator.GetLevelData();
-            SetTargetCardsList(GetTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders));
+            SetTargetCardsList(GetTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders - removedBoardHolderCount));
         }
         
         [ServerRpc (RequireOwnership = false)]
@@ -95,7 +96,7 @@ namespace Scripts
     public interface ITargetNumberCreator
     {
         void CreateMultiplayerTargetNumber();
-        void CreateTargetNumber();
+        void CreateTargetNumber(int removedBoardHolderCount);
         List<int> GetTargetCardsList();
         void SetSavedTargetCardList(List<int> targetCardsList);
     }

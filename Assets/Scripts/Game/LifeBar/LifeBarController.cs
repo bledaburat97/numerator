@@ -11,17 +11,23 @@ namespace Scripts
         private ILifeBarView _view;
         private List<IBoundaryController> _boundaryControllerList;
         private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
-        
+        private List<LifeBarStarInfo> _lifeBarStarInfoList;
         public LifeBarController(ILifeBarView view)
         {
             _view = view;
             _boundaryControllerList = new List<IBoundaryController>();
+            _lifeBarStarInfoList = new List<LifeBarStarInfo>();
         }
         
-        public void Initialize()
+        public void Initialize(int maxGuessCount, int remainingGuessCount, int rewardStarCount)
         {
             ClearBoundaries();
+            ClearLifeBarStarInfoList();
             _view.Init();
+            CreateBoundaries(maxGuessCount);
+            CreateLifeBarStarInfoList(maxGuessCount, remainingGuessCount, rewardStarCount);
+            CreateStars(_lifeBarStarInfoList);
+            InitProgressBar((float) remainingGuessCount / maxGuessCount);
         }
 
         public void DisableStarProgressBar()
@@ -35,10 +41,15 @@ namespace Scripts
             {
                 boundary.DestroyObject();
             }
-            _boundaryControllerList = new List<IBoundaryController>();
+            _boundaryControllerList.Clear();
+        }
+
+        private void ClearLifeBarStarInfoList()
+        {
+            _lifeBarStarInfoList.Clear();
         }
         
-        public void CreateBoundaries(int maxGuessCount)
+        private void CreateBoundaries(int maxGuessCount)
         {
             List<Vector2> boundaryLocalPositionList = new List<Vector2>();
             Vector2 boundarySize = _view.GetBoundaryRectTransform().sizeDelta;
@@ -58,19 +69,28 @@ namespace Scripts
             }
         }
         
-        public void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList)
+        private void CreateLifeBarStarInfoList(int maxGuessCount, int remainingGuessCount, int rewardStarCount)
+        {
+            List<int> lifeBarStarIndexes = new List<int>(){0, (maxGuessCount - 2) / 4, (maxGuessCount - 2) / 2};
+            for (int i = 0; i < lifeBarStarIndexes.Count; i++)
+            {
+                _lifeBarStarInfoList.Add(new LifeBarStarInfo(lifeBarStarIndexes[i], rewardStarCount < 3 - i, remainingGuessCount > i));
+            }
+        }
+        
+        private void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList)
         {
             for (int i = 0; i < lifeBarStarInfoList.Count; i++)
             {
-                _boundaryControllerList[lifeBarStarInfoList[i].lifeBarIndex].AddStarImage(_localPositionOfStar, lifeBarStarInfoList[i].isOriginal);
-                if (!lifeBarStarInfoList[i].isActive)
+                _boundaryControllerList[lifeBarStarInfoList[i].BoundaryIndex].AddStarImage(_localPositionOfStar, lifeBarStarInfoList[i].IsOriginal);
+                if (!lifeBarStarInfoList[i].IsActive)
                 {
-                    _boundaryControllerList[lifeBarStarInfoList[i].lifeBarIndex].SetStarStatus(false);
+                    _boundaryControllerList[lifeBarStarInfoList[i].BoundaryIndex].SetStarStatus(false);
                 }
             }
         }
 
-        public void InitProgressBar(float targetPercentage)
+        private void InitProgressBar(float targetPercentage)
         {
             _view.InitProgress(targetPercentage);
         }
@@ -80,26 +100,68 @@ namespace Scripts
             return _view.SetProgress(targetPercentage, animationDuration, onComplete);
         }
 
-        public void SetStarStatus(bool status, int boundaryIndex)
+        public void SetStarStatus(bool status, int lifeBarStarInfoIndex)
         {
-            _boundaryControllerList[boundaryIndex].SetStarStatus(status);
+            _lifeBarStarInfoList[lifeBarStarInfoIndex].SetIsActive(status);
+            _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(status);
         }
 
         public IStarImageView GetStarImage(int boundaryIndex)
         {
             return _boundaryControllerList[boundaryIndex].GetStarImage();
         }
+
+        public void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount)
+        {
+            activeTotalStarCount = 0;
+            activeRewardStarCount = 0;
+            foreach (LifeBarStarInfo lifeBarStarInfo in _lifeBarStarInfoList)
+            {
+                if (lifeBarStarInfo.IsActive)
+                {
+                    activeTotalStarCount++;
+                    if (!lifeBarStarInfo.IsOriginal)
+                    {
+                        activeRewardStarCount++;
+                    }
+                }
+            }
+        }
+
+        public List<LifeBarStarInfo> GetLifeBarStarInfoList()
+        {
+            return _lifeBarStarInfoList;
+        }
     }
 
     public interface ILifeBarController
     {
-        void Initialize();
+        void Initialize(int maxGuessCount, int remainingGuessCount, int rewardStarCount);
         void DisableStarProgressBar();
-        void CreateBoundaries(int maxGuessCount);
-        void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList);
-        void InitProgressBar(float targetPercentage);
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
-        void SetStarStatus(bool status, int boundaryIndex);
+        void SetStarStatus(bool status, int lifeBarStarInfoIndex);
         IStarImageView GetStarImage(int boundaryIndex);
+        void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
+        List<LifeBarStarInfo> GetLifeBarStarInfoList();
     }
+    
+    public class LifeBarStarInfo
+    {
+        public int BoundaryIndex { get; private set; }
+        public bool IsOriginal { get; private set; }
+        public bool IsActive { get; private set; }
+        
+        public LifeBarStarInfo(int boundaryIndex, bool isOriginal, bool isActive)
+        {
+            BoundaryIndex = boundaryIndex;
+            IsOriginal = isOriginal;
+            IsActive = isActive;
+        }
+
+        public void SetIsActive(bool isActive)
+        {
+            IsActive = isActive;
+        }
+    }
+
 }

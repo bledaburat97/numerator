@@ -21,6 +21,8 @@ namespace Scripts
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
         [Inject] private IGameInitializer _gameInitializer;
+        [Inject] private ILevelFinishController _levelFinishController;
+        [Inject] private IPowerUpMessageController _powerUpMessageController;
         void Start()
         {
             InitializeHapticController();
@@ -80,7 +82,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager);
+                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelFinishController, _powerUpMessageController);
             }
             
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR

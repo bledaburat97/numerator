@@ -11,9 +11,10 @@ namespace Scripts
         }
 
         public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, 
-            IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IGameInitializer gameInitializer, IBaseButtonController closeButton, IBaseButtonController continueButton)
+            IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IBaseButtonController closeButton, 
+            IBaseButtonController continueButton, ICardItemInfoManager cardItemInfoManager, Action onRemoveLastWagon)
         {
-            base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, gameInitializer, closeButton, continueButton);
+            base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, closeButton, continueButton, cardItemInfoManager, onRemoveLastWagon);
             continueButton.SetButtonStatus(true);
             continueButton.SetAction(Continue);
             closeButton.SetAction(Close);

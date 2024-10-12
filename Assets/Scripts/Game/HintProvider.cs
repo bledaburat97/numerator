@@ -1,13 +1,77 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Scripts;
+using UnityEngine;
 using Zenject;
 
 namespace Game
 {
     public class HintProvider : IHintProvider
     {
-        public bool TryGetNonExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers, List<CardItemInfo> cardItemInfoList, out int cardIndex)
+        private IBoardAreaController _boardAreaController;
+        private ITargetNumberCreator _targetNumberCreator;
+        private ICardItemInfoManager _cardItemInfoManager;
+        private IInitialCardAreaController _initialCardAreaController;
+        
+        [Inject]
+        public HintProvider(IGuessManager guessManager, IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator,
+            ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController)
         {
+            guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
+            _boardAreaController = boardAreaController;
+            _targetNumberCreator = targetNumberCreator;
+            _cardItemInfoManager = cardItemInfoManager;
+            _initialCardAreaController = initialCardAreaController;
+        }
+
+        private void OnHintRewardStarEvent(object sender, HintRewardStarEventArgs args)
+        {
+            if (args.CanRevealCard)
+            {
+                if (TryGetExistedCardIndex(out int cardIndex, out int boardHolderIndex))
+                {
+                    _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int>(){boardHolderIndex});
+                    RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
+                    Action makeCardCertainAction = () =>
+                    {
+                        _initialCardAreaController.SetProbabilityOfCardItem(cardIndex, ProbabilityType.Certain,
+                            true);
+                        _initialCardAreaController.SetHolderIndicatorListOfCardHolder(cardIndex, new List<int>(){boardHolderIndex});
+                    };
+                    
+                    new StarAnimationManager().RevealCard(args.StarImageView, cardRectTransform, makeCardCertainAction);
+                }
+                else
+                {
+                    
+                }
+            }
+
+            else
+            {
+                if (TryGetNonExistedCardIndex(out int cardIndex))
+                {
+                    _cardItemInfoManager.MakeCardNotExisted(cardIndex);
+                    _boardAreaController.TryResetCardIndexOnBoard(cardIndex);
+                    RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
+                    Action destroyCardAction = () =>
+                    {
+                        _initialCardAreaController.DestroyCard(cardIndex);
+                    };
+                    new StarAnimationManager().DestroyCard(args.StarImageView, cardRectTransform, destroyCardAction);
+                }
+                else
+                {
+                    
+                }
+            }
+        }
+        
+        private bool TryGetNonExistedCardIndex(out int cardIndex)
+        {
+            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
+            List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
+            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<int> cardIndexesShouldBeRed = new List<int>();
             cardIndex = -1;
             for (int i = 0; i < finalCardNumbers.Count; i++)
@@ -56,8 +120,11 @@ namespace Game
             return false;
         }
 
-        public bool TryGetExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers, List<CardItemInfo> cardItemInfoList, out int cardIndex, out int boardHolderIndex)
+        private bool TryGetExistedCardIndex( out int cardIndex, out int boardHolderIndex)
         {
+            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
+            List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
+            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<(int, int)> firstList = new List<(int, int)>();
             List<(int, int)> secondList = new List<(int, int)>();
             List<(int, int)> thirdList = new List<(int, int)>();
@@ -113,9 +180,5 @@ namespace Game
     
     public interface IHintProvider
     {
-        bool TryGetNonExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers,
-            List<CardItemInfo> cardItemInfoList, out int cardIndex);
-        bool TryGetExistedCardIndex(List<int> targetCardNumbers, List<int> finalCardNumbers,
-            List<CardItemInfo> cardItemInfoList, out int cardIndex, out int boardHolderIndex);
     }
 }

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Scripts;
-using UnityEngine;
 using Zenject;
 
 namespace Game
@@ -32,12 +30,14 @@ namespace Game
         [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         [Inject] private IPowerUpMessageController _powerUpMessageController;
         [Inject] private ICardHolderPositionManager _cardHolderPositionManager;
-
+        [Inject] private ILevelFinishController _levelFinishController;
+        [Inject] private IHintProvider _hintProvider;
+        
         public void Initialize()
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _levelDataCreator.SetSinglePlayerLevelData(); //do not call while removing board holder.
+                _levelDataCreator.SetSinglePlayerLevelData();
                 if (_levelTracker.IsFirstLevelTutorial())
                 {
                     _levelSaveDataManager.CreateDefaultLevelSaveData();
@@ -56,7 +56,7 @@ namespace Game
                 else
                 {
                     _levelSaveDataManager.CreateDefaultLevelSaveData();
-                    _targetNumberCreator.CreateTargetNumber();
+                    _targetNumberCreator.CreateTargetNumber(_levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
                 }
             }
 
@@ -68,47 +68,28 @@ namespace Game
                 _userReady.Initialize();
             }
             
+            _powerUpMessageController.Initialize();
             _gameUIController.Initialize(); //check which powerup button is pressable
             _resultAreaController.Initialize();
-            _resultManager.Initialize();
+            _resultManager.Initialize(_levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
             _cardItemLocator.Initialize();
-            _guessManager.Initialize(_levelDataCreator.GetLevelData().MaxNumOfTries, _levelSaveDataManager.GetLevelSaveData().RemainingGuessCount, _levelDataCreator.GetLevelData().NumOfBoardHolders);
-            _cardHolderPositionManager.Initialize();
-            _boardAreaController.Initialize();
-            _cardItemInfoManager.Initialize();
-            _initialCardAreaController.Initialize();
+            _guessManager.Initialize();
+            _cardHolderPositionManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
+            _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
+            _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
+            _initialCardAreaController.Initialize(_cardItemInfoManager.GetCardItemInfoList());
             _cardItemInfoPopupController.Initialize();
             _fadePanelController.SetFadeImageStatus(false);
             _unmaskServiceAreaView.Initialize(_fadePanelController);
             _gamePopupCreator.Initialize();
             _cardInteractionManager.Initialize();
+            _levelFinishController.Initialize();
             _gameSaveService.DeleteSave();
-        }
-
-        public void RemoveLastWagon()
-        {
-            if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
-            {
-                Debug.LogError("You shouldn't have clicked the bomb button");
-                return;
-            }
-            _levelDataCreator.DecreaseNumOfBoardHolders();
-            _levelSaveDataManager.CreateDefaultLevelSaveData();
-            _targetNumberCreator.CreateTargetNumber();
-            _gameUIController.Initialize(); //check which powerup button is pressable
-            _resultManager.Initialize();
-            _cardItemLocator.Initialize();
-            _cardHolderPositionManager.Initialize();
-            _initialCardAreaController.DeleteOneHolderIndicator();
-            _boardAreaController.DeleteOneBoardHolder();
-            _cardItemInfoManager.Initialize();
-            _cardItemInfoPopupController.Initialize();
         }
     }
 
     public interface IGameInitializer
     {
         void Initialize();
-        void RemoveLastWagon();
     }
 }

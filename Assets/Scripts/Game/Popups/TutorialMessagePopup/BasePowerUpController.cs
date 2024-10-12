@@ -1,4 +1,5 @@
-﻿using Game;
+﻿using System;
+using Game;
 using Scripts;
 using UnityEngine;
 
@@ -16,7 +17,9 @@ public class BasePowerUpController
         _fadePanelController = fadePanelController;
     }
 
-    public virtual void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IGameInitializer gameInitializer, IBaseButtonController closeButton, IBaseButtonController continueButton)
+    public virtual void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator,
+        IInitialCardAreaController initialCardAreaController, IGuessManager guessManager,
+        IBaseButtonController closeButton, IBaseButtonController continueButton, ICardItemInfoManager cardItemInfoManager, Action onRemoveLastWagon)
     {
         _powerUpMessagePopupView.SetStatus(true);
         _powerUpMessagePopupView.Init();

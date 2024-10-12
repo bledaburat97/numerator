@@ -10,6 +10,7 @@ namespace Scripts
         private List<Vector2> _initialHolderPositionList;
         private List<Vector2> _holderIndicatorPositionList;
         private ILevelDataCreator _levelDataCreator;
+        private int _numOfBoardHolders;
         
         [Inject]
         public CardHolderPositionManager(ILevelDataCreator levelDataCreator)
@@ -20,8 +21,9 @@ namespace Scripts
             _levelDataCreator = levelDataCreator;
         }
         
-        public void Initialize()
+        public void Initialize(int numOfBoardHolders)
         {
+            _numOfBoardHolders = numOfBoardHolders;
             SetBoardHolderPositionList();
             SetInitialHolderPositionList();
             SetHolderIndicatorPositionList();
@@ -33,7 +35,7 @@ namespace Scripts
             float spacing = ConstantValues.SPACING_BETWEEN_BOARD_CARDS;
             Vector2 cardHolderSize = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT);
             float verticalLocalPos = 0f;
-            _boardHolderPositionList = _boardHolderPositionList.GetLocalPositionList(_levelDataCreator.GetLevelData().NumOfBoardHolders, spacing, cardHolderSize, verticalLocalPos);
+            _boardHolderPositionList = _boardHolderPositionList.GetLocalPositionList(_numOfBoardHolders, spacing, cardHolderSize, verticalLocalPos);
         }
 
         private void SetInitialHolderPositionList()
@@ -61,7 +63,7 @@ namespace Scripts
                 ConstantValues.POSSIBLE_HOLDER_INDICATOR_HEIGHT);
             float verticalLocalPos = 0f;
             _holderIndicatorPositionList = _holderIndicatorPositionList.GetLocalPositionList(
-                _levelDataCreator.GetLevelData().NumOfBoardHolders, spacing, holderIndicatorSize, verticalLocalPos);
+                _numOfBoardHolders, spacing, holderIndicatorSize, verticalLocalPos);
         }
 
         public List<Vector2> GetHolderPositionList(CardHolderType cardHolderType)
@@ -78,7 +80,7 @@ namespace Scripts
 
     public interface ICardHolderPositionManager
     {
-        void Initialize();
+        void Initialize(int numOfBoardHolders);
         List<Vector2> GetHolderPositionList(CardHolderType cardHolderType);
         List<Vector2> GetHolderIndicatorPositionList();
     }

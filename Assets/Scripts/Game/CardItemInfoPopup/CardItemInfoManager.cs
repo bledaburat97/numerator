@@ -1,109 +1,79 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Game;
+using Zenject;
 
 namespace Scripts
 {
     public class CardItemInfoManager : ICardItemInfoManager
     {
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
-        public event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;
-        public event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
-
         private ILevelSaveDataManager _levelSaveDataManager;
-        private ILevelDataCreator _levelDataCreator;
+        private IInitialCardAreaController _initialCardAreaController;
 
-        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator)
+        private int _numOfBoardHolders;
+        [Inject]
+        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController)
         {
             _levelSaveDataManager = levelSaveDataManager;
-            _levelDataCreator = levelDataCreator;
+            _initialCardAreaController = initialCardAreaController;
         }
         
-        public void Initialize()
+        public void Initialize(int numOfBoardHolders)
         {
+            _numOfBoardHolders = numOfBoardHolders;
             _cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
+        }
+
+        public void RemoveLastCardHolderIndicator()
+        {
+            foreach (CardItemInfo cardItemInfo in _cardItemInfoList)
+            {
+                if(cardItemInfo.possibleCardHolderIndicatorIndexes.Contains(0))
+                {
+                    cardItemInfo.possibleCardHolderIndicatorIndexes.Remove(0);
+                }
+
+                for (int i = 0; i < cardItemInfo.possibleCardHolderIndicatorIndexes.Count; i++)
+                {
+                    cardItemInfo.possibleCardHolderIndicatorIndexes[i]--;
+                }
+            }
         }
 
         public List<CardItemInfo> GetCardItemInfoList()
         {
             return _cardItemInfoList;
         }
-
+        
         public void MakeCardNotExisted(int cardIndex)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
-            cardItemInfo.isLocked = true;
-            cardItemInfo.probabilityType = ProbabilityType.NotExisted;
-            cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
-            ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
-                { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex, isLocked = true});
-            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
-            {
-                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
-                cardIndex = cardIndex
-            });
+            cardItemInfo.isExisted = false;
         }
 
-        public void MakeCardCertain(int cardIndex, int correctBoardHolderIndex)
+        public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             cardItemInfo.isLocked = true;
             cardItemInfo.probabilityType = ProbabilityType.Certain;
-            cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>() { correctBoardHolderIndex };
-            ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
-                { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex, isLocked = true});
-            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
-            {
-                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
-                cardIndex = cardIndex
-            });
+            cardItemInfo.possibleCardHolderIndicatorIndexes = possibleCardHolderIndicatorIndexes;
         }
 
-        private List<int> GetAllPossibleCardHolderIndicatorIndexes()
+        public void OnProbabilityButtonClicked(int activeCardIndex, ProbabilityType probabilityType)
         {
-            List<int> possibleCardHolderIndexes = new List<int>();
-            for (int i = 0; i < _levelDataCreator.GetLevelData().NumOfBoardHolders; i++)
-            {
-                possibleCardHolderIndexes.Add(i);
-            }
-
-            return possibleCardHolderIndexes;
+            ChangeTheCardInfoByProbability(activeCardIndex, probabilityType);
+            _initialCardAreaController.AnimateProbabilityChangeOfCardItem(activeCardIndex, 0f, probabilityType, false);
+            _initialCardAreaController.SetHolderIndicatorListOfCardHolder(activeCardIndex, _cardItemInfoList[activeCardIndex].possibleCardHolderIndicatorIndexes);
         }
-
-        public void OnCardHolderIndicatorClicked(int cardIndex, int cardHolderIndicatorIndex)
+        
+        public void OnHolderIndicatorClicked(int activeCardIndex, int holderIndicatorIndex)
         {
-            CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
-            if (cardItemInfo.possibleCardHolderIndicatorIndexes.Contains(cardHolderIndicatorIndex))
-            {
-                cardItemInfo.possibleCardHolderIndicatorIndexes.Remove(cardHolderIndicatorIndex);
-                if (cardItemInfo.possibleCardHolderIndicatorIndexes.Count == 0)
-                {
-                    if (cardItemInfo.probabilityType == ProbabilityType.Certain)
-                    {
-                        cardItemInfo.probabilityType = ProbabilityType.Probable; 
-                        cardItemInfo.possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes();
-                    }
-                    else if (cardItemInfo.probabilityType == ProbabilityType.Probable)
-                    {
-                        cardItemInfo.probabilityType = ProbabilityType.NotExisted;
-                        cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
-                    }
-                    ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
-                            { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex });
-                }
-            }
-            else
-            {
-                cardItemInfo.possibleCardHolderIndicatorIndexes.Add(cardHolderIndicatorIndex);
-            }
-            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
-            {
-                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
-                cardIndex = cardIndex
-            });
+            ChangeTheCardInfoByHolderIndicator(activeCardIndex, holderIndicatorIndex);
+            _initialCardAreaController.SetHolderIndicatorListOfCardHolder(activeCardIndex,
+                _cardItemInfoList[activeCardIndex].possibleCardHolderIndicatorIndexes);
         }
 
-        public void OnProbabilityButtonClicked(int cardIndex, ProbabilityType probabilityType)
+        private void ChangeTheCardInfoByProbability(int cardIndex, ProbabilityType probabilityType)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             if (probabilityType == ProbabilityType.NotExisted)
@@ -128,40 +98,56 @@ namespace Scripts
                 }
                 cardItemInfo.probabilityType = ProbabilityType.Certain;
             }
-            ProbabilityChanged?.Invoke(this, new ProbabilityChangedEventArgs() 
-                { probabilityType = cardItemInfo.probabilityType, cardIndex = cardIndex });
-            HolderIndicatorListChanged?.Invoke(this, new HolderIndicatorListChangedEventArgs()
-            {
-                holderIndicatorIndexList = cardItemInfo.possibleCardHolderIndicatorIndexes,
-                cardIndex = cardIndex
-            });
         }
-    }
-    
-    public class ProbabilityChangedEventArgs : EventArgs
-    {
-        public ProbabilityType probabilityType { get; set; }
-        public int cardIndex { get; set; }
-        public bool isLocked { get; set; }
-    }
+        
+        private void ChangeTheCardInfoByHolderIndicator(int cardIndex, int cardHolderIndicatorIndex)
+        {
+            CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
+            if (cardItemInfo.possibleCardHolderIndicatorIndexes.Contains(cardHolderIndicatorIndex))
+            {
+                cardItemInfo.possibleCardHolderIndicatorIndexes.Remove(cardHolderIndicatorIndex);
+                if (cardItemInfo.possibleCardHolderIndicatorIndexes.Count == 0)
+                {
+                    if (cardItemInfo.probabilityType == ProbabilityType.Certain)
+                    {
+                        cardItemInfo.probabilityType = ProbabilityType.Probable; 
+                        cardItemInfo.possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes();
+                    }
+                    else if (cardItemInfo.probabilityType == ProbabilityType.Probable)
+                    {
+                        cardItemInfo.probabilityType = ProbabilityType.NotExisted;
+                        cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
+                    }
+                    _initialCardAreaController.AnimateProbabilityChangeOfCardItem(cardIndex, 0f, cardItemInfo.probabilityType, false);
+                }
+            }
+            else
+            {
+                cardItemInfo.possibleCardHolderIndicatorIndexes.Add(cardHolderIndicatorIndex);
+            }
+        }
 
-    public class HolderIndicatorListChangedEventArgs : EventArgs
-    {
-        public List<int> holderIndicatorIndexList { get; set; }
-        public int cardIndex { get; set; }
+        private List<int> GetAllPossibleCardHolderIndicatorIndexes()
+        {
+            List<int> possibleCardHolderIndexes = new List<int>();
+            for (int i = 0; i < _numOfBoardHolders; i++)
+            {
+                possibleCardHolderIndexes.Add(i);
+            }
+
+            return possibleCardHolderIndexes;
+        }
     }
 
     public interface ICardItemInfoManager
     {
-        void Initialize();
-        void OnCardHolderIndicatorClicked(int cardIndex, int cardHolderIndicatorIndex);
-        void OnProbabilityButtonClicked(int cardIndex, ProbabilityType probabilityType);
-        event EventHandler<ProbabilityChangedEventArgs> ProbabilityChanged;
-        event EventHandler<HolderIndicatorListChangedEventArgs> HolderIndicatorListChanged;
-
+        void Initialize(int numOfBoardHolders);
         List<CardItemInfo> GetCardItemInfoList();
-        void MakeCardCertain(int cardIndex, int correctBoardHolderIndex);
+        void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes);
         void MakeCardNotExisted(int cardIndex);
+        void OnProbabilityButtonClicked(int activeCardIndex, ProbabilityType probabilityType);
+        void OnHolderIndicatorClicked(int activeCardIndex, int holderIndicatorIndex);
+        void RemoveLastCardHolderIndicator();
     }
 
 
@@ -170,5 +156,6 @@ namespace Scripts
         public List<int> possibleCardHolderIndicatorIndexes;
         public ProbabilityType probabilityType;
         public bool isLocked;
+        public bool isExisted;
     }
 }

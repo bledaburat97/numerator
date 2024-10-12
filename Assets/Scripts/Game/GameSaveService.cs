@@ -26,16 +26,17 @@ namespace Scripts
             PlayerPrefs.DeleteKey(_saveGameKey);
         }
         
-        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager)
+        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager, ILevelFinishController levelFinishController, IPowerUpMessageController powerUpMessageController)
         {
             if (resultManager.GetTriedCardsList().Count == 0) return;
-            if (guessManager.IsGameOver()) return;
+            if (levelFinishController.IsGameOver()) return;
             LevelSaveData levelSaveData = new LevelSaveData()
             {
                 TriedCardsList = resultManager.GetTriedCardsList(),
                 TargetCards = targetNumberCreator.GetTargetCardsList(),
                 RemainingGuessCount = guessManager.GetRemainingGuessCount(),
-                CardItemInfoList = cardItemInfoManager.GetCardItemInfoList()
+                CardItemInfoList = cardItemInfoManager.GetCardItemInfoList(),
+                RemovedBoardHolderCount = powerUpMessageController.GetRemovedBoardHolderCount()
             };
             
             string data = JsonConvert.SerializeObject(levelSaveData);
@@ -49,7 +50,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager,
-            ICardItemInfoManager cardItemInfoManager);
+            ICardItemInfoManager cardItemInfoManager, ILevelFinishController levelFinishController, IPowerUpMessageController powerUpMessageController);
         bool HasSavedGame();
     }
 
@@ -59,6 +60,7 @@ namespace Scripts
         public List<int> TargetCards;
         public List<CardItemInfo> CardItemInfoList;
         public int RemainingGuessCount;
+        public int RemovedBoardHolderCount;
     }
     
 }

@@ -33,10 +33,13 @@ namespace Game
                 {
                     possibleCardHolderIndicatorIndexes = GetAllPossibleCardHolderIndicatorIndexes(levelData.NumOfBoardHolders),
                     probabilityType = ProbabilityType.Probable,
-                    isLocked = false
+                    isLocked = false,
+                    isExisted = true
                 };
                 _levelSaveData.CardItemInfoList.Add(cardItemInfo);
             }
+
+            _levelSaveData.RemovedBoardHolderCount = 0;
         }
 
         public void SetLevelSaveDataAsSaved(LevelSaveData savedData)

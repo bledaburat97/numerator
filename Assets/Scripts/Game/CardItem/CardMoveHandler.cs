@@ -12,7 +12,7 @@ public class CardMoveHandler : ICardMoveHandler
     private readonly IBoardAreaController _boardAreaController;
     private Action _onDragStart;
     private Action<Vector2, int> _onDragContinue;
-    private bool _isDragStart = false;
+    private bool _isDragStart;
     private CardItemData _cardItemData;
     
     public CardMoveHandler(IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager, ICardViewHandler cardViewHandler, IBoardAreaController boardAreaController, Action onDragStart, Action<Vector2, int> onDragContinue)
@@ -32,19 +32,19 @@ public class CardMoveHandler : ICardMoveHandler
 
     public void HandleDrag(PointerEventData data)
     {
-        if(!_tutorialAbilityManager.IsCardDraggable(_cardItemData.cardItemIndex)) return;
+        if(!_tutorialAbilityManager.IsCardDraggable(_cardItemData.CardItemIndex)) return;
         
         if (!_isDragStart)
         {
             _hapticController.Vibrate(HapticType.CardGrab);
             _onDragStart?.Invoke();
-            _cardViewHandler.InitializeDrag(_cardItemData.tempParent);
+            _cardViewHandler.InitializeDrag(_cardItemData.TempParent);
         }
 
         _isDragStart = true;
         Vector2 localPosition = _cardViewHandler.CalculateAnchoredPosition(data.position);
         _cardViewHandler.UpdatePosition(localPosition);
-        _onDragContinue(data.position, _cardItemData.cardItemIndex);
+        _onDragContinue(data.position, _cardItemData.CardItemIndex);
     }
 
     public void MoveCardToBoard(int boardCardHolderIndex, RectTransform tempParent)

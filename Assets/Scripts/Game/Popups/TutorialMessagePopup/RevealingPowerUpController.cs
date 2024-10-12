@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Game;
 using Scripts;
 
@@ -8,7 +9,7 @@ public class RevealingPowerUpController : BasePowerUpController
     private IBoardAreaController _boardAreaController;
     private ITargetNumberCreator _targetNumberCreator;
     private IInitialCardAreaController _initialCardAreaController;
-
+    private ICardItemInfoManager _cardItemInfoManager;
     private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
 
     public RevealingPowerUpController(IHapticController hapticController, IPowerUpMessagePopupView powerUpMessagePopupView, IFadePanelController fadePanelController) : base(hapticController, powerUpMessagePopupView, fadePanelController)
@@ -16,9 +17,10 @@ public class RevealingPowerUpController : BasePowerUpController
         _shinyBoardCardHolderControllers = new List<IBoardCardHolderController>();
     }
 
-    public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController, IGuessManager guessManager, IGameInitializer gameInitializer, IBaseButtonController closeButton, IBaseButtonController continueButton)
+    public override void Activate(IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, IInitialCardAreaController initialCardAreaController,
+        IGuessManager guessManager, IBaseButtonController closeButton, IBaseButtonController continueButton, ICardItemInfoManager cardItemInfoManager, Action onRemoveLastWagon)
     {
-        base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, gameInitializer, closeButton, continueButton);
+        base.Activate(boardAreaController, targetNumberCreator, initialCardAreaController, guessManager, closeButton, continueButton, cardItemInfoManager, onRemoveLastWagon);
         continueButton.SetButtonStatus(false);
         closeButton.SetAction(Close);
         _shinyBoardCardHolderControllers = boardAreaController.GetEmptyBoardHolders();
@@ -32,6 +34,7 @@ public class RevealingPowerUpController : BasePowerUpController
         _boardAreaController = boardAreaController;
         _targetNumberCreator = targetNumberCreator;
         _initialCardAreaController = initialCardAreaController;
+        _cardItemInfoManager = cardItemInfoManager;
     }
 
     protected override void Close()
@@ -52,7 +55,7 @@ public class RevealingPowerUpController : BasePowerUpController
         _boardAreaController.SetCardIndex(boardHolderIndex, cardIndex);
         LockedCardInfo lockedCardInfo = new LockedCardInfo(){boardHolderIndex = boardHolderIndex, targetCardIndex = cardIndex};
         _initialCardAreaController.SetLockedCardController(lockedCardInfo);
-        Close();
+        _cardItemInfoManager.MakeCardCertain(lockedCardInfo.targetCardIndex, new List<int>{lockedCardInfo.boardHolderIndex});        Close();
         _boardAreaController.BoardHolderClickedEvent -= OnBoardClicked;
     }
 }

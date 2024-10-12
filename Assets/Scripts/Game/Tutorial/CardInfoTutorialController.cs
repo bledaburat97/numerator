@@ -61,12 +61,12 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size, 0f, 1f);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText(text);
-            _cardItemInfoManager.ProbabilityChanged += CloseClickAnimation;
+            _cardItemInfoPopupController.ProbabilityButtonClickedEvent += CloseClickAnimation;
             
             void CloseClickAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _cardItemInfoManager.ProbabilityChanged -= CloseClickAnimation;
+                _cardItemInfoPopupController.ProbabilityButtonClickedEvent -= CloseClickAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
@@ -88,12 +88,12 @@ namespace Scripts
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(size);
             _tutorialMessagePopupView.SetText("When the number does not exist on a specific place, put a cross for that place.");
-            _cardItemInfoManager.HolderIndicatorListChanged += CloseClickAnimation;
+            _cardItemInfoPopupController.HolderIndicatorClickedEvent += CloseClickAnimation;
             
             void CloseClickAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _cardItemInfoManager.HolderIndicatorListChanged -= CloseClickAnimation;
+                _cardItemInfoPopupController.HolderIndicatorClickedEvent -= CloseClickAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }

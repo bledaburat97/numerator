@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using Scripts;
+using UnityEngine;
 using Zenject;
 
 namespace Game
@@ -9,133 +11,79 @@ namespace Game
     {
         private ILevelTracker _levelTracker;
         private ILifeBarController _lifeBarController;
-        private ILevelFinishController _levelFinishController;
-        private IHintProvider _hintProvider;
         private ILevelDataCreator _levelDataCreator;
         private ILevelSaveDataManager _levelSaveDataManager;
-        private IBoardAreaController _boardAreaController;
-        private ITargetNumberCreator _targetNumberCreator;
-        private ICardItemInfoManager _cardItemInfoManager;
         
         private int _remainingGuessCount;
-        private List<LifeBarStarInfo> _lifeBarStarInfoList;
         private int _maxGuessCount;
-        private bool _isGameOver;
-        private int _numOfBoardHolders;
+
+        public event EventHandler LevelFailEvent;
+        public event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
 
         [Inject]
-        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController, ILevelFinishController levelFinishController,
-            IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager)
+        public GuessManager(IResultManager resultManager, ILevelTracker levelTracker, ILifeBarController lifeBarController,
+            IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager,
+            ILevelDataCreator levelDataCreator, ILevelSaveDataManager levelSaveDataManager)
         {
-            resultManager.NumberGuessed += CheckGameIsOver;
+            resultManager.WrongGuessEvent += OnWrongGuess;
             _levelTracker = levelTracker;
             _lifeBarController = lifeBarController;
-            _levelFinishController = levelFinishController;
-            _hintProvider = new HintProvider();
-            _boardAreaController = boardAreaController;
-            _targetNumberCreator = targetNumberCreator;
-            _cardItemInfoManager = cardItemInfoManager;
+            _levelDataCreator = levelDataCreator;
+            _levelSaveDataManager = levelSaveDataManager;
         }
         
-        public void Initialize(int maxGuessCount, int remainingGuessCount, int numOfBoardHolders)
+        public void Initialize()
         {
-            _maxGuessCount = maxGuessCount;
-            _remainingGuessCount = remainingGuessCount;
-            _numOfBoardHolders = numOfBoardHolders;
-            _lifeBarStarInfoList = new List<LifeBarStarInfo>();
-            CreateLifeBarStarInfoList();
+            _maxGuessCount = _levelDataCreator.GetLevelData().MaxNumOfTries;
+            _remainingGuessCount = _levelSaveDataManager.GetLevelSaveData().RemainingGuessCount;
+            int rewardStarCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                InitializeLifeBarController();
-            }
+                _lifeBarController.Initialize(_maxGuessCount, _remainingGuessCount, rewardStarCount);            }
             else
             {
                 _lifeBarController.DisableStarProgressBar();
             }
-            _isGameOver = false;
         }
 
-        private void InitializeLifeBarController()
+        public void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount)
         {
-            _lifeBarController.Initialize();
-            _lifeBarController.CreateBoundaries(_maxGuessCount);
-            _lifeBarController.CreateStars(_lifeBarStarInfoList);
-            _lifeBarController.InitProgressBar((float) _remainingGuessCount / _maxGuessCount);
+            _lifeBarController.GetActiveStarCounts(out activeTotalStarCount, out activeRewardStarCount);
         }
         
-        private void CheckGameIsOver(object sender, NumberGuessedEventArgs args)
-        {
-            int starCount = 0;
-            int newRewardStarCount = 0;
-            foreach (LifeBarStarInfo lifeBarStarInfo in _lifeBarStarInfoList)
-            {
-                if (lifeBarStarInfo.isActive)
-                {
-                    starCount++;
-                    if (!lifeBarStarInfo.isOriginal)
-                    {
-                        newRewardStarCount++;
-                    }
-                }
-            }
-            
-            if (args.isGuessRight)
-            {
-                if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-                {
-                    _isGameOver = true;
-                    _levelFinishController.LevelFinish(new LevelFinishInfo()
-                    {
-                        isSuccess = true,
-                        newRewardStarCount = newRewardStarCount,
-                        starCount = starCount,
-                        targetNumbers = args.targetCardNumbers
-                    });
-                }
-
-                if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
-                {
-                    _levelFinishController.MultiplayerLevelFinish(new MultiplayerLevelFinishInfo()
-                    {
-                        
-                    });
-                    //MultiplayerLevelEndEvent?.Invoke(sender, EventArgs.Empty);
-                    //send event to gameclockcontroller to remove it
-                }
-            }
-
-            else
-            {
-                UpdateProgressBar(args.targetCardNumbers);
-            }
-        }
-
-        private void UpdateProgressBar(List<int> targetCardNumbers)
+        private void OnWrongGuess(object sender, EventArgs args)
         {
             _remainingGuessCount--;
-            for (int i = 0; i < _lifeBarStarInfoList.Count; i++)
+            List<LifeBarStarInfo> lifeBarStarInfoList = _lifeBarController.GetLifeBarStarInfoList();
+            for (int i = 0; i < _lifeBarController.GetLifeBarStarInfoList().Count; i++)
             {
-                if (_remainingGuessCount == _lifeBarStarInfoList[i].lifeBarIndex)
+                if (_remainingGuessCount == lifeBarStarInfoList[i].BoundaryIndex)
                 {
-                    _lifeBarStarInfoList[i].isActive = false;
-                    _lifeBarController.SetStarStatus(false, _lifeBarStarInfoList[i].lifeBarIndex);
-                    if (!_lifeBarStarInfoList[i].isOriginal)
+                    _lifeBarController.SetStarStatus(false, i);
+                    
+                    if (!lifeBarStarInfoList[i].IsOriginal)
                     {
                         if (i == 2)
                         {
-                            if(_hintProvider.TryGetNonExistedCardIndex(_targetNumberCreator.GetTargetCardsList(), _boardAreaController.GetFinalNumbers(), _cardItemInfoManager.GetCardItemInfoList(), out int cardIndex))
+                            IStarImageView starImageView = _lifeBarController.GetStarImage(lifeBarStarInfoList[i].BoundaryIndex);
+                            if (starImageView == null)
                             {
-                                _cardItemInfoManager.MakeCardNotExisted(cardIndex);
+                                Debug.LogError("StarImageView is null");
+                                return;
                             }
 
+                            HintRewardStarEvent.Invoke(this, new HintRewardStarEventArgs(starImageView, false));
                         }
                         
                         else if (i == 1)
                         {
-                            if(_hintProvider.TryGetExistedCardIndex(_targetNumberCreator.GetTargetCardsList(), _boardAreaController.GetFinalNumbers(), _cardItemInfoManager.GetCardItemInfoList(), out int cardIndex, out int boardHolderIndex))
+                            IStarImageView starImageView = _lifeBarController.GetStarImage(lifeBarStarInfoList[i].BoundaryIndex);
+                            if (starImageView == null)
                             {
-                                _cardItemInfoManager.MakeCardCertain(cardIndex, boardHolderIndex);
+                                Debug.LogError("StarImageView is null");
+                                return;
                             }
+                            HintRewardStarEvent.Invoke(this, new HintRewardStarEventArgs(starImageView, true));
                         }
                     }
 
@@ -144,28 +92,28 @@ namespace Game
             }
             
             _lifeBarController.UpdateProgressBar((float)_remainingGuessCount / _maxGuessCount, 1f,
-                _remainingGuessCount == 0 ? () => LevelFailed(targetCardNumbers) : null).Play();
+                _remainingGuessCount == 0 ? () => LevelFailEvent?.Invoke(this,EventArgs.Empty) : null).Play();
         }
-
+        
         public void AddExtraLives(int numOfLives)
         {
             if (_remainingGuessCount + numOfLives > _maxGuessCount) return;
             int lastStarLifeBarIndex = _remainingGuessCount;
             Sequence sequence = DOTween.Sequence();
-            for (int i = 0; i < _lifeBarStarInfoList.Count; i++)
+            List<LifeBarStarInfo> lifeBarStarInfoList = _lifeBarController.GetLifeBarStarInfoList();
+            for (int i = 0; i < lifeBarStarInfoList.Count; i++)
             {
-                if (_lifeBarStarInfoList[i].lifeBarIndex >= _remainingGuessCount &&
-                    _lifeBarStarInfoList[i].lifeBarIndex < _remainingGuessCount + numOfLives)
+                if (lifeBarStarInfoList[i].BoundaryIndex >= _remainingGuessCount &&
+                    lifeBarStarInfoList[i].BoundaryIndex < _remainingGuessCount + numOfLives)
                 {
                     int index = i;
                     sequence.Append(_lifeBarController.UpdateProgressBar(
-                        (float)(_lifeBarStarInfoList[i].lifeBarIndex + 1) / _maxGuessCount,
-                        _lifeBarStarInfoList[i].lifeBarIndex - _remainingGuessCount + 1,
+                        (float)(lifeBarStarInfoList[i].BoundaryIndex + 1) / _maxGuessCount,
+                        lifeBarStarInfoList[i].BoundaryIndex - _remainingGuessCount + 1,
                         () =>
                         {
-                            _lifeBarStarInfoList[index].isActive = true;
-                            _lifeBarController.SetStarStatus(true, _lifeBarStarInfoList[index].lifeBarIndex);
-                            lastStarLifeBarIndex = _lifeBarStarInfoList[index].lifeBarIndex;
+                            _lifeBarController.SetStarStatus(true, index);
+                            lastStarLifeBarIndex = lifeBarStarInfoList[index].BoundaryIndex;
                         }));
                 }
             }
@@ -180,33 +128,6 @@ namespace Game
             sequence.Play();
         }
 
-        private void CreateLifeBarStarInfoList()
-        {
-            List<int> lifeBarStarIndexes = new List<int>(){0, (_maxGuessCount - 2) / 4, (_maxGuessCount - 2) / 2};
-            int rewardStarCount = _numOfBoardHolders - 2;
-
-            for (int i = 0; i < lifeBarStarIndexes.Count; i++)
-            {
-                _lifeBarStarInfoList.Add(new LifeBarStarInfo() { isOriginal = rewardStarCount < 3 - i, lifeBarIndex = lifeBarStarIndexes[i], isActive = _remainingGuessCount > i});
-            }
-        }
-        
-        private void LevelFailed(List<int> targetNumbers)
-        {
-            _isGameOver = true;
-
-            _levelFinishController.LevelFinish(new LevelFinishInfo()
-            {
-                isSuccess = false,
-                targetNumbers = targetNumbers
-            });
-        }
-        
-        public bool IsGameOver()
-        {
-            return _isGameOver;
-        }
-
         public int GetRemainingGuessCount()
         {
             return _remainingGuessCount;
@@ -215,16 +136,23 @@ namespace Game
 
     public interface IGuessManager
     {
-        void Initialize(int maxGuessCount, int remainingGuessCount, int numOfBoardHolders);
-        bool IsGameOver();
+        void Initialize();
         int GetRemainingGuessCount();
         void AddExtraLives(int numOfLives);
+        void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
+        event EventHandler LevelFailEvent;
+        event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
     }
-    
-    public class LifeBarStarInfo
+
+    public class HintRewardStarEventArgs : EventArgs
     {
-        public int lifeBarIndex;
-        public bool isOriginal;
-        public bool isActive;
+        public IStarImageView StarImageView { get; set; }
+        public bool CanRevealCard { get; set; }
+
+        public HintRewardStarEventArgs(IStarImageView starImageView, bool canRevealCard)
+        {
+            StarImageView = starImageView;
+            CanRevealCard = canRevealCard;
+        }
     }
 }

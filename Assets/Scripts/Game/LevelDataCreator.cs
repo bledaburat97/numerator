@@ -46,11 +46,6 @@ namespace Scripts
                 MaxNumOfTries = 1000,
             };
         }
-
-        public void DecreaseNumOfBoardHolders()
-        {
-            _levelData.NumOfBoardHolders -= 1;
-        }
         
         public LevelData GetLevelData()
         {
@@ -79,6 +74,5 @@ namespace Scripts
         void SetSinglePlayerLevelData();
         LevelData GetLevelData();
         void SetMultiplayerLevelData();
-        void DecreaseNumOfBoardHolders();
     }
 }

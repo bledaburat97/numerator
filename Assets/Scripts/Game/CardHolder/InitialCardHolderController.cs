@@ -7,7 +7,6 @@ namespace Scripts
     {
         private List<IPossibleHolderIndicatorView> _holderIndicatorList = new List<IPossibleHolderIndicatorView>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
-        private ICardItemInfoManager _cardItemInfoManager;
         private ICardHolderPositionManager _cardHolderPositionManager;
         private int _index;
         private IInitialHolderView _view;
@@ -17,19 +16,16 @@ namespace Scripts
             _cardHolderPositionManager = cardHolderPositionManager;
         }
 
-        public void Initialize(int index, ICardItemInfoManager cardItemInfoManager)
+        public void Initialize(int index, CardItemInfo cardItemInfo)
         {
             _index = index;
             _view.SetLocalScale();
             _view.SetLocalPosition(_cardHolderPositionManager.GetHolderPositionList(CardHolderType.Initial)[_index]);
             _view.SetSize(new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT));
             _view.SetText(_index + 1);
-            _cardItemInfoManager = cardItemInfoManager;
-            Subscribe();
             
             CreatePossibleHolderIndicators();
-            CardItemInfo cardItemInfo = _cardItemInfoManager.GetCardItemInfoList()[index];
-            SetHolderIndicatorListStatus(cardItemInfo.possibleCardHolderIndicatorIndexes);
+            SetHolderIndicatorList(cardItemInfo.possibleCardHolderIndicatorIndexes);
         }
 
         public void RemoveFirstHolderIndicator()
@@ -49,14 +45,6 @@ namespace Scripts
             }
         }
         
-        private void OnHolderIndicatorListChanged(object sender, HolderIndicatorListChangedEventArgs args)
-        {
-            if (_index == args.cardIndex)
-            {
-                SetHolderIndicatorListStatus(args.holderIndicatorIndexList);
-            }
-        }
-        
         private void CreatePossibleHolderIndicators()
         {
             for (int i = 0; i < _cardHolderPositionManager.GetHolderIndicatorPositionList().Count; i++)
@@ -69,7 +57,7 @@ namespace Scripts
             }
         }
     
-        private void SetHolderIndicatorListStatus(List<int> activeHolderIndicatorIndexList)
+        public void SetHolderIndicatorList(List<int> activeHolderIndicatorIndexList)
         {
             _activeHolderIndicatorIndexes = activeHolderIndicatorIndexList;
             for (int i = 0; i < _holderIndicatorList.Count; i++)
@@ -92,7 +80,6 @@ namespace Scripts
         {
             _view.DestroyObject();
             _view = null;
-            Unsubscribe();
         }
         
         public IInitialHolderView GetView()
@@ -104,27 +91,18 @@ namespace Scripts
         {
             return _view.GetGlobalPosition();
         }
-        
-        private void Subscribe()
-        {
-            _cardItemInfoManager.HolderIndicatorListChanged += OnHolderIndicatorListChanged;
-        }
-        
-        private void Unsubscribe()
-        {
-            _cardItemInfoManager.HolderIndicatorListChanged -= OnHolderIndicatorListChanged;
-        }
     }
 
     public interface IInitialCardHolderController
     {
-        void Initialize(int index, ICardItemInfoManager cardItemInfoManager);
+        void Initialize(int index, CardItemInfo cardItemInfo);
         void SetLocalPosition(Vector2 localXPos);
         List<int> GetActiveHolderIndicatorIndexes();
         void RemoveFirstHolderIndicator();
         IInitialHolderView GetView();
         Vector3 GetPositionOfCardHolder();
         void DestroyObject();
+        void SetHolderIndicatorList(List<int> activeHolderIndicatorIndexList);
     }
     
 }

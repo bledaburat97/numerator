@@ -10,35 +10,82 @@ namespace Scripts
 {
     public class LevelFinishController : ILevelFinishController
     {
-        [Inject] IFadePanelController _fadePanelController;
-        [Inject] private IHapticController _hapticController;
-        [Inject] private ILevelTracker _levelTracker;
-        [Inject] private IBoardAreaController _boardAreaController;
-        [Inject] private IInitialCardAreaController _initialCardAreaController;
-        [Inject] private IGameSaveService _gameSaveService;
-        [Inject] private IGameInitializer _gameInitializer;
-        
+        private IFadePanelController _fadePanelController;
+        private IHapticController _hapticController;
+        private ILevelTracker _levelTracker;
+        private IInitialCardAreaController _initialCardAreaController;
+        private IGameSaveService _gameSaveService;
+        private IGameInitializer _gameInitializer;
+        private IGuessManager _guessManager;
         private ILevelFinishPopupView _view;
         private ICircleProgressBarController _circleProgressBarController;
-        
-        public LevelFinishController(ILevelFinishPopupView view)
+        private ITargetNumberCreator _targetNumberCreator;
+
+        private bool _isGameOver;
+
+        [Inject]
+        public LevelFinishController(IFadePanelController fadePanelController, IHapticController hapticController,
+            ILevelTracker levelTracker,
+            IInitialCardAreaController initialCardAreaController,
+            IGameSaveService gameSaveService,
+            IGameInitializer gameInitializer, IResultManager resultManager, IGuessManager guessManager,
+            ITargetNumberCreator targetNumberCreator,
+            ILevelFinishPopupView view)
         {
             _view = view;
-            _circleProgressBarController = new CircleProgressBarController(_view.GetCircleProgressBar(), _hapticController);
+            _fadePanelController = fadePanelController;
+            _hapticController = hapticController;
+            _levelTracker = levelTracker;
+            _initialCardAreaController = initialCardAreaController;
+            _gameSaveService = gameSaveService;
+            _gameInitializer = gameInitializer;
+            _guessManager = guessManager;
+            _targetNumberCreator = targetNumberCreator;
+            _circleProgressBarController =
+                new CircleProgressBarController(_view.GetCircleProgressBar(), _hapticController);
+            resultManager.LevelSuccessEvent += OnLevelSuccess;
+            guessManager.LevelFailEvent += OnLevelFail;
+        }
+
+        public void Initialize()
+        {
+            _isGameOver = false;
+        }
+
+        private void OnLevelSuccess(object sender, EventArgs args)
+        {
+            _isGameOver = true;
+            InitLevelEnd();
+            _fadePanelController.SetFadeImageStatus(true);
+            _fadePanelController.SetFadeImageAlpha(0f);
+            InitText("Well Done!");
+            int rewardStarCount = _levelTracker.GetGiftStarCount();
+            RewardType rewardType = _levelTracker.GetCurrentRewardType();
+            _guessManager.GetActiveStarCounts(out int totalStarCount, out int newRewardStarCount);
+            _levelTracker.IncrementLevelId(totalStarCount, newRewardStarCount);
+            _view.GetButton(LevelFinishButtonType.Game).SetText("Level " + (_levelTracker.GetLevelId() + 1));
+            CreateRewardCircle(rewardStarCount);
+            InitStarsAndParticles(totalStarCount, newRewardStarCount);
+            InitRewardItem(rewardType);
+            SuccessLevelAnimation(_targetNumberCreator.GetTargetCardsList(), _initialCardAreaController.GetFinalCardItems(), true, totalStarCount,
+                newRewardStarCount, rewardStarCount);
+        }
+
+        private void OnLevelFail(object sender, EventArgs args)
+        {
+            _isGameOver = true;
+            InitLevelEnd();
+            InitText("Try Again!");
+            _view.GetButton(LevelFinishButtonType.Game).SetText("Retry");
+            _view.GetStarCanvasGroup().gameObject.SetActive(false);
+            _view.GetRewardItem().gameObject.SetActive(false);
+            _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
+            FailLevelAnimation(_targetNumberCreator.GetTargetCardsList(), _initialCardAreaController.GetFinalCardItems());
         }
         
-        public void LevelFinish(LevelFinishInfo levelFinishInfo)
+        private void InitLevelEnd()
         {
             _gameSaveService.DeleteSave();
-            List<int> finalCardIndexes = _boardAreaController.GetCardIndexesOnBoard();
-            List<INormalCardItemController> cards = new List<INormalCardItemController>();
-            for (int i = 0; i < finalCardIndexes.Count; i++)
-            {
-                if (finalCardIndexes[i] != -1)
-                {
-                    cards.Add(_initialCardAreaController.GetCardItemController(finalCardIndexes[i]));
-                }
-            }
             _view.Init();
             InitButton(LevelFinishButtonType.Game, () =>
             {
@@ -51,29 +98,6 @@ namespace Scripts
                 _gameInitializer.Initialize();
             });
             InitButton(LevelFinishButtonType.Menu, () => SceneManager.LoadScene("Menu"));
-            if (levelFinishInfo.isSuccess)
-            {
-                _fadePanelController.SetFadeImageStatus(true);
-                _fadePanelController.SetFadeImageAlpha(0f);
-                InitText("Well Done!");
-                int rewardStarCount = _levelTracker.GetGiftStarCount();
-                RewardType rewardType = _levelTracker.GetCurrentRewardType();
-                _levelTracker.IncrementLevelId(levelFinishInfo.starCount, levelFinishInfo.newRewardStarCount);
-                _view.GetButton(LevelFinishButtonType.Game).SetText("Level " + (_levelTracker.GetLevelId() + 1));
-                CreateRewardCircle(rewardStarCount);
-                InitStarsAndParticles(levelFinishInfo.starCount, levelFinishInfo.newRewardStarCount);
-                InitRewardItem(rewardType);
-                SuccessLevelAnimation(levelFinishInfo.targetNumbers, cards, true, levelFinishInfo.starCount, levelFinishInfo.newRewardStarCount, rewardStarCount);
-            }
-            else
-            {
-                InitText("Try Again!");
-                _view.GetButton(LevelFinishButtonType.Game).SetText("Retry");
-                _view.GetStarCanvasGroup().gameObject.SetActive(false);
-                _view.GetRewardItem().gameObject.SetActive(false);
-                _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
-                FailLevelAnimation(levelFinishInfo.targetNumbers, cards);
-            }
         }
 
         public void MultiplayerLevelFinish(MultiplayerLevelFinishInfo multiplayerLevelFinishInfo)
@@ -89,7 +113,7 @@ namespace Scripts
             multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, userReady, onPlayerReady, _baseButtonControllerFactory, _fadePanelController);
             */
         }
-        
+
         private void FailLevelAnimation(List<int> targetCardIndexList, List<INormalCardItemController> cardItemList)
         {
             DOTween.Sequence()
@@ -104,25 +128,26 @@ namespace Scripts
                 .AppendInterval(0.2f)
                 .Append(AnimateButtons());
         }
-        
+
         private void CreateRewardCircle(int rewardStarCount)
         {
             _circleProgressBarController.Initialize(rewardStarCount);
             _circleProgressBarController.CreateInitialStarImages();
         }
-        
+
         private void InitStarsAndParticles(int numOfStars, int numOfRewardStars)
         {
             Vector2[] starsPosition = new Vector2[numOfStars];
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
                 ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
-            starsPosition = starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size, 0);
+            starsPosition =
+                starsPosition.GetLocalPositions(ConstantValues.SPACING_BETWEEN_STARS_ON_LEVEL_SUCCESS, size, 0);
             for (int i = 0; i < _view.GetStarList().Length; i++)
             {
                 _view.GetStarList()[i].gameObject.SetActive(i < numOfStars);
 
             }
-            
+
             for (int i = 0; i < numOfStars; i++)
             {
                 bool isOriginal = numOfRewardStars < numOfStars - i;
@@ -158,7 +183,7 @@ namespace Scripts
             _view.GetRewardItem().color = color;
 
         }
-        
+
         private void InitButton(LevelFinishButtonType buttonType, Action onClick)
         {
             IFadeButtonView buttonView = _view.GetButton(buttonType);
@@ -199,7 +224,8 @@ namespace Scripts
                 .Append(TryCreateReward(newRewardStarCount, currentRewardStarCount));
         }
 
-        private void AnimateBackFlipCards(List<int> targetCardIndexList, List<INormalCardItemController> cardItemList, bool isSuccess)
+        private void AnimateBackFlipCards(List<int> targetCardIndexList, List<INormalCardItemController> cardItemList,
+            bool isSuccess)
         {
             for (int i = 0; i < cardItemList.Count; i++)
             {
@@ -207,7 +233,7 @@ namespace Scripts
                 cardItemList[i].BackFlipAnimation(delay, isSuccess, targetCardIndexList[i].ToString());
             }
         }
-        
+
         private Sequence AnimateStarCreation(int numOfStars, float durationBetweenParticleAndStar, float duration)
         {
             Sequence starCreationAnimation = DOTween.Sequence();
@@ -223,21 +249,21 @@ namespace Scripts
 
             return starCreationAnimation;
         }
-        
+
         private void ActivateStarParticle(int index)
         {
             _view.GetStarParticleList()[index].gameObject.SetActive(true);
             _view.GetStarParticleList()[index].Play();
             _hapticController.Vibrate(HapticType.Success);
         }
-        
+
         private Sequence TryCreateReward(int newRewardStarCount, int currentRewardStarCount)
         {
             if (newRewardStarCount + currentRewardStarCount < ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
                 return DOTween.Sequence().Append(AnimateButtons());
             }
-            
+
             Action onClickClaim = () =>
             {
                 _view.GetRewardItem().rectTransform.localScale = Vector3.zero;
@@ -246,14 +272,15 @@ namespace Scripts
                     .AppendCallback(() => _view.GetButton(LevelFinishButtonType.Claim).SetButtonStatus(false))
                     .Append(AnimateButtons());
             };
-            
+
             InitButton(LevelFinishButtonType.Claim, onClickClaim);
 
             return DOTween.Sequence()
                 .Append(DOTween.Sequence().AppendInterval(0.4f).SetEase(Ease.OutQuad))
                 .Append(_view.GetRewardItem().rectTransform.DOScale(Vector3.one * 5 / 3f, 1.6f)).SetEase(Ease.OutQuad)
                 .Join(DOTween.Sequence().AppendInterval(1f))
-                .Append(DOTween.Sequence().Append(_view.GetRewardItem().rectTransform.DOLocalMoveY(-190f, 1f)).OnComplete(() => _hapticController.Vibrate(HapticType.Success)))
+                .Append(DOTween.Sequence().Append(_view.GetRewardItem().rectTransform.DOLocalMoveY(-190f, 1f))
+                    .OnComplete(() => _hapticController.Vibrate(HapticType.Success)))
                 .Join(_view.GetText().DOFade(0f, 0.6f))
                 .Join(_view.GetStarCanvasGroup().DOFade(0f, 0.6f))
                 .Join(DOTween.Sequence().AppendCallback(() =>
@@ -267,7 +294,7 @@ namespace Scripts
                 .AppendInterval(0.2f)
                 .Append(_view.GetButton(LevelFinishButtonType.Claim).GetCanvasGroup().DOFade(1f, 0.3f));
         }
-        
+
         private Sequence AnimateButtons()
         {
             return DOTween.Sequence()
@@ -277,22 +304,19 @@ namespace Scripts
 
         private void SuccessMultiplayerLevel()
         {
-            
+
         }
 
         private void FailMultiplayerLevel()
         {
-            
+
         }
         
-    }
+        public bool IsGameOver()
+        {
+            return _isGameOver;
+        }
 
-    public struct LevelFinishInfo
-    {
-        public bool isSuccess;
-        public int starCount;
-        public int newRewardStarCount;
-        public List<int> targetNumbers;
     }
 
     public struct MultiplayerLevelFinishInfo
@@ -310,7 +334,8 @@ namespace Scripts
 
     public interface ILevelFinishController
     {
-        void LevelFinish(LevelFinishInfo levelFinishInfo);
+        void Initialize();
         void MultiplayerLevelFinish(MultiplayerLevelFinishInfo multiplayerLevelFinishInfo);
+        bool IsGameOver();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
@@ -15,6 +16,9 @@ namespace Scripts
         private List<IBaseButtonController> _cardHolderIndicatorButtonControllers;
         private Dictionary<int, IBaseButtonController> _probabilityButtonControllers;
         private int _activeCardIndex;
+        
+        public event EventHandler<ProbabilityButtonClickedEventArgs> ProbabilityButtonClickedEvent;
+        public event EventHandler<HolderIndicatorClickedEventArgs> HolderIndicatorClickedEvent;
         
         [Inject]
         public CardItemInfoPopupController(BaseButtonControllerFactory baseButtonControllerFactory, ICardInteractionManager cardInteractionManager, ICardItemInfoManager cardItemInfoManager, 
@@ -108,7 +112,8 @@ namespace Scripts
         private void OnCardHolderIndicatorButtonClicked(int cardHolderIndicatorIndex)
         {
             if (!_tutorialAbilityManager.IsHolderIndicatorButtonClickable(cardHolderIndicatorIndex)) return;
-            _cardItemInfoManager.OnCardHolderIndicatorClicked(_activeCardIndex, cardHolderIndicatorIndex);
+            _cardItemInfoManager.OnHolderIndicatorClicked(_activeCardIndex, cardHolderIndicatorIndex);
+            HolderIndicatorClickedEvent?.Invoke(this, new HolderIndicatorClickedEventArgs(_activeCardIndex, cardHolderIndicatorIndex));
             SetCardItemInfoPopupStatus(true, _activeCardIndex);
         }
         
@@ -129,6 +134,7 @@ namespace Scripts
         {
             if (!_tutorialAbilityManager.IsProbabilityButtonClickable(probabilityIndex)) return;
             _cardItemInfoManager.OnProbabilityButtonClicked(_activeCardIndex, (ProbabilityType)probabilityIndex);
+            ProbabilityButtonClickedEvent?.Invoke(this, new ProbabilityButtonClickedEventArgs(_activeCardIndex, (ProbabilityType)probabilityIndex));
             SetCardItemInfoPopupStatus(true, _activeCardIndex);
         }
         
@@ -159,6 +165,32 @@ namespace Scripts
         IBaseButtonController GetProbabilityButton(ProbabilityType probabilityType);
         IBaseButtonController GetHolderIndicatorButton(int index);
         void Unsubscribe();
+        event EventHandler<ProbabilityButtonClickedEventArgs> ProbabilityButtonClickedEvent;
+        event EventHandler<HolderIndicatorClickedEventArgs> HolderIndicatorClickedEvent;
+    }
+
+    public class ProbabilityButtonClickedEventArgs : EventArgs
+    {
+        public int ActiveCardIndex { get; private set; }
+        public ProbabilityType ProbabilityType { get; private set; }
+
+        public ProbabilityButtonClickedEventArgs(int activeCardIndex, ProbabilityType probabilityType)
+        {
+            ActiveCardIndex = activeCardIndex;
+            ProbabilityType = probabilityType;
+        }
+    }
+
+    public class HolderIndicatorClickedEventArgs : EventArgs
+    {
+        public int ActiveCardIndex { get; private set; }
+        public int HolderIndicatorIndex { get; private set; }
+
+        public HolderIndicatorClickedEventArgs(int activeCardIndex, int holderIndicatorIndex)
+        {
+            ActiveCardIndex = activeCardIndex;
+            HolderIndicatorIndex = holderIndicatorIndex;
+        }
     }
 }
 
