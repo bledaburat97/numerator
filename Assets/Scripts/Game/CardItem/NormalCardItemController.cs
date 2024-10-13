@@ -1,27 +1,17 @@
-﻿using System;
-using UnityEngine;
-using UnityEngine.EventSystems;
+﻿using UnityEngine;
 namespace Scripts
 {
-    public class NormalCardItemController : DraggableCardItemController, INormalCardItemController
+    public class NormalCardItemController : INormalCardItemController
     {
         private ICardMoveHandler _cardMoveHandler;
         private ICardViewHandler _cardViewHandler;
-        private ICardReleaseHandler _cardReleaseHandler;
+        private CardItemData _cardItemData;
         
-        public void Initialize(INormalCardItemView cardItemView, Camera cam, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager,
-            CardItemData cardItemData, ICardItemLocator cardItemLocator, IBoardAreaController boardAreaController,
-            Action<int> onDragStart)
+        public NormalCardItemController(INormalCardItemView cardItemView, Camera cam,
+            IHapticController hapticController, CardItemData cardItemData, IBoardAreaController boardAreaController)
         {
-            _cardViewHandler = new CardViewHandler(cardItemView, cam, hapticController);
-            _cardMoveHandler = new CardMoveHandler(hapticController, tutorialAbilityManager, _cardViewHandler,
-                boardAreaController, () => onDragStart(cardItemData.CardItemIndex), cardItemLocator.OnDragContinue);
-            _cardReleaseHandler = new CardReleaseHandler(hapticController, _cardViewHandler, boardAreaController, cardItemLocator.OnDragComplete);
-
-            _cardItemData = cardItemData;
-
-            _cardViewHandler.Initialize(_cardMoveHandler, OnPointerUp, _cardItemData);
-            _cardMoveHandler.Initialize(_cardItemData);
+            _cardMoveHandler = new CardMoveHandler(hapticController, boardAreaController, cardItemData.CardItemIndex);
+            _cardViewHandler = new CardViewHandler(cardItemView, cam, hapticController, _cardMoveHandler, cardItemData);
         }
         
         public INormalCardItemView GetView()
@@ -29,28 +19,9 @@ namespace Scripts
             return _cardViewHandler.GetView();
         }
 
-        public void ResetPosition()
+        public ICardMoveHandler GetCardMoveHandler()
         {
-            RectTransform parentTransform = _cardItemData.Parent;
-            _cardViewHandler.SetParent(_cardItemData.TempParent);
-            _cardViewHandler.PlaceCard(parentTransform.position, parentTransform);
-        }
-        
-        private void OnPointerUp(PointerEventData data)
-        {
-            if (!_cardMoveHandler.IsDragStarted())
-            {
-                _cardItemData.OnCardClicked(_cardItemData.CardItemIndex);
-            }
-            else
-            {
-                _cardReleaseHandler.Release(_cardItemData.CardItemIndex, _cardItemData.Parent, _cardItemData.TempParent);
-            }
-        }
-
-        public void MoveCardByClick(int boardCardHolderIndex)
-        {
-            _cardMoveHandler.MoveCardToBoard(boardCardHolderIndex, _cardItemData.TempParent);
+            return _cardMoveHandler;
         }
         
         public void SetCardAnimation(bool status)
@@ -58,6 +29,11 @@ namespace Scripts
             _cardViewHandler.SetCardAnimation(status);
         }
 
+        public void SuccessAnimation(float delayDuration)
+        {
+            _cardViewHandler.SuccessAnimation(delayDuration);
+        }
+        
         public void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
         {
             _cardViewHandler.BackFlipAnimation(delayDuration, isGuessRight, correctNumber);
@@ -86,17 +62,14 @@ namespace Scripts
     }
     public interface INormalCardItemController
     {
-        void Initialize(INormalCardItemView cardItemView, Camera cam, IHapticController hapticController, ITutorialAbilityManager tutorialAbilityManager,
-            CardItemData cardItemData, ICardItemLocator cardItemLocator, IBoardAreaController boardAreaController,
-            Action<int> onDragStart);
-        void ResetPosition();
         INormalCardItemView GetView();
-        void MoveCardByClick(int boardCardHolderIndex);
         void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         void SetCardAnimation(bool status);
         void DestroyObject();
         void SetProbability(ProbabilityType probabilityType, bool isLocked);
         void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked);
         RectTransform GetRectTransform();
+        void SuccessAnimation(float delayDuration);
+        ICardMoveHandler GetCardMoveHandler();
     }
 }

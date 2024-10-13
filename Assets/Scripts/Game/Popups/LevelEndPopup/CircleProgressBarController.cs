@@ -74,6 +74,7 @@ namespace Scripts
                 starImageView.SetLocalScale(Vector3.one);
                 starImageView.SetSize(new Vector2(25f, 25f));
                 starImageView.SetColor(false);
+                starImageView.GetMovingRewardItem().SetStatus(false);
                 _starImageViewList.Add(starImageView);
             }
             
@@ -104,6 +105,7 @@ namespace Scripts
             animatedStar.SetLocalPosition(Vector2.zero);
             animatedStar.SetSize(new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS, ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS));
             animatedStar.SetColor(false);
+            animatedStar.GetMovingRewardItem().SetStatus(false);
             _starImageViewList.Add(animatedStar);
             _currentStarCount += 1;
             RectTransform targetInCircle = _starFrameViewList[(_currentStarCount - 1) % ConstantValues.NUM_OF_STARS_FOR_WILD].GetRectTransform();

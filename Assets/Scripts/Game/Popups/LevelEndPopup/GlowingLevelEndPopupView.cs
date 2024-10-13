@@ -30,6 +30,7 @@ namespace Scripts
             starImageView.SetSize(size);
             starImageView.SetLocalScale(Vector2.zero);
             starImageView.SetColor(isOriginal);
+            starImageView.GetMovingRewardItem().SetStatus(false);
             _glowingStarImageList.Add(starImageView);
         }
         

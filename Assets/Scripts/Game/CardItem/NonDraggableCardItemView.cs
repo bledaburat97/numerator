@@ -4,9 +4,7 @@
     {
         public void MultiplyPixelsPerUnit()
         {
-            outerBGImage.pixelsPerUnitMultiplier = outerBGImage.pixelsPerUnitMultiplier * 2;
-            innerBGImage.pixelsPerUnitMultiplier = innerBGImage.pixelsPerUnitMultiplier * 2;
-            shadowImage.pixelsPerUnitMultiplier = shadowImage.pixelsPerUnitMultiplier * 2;
+            image.pixelsPerUnitMultiplier = image.pixelsPerUnitMultiplier * 2;
         }
     }
     

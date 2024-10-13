@@ -14,7 +14,7 @@ namespace Scripts
         [Inject] private IGuessManager _guessManager;
         [Inject] private ICardItemInfoManager _cardItemInfoManager;
         [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
-        [Inject] private IInitialCardAreaController _initialCardAreaController;
+        [Inject] private IBoxMovementHandler _boxMovementHandler;
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private ITargetNumberCreator _targetNumberCreator;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
@@ -56,7 +56,7 @@ namespace Scripts
 
         private void OnDestroy()
         {
-            _initialCardAreaController.Unsubscribe();
+            _boxMovementHandler.Unsubscribe();
             _cardInteractionManager.Unsubscribe();
             _cardItemInfoPopupController.Unsubscribe();
         }

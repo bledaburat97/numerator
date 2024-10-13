@@ -10,7 +10,6 @@ namespace Scripts
         private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ICardInteractionManager _cardInteractionManager;
         private ICardItemInfoManager _cardItemInfoManager;
-        private ITutorialAbilityManager _tutorialAbilityManager;
         private ICardHolderPositionManager _cardHolderPositionManager;
         private ICardItemInfoPopupView _view;
         private List<IBaseButtonController> _cardHolderIndicatorButtonControllers;
@@ -22,7 +21,7 @@ namespace Scripts
         
         [Inject]
         public CardItemInfoPopupController(BaseButtonControllerFactory baseButtonControllerFactory, ICardInteractionManager cardInteractionManager, ICardItemInfoManager cardItemInfoManager, 
-            ITutorialAbilityManager tutorialAbilityManager, ICardHolderPositionManager cardHolderPositionManager, ICardItemInfoPopupView view)
+            ICardHolderPositionManager cardHolderPositionManager, ICardItemInfoPopupView view)
         {
             _view = view;
             BaseButtonViewFactory cardHolderIndicatorButtonViewFactory = new BaseButtonViewFactory();
@@ -33,7 +32,6 @@ namespace Scripts
             _cardInteractionManager = cardInteractionManager;
             _cardInteractionManager.OpenCardItemInfoPopupEvent += OpenCardItemInfoPopup;
             _cardItemInfoManager = cardItemInfoManager;
-            _tutorialAbilityManager = tutorialAbilityManager;
             _cardHolderPositionManager = cardHolderPositionManager;
             CreateProbabilityButtons();
         }
@@ -111,7 +109,6 @@ namespace Scripts
 
         private void OnCardHolderIndicatorButtonClicked(int cardHolderIndicatorIndex)
         {
-            if (!_tutorialAbilityManager.IsHolderIndicatorButtonClickable(cardHolderIndicatorIndex)) return;
             _cardItemInfoManager.OnHolderIndicatorClicked(_activeCardIndex, cardHolderIndicatorIndex);
             HolderIndicatorClickedEvent?.Invoke(this, new HolderIndicatorClickedEventArgs(_activeCardIndex, cardHolderIndicatorIndex));
             SetCardItemInfoPopupStatus(true, _activeCardIndex);
@@ -132,7 +129,6 @@ namespace Scripts
         
         private void OnProbabilityButtonClicked(int probabilityIndex)
         {
-            if (!_tutorialAbilityManager.IsProbabilityButtonClickable(probabilityIndex)) return;
             _cardItemInfoManager.OnProbabilityButtonClicked(_activeCardIndex, (ProbabilityType)probabilityIndex);
             ProbabilityButtonClickedEvent?.Invoke(this, new ProbabilityButtonClickedEventArgs(_activeCardIndex, (ProbabilityType)probabilityIndex));
             SetCardItemInfoPopupStatus(true, _activeCardIndex);

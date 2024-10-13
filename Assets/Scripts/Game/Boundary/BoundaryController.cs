@@ -21,6 +21,7 @@ namespace Scripts
             _starImageView.SetLocalPosition(starLocalPosition);
             _starImageView.SetLocalScale(Vector3.one);
             _starImageView.SetColor(isOriginal);
+            _starImageView.GetMovingRewardItem().SetStatus(false);
         }
 
         public void SetStarStatus(bool status)

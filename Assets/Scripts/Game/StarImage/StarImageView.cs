@@ -9,7 +9,6 @@ namespace Scripts
         [SerializeField] private Image star;
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
-        [SerializeField] private Image roundImage;
         [SerializeField] private MovingRewardItemView movingRewardItemView;
         
         public void SetLocalPosition(Vector2 localPosition)
@@ -57,9 +56,9 @@ namespace Scripts
             star.color = originalColor ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR;
         }
 
-        public Image GetRoundImage()
+        public MovingRewardItemView GetMovingRewardItem()
         {
-            return roundImage;
+            return movingRewardItemView;
         }
     }
 
@@ -74,6 +73,6 @@ namespace Scripts
         void Destroy();
         CurvedAnimationPreset GetCurvedAnimationPreset();
         void SetColor(bool originalColor);
-        Image GetRoundImage();
+        MovingRewardItemView GetMovingRewardItem();
     }
 }

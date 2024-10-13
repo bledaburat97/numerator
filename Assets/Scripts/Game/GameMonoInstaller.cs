@@ -36,7 +36,6 @@ namespace Scripts
             Container.Bind<IInitialCardAreaController>().To<InitialCardAreaController>().AsSingle()
                 .WithArguments(initialCardAreaView);
             Container.Bind<ICardInteractionManager>().To<CardInteractionManager>().AsSingle();
-            Container.Bind<ITutorialAbilityManager>().To<TutorialAbilityManager>().AsSingle();
             Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView);
             Container.Bind<IGamePopupCreator>().To<GamePopupCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ICardItemLocator>().To<CardItemLocator>().AsSingle();
@@ -53,6 +52,7 @@ namespace Scripts
                 .WithArguments(powerUpMessagePopup);
             Container.Bind<ICardHolderPositionManager>().To<CardHolderPositionManager>().AsSingle();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
+            Container.Bind<IBoxMovementHandler>().To<BoxMovementHandler>().AsSingle();
         }
     }
 }

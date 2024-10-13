@@ -8,7 +8,6 @@ namespace Scripts
 {
     public class BoardAreaController : IBoardAreaController
     {
-        private ITutorialAbilityManager _tutorialAbilityManager;
         private IBoardAreaView _view;
         private ICardHolderPositionManager _cardHolderPositionManager;
         private List<IBoardCardHolderController> _boardHolderControllerList;
@@ -17,11 +16,10 @@ namespace Scripts
         public event EventHandler<int> BoardHolderClickedEvent;
 
         [Inject]
-        public BoardAreaController(IGameUIController gameUIController, ITutorialAbilityManager tutorialAbilityManager, ILevelDataCreator levelDataCreator,
+        public BoardAreaController(IGameUIController gameUIController, ILevelDataCreator levelDataCreator,
             ICardHolderPositionManager cardHolderPositionManager, IBoardAreaView view)
         {
             gameUIController.ResetNumbers += ResetBoard;
-            _tutorialAbilityManager = tutorialAbilityManager;
             _cardHolderPositionManager = cardHolderPositionManager;
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
@@ -149,7 +147,7 @@ namespace Scripts
         {
             for (int i = 0; i < _numOfBoardHolders; i++)
             {
-                if(!_tutorialAbilityManager.IsBoardIndexDraggable(i) || _boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
+                if(_boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
                 IBoardHolderView view = GetBoardHolderView(i);
                 Vector2 position = view.GetPosition();
                 Vector2 size = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT) * _view.GetCanvas().scaleFactor;

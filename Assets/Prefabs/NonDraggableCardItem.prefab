@@ -35,7 +35,6 @@ RectTransform:
   - {fileID: 949554341599789661}
   - {fileID: 2877581949205976093}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -64,10 +63,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 1445150972712788324}
   cardNumberText: {fileID: 4488422079029886289}
-  outerBGImage: {fileID: 3936936582331623423}
-  innerBGImage: {fileID: 6021538845946115262}
-  shadowImage: {fileID: 5598195464458495719}
-  cardFrame: {fileID: 4994893504704688496}
+  image: {fileID: 6021538845946115262}
 --- !u!1 &2477493052748394349
 GameObject:
   m_ObjectHideFlags: 0
@@ -99,7 +95,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1445150972712788324}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -175,7 +170,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1445150972712788324}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -252,7 +246,6 @@ RectTransform:
   m_Children:
   - {fileID: 4306339800151874805}
   m_Father: {fileID: 1445150972712788324}
-  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: -0.03, y: 0.04}
   m_AnchorMax: {x: 0.96, y: 1}
@@ -328,7 +321,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1445150972712788324}
-  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: -0.07, y: 0}
   m_AnchorMax: {x: 1, y: 1.04}
@@ -404,7 +396,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2877581949205976093}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}

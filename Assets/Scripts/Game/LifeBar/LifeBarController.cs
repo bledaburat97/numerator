@@ -103,9 +103,17 @@ namespace Scripts
         public void SetStarStatus(bool status, int lifeBarStarInfoIndex)
         {
             _lifeBarStarInfoList[lifeBarStarInfoIndex].SetIsActive(status);
-            _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(status);
+            if (status)
+            {
+                //create movingrewarditem.
+                _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(true);
+            }
+            else
+            {
+                
+            }
         }
-
+        
         public IStarImageView GetStarImage(int boundaryIndex)
         {
             return _boundaryControllerList[boundaryIndex].GetStarImage();

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-
+/*
 namespace Scripts
 {
     public class TutorialAbilityManager : ITutorialAbilityManager
@@ -111,3 +111,4 @@ namespace Scripts
         
     }
 }
+*/

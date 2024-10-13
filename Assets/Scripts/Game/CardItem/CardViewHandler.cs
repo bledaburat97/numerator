@@ -9,26 +9,38 @@ namespace Scripts
     {
         private readonly INormalCardItemView _view;
         private readonly IHapticController _hapticController;
+        private readonly ICardMoveHandler _cardMoveHandler;
+        private readonly CardItemData _cardItemData;
         private Camera _cam;
 
-        public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController)
+        public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController, ICardMoveHandler cardMoveHandler, CardItemData cardItemData)
         {
             _view = view;
             _cam = cam;
             _hapticController = hapticController;
-        }
-
-        public void Initialize(ICardMoveHandler cardMoveHandler, Action<PointerEventData> onPointerUp,
-            CardItemData cardItemData)
-        {
+            _cardMoveHandler = cardMoveHandler;
+            _cardItemData = cardItemData;
+            _cardMoveHandler.MoveCardToBoardEvent += MoveCardToBoard;
+            _cardMoveHandler.MoveCardToInitialEvent += MoveCardToInitial;
             _view.Init(cardItemData.CardNumber);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero);
             _view.SetOnPointerDown(cardMoveHandler.OnPointerDown);
-            _view.SetOnDrag(cardMoveHandler.HandleDrag);
-            _view.SetOnPointerUp(onPointerUp);
+            _view.SetOnDrag(OnDrag);
+            _view.SetOnPointerUp(cardMoveHandler.OnPointerUp);
             _view.SetSize(cardItemData.Parent.sizeDelta);
             SetProbability(cardItemData.InitialProbabilityType, cardItemData.InitialIsLocked);
+        }
+
+        private void OnDrag(PointerEventData data)
+        {
+            if (!_cardMoveHandler.IsDragStarted())
+            {
+                InitializeDrag(_cardItemData.TempParent);
+            }
+            Vector2 localPosition = CalculateAnchoredPosition(data.position);
+            UpdatePosition(localPosition);
+            _cardMoveHandler.HandleDrag(data.position);
         }
 
         public void SetProbability(ProbabilityType probabilityType, bool isLocked)
@@ -60,16 +72,54 @@ namespace Scripts
             _view.SetAnchoredPosition(localPosition);
         }
 
-        public void PlaceCard(Vector2 targetPosition, RectTransform parentTransform)
+        private void MoveCardToBoard(object sender, RectTransform boardHolderRectTransform)
         {
+            PlaceCard(boardHolderRectTransform);
+        }
+
+        private void MoveCardToInitial(object sender, EventArgs args)
+        {
+            PlaceCard(_cardItemData.Parent);
+        }
+        
+        private void PlaceCard(RectTransform parentTransform)
+        {
+            SetParent(_cardItemData.TempParent);
             _view.InitLocalScale();
-            DOTween.Sequence().Append(_view.ChangePosition(targetPosition, 0.3f))
+            DOTween.Sequence().Append(_view.ChangePosition(parentTransform.position, 0.3f))
                 .OnComplete(() => _view.SetParent(parentTransform));
             _view.SetSize(parentTransform.sizeDelta);
         }
 
+        public void SuccessAnimation(float delayDuration)
+        {
+            DOTween.Sequence()
+                .AppendInterval(delayDuration)
+                .Append(_view.AnimateColorChange(
+                    ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain], 0.5f))
+                .Join(_view.AnimateLockImage(0.2f))
+                .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
+        }
+
+        
         public void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
         {
+            if (isGuessRight)
+            {
+                DOTween.Sequence()
+                    .AppendInterval(delayDuration)
+                    .Append(_view.AnimateColorChange(
+                        ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain], 0.5f))
+                    .Join(_view.AnimateLockImage(0.2f))
+                    .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
+            }
+            else
+            {
+                
+            }
+            
+            
+            /*
             DOTween.Sequence()
                 .AppendInterval(delayDuration)
                 .Append(_view.ChangeLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
@@ -87,6 +137,8 @@ namespace Scripts
                 .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.15f))
                 .Append(_view.ChangeLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
                 .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
+                */
+                
         }
 
         public INormalCardItemView GetView()
@@ -120,13 +172,10 @@ namespace Scripts
 
     public interface ICardViewHandler
     {
-        void Initialize(ICardMoveHandler cardMoveHandler, Action<PointerEventData> onPointerUp,
-            CardItemData cardItemData);
         void InitializeDrag(RectTransform parent);
         void SetParent(RectTransform parent);
         Vector2 CalculateAnchoredPosition(Vector2 screenPosition);
         void UpdatePosition(Vector2 localPosition);
-        void PlaceCard(Vector2 targetPosition, RectTransform parentTransform);
         void SetProbability(ProbabilityType probabilityType, bool isLocked);
         void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         INormalCardItemView GetView();
@@ -134,5 +183,6 @@ namespace Scripts
         void DestroyObject();
         void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked);
         RectTransform GetRectTransform();
+        void SuccessAnimation(float delayDuration);
     }
 }

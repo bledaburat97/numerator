@@ -53,11 +53,6 @@ namespace Scripts
             Vector2 position = probabilityButtonRectTransform.position;
             Vector2 size = new Vector2(probabilityButtonRectTransform.rect.width,
                 probabilityButtonRectTransform.rect.height);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                pressableProbabilityButtonIndex = (int)probabilityType,
-                isSelectedCardIndexChangeable = false
-            });
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size, 0f, 1f);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText(text);
@@ -80,11 +75,6 @@ namespace Scripts
             Vector2 position = holderIndicatorButtonRectTransform.position;
             Vector2 size = new Vector2(holderIndicatorButtonRectTransform.rect.width,
                 holderIndicatorButtonRectTransform.rect.height);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                pressableHolderButtonIndex = holderIndicatorIndex,
-                isSelectedCardIndexChangeable = false
-            });
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(size);
             _tutorialMessagePopupView.SetText("When the number does not exist on a specific place, put a cross for that place.");
@@ -102,10 +92,6 @@ namespace Scripts
         private void StartBoardClickAnimation(int boardHolderIndex)
         {
             Vector2 position = _boardAreaController.GetBoardHolderPositionAtIndex(boardHolderIndex);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                clickableBoardIndexes = new List<int>{boardHolderIndex},
-            });
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, _sizeOfBoardHolder);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the board.");
@@ -125,7 +111,6 @@ namespace Scripts
             RectTransform cardInfoButtonRectTransform = _gameUIController.GetCardInfoButtonRectTransform();
             Vector2 position = cardInfoButtonRectTransform.position;
             Vector2 size = new Vector2(cardInfoButtonRectTransform.rect.width, cardInfoButtonRectTransform.rect.height);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility());
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the number info button. It will help you to play.");

@@ -136,6 +136,9 @@ MonoBehaviour:
   animator: {fileID: 521120714130986653}
   backImage: {fileID: 5836152971079305314}
   backText: {fileID: 2372860944899336747}
+  colorChangingImage: {fileID: 0}
+  maskRectTransform: {fileID: 0}
+  transitionSpeed: 100
 --- !u!222 &8917381596642948652
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -174,6 +177,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5966125086463443137}
+  - component: {fileID: 9180794844046342557}
   m_Layer: 0
   m_Name: AnimationProvider
   m_TagString: Untagged
@@ -199,11 +203,19 @@ RectTransform:
   - {fileID: 2877581949205976093}
   m_Father: {fileID: 1445150972712788324}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 60, y: 76}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &9180794844046342557
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2370901023072509758}
+  m_CullTransparentMesh: 1
 --- !u!1 &2477493052748394349
 GameObject:
   m_ObjectHideFlags: 0
@@ -809,7 +821,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 64.4
+  m_fontSize: 65.3
   m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 1

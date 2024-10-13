@@ -17,15 +17,17 @@ namespace Scripts
         protected Queue<Action> _tutorialAnimationActions;
         protected IResultAreaController _resultAreaController;
         protected ICardItemInfoPopupController _cardItemInfoPopupController;
-        protected ITutorialAbilityManager _tutorialAbilityManager;
         protected ICardInteractionManager _cardInteractionManager;
         protected IBoardAreaController _boardAreaController;
         protected Vector2 _sizeOfInitialHolder;
         protected Vector2 _sizeOfBoardHolder;
+        private IBoxMovementHandler _boxMovementHandler;
         
         public void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController)
+            ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, IResultAreaController resultAreaController, 
+            ICardItemInfoPopupController cardItemInfoPopupController, ICardInteractionManager cardInteractionManager, 
+            IBoardAreaController boardAreaController, IBoxMovementHandler boxMovementHandler)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _handTutorialView = handTutorialView;
@@ -35,9 +37,9 @@ namespace Scripts
             _gameUIController = gameUIController;
             _resultAreaController = resultAreaController;
             _cardItemInfoPopupController = cardItemInfoPopupController;
-            _tutorialAbilityManager = tutorialAbilityManager;
             _cardInteractionManager = cardInteractionManager;
             _boardAreaController = boardAreaController;
+            _boxMovementHandler = boxMovementHandler;
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _tutorialMessagePopupView.Init();
             _tutorialAnimationActions = new Queue<Action>();
@@ -75,14 +77,9 @@ namespace Scripts
         {
             Vector2 cardHolderPosition = _initialCardAreaController.GetNormalCardHolderPositionAtIndex(cardIndex);
             Vector2 boardHolderPosition = _boardAreaController.GetBoardHolderPositionAtIndex(boardIndex);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                draggableBoardIndex = boardIndex,
-                draggableCardIndex = cardIndex
-            });
             _unmaskServiceAreaView.CreateUnmaskCardItem(cardHolderPosition, _sizeOfInitialHolder);
             _unmaskServiceAreaView.CreateUnmaskCardItem(boardHolderPosition, _sizeOfBoardHolder);
-            _initialCardAreaController.OnCardDragStartedEvent += StopDragAnimation;
+            _boxMovementHandler.OnCardDragStartedEvent += StopDragAnimation;
 
             if (!isReversed)
             {
@@ -112,7 +109,7 @@ namespace Scripts
             void CloseDragAnimation(object sender, EventArgs args)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _initialCardAreaController.OnCardDragStartedEvent -= StopDragAnimation;
+                _boxMovementHandler.OnCardDragStartedEvent -= StopDragAnimation;
                 if (!isReversed)
                 {
                     _cardItemLocator.CardReturnedToInitialEvent -= RestartDragAnimation;
@@ -129,19 +126,15 @@ namespace Scripts
 
         protected void StartCardClickAnimation(int cardIndex, Vector2 position, Vector2 size)
         {
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility()
-            {
-                selectableCardIndex = cardIndex
-            });
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the card.");
-            _initialCardAreaController.OnCardClickedEvent += CloseClickAnimation;
+            _boxMovementHandler.OnCardClickedEvent += CloseClickAnimation;
             
             void CloseClickAnimation(object sender, int cardIndex)
             {
                 _unmaskServiceAreaView.ClearAllUnmaskCardItems();
-                _initialCardAreaController.OnCardClickedEvent -= CloseClickAnimation;
+                _boxMovementHandler.OnCardClickedEvent -= CloseClickAnimation;
                 _handTutorialView.StopActiveAnimation();
                 ExecuteNextTutorialActionWithDelay(0.3f);
             }
@@ -152,7 +145,6 @@ namespace Scripts
             ResultAreaInfo resultAreaInfo = _resultAreaController.GetResultAreaInfo();
             float changeInLocalPosY = - resultBlockIndex * (resultAreaInfo.resultBlockSize.y + resultAreaInfo.spacing) -
                                       resultAreaInfo.resultBlockSize.y / 2;
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility());
             _unmaskServiceAreaView.CreateUnmaskCardItem(resultAreaInfo.topPoint, resultAreaInfo.resultBlockSize, changeInLocalPosY);
             _tutorialMessagePopupView.SetText(text);
             ExecuteNextTutorialActionWithDelay(0.3f);
@@ -163,7 +155,6 @@ namespace Scripts
             RectTransform checkButtonRectTransform = _gameUIController.GetCheckButtonRectTransform();
             Vector2 position = checkButtonRectTransform.position;
             Vector2 size = new Vector2(checkButtonRectTransform.rect.width, checkButtonRectTransform.rect.height);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility());
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the check button.");
@@ -184,7 +175,6 @@ namespace Scripts
             RectTransform resetButtonRectTransform = _gameUIController.GetResetButtonRectTransform();
             Vector2 position = resetButtonRectTransform.position;
             Vector2 size = new Vector2(resetButtonRectTransform.rect.width, resetButtonRectTransform.rect.height);
-            _tutorialAbilityManager.SetCurrentTutorialAbility(new TutorialAbility());
             _unmaskServiceAreaView.CreateUnmaskCardItem(position, size);
             _handTutorialView.StartClickAnimation(position);
             _tutorialMessagePopupView.SetText("You can click the reset button.");
@@ -219,6 +209,9 @@ namespace Scripts
     {
         void Initialize(IInitialCardAreaController initialCardAreaController, ICardItemLocator cardItemLocator,
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
-            ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, ITutorialAbilityManager tutorialAbilityManager, ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController);
+            ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, 
+            IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, 
+            ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController,
+            IBoxMovementHandler boxMovementHandler);
     }
 }

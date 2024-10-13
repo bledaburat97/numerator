@@ -12748,7 +12748,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialHolderPrefab: {fileID: 6931587440260615381, guid: 60e506c56df635e4ca65e7faeddc6878, type: 3}
-  normalCardItemPrefab: {fileID: 8613591124439939394, guid: eef86066a137aa64a93db3892ebd31ab, type: 3}
+  normalCardItemPrefab: {fileID: 8613591124439939394, guid: d6382d33a547745b1bcbbf308b5e227e, type: 3}
   tempParentRectTransform: {fileID: 872332907}
   invisibleClickHandler: {fileID: 1942907004}
   cam: {fileID: 1272574426}

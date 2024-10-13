@@ -155,6 +155,7 @@ namespace Scripts
                 _view.GetStarList()[i].SetLocalPosition(starsPosition[i]);
                 _view.GetStarList()[i].SetSize(size);
                 _view.GetStarList()[i].SetColor(isOriginal);
+                _view.GetStarList()[i].GetMovingRewardItem().SetStatus(false);
                 _view.GetStarParticleList()[i].transform.localPosition = starsPosition[i];
                 _view.GetStarParticleList()[i].gameObject.SetActive(false);
                 var mainModule = _view.GetStarParticleList()[i].main;
@@ -202,7 +203,7 @@ namespace Scripts
             bool isSuccess, int numOfStars, int newRewardStarCount, int currentRewardStarCount)
         {
             DOTween.Sequence()
-                .AppendCallback(() => AnimateBackFlipCards(targetCardIndexList, cardItemList, isSuccess))
+                .AppendCallback(() => AnimateSuccessAnimation(cardItemList))
                 .AppendInterval(1.2f + 0.3f * cardItemList.Count)
                 .Append(_view.GetTopArea().DOFade(0f, 0.2f))
                 .Join(_view.GetScrollArea().DOFade(0f, 0.2f))
@@ -222,6 +223,15 @@ namespace Scripts
                 .Append(_circleProgressBarController.AddNewStars(_view.GetStarList(), newRewardStarCount, numOfStars))
                 .AppendInterval(0.2f)
                 .Append(TryCreateReward(newRewardStarCount, currentRewardStarCount));
+        }
+
+        private void AnimateSuccessAnimation(List<INormalCardItemController> cardItemList)
+        {
+            for (int i = 0; i < cardItemList.Count; i++)
+            {
+                float delay = 0.3f * i;
+                cardItemList[i].SuccessAnimation(delay);
+            }
         }
 
         private void AnimateBackFlipCards(List<int> targetCardIndexList, List<INormalCardItemController> cardItemList,
