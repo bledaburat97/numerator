@@ -100,6 +100,26 @@ namespace Scripts
         {
             return DOTween.Sequence().Append(rectTransform.DOMove(position, duration)).SetEase(Ease.OutQuad);
         }
+
+        public Image GetRibbonImage()
+        {
+            return ribbonImage;
+        }
+
+        public Image GetInnerImage()
+        {
+            return innerImage;
+        }
+
+        public Image GetImage()
+        {
+            return image;
+        }
+
+        public Animator GetCardAnimator()
+        {
+            return animator;
+        }
     }
 
     public interface INormalCardItemView : IDraggableCardItemView
@@ -108,14 +128,13 @@ namespace Scripts
         void SetLockImageStatus(bool status);
         void SetCardAnimation(bool isSelected);
         RectTransform GetRectTransform();
-        //void SetBackImageStatus(bool status);
-        //void SetTextStatus(bool status);
-        //void SetNewAnchoredPositionOfRotatedImage();
-        //void SetBackText(string text);
         void DestroyObject();
-        //Sequence ChangeLocalPosition(Vector3 localPosition, float duration);
         Sequence ChangePosition(Vector3 position, float duration);
         Sequence AnimateColorChange(Color color, float duration);
         Sequence AnimateLockImage(float duration);
+        Image GetRibbonImage();
+        Image GetInnerImage();
+        Image GetImage();
+        Animator GetCardAnimator();
     }
 }

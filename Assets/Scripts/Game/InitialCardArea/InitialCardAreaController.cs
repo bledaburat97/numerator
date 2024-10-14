@@ -143,18 +143,23 @@ namespace Scripts
             return _view.GetInvisibleClickHandler();
         }
 
-        public List<INormalCardItemController> GetFinalCardItems()
+        public List<ICardViewHandler> GetFinalCardItems()
         {
             List<int> finalCardIndexes = _boardAreaController.GetCardIndexesOnBoard();
-            List<INormalCardItemController> cards = new List<INormalCardItemController>();
+            List<ICardViewHandler> cards = new List<ICardViewHandler>();
             for (int i = 0; i < finalCardIndexes.Count; i++)
             {
                 if (finalCardIndexes[i] != -1)
                 {
-                    cards.Add(_normalCardItemControllerList[finalCardIndexes[i]]);
+                    cards.Add(_normalCardItemControllerList[finalCardIndexes[i]].GetCardViewHandler());
                 }
             }
             return cards;
+        }
+
+        public List<ICardViewHandler> GetCardsOnInitialHolder()
+        {
+            return new List<ICardViewHandler>();
         }
 
         public void AnimateProbabilityChangeOfCardItem(int cardIndex, float duration, ProbabilityType probabilityType, bool isLocked)
@@ -200,7 +205,7 @@ namespace Scripts
         void SetCardAnimation(int cardIndex, bool status);
         IInvisibleClickHandler GetInvisibleClickHandler();
         void SetLockedCardController(LockedCardInfo lockedCardInfo);
-        List<INormalCardItemController> GetFinalCardItems();
+        List<ICardViewHandler> GetFinalCardItems();
         void DeleteOneHolderIndicator();
 
         void AnimateProbabilityChangeOfCardItem(int cardIndex, float duration, ProbabilityType probabilityType,
@@ -210,6 +215,7 @@ namespace Scripts
         void SetHolderIndicatorListOfCardHolder(int cardIndex, List<int> holderIndicatorList);
         RectTransform GetRectTransformOfCardItem(int cardIndex);
         void DestroyCard(int cardIndex);
+        List<ICardViewHandler> GetCardsOnInitialHolder();
     }
     
     public class CardItemData

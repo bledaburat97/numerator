@@ -13,7 +13,8 @@ namespace Scripts
         private readonly CardItemData _cardItemData;
         private Camera _cam;
 
-        public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController, ICardMoveHandler cardMoveHandler, CardItemData cardItemData)
+        public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController,
+            ICardMoveHandler cardMoveHandler, CardItemData cardItemData)
         {
             _view = view;
             _cam = cam;
@@ -38,6 +39,7 @@ namespace Scripts
             {
                 InitializeDrag(_cardItemData.TempParent);
             }
+
             Vector2 localPosition = CalculateAnchoredPosition(data.position);
             UpdatePosition(localPosition);
             _cardMoveHandler.HandleDrag(data.position);
@@ -60,14 +62,14 @@ namespace Scripts
             _view.SetParent(parent);
         }
 
-        public Vector2 CalculateAnchoredPosition(Vector2 screenPosition)
+        private Vector2 CalculateAnchoredPosition(Vector2 screenPosition)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_view.GetParent(), screenPosition, _cam,
                 out Vector2 localPosition);
             return localPosition;
         }
 
-        public void UpdatePosition(Vector2 localPosition)
+        private void UpdatePosition(Vector2 localPosition)
         {
             _view.SetAnchoredPosition(localPosition);
         }
@@ -81,7 +83,7 @@ namespace Scripts
         {
             PlaceCard(_cardItemData.Parent);
         }
-        
+
         private void PlaceCard(RectTransform parentTransform)
         {
             SetParent(_cardItemData.TempParent);
@@ -101,7 +103,7 @@ namespace Scripts
                 .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
         }
 
-        
+
         public void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber)
         {
             if (isGuessRight)
@@ -115,30 +117,8 @@ namespace Scripts
             }
             else
             {
-                
+
             }
-            
-            
-            /*
-            DOTween.Sequence()
-                .AppendInterval(delayDuration)
-                .Append(_view.ChangeLocalPosition(new Vector3(0f, 50f, 0f), 0.25f))
-                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 90f, 0f), 0.15f))
-                .AppendCallback(() =>
-                    _view.SetColor(isGuessRight
-                        ? ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain]
-                        : ConstantValues.GREY_CARD_COLOR))
-                .AppendCallback(() => _view.SetTextStatus(false))
-                .AppendCallback(() => _view.SetLockImageStatus(false))
-                .AppendCallback(isGuessRight
-                    ? () => _view.SetBackImageStatus(true)
-                    : () => _view.SetBackText(correctNumber))
-                .AppendCallback(() => _view.SetNewAnchoredPositionOfRotatedImage())
-                .Append(_view.GetRectTransform().DORotate(new Vector3(0f, 180f, 0f), 0.15f))
-                .Append(_view.ChangeLocalPosition(new Vector3(0f, 0f, 0f), 0.15f).SetEase(Ease.OutBounce))
-                .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
-                */
-                
         }
 
         public INormalCardItemView GetView()
@@ -155,7 +135,7 @@ namespace Scripts
         {
             _view.DestroyObject();
         }
-        
+
         public void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked)
         {
             DOTween.Sequence().AppendCallback(() =>
@@ -168,14 +148,88 @@ namespace Scripts
             return _view.GetRectTransform();
         }
 
+        public Sequence AnimateExplosion(float duration)
+        {
+            return DOTween.Sequence().AppendCallback(() =>
+            {
+                ActivateExplosionParticle();
+                SetStatusOfImage(false);
+            }).AppendInterval(duration).AppendCallback(_view.DestroyObject);
+        }
+
+        public Sequence AnimateFall(float fallDuration, float bounceDuration, RectTransform targetRectTransform)
+        {
+            var sequence = DOTween.Sequence();
+
+            // Simulate falling with acceleration (Ease.InQuad)
+            sequence.Append(_view.GetRectTransform().DOMove(targetRectTransform.position, fallDuration).SetEase(Ease.InQuad));
+
+            // Add a slight bounce after the fall (using bounce ease)
+            sequence.Append(_view.GetRectTransform().DOMove(targetRectTransform.position, bounceDuration).SetEase(Ease.OutBounce));
+
+            // Start the sequence
+            return sequence;
+        }
+
+        public void AnimateTurnIntoCertain(float delayDuration, float colorChangeDuration,
+            float ribbonImageDuration)
+        {
+            DOTween.Sequence().AppendInterval(delayDuration)
+                .Append(AnimateColorChange(colorChangeDuration, ProbabilityType.Certain))
+                .Join(DOTween.Sequence().AppendInterval(colorChangeDuration - ribbonImageDuration)
+                    .Append(AnimateRibbonImage(ribbonImageDuration)))
+                .AppendCallback(ActivateGlitteringParticle);
+        }
+
+        public Sequence AnimateColorChange(float duration, ProbabilityType probabilityType)
+        {
+            Color newColor = ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType];
+            SetColorOfInnerImage(newColor);
+            return DOTween.Sequence()
+                .Append(_view.GetInnerImage().rectTransform.DOSizeDelta(_view.GetImage().rectTransform.sizeDelta * 2, duration))
+                .AppendCallback(() =>
+                {
+                    SetColorOfImage(newColor);
+                    _view.GetInnerImage().rectTransform.sizeDelta = Vector2.zero;
+                });
+        }
+
+        private Sequence AnimateRibbonImage(float duration)
+        {
+            return DOTween.Sequence();
+        }
+
+        private void ActivateGlitteringParticle()
+        {
+
+        }
+
+        private void ActivateExplosionParticle()
+        {
+
+        }
+
+        private void SetColorOfInnerImage(Color color)
+        {
+            _view.GetInnerImage().color = color;
+        }
+
+        private void SetColorOfImage(Color color)
+        {
+            _view.GetImage().color = color;
+        }
+
+        private void SetStatusOfImage(bool status)
+        {
+            _view.GetImage().gameObject.SetActive(status);
+        }
+
     }
 
     public interface ICardViewHandler
     {
         void InitializeDrag(RectTransform parent);
         void SetParent(RectTransform parent);
-        Vector2 CalculateAnchoredPosition(Vector2 screenPosition);
-        void UpdatePosition(Vector2 localPosition);
         void SetProbability(ProbabilityType probabilityType, bool isLocked);
         void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         INormalCardItemView GetView();
@@ -184,5 +238,10 @@ namespace Scripts
         void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked);
         RectTransform GetRectTransform();
         void SuccessAnimation(float delayDuration);
+
+        void AnimateTurnIntoCertain(float delayDuration, float colorChangeDuration,
+            float ribbonImageDuration);
+
+        Sequence AnimateExplosion(float duration);
     }
 }

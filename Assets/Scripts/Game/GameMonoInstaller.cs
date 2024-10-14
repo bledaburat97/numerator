@@ -1,5 +1,6 @@
 ﻿using Game;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Zenject;
 
 namespace Scripts
@@ -53,6 +54,10 @@ namespace Scripts
             Container.Bind<ICardHolderPositionManager>().To<CardHolderPositionManager>().AsSingle();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
             Container.Bind<IBoxMovementHandler>().To<BoxMovementHandler>().AsSingle();
+            Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle();
+            Container.Bind<ILevelSuccessManager>().To<LevelSuccessManager>().AsSingle();
+            Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();
+            Container.Bind<ILevelStartManager>().To<LevelStartManager>().AsSingle();
         }
     }
 }

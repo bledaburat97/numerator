@@ -22,11 +22,6 @@ namespace Scripts
         [SerializeField] private CanvasGroup buttonArea;
         [SerializeField] private CanvasGroup starCanvasGroup;
 
-        public void Init()
-        {
-            transform.localScale = Vector3.one;
-        }
-
         public void SetStatus(bool status)
         {
             gameObject.SetActive(status);
@@ -113,7 +108,6 @@ namespace Scripts
 
     public interface ILevelFinishPopupView
     {
-        void Init();
         IFadeButtonView GetButton(LevelFinishButtonType buttonType);
         StarImageView[] GetStarList();
         ParticleSystem[] GetStarParticleList();

@@ -26,7 +26,7 @@ namespace Scripts
         private ICardItemLocator _cardItemLocator;
         private ICardHolderPositionManager _cardHolderPositionManager;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
-        private ILevelFinishController _levelFinishController;
+        private ILevelSuccessManager _levelSuccessManager;
         private ILevelSaveDataManager _levelSaveDataManager;
         private ILevelDataCreator _levelDataCreator;
         private IBoxMovementHandler _boxMovementHandler;
@@ -39,7 +39,7 @@ namespace Scripts
             IFadePanelController fadePanelController, IGameInitializer gameInitializer, IPowerUpMessagePopupView view, ICardItemInfoManager cardItemInfoManager,
             ILevelTracker levelTracker, IGameSaveService gameSaveService, IResultManager resultManager,
             ICardItemLocator cardItemLocator, ICardHolderPositionManager cardHolderPositionManager, ICardItemInfoPopupController cardItemInfoPopupController,
-            ILevelFinishController levelFinishController, ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator,
+            ILevelSuccessManager levelSuccessManager, ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator,
             IBoxMovementHandler boxMovementHandler)
         {
             _initialCardAreaController = initialCardAreaController;
@@ -57,7 +57,7 @@ namespace Scripts
             _cardItemLocator = cardItemLocator;
             _cardHolderPositionManager = cardHolderPositionManager;
             _cardItemInfoPopupController = cardItemInfoPopupController;
-            _levelFinishController = levelFinishController;
+            _levelSuccessManager = levelSuccessManager;
             _levelSaveDataManager = levelSaveDataManager;
             _levelDataCreator = levelDataCreator;
             _boxMovementHandler = boxMovementHandler;
@@ -106,7 +106,7 @@ namespace Scripts
             _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
             _cardItemInfoManager.RemoveLastCardHolderIndicator();
             _cardItemInfoPopupController.Initialize();
-            _levelFinishController.Initialize();
+            _levelSuccessManager.Initialize();
         }
 
         public int GetRemovedBoardHolderCount()

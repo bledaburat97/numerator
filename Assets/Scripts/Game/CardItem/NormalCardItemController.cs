@@ -58,6 +58,11 @@ namespace Scripts
         {
             return _cardViewHandler.GetRectTransform();
         }
+
+        public ICardViewHandler GetCardViewHandler()
+        {
+            return _cardViewHandler;
+        }
         
     }
     public interface INormalCardItemController
@@ -71,5 +76,6 @@ namespace Scripts
         RectTransform GetRectTransform();
         void SuccessAnimation(float delayDuration);
         ICardMoveHandler GetCardMoveHandler();
+        ICardViewHandler GetCardViewHandler();
     }
 }

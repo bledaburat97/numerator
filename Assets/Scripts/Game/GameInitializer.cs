@@ -30,7 +30,7 @@ namespace Game
         [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         [Inject] private IPowerUpMessageController _powerUpMessageController;
         [Inject] private ICardHolderPositionManager _cardHolderPositionManager;
-        [Inject] private ILevelFinishController _levelFinishController;
+        [Inject] private ILevelSuccessManager _levelSuccessManager;
         [Inject] private IHintProvider _hintProvider;
         
         public void Initialize()
@@ -83,7 +83,7 @@ namespace Game
             _unmaskServiceAreaView.Initialize(_fadePanelController);
             _gamePopupCreator.Initialize();
             _cardInteractionManager.Initialize();
-            _levelFinishController.Initialize();
+            _levelSuccessManager.Initialize();
             _gameSaveService.DeleteSave();
         }
     }
