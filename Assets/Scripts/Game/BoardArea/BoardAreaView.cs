@@ -7,7 +7,8 @@ namespace Scripts
         [SerializeField] private BoardHolderView boardHolderPrefab;
         [SerializeField] private Camera cam;
         [SerializeField] private Canvas canvas;
-
+        [SerializeField] private RectTransform rectTransform;
+        
         public IBoardHolderView CreateBoardHolderView()
         {
             return Instantiate(boardHolderPrefab, transform, true);
@@ -22,6 +23,11 @@ namespace Scripts
         {
             return canvas;
         }
+
+        public RectTransform GetRectTransform()
+        {
+            return rectTransform;
+        }
     }
 
     public interface IBoardAreaView
@@ -29,5 +35,6 @@ namespace Scripts
         IBoardHolderView CreateBoardHolderView();
         Camera GetCamera();
         Canvas GetCanvas();
+        RectTransform GetRectTransform();
     }
 }

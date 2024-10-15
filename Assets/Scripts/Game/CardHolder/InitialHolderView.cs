@@ -1,6 +1,5 @@
 ﻿using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Scripts
 {
@@ -10,6 +9,7 @@ namespace Scripts
         [SerializeField] private RectTransform possibleHolderIndicatorHolderTransform;
         [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
         [SerializeField] private TMP_Text text;
+        [SerializeField] private RectTransform boxHolder;
         
         public void SetLocalScale()
         {
@@ -58,6 +58,11 @@ namespace Scripts
         {
             return Instantiate(possibleHolderIndicatorPrefab, possibleHolderIndicatorHolderTransform);
         }
+
+        public RectTransform GetBoxHolderRectTransform()
+        {
+            return boxHolder;
+        }
         
     }
 
@@ -65,5 +70,6 @@ namespace Scripts
     {
         void SetText(int number);
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
+        RectTransform GetBoxHolderRectTransform();
     }
 }

@@ -12,7 +12,9 @@ namespace Scripts
         [SerializeField] private Image highlightImage;
         [SerializeField] private Canvas tutorialCanvas;
         [SerializeField] private GraphicRaycaster tutorialRaycaster;
-
+        [SerializeField] private RectTransform wagon;
+        [SerializeField] private RectTransform[] wheels;
+        
         private Camera _cam;
         
         public void SetLocalScale()
@@ -48,6 +50,16 @@ namespace Scripts
         public void SetCamera(Camera cam)
         {
             _cam = cam;
+        }
+
+        public RectTransform GetWagonRectTransform()
+        {
+            return wagon;
+        }
+
+        public RectTransform[] GetWheelRectTransforms()
+        {
+            return wheels;
         }
 
         /*
@@ -93,5 +105,7 @@ namespace Scripts
         void SetHighlightStatus(bool status);
         void SetupTutorialMode();
         void CleanupTutorialMode();
+        RectTransform GetWagonRectTransform();
+        RectTransform[] GetWheelRectTransforms();
     }
 }

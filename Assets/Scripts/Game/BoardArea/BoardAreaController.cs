@@ -169,6 +169,11 @@ namespace Scripts
         {
             return _boardCardIndexManager.GetCardIndexesOnBoard();
         }
+
+        public Vector2 GetSizeOfArea()
+        {
+            return new Vector2(_view.GetRectTransform().sizeDelta.x, _view.GetRectTransform().sizeDelta.y);
+        }
     }
 
     public interface IBoardAreaController
@@ -187,5 +192,6 @@ namespace Scripts
         List<IBoardCardHolderController> GetEmptyBoardHolders();
         void DeleteOneBoardHolder();
         bool CheckFirstBoardHolderHasAnyCard(out int cardIndex);
+        Vector2 GetSizeOfArea();
     }
 }
