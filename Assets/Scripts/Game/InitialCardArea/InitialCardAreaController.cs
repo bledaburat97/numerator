@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Game;
 using UnityEngine;
 using Zenject;
 
@@ -10,23 +11,32 @@ namespace Scripts
         private IHapticController _hapticController;
         private ILevelTracker _levelTracker;
         private IBoardAreaController _boardAreaController;
-        private ICardHolderPositionManager _cardHolderPositionManager;
         private IInitialCardAreaView _view;
         private IInitialCardHolderController[] _normalCardHolderControllerList;
         private INormalCardItemController[] _normalCardItemControllerList;
         private IBoxMovementHandler _boxMovementHandler;
+        private ILevelDataCreator _levelDataCreator;
+        private List<Vector2> _initialHolderLocalPositionList;
+        private List<Vector2> _holderIndicatorLocalPositionList;
+        private int _numOfInitialHolders;
+        private const float SpacingToInitialHolderWidthRatio = 0.8f / 3f;
+        private const float SpacingToHolderIndicatorWidthRatio = 1f / 11f;
+        private ISizeManager _sizeManager;
         
         [Inject]
         public InitialCardAreaController(IHapticController hapticController, ICardItemLocator cardItemLocator, IInitialCardAreaView view, 
-            ILevelTracker levelTracker, IBoxMovementHandler boxMovementHandler,
-            IBoardAreaController boardAreaController, ICardHolderPositionManager cardHolderPositionManager)
+            ILevelTracker levelTracker, IBoxMovementHandler boxMovementHandler, ISizeManager sizeManager,
+            IBoardAreaController boardAreaController, ILevelDataCreator levelDataCreator)
         {
             _view = view;
             _hapticController = hapticController;
             _levelTracker = levelTracker;
             _boardAreaController = boardAreaController;
             _boxMovementHandler = boxMovementHandler;
-            _cardHolderPositionManager = cardHolderPositionManager;
+            _levelDataCreator = levelDataCreator;
+            _sizeManager = sizeManager;
+            _initialHolderLocalPositionList = new List<Vector2>();
+            _holderIndicatorLocalPositionList = new List<Vector2>();
         }
         
         public void Initialize(List<CardItemInfo> cardItemInfoList)
@@ -34,18 +44,49 @@ namespace Scripts
             ClearInitialCardHolders();
             ClearInitialCards();
             _view.Init();
+            _numOfInitialHolders = _levelDataCreator.GetLevelData().NumOfCards;
+            SetInitialHolderPositionList();
+            SetHolderIndicatorPositionList();
             CreateCardHolders(cardItemInfoList);
             CreateCardItemsData(cardItemInfoList);
-            
             _boxMovementHandler.Initialize(_normalCardItemControllerList.Length, (i) => _normalCardItemControllerList[i]);
             _boxMovementHandler.AddCardActions();
+        }
+        
+        private void SetInitialHolderPositionList()
+        {
+            _initialHolderLocalPositionList.Clear();
+            List<Vector2> localPositionsOfSecondLine = new List<Vector2>();
+            Vector2 size = _sizeManager.GetSizeRatio() * _view.GetSizeOfInitialHolderPrefab();
+            
+            float spacing = size.x * SpacingToInitialHolderWidthRatio;
+
+            float firstLineYPos = size.y / 2 + 4f;
+            float secondLineYPos = -size.y / 2 - 1f;
+            
+            _initialHolderLocalPositionList = _initialHolderLocalPositionList.GetLocalPositionList(_numOfInitialHolders / 2, spacing, size, firstLineYPos);
+            localPositionsOfSecondLine = localPositionsOfSecondLine.GetLocalPositionList(_numOfInitialHolders - _numOfInitialHolders / 2, spacing, size, secondLineYPos);
+            
+            _initialHolderLocalPositionList.AddRange(localPositionsOfSecondLine);
+        }
+
+        private void SetHolderIndicatorPositionList()
+        {
+            _holderIndicatorLocalPositionList.Clear();
+            Vector2 holderIndicatorSize = _sizeManager.GetSizeRatio() * _view.GetSizeOfHolderIndicatorPrefab();
+            float spacing = holderIndicatorSize.x * SpacingToHolderIndicatorWidthRatio;
+            
+            float verticalLocalPos = 0f;
+            _holderIndicatorLocalPositionList = _holderIndicatorLocalPositionList.GetLocalPositionList(
+                _boardAreaController.GetNumOfBoardHolders(), spacing, holderIndicatorSize, verticalLocalPos);
         }
 
         public void DeleteOneHolderIndicator()
         {
+            SetHolderIndicatorPositionList();
             foreach (IInitialCardHolderController initialHolderController in _normalCardHolderControllerList)
             {
-                initialHolderController.RemoveFirstHolderIndicator();
+                initialHolderController.RemoveFirstHolderIndicator(_holderIndicatorLocalPositionList);
             }
         }
 
@@ -72,8 +113,7 @@ namespace Scripts
         private void CreateCardHolders(List<CardItemInfo> cardItemInfoList)
         {
             _normalCardHolderControllerList =
-                new IInitialCardHolderController[_cardHolderPositionManager
-                    .GetHolderPositionList(CardHolderType.Initial).Count];
+                new IInitialCardHolderController[_numOfInitialHolders];
             for (int i = 0; i < _normalCardHolderControllerList.Length; i++)
             {
                 if (!cardItemInfoList[i].isExisted)
@@ -81,8 +121,9 @@ namespace Scripts
                     continue;
                 }
                 IInitialHolderView initialHolderView = _view.CreateCardHolderView();
-                IInitialCardHolderController initialHolderController = new InitialCardHolderController(initialHolderView, _cardHolderPositionManager);
-                initialHolderController.Initialize(i, cardItemInfoList[i]);
+                IInitialCardHolderController initialHolderController = new InitialCardHolderController(initialHolderView);
+                initialHolderController.Initialize(i, cardItemInfoList[i], _initialHolderLocalPositionList[i],
+                    _sizeManager.GetSizeRatio() * _view.GetSizeOfInitialHolderPrefab(), _holderIndicatorLocalPositionList, _sizeManager.GetSizeRatio() * _view.GetSizeOfHolderIndicatorPrefab());
                 _normalCardHolderControllerList[i] = initialHolderController;
             }
         }
@@ -196,6 +237,11 @@ namespace Scripts
                 Debug.LogError("Card controller is null");
             }
         }
+        
+        public Vector2 GetSizeOfInitialHolder()
+        {
+            return _sizeManager.GetSizeRatio() * _view.GetSizeOfInitialHolderPrefab();
+        }
     }
     
     public interface IInitialCardAreaController
@@ -216,6 +262,7 @@ namespace Scripts
         RectTransform GetRectTransformOfCardItem(int cardIndex);
         void DestroyCard(int cardIndex);
         List<ICardViewHandler> GetCardsOnInitialHolder();
+        Vector2 GetSizeOfInitialHolder();
     }
     
     public class CardItemData

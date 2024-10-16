@@ -28,6 +28,11 @@ namespace Scripts
         {
             return rectTransform;
         }
+
+        public Vector2 GetSizeOfBoardHolder()
+        {
+            return boardHolderPrefab.GetRectTransform().sizeDelta;
+        }
     }
 
     public interface IBoardAreaView
@@ -36,5 +41,6 @@ namespace Scripts
         Camera GetCamera();
         Canvas GetCanvas();
         RectTransform GetRectTransform();
+        Vector2 GetSizeOfBoardHolder();
     }
 }

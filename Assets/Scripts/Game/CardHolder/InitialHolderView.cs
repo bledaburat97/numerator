@@ -63,6 +63,11 @@ namespace Scripts
         {
             return boxHolder;
         }
+
+        public Vector2 GetSizeOfHolderIndicatorPrefab()
+        {
+            return possibleHolderIndicatorPrefab.GetRectTransform().sizeDelta;
+        }
         
     }
 
@@ -71,5 +76,6 @@ namespace Scripts
         void SetText(int number);
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
         RectTransform GetBoxHolderRectTransform();
+        Vector2 GetSizeOfHolderIndicatorPrefab();
     }
 }

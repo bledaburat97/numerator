@@ -61,6 +61,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   imageText: {fileID: 6715886958051455016}
   crossImage: {fileID: 794522160072054441}
+  rectTransform: {fileID: 385696751770667587}
 --- !u!1 &7374308345957734669
 GameObject:
   m_ObjectHideFlags: 0

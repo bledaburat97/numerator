@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
-
+/*
 namespace Scripts
 {
     public class CardHolderPositionManager : ICardHolderPositionManager
@@ -92,3 +92,4 @@ namespace Scripts
     }
     
 }
+*/

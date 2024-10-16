@@ -9,46 +9,55 @@ namespace Scripts
     public class BoardAreaController : IBoardAreaController
     {
         private IBoardAreaView _view;
-        private ICardHolderPositionManager _cardHolderPositionManager;
         private List<IBoardCardHolderController> _boardHolderControllerList;
         private BoardCardIndexManager _boardCardIndexManager;
         private int _numOfBoardHolders;
+        private const float WagonSpacingToBoardHolderWidthRatio = 0.1f / 3.5f;
+        private List<Vector2> _boardHolderLocalPositionList;
+        private ISizeManager _sizeManager;
         public event EventHandler<int> BoardHolderClickedEvent;
 
         [Inject]
         public BoardAreaController(IGameUIController gameUIController, ILevelDataCreator levelDataCreator,
-            ICardHolderPositionManager cardHolderPositionManager, IBoardAreaView view)
+            IBoardAreaView view, ISizeManager sizeManager)
         {
             gameUIController.ResetNumbers += ResetBoard;
-            _cardHolderPositionManager = cardHolderPositionManager;
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
+            _sizeManager = sizeManager;
+            _sizeManager.SetSizeRatio(new Vector2(_view.GetRectTransform().rect.width, _view.GetRectTransform().rect.height), _view.GetSizeOfBoardHolder(), WagonSpacingToBoardHolderWidthRatio);
+            _boardHolderLocalPositionList = new List<Vector2>();
         }
         
         public void Initialize(int numOfBoardHolders)
         {
             ClearBoardHolders();
             _numOfBoardHolders = numOfBoardHolders;
+            SetBoardHolderLocalPositionList();
             CreateBoardHolders();
             _boardCardIndexManager = new BoardCardIndexManager(_numOfBoardHolders);
+        }
+        
+        private void SetBoardHolderLocalPositionList()
+        {
+            _boardHolderLocalPositionList.Clear();
+            Vector2 cardHolderSize = _sizeManager.GetSizeRatio() * _view.GetSizeOfBoardHolder();
+            float spacing = cardHolderSize.x * WagonSpacingToBoardHolderWidthRatio;
+            float verticalLocalPos = 0f;
+            _boardHolderLocalPositionList = _boardHolderLocalPositionList.GetLocalPositionList(_numOfBoardHolders, spacing, cardHolderSize, verticalLocalPos);
         }
 
         public void DeleteOneBoardHolder()
         {
-            if (_numOfBoardHolders != _cardHolderPositionManager.GetHolderPositionList(CardHolderType.Board).Count + 1)
-            {
-                Debug.LogError("Wrong board holder number");
-                return;
-            }
-
             _numOfBoardHolders -= 1;
             IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
             _boardHolderControllerList.Remove(boardHolderController);
             boardHolderController.DestroyObject();
+            SetBoardHolderLocalPositionList();
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
             {
                 int index = i;
-                _boardHolderControllerList[i].Initialize(index, () => BoardHolderClickCallBack(index));
+                _boardHolderControllerList[i].Initialize(() => BoardHolderClickCallBack(index), _boardHolderLocalPositionList[index],_sizeManager.GetSizeRatio());
             }
             
             _boardCardIndexManager.DeleteFirstBoardHolder();
@@ -73,9 +82,9 @@ namespace Scripts
             for (int i = 0; i < _numOfBoardHolders; i++)
             {
                 IBoardHolderView boardHolderView = _view.CreateBoardHolderView();
-                IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera(), _cardHolderPositionManager);
+                IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
                 int index = i;
-                boardHolderController.Initialize(index, () => BoardHolderClickCallBack(index));
+                boardHolderController.Initialize(() => BoardHolderClickCallBack(index), _boardHolderLocalPositionList[index], _sizeManager.GetSizeRatio());
                 _boardHolderControllerList.Add(boardHolderController);
             }
         }
@@ -150,7 +159,7 @@ namespace Scripts
                 if(_boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
                 IBoardHolderView view = GetBoardHolderView(i);
                 Vector2 position = view.GetPosition();
-                Vector2 size = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT) * _view.GetCanvas().scaleFactor;
+                Vector2 size = GetSizeOfBoardHolder() * _view.GetCanvas().scaleFactor;
                 if (position.x + size.x / 2 > cardItemPosition.x &&
                     position.x - size.x / 2 < cardItemPosition.x)
                 {
@@ -170,9 +179,19 @@ namespace Scripts
             return _boardCardIndexManager.GetCardIndexesOnBoard();
         }
 
-        public Vector2 GetSizeOfArea()
+        public Vector2 GetSizeOfBoardHolder()
         {
-            return new Vector2(_view.GetRectTransform().sizeDelta.x, _view.GetRectTransform().sizeDelta.y);
+            return _view.GetSizeOfBoardHolder() * _sizeManager.GetSizeRatio();
+        }
+
+        public List<Vector2> GetBoardHolderLocalPositionList()
+        {
+            return _boardHolderLocalPositionList;
+        }
+
+        public int GetNumOfBoardHolders()
+        {
+            return _numOfBoardHolders;
         }
     }
 
@@ -192,6 +211,8 @@ namespace Scripts
         List<IBoardCardHolderController> GetEmptyBoardHolders();
         void DeleteOneBoardHolder();
         bool CheckFirstBoardHolderHasAnyCard(out int cardIndex);
-        Vector2 GetSizeOfArea();
+        List<Vector2> GetBoardHolderLocalPositionList();
+        Vector2 GetSizeOfBoardHolder();
+        int GetNumOfBoardHolders();
     }
 }

@@ -8,7 +8,7 @@ namespace Scripts
     {
         [SerializeField] private TMP_Text imageText;
         [SerializeField] private Image crossImage;
-        
+        [SerializeField] private RectTransform rectTransform;
         public void Init(PossibleHolderIndicatorModel model)
         {
             transform.localScale = Vector3.one;
@@ -45,6 +45,16 @@ namespace Scripts
         {
             Destroy(gameObject);
         }
+
+        public RectTransform GetRectTransform()
+        {
+            return rectTransform;
+        }
+        
+        public void SetSize(Vector2 size)
+        {
+            rectTransform.sizeDelta = size;
+        }
     }
 
     public interface IPossibleHolderIndicatorView
@@ -56,6 +66,8 @@ namespace Scripts
         void SetLocalScale();
         void SetLocalPosition(Vector2 localPosition);
         void SetText(string text);
+        RectTransform GetRectTransform();
+        void SetSize(Vector2 size);
 
     }
 }

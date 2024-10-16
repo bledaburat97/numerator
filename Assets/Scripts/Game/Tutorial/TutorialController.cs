@@ -43,8 +43,8 @@ namespace Scripts
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _tutorialMessagePopupView.Init();
             _tutorialAnimationActions = new Queue<Action>();
-            _sizeOfInitialHolder = new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT) + Vector2.one;
-            _sizeOfBoardHolder = new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT) + Vector2.one;
+            _sizeOfInitialHolder = _initialCardAreaController.GetSizeOfInitialHolder() + Vector2.one;
+            _sizeOfBoardHolder = _boardAreaController.GetSizeOfBoardHolder() + Vector2.one;
             InitializeTutorialAnimationActions();
         }
 

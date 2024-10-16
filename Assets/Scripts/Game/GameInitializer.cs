@@ -29,7 +29,6 @@ namespace Game
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         [Inject] private IPowerUpMessageController _powerUpMessageController;
-        [Inject] private ICardHolderPositionManager _cardHolderPositionManager;
         [Inject] private ILevelSuccessManager _levelSuccessManager;
         [Inject] private IHintProvider _hintProvider;
         
@@ -74,7 +73,6 @@ namespace Game
             _resultManager.Initialize(_levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
             _cardItemLocator.Initialize();
             _guessManager.Initialize();
-            _cardHolderPositionManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
             _boardAreaController.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
             _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
             _initialCardAreaController.Initialize(_cardItemInfoManager.GetCardItemInfoList());

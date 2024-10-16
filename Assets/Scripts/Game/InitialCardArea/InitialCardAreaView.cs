@@ -39,6 +39,21 @@ namespace Scripts
         {
             return tempParentRectTransform;
         }
+
+        public Vector2 GetSizeOfInitialHolderPrefab()
+        {
+            return initialHolderPrefab.GetRectTransform().sizeDelta;
+        }
+
+        public Vector2 GetSizeOfBoxPrefab()
+        {
+            return normalCardItemPrefab.GetRectTransform().sizeDelta;
+        }
+        
+        public Vector2 GetSizeOfHolderIndicatorPrefab()
+        {
+            return initialHolderPrefab.GetSizeOfHolderIndicatorPrefab();
+        }
     }
     
     public interface IInitialCardAreaView
@@ -49,5 +64,8 @@ namespace Scripts
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();
         Camera GetCamera();
+        Vector2 GetSizeOfInitialHolderPrefab();
+        Vector2 GetSizeOfBoxPrefab();
+        Vector2 GetSizeOfHolderIndicatorPrefab();
     }
 }

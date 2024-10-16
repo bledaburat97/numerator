@@ -7,51 +7,51 @@ namespace Scripts
     {
         private List<IPossibleHolderIndicatorView> _holderIndicatorList = new List<IPossibleHolderIndicatorView>();
         private List<int> _activeHolderIndicatorIndexes = new List<int>();
-        private ICardHolderPositionManager _cardHolderPositionManager;
         private int _index;
         private IInitialHolderView _view;
-        public InitialCardHolderController(IInitialHolderView initialHolderView, ICardHolderPositionManager cardHolderPositionManager)
+        public InitialCardHolderController(IInitialHolderView initialHolderView)
         {
             _view = initialHolderView;
-            _cardHolderPositionManager = cardHolderPositionManager;
         }
 
-        public void Initialize(int index, CardItemInfo cardItemInfo)
+        public void Initialize(int index, CardItemInfo cardItemInfo, Vector2 localPosition, Vector2 size, 
+            List<Vector2> holderIndicatorLocalPositions, Vector2 holderIndicatorSize)
         {
             _index = index;
             _view.SetLocalScale();
-            _view.SetLocalPosition(_cardHolderPositionManager.GetHolderPositionList(CardHolderType.Initial)[_index]);
-            _view.SetSize(new Vector2(ConstantValues.INITIAL_CARD_HOLDER_WIDTH, ConstantValues.INITIAL_CARD_HOLDER_HEIGHT));
+            _view.SetLocalPosition(localPosition);
+            _view.SetSize(size);
             _view.SetText(_index + 1);
             
-            CreatePossibleHolderIndicators();
+            CreatePossibleHolderIndicators(holderIndicatorLocalPositions, holderIndicatorSize);
             SetHolderIndicatorList(cardItemInfo.possibleCardHolderIndicatorIndexes);
         }
 
-        public void RemoveFirstHolderIndicator()
+        public void RemoveFirstHolderIndicator(List<Vector2> holderIndicatorNewLocalPositions)
         {
             IPossibleHolderIndicatorView holderIndicator = _holderIndicatorList[0];
             _holderIndicatorList.Remove(holderIndicator);
             holderIndicator.DestroyObject();
-            if (_holderIndicatorList.Count != _cardHolderPositionManager.GetHolderIndicatorPositionList().Count)
+            if (_holderIndicatorList.Count != holderIndicatorNewLocalPositions.Count)
             {
                 Debug.LogError("Holder indicator count mismatch");
                 return;
             }
-            for (int i = 0; i < _cardHolderPositionManager.GetHolderIndicatorPositionList().Count; i++)
+            for (int i = 0; i < holderIndicatorNewLocalPositions.Count; i++)
             {
-                _holderIndicatorList[i].SetLocalPosition(_cardHolderPositionManager.GetHolderIndicatorPositionList()[i]);
+                _holderIndicatorList[i].SetLocalPosition(holderIndicatorNewLocalPositions[i]);
                 _holderIndicatorList[i].SetText(ConstantValues.HOLDER_ID_LIST[i]);
             }
         }
         
-        private void CreatePossibleHolderIndicators()
+        private void CreatePossibleHolderIndicators(List<Vector2> holderIndicatorLocalPositions, Vector2 size)
         {
-            for (int i = 0; i < _cardHolderPositionManager.GetHolderIndicatorPositionList().Count; i++)
+            for (int i = 0; i < holderIndicatorLocalPositions.Count; i++)
             {
                 IPossibleHolderIndicatorView possibleHolderIndicatorView = _view.CreatePossibleHolderIndicatorView();
                 possibleHolderIndicatorView.SetLocalScale();
-                possibleHolderIndicatorView.SetLocalPosition(_cardHolderPositionManager.GetHolderIndicatorPositionList()[i]);
+                possibleHolderIndicatorView.SetSize(size);
+                possibleHolderIndicatorView.SetLocalPosition(holderIndicatorLocalPositions[i]);
                 possibleHolderIndicatorView.SetText(ConstantValues.HOLDER_ID_LIST[i]);
                 _holderIndicatorList.Add(possibleHolderIndicatorView);
             }
@@ -95,14 +95,15 @@ namespace Scripts
 
     public interface IInitialCardHolderController
     {
-        void Initialize(int index, CardItemInfo cardItemInfo);
+        void Initialize(int index, CardItemInfo cardItemInfo, Vector2 localPosition, Vector2 size, 
+            List<Vector2> holderIndicatorLocalPositions, Vector2 holderIndicatorSize);
         void SetLocalPosition(Vector2 localXPos);
         List<int> GetActiveHolderIndicatorIndexes();
-        void RemoveFirstHolderIndicator();
         IInitialHolderView GetView();
         Vector3 GetPositionOfCardHolder();
         void DestroyObject();
         void SetHolderIndicatorList(List<int> activeHolderIndicatorIndexList);
+        void RemoveFirstHolderIndicator(List<Vector2> holderIndicatorNewLocalPositions);
     }
     
 }

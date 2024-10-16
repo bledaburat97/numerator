@@ -51,13 +51,13 @@ namespace Scripts
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
                 .WithArguments(powerUpMessagePopup);
-            Container.Bind<ICardHolderPositionManager>().To<CardHolderPositionManager>().AsSingle();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
             Container.Bind<IBoxMovementHandler>().To<BoxMovementHandler>().AsSingle();
             Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);;
             Container.Bind<ILevelSuccessManager>().To<LevelSuccessManager>().AsSingle();
             Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();
             Container.Bind<ILevelStartManager>().To<LevelStartManager>().AsSingle();
+            Container.Bind<ISizeManager>().To<SizeManager>().AsSingle();
         }
     }
 }

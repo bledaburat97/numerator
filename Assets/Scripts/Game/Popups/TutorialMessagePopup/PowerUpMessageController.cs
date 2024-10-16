@@ -24,7 +24,6 @@ namespace Scripts
         private IGameUIController _gameUIController;
         private IResultManager _resultManager;
         private ICardItemLocator _cardItemLocator;
-        private ICardHolderPositionManager _cardHolderPositionManager;
         private ICardItemInfoPopupController _cardItemInfoPopupController;
         private ILevelSuccessManager _levelSuccessManager;
         private ILevelSaveDataManager _levelSaveDataManager;
@@ -38,7 +37,7 @@ namespace Scripts
             IGameUIController gameUIController, IGuessManager guessManager, BaseButtonControllerFactory baseButtonControllerFactory,
             IFadePanelController fadePanelController, IGameInitializer gameInitializer, IPowerUpMessagePopupView view, ICardItemInfoManager cardItemInfoManager,
             ILevelTracker levelTracker, IGameSaveService gameSaveService, IResultManager resultManager,
-            ICardItemLocator cardItemLocator, ICardHolderPositionManager cardHolderPositionManager, ICardItemInfoPopupController cardItemInfoPopupController,
+            ICardItemLocator cardItemLocator, ICardItemInfoPopupController cardItemInfoPopupController,
             ILevelSuccessManager levelSuccessManager, ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator,
             IBoxMovementHandler boxMovementHandler)
         {
@@ -55,7 +54,6 @@ namespace Scripts
             _gameUIController = gameUIController;
             _resultManager = resultManager;
             _cardItemLocator = cardItemLocator;
-            _cardHolderPositionManager = cardHolderPositionManager;
             _cardItemInfoPopupController = cardItemInfoPopupController;
             _levelSuccessManager = levelSuccessManager;
             _levelSaveDataManager = levelSaveDataManager;
@@ -99,10 +97,9 @@ namespace Scripts
             _gameUIController.Initialize(); //check which powerup button is pressable
             _resultManager.Initialize(_removedBoardHolderCount);
             _cardItemLocator.Initialize();
-            _cardHolderPositionManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
-            _initialCardAreaController.DeleteOneHolderIndicator();
             _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
             _boardAreaController.DeleteOneBoardHolder();
+            _initialCardAreaController.DeleteOneHolderIndicator();
             _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
             _cardItemInfoManager.RemoveLastCardHolderIndicator();
             _cardItemInfoPopupController.Initialize();

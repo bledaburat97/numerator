@@ -6,20 +6,18 @@ namespace Scripts
     public class BoardCardHolderController : IBoardCardHolderController
     {
         private IBoardHolderView _view;
-        private ICardHolderPositionManager _cardHolderPositionManager;
 
-        public BoardCardHolderController(IBoardHolderView boardHolderView, Camera cam, ICardHolderPositionManager cardHolderPositionManager)
+        public BoardCardHolderController(IBoardHolderView boardHolderView, Camera cam)
         {
             _view = boardHolderView;
-            _cardHolderPositionManager = cardHolderPositionManager;
             _view.SetCamera(cam);
         }
 
-        public void Initialize(int index, Action onClickAction)
+        public void Initialize(Action onClickAction, Vector2 localPosition, float sizeRatio)
         {
             _view.SetLocalScale();
-            _view.SetLocalPosition(_cardHolderPositionManager.GetHolderPositionList(CardHolderType.Board)[index]);
-            _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
+            _view.SetLocalPosition(localPosition);
+            _view.SetSize(_view.GetRectTransform().sizeDelta * sizeRatio);
             _view.SetOnClick(onClickAction);
         }
     
@@ -47,7 +45,7 @@ namespace Scripts
 
     public interface IBoardCardHolderController
     {
-        void Initialize(int index, Action onClickAction);
+        void Initialize(Action onClickAction, Vector2 localPosition, float sizeRatio);
         void SetHighlightStatus(bool status);
         IBoardHolderView GetView();
         Vector3 GetPositionOfCardHolder();

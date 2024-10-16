@@ -54,7 +54,6 @@ namespace Scripts
         public void InitializeDrag(RectTransform parent)
         {
             SetParent(parent);
-            _view.SetSize(new Vector2(ConstantValues.BOARD_CARD_HOLDER_WIDTH, ConstantValues.BOARD_CARD_HOLDER_HEIGHT));
         }
 
         public void SetParent(RectTransform parent)
