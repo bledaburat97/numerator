@@ -95,6 +95,7 @@ namespace Scripts
         {
             tutorialCanvas.overrideSorting = false;
         }
+        
     }
 
     public interface IBoardHolderView : IBaseHolderView

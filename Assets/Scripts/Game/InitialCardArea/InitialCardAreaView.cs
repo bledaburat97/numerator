@@ -9,6 +9,8 @@ namespace Scripts
         [SerializeField] private RectTransform tempParentRectTransform;
         [SerializeField] private InvisibleClickHandler invisibleClickHandler;
         [SerializeField] private Camera cam;
+        [SerializeField] private RectTransform upperHolder;
+        [SerializeField] private RectTransform lowerHolder;
         
         public void Init()
         {
@@ -28,6 +30,16 @@ namespace Scripts
         public IInitialHolderView CreateCardHolderView()
         {
             return Instantiate(initialHolderPrefab, transform);
+        }
+
+        public IInitialHolderView CreateCardHolderViewOnUpperHolder()
+        {
+            return Instantiate(initialHolderPrefab, upperHolder);
+        }
+
+        public IInitialHolderView CreateCardHolderViewOnLowerHolder()
+        {
+            return Instantiate(initialHolderPrefab, lowerHolder);
         }
 
         public INormalCardItemView CreateCardItemView(Transform parent)
@@ -59,7 +71,9 @@ namespace Scripts
     public interface IInitialCardAreaView
     {
         void Init();
-        IInitialHolderView CreateCardHolderView();
+        IInitialHolderView CreateCardHolderViewOnUpperHolder();
+        IInitialHolderView CreateCardHolderViewOnLowerHolder();
+
         INormalCardItemView CreateCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();

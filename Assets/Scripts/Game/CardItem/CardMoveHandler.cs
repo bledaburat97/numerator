@@ -36,10 +36,10 @@ public class CardMoveHandler : ICardMoveHandler
         _onDragContinue(position, _cardIndex);
     }
 
-    public void MoveCardToBoard(RectTransform boardHolderTransform)
+    public void MoveCardToBoard(RectTransform wagonTransform)
     {
         _onDragStart?.Invoke(_cardIndex);
-        MoveCardToBoardEvent?.Invoke(this, boardHolderTransform);
+        MoveCardToBoardEvent?.Invoke(this, wagonTransform);
     }
 
     public void SetOnClick(Action<int> onClick)
@@ -74,7 +74,7 @@ public class CardMoveHandler : ICardMoveHandler
             int boardHolderIndex = _onDragComplete(_cardIndex);
             if (boardHolderIndex != -1)
             {
-                MoveCardToBoardEvent?.Invoke(this, _boardAreaController.GetRectTransformOfBoardHolder(boardHolderIndex));
+                MoveCardToBoardEvent?.Invoke(this, _boardAreaController.GetRectTransformOfWagon(boardHolderIndex));
             }
             else
             {
@@ -101,7 +101,7 @@ public class CardMoveHandler : ICardMoveHandler
 
 public interface ICardMoveHandler
 {
-    void MoveCardToBoard(RectTransform boardHolderTransform);
+    void MoveCardToBoard(RectTransform wagonTransform);
     bool IsDragStarted();
     void OnPointerDown(PointerEventData data);
     void OnPointerUp(PointerEventData data);

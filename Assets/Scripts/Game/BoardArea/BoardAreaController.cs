@@ -126,9 +126,9 @@ namespace Scripts
             return _boardHolderControllerList[boardHolderIndex].GetView();
         }
 
-        public RectTransform GetRectTransformOfBoardHolder(int boardHolderIndex)
+        public RectTransform GetRectTransformOfWagon(int boardHolderIndex)
         {
-            return _boardHolderControllerList[boardHolderIndex].GetView().GetRectTransform();
+            return _boardHolderControllerList[boardHolderIndex].GetView().GetWagonRectTransform();
         }
         
         public Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex)
@@ -199,7 +199,7 @@ namespace Scripts
     {
         void Initialize(int numOfBoardHolders);
         event EventHandler<int> BoardHolderClickedEvent;
-        RectTransform GetRectTransformOfBoardHolder(int boardHolderIndex);
+        RectTransform GetRectTransformOfWagon(int boardHolderIndex);
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);
         void SetCardIndex(int boardHolderIndex, int cardIndex);
         List<int> GetEmptyBoardHolderIndexList();

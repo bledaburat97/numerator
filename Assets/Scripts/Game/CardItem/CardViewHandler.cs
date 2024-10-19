@@ -29,7 +29,7 @@ namespace Scripts
             _view.SetOnPointerDown(cardMoveHandler.OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(cardMoveHandler.OnPointerUp);
-            _view.SetSize(cardItemData.Parent.sizeDelta);
+            _view.SetSize(cardItemData.Size);
             SetProbability(cardItemData.InitialProbabilityType, cardItemData.InitialIsLocked);
         }
 
@@ -56,7 +56,7 @@ namespace Scripts
             SetParent(parent);
         }
 
-        public void SetParent(RectTransform parent)
+        private void SetParent(RectTransform parent)
         {
             _view.SetParent(parent);
         }
@@ -89,7 +89,7 @@ namespace Scripts
             _view.InitLocalScale();
             DOTween.Sequence().Append(_view.ChangePosition(parentTransform.position, 0.3f))
                 .OnComplete(() => _view.SetParent(parentTransform));
-            _view.SetSize(parentTransform.sizeDelta);
+            //_view.SetSize(parentTransform.sizeDelta);
         }
 
         public void SuccessAnimation(float delayDuration)
@@ -228,7 +228,6 @@ namespace Scripts
     public interface ICardViewHandler
     {
         void InitializeDrag(RectTransform parent);
-        void SetParent(RectTransform parent);
         void SetProbability(ProbabilityType probabilityType, bool isLocked);
         void BackFlipAnimation(float delayDuration, bool isGuessRight, string correctNumber);
         INormalCardItemView GetView();

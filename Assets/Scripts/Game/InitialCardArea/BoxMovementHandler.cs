@@ -46,7 +46,7 @@ namespace Scripts
         {
             if (cardIndex != -1 && boardCardHolderIndex != -1)
             {
-                _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToBoard(_boardAreaController.GetRectTransformOfBoardHolder(boardCardHolderIndex));
+                _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToBoard(_boardAreaController.GetRectTransformOfWagon(boardCardHolderIndex));
                 _boardAreaController.SetCardIndex(boardCardHolderIndex, cardIndex);
             }
         }
