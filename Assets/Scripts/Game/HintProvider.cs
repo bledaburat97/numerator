@@ -12,16 +12,18 @@ namespace Game
         private ITargetNumberCreator _targetNumberCreator;
         private ICardItemInfoManager _cardItemInfoManager;
         private IInitialCardAreaController _initialCardAreaController;
+        private IBoardCardIndexManager _boardCardIndexManager;
         
         [Inject]
         public HintProvider(IGuessManager guessManager, IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator,
-            ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController)
+            ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController, IBoardCardIndexManager boardCardIndexManager)
         {
             guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
             _boardAreaController = boardAreaController;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
+            _boardCardIndexManager = boardCardIndexManager;
         }
 
         private void OnHintRewardStarEvent(object sender, HintRewardStarEventArgs args)
@@ -52,7 +54,7 @@ namespace Game
                 if (TryGetNonExistedCardIndex(out int cardIndex))
                 {
                     _cardItemInfoManager.MakeCardNotExisted(cardIndex);
-                    _boardAreaController.TryResetCardIndexOnBoard(cardIndex);
+                    _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
                     RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
                     Action destroyCardAction = () =>
                     {
@@ -70,16 +72,18 @@ namespace Game
         private bool TryGetNonExistedCardIndex(out int cardIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
+            List<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<int> cardIndexesShouldBeRed = new List<int>();
             cardIndex = -1;
-            for (int i = 0; i < finalCardNumbers.Count; i++)
+            for (int i = 0; i < cardIndexesOnBoard.Count; i++)
             {
-                if (cardItemInfoList[finalCardNumbers[i] - 1].probabilityType != ProbabilityType.NotExisted &&
-                    !targetCardNumbers.Contains(finalCardNumbers[i]))
+                if (cardIndexesOnBoard[i] == -1) continue;
+                int cardNumber = cardIndexesOnBoard[i] + 1;
+                if (cardItemInfoList[cardNumber - 1].probabilityType != ProbabilityType.NotExisted &&
+                    !targetCardNumbers.Contains(cardNumber))
                 {
-                    cardIndexesShouldBeRed.Add(finalCardNumbers[i] - 1);
+                    cardIndexesShouldBeRed.Add(cardNumber - 1);
                 }
             }
 
@@ -91,7 +95,7 @@ namespace Game
             }
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
-                if (!finalCardNumbers.Contains(i+1) && cardItemInfoList[i].probabilityType != ProbabilityType.NotExisted && !targetCardNumbers.Contains(i+1))
+                if (!cardIndexesOnBoard.Contains(i) && cardItemInfoList[i].probabilityType != ProbabilityType.NotExisted && !targetCardNumbers.Contains(i+1))
                 {
                     cardIndexesShouldBeRed.Add(i);
                 }
@@ -123,7 +127,7 @@ namespace Game
         private bool TryGetExistedCardIndex( out int cardIndex, out int boardHolderIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            List<int> finalCardNumbers = _boardAreaController.GetFinalNumbers();
+            List<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<(int, int)> firstList = new List<(int, int)>();
             List<(int, int)> secondList = new List<(int, int)>();
@@ -136,7 +140,7 @@ namespace Game
                     cardItemInfoList[targetCardNumbers[i] - 1].possibleCardHolderIndicatorIndexes.Count == 1 &&
                     cardItemInfoList[targetCardNumbers[i] - 1].possibleCardHolderIndicatorIndexes[0] == i))
                 {
-                    if (!finalCardNumbers.Contains(targetCardNumbers[i]))
+                    if (!cardIndexesOnBoard.Contains(targetCardNumbers[i] - 1))
                     {
                         firstList.Add((targetCardNumbers[i] - 1, i));
                     }

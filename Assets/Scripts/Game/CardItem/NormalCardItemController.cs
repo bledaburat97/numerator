@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 namespace Scripts
 {
     public class NormalCardItemController : INormalCardItemController

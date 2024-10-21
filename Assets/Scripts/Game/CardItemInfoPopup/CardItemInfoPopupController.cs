@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Game;
 using UnityEngine;
 using Zenject;
 
@@ -38,8 +39,6 @@ namespace Scripts
 
         public void Initialize()
         {
-            ClearCardHolderIndicatorButtons();
-            CreateCardHolderIndicatorButtons();
             _view.SetStatus(false);
         }
 
@@ -102,7 +101,7 @@ namespace Scripts
                 int index = i;
                 IBaseButtonController cardHolderIndicatorButtonController = _baseButtonControllerFactory.Create(cardHolderIndicatorButtonView, () => OnCardHolderIndicatorButtonClicked(index));
                 cardHolderIndicatorButtonController.SetText(ConstantValues.HOLDER_ID_LIST[index]);
-                cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(_boardAreaController.GetBoardHolderLocalPositionList()[index].x, 0));
+                cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(_boardAreaController.GetBoardHolderSceneLocalPositionList()[index].x, 0));
                 _cardHolderIndicatorButtonControllers.Add(cardHolderIndicatorButtonController);
             }
         }
@@ -157,12 +156,12 @@ namespace Scripts
     
     public interface ICardItemInfoPopupController
     {
-        void Initialize();
         IBaseButtonController GetProbabilityButton(ProbabilityType probabilityType);
         IBaseButtonController GetHolderIndicatorButton(int index);
         void Unsubscribe();
         event EventHandler<ProbabilityButtonClickedEventArgs> ProbabilityButtonClickedEvent;
         event EventHandler<HolderIndicatorClickedEventArgs> HolderIndicatorClickedEvent;
+        void Initialize();
     }
 
     public class ProbabilityButtonClickedEventArgs : EventArgs

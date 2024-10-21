@@ -15,7 +15,6 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private IInitialCardAreaController _initialCardAreaController;
         private IGameSaveService _gameSaveService;
-        private IGameInitializer _gameInitializer;
         private IGuessManager _guessManager;
         private ILevelFinishPopupView _view;
         private ICircleProgressBarController _circleProgressBarController;
@@ -27,7 +26,7 @@ namespace Scripts
             ILevelTracker levelTracker,
             IInitialCardAreaController initialCardAreaController,
             IGameSaveService gameSaveService,
-            IGameInitializer gameInitializer, IResultManager resultManager, IGuessManager guessManager,
+            IResultManager resultManager, IGuessManager guessManager,
             ITargetNumberCreator targetNumberCreator,
             ILevelFinishPopupView view)
         {
@@ -37,7 +36,6 @@ namespace Scripts
             _levelTracker = levelTracker;
             _initialCardAreaController = initialCardAreaController;
             _gameSaveService = gameSaveService;
-            _gameInitializer = gameInitializer;
             _guessManager = guessManager;
             _targetNumberCreator = targetNumberCreator;
             _circleProgressBarController =

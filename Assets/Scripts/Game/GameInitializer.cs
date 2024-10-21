@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Scripts;
 using Zenject;
-
+/*
 namespace Game
 {
     public class GameInitializer : IGameInitializer
@@ -34,29 +34,7 @@ namespace Game
         
         public void Initialize()
         {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                _levelDataCreator.SetSinglePlayerLevelData();
-                if (_levelTracker.IsFirstLevelTutorial())
-                {
-                    _levelSaveDataManager.CreateDefaultLevelSaveData();
-                    _targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,1});
-                }
-                else if (_levelTracker.IsCardInfoTutorial())
-                {
-                    _levelSaveDataManager.CreateDefaultLevelSaveData();
-                    _targetNumberCreator.SetSavedTargetCardList(new List<int>(){4,6});
-                }
-                else if (_gameSaveService.GetSavedLevel() != null)
-                {
-                    _levelSaveDataManager.SetLevelSaveDataAsSaved(_gameSaveService.GetSavedLevel());
-                    _targetNumberCreator.SetSavedTargetCardList(_gameSaveService.GetSavedLevel().TargetCards);
-                }
-                else
-                {
-                    _levelSaveDataManager.CreateDefaultLevelSaveData();
-                    _targetNumberCreator.CreateTargetNumber(_levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
-                }
+            if(true){
             }
 
             else
@@ -67,7 +45,6 @@ namespace Game
                 _userReady.Initialize();
             }
             
-            _powerUpMessageController.Initialize();
             _gameUIController.Initialize(); //check which powerup button is pressable
             _resultAreaController.Initialize();
             _resultManager.Initialize(_levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount);
@@ -91,3 +68,4 @@ namespace Game
         void Initialize();
     }
 }
+*/

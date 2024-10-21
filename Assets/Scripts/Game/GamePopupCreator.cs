@@ -26,7 +26,6 @@ namespace Scripts
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private IBoardAreaController _boardAreaController;
-        [Inject] private IGameInitializer _gameInitializer;
         [Inject] private ITargetNumberCreator _targetNumberCreator;
         [Inject] private IResultManager _resultManager;
         [Inject] private IGuessManager _guessManager;
@@ -78,7 +77,7 @@ namespace Scripts
             _gameUIController.OpenSettings += CreateSettingsPopup;
             
             _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
-            _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? () => _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelSuccessManager, _powerUpMessageController) : null;
+            _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? () => _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelSuccessManager, _boardAreaController) : null;
             _deleteSaveAction += _gameSaveService.DeleteSave;
             
             if (_levelTracker.IsFirstLevelTutorial())

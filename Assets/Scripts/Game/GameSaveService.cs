@@ -26,7 +26,7 @@ namespace Scripts
             PlayerPrefs.DeleteKey(_saveGameKey);
         }
         
-        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager, ILevelSuccessManager levelSuccessManager, IPowerUpMessageController powerUpMessageController)
+        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager, ILevelSuccessManager levelSuccessManager, IBoardAreaController boardAreaController)
         {
             if (resultManager.GetTriedCardsList().Count == 0) return;
             if (levelSuccessManager.IsGameOver()) return;
@@ -36,7 +36,7 @@ namespace Scripts
                 TargetCards = targetNumberCreator.GetTargetCardsList(),
                 RemainingGuessCount = guessManager.GetRemainingGuessCount(),
                 CardItemInfoList = cardItemInfoManager.GetCardItemInfoList(),
-                RemovedBoardHolderCount = powerUpMessageController.GetRemovedBoardHolderCount()
+                RemovedBoardHolderCount = boardAreaController.GetRemovedBoardHolderCount()
             };
             
             string data = JsonConvert.SerializeObject(levelSaveData);
@@ -50,7 +50,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager,
-            ICardItemInfoManager cardItemInfoManager, ILevelSuccessManager levelSuccessManager, IPowerUpMessageController powerUpMessageController);
+            ICardItemInfoManager cardItemInfoManager, ILevelSuccessManager levelSuccessManager, IBoardAreaController boardAreaController);
         bool HasSavedGame();
     }
 

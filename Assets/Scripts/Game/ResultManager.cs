@@ -8,33 +8,29 @@ namespace Scripts
 {
     public class ResultManager : IResultManager
     {
-        private IBoardAreaController _boardAreaController;
         private IResultAreaController _resultAreaController;
         private ILevelSaveDataManager _levelSaveDataManager;
         private ITargetNumberCreator _targetNumberCreator;
-        private ILevelDataCreator _levelDataCreator;
+        private IBoardCardIndexManager _boardCardIndexManager;
         
-        private List<int> _targetCards = new List<int>();
         private List<List<int>> _triedCardsList = new List<List<int>>();
-        private int _numOfBoardHolders;
         public event EventHandler LevelSuccessEvent;
         public event EventHandler WrongGuessEvent;
 
         [Inject]
-        public ResultManager(IGameUIController gameUIController, IBoardAreaController boardAreaController, IResultAreaController resultAreaController, ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator, ILevelDataCreator levelDataCreator)
+        public ResultManager(IGameUIController gameUIController, 
+            IResultAreaController resultAreaController, ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator,
+            IBoardCardIndexManager boardCardIndexManager)
         {
             gameUIController.CheckFinalNumbers += CheckFinalCards;
-            _boardAreaController = boardAreaController;
             _resultAreaController = resultAreaController;
             _levelSaveDataManager = levelSaveDataManager;
             _targetNumberCreator = targetNumberCreator;
-            _levelDataCreator = levelDataCreator;
+            _boardCardIndexManager = boardCardIndexManager;
         }
-        
-        public void Initialize(int removedBoardHolderCount)
+
+        public void TryAddTriedCards()
         {
-            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders - removedBoardHolderCount;
-            _targetCards = _targetNumberCreator.GetTargetCardsList();
             _triedCardsList = _levelSaveDataManager.GetLevelSaveData().TriedCardsList;
             foreach (List<int> triedCards in _triedCardsList)
             {
@@ -55,9 +51,9 @@ namespace Scripts
             
             for (int i = 0; i < finalCards.Count; i++)
             {
-                for (int j = 0; j < _targetCards.Count; j++)
+                for (int j = 0; j < _targetNumberCreator.GetTargetCardsList().Count; j++)
                 {
-                    if (finalCards[i] == _targetCards[j])
+                    if (finalCards[i] == _targetNumberCreator.GetTargetCardsList()[j])
                     {
                         if (i == j) numOfCorrectPos++;
                         else numOfWrongPos++;
@@ -68,9 +64,18 @@ namespace Scripts
 
         private void CheckFinalCards(object sender, EventArgs args)
         {
-            if (_boardAreaController.GetEmptyBoardHolderIndexList().Count != 0) return;
-            List<int> finalCards = _boardAreaController.GetFinalNumbers();
-            if (finalCards.Count != _targetCards.Count)
+            if (_boardCardIndexManager.GetEmptyBoardHolderIndexList().Count != 0) return;
+            List<int> finalCardIndexes = _boardCardIndexManager.GetCardIndexesOnBoard();
+            List<int> finalCards = new List<int>();
+            for (int i = 0; i < finalCardIndexes.Count; i++)
+            {
+                if (finalCardIndexes[i] == -1)
+                {
+                    return;
+                }
+                finalCards.Add(finalCardIndexes[i] + 1);
+            }
+            if (finalCards.Count != _targetNumberCreator.GetTargetCardsList().Count)
             {
                 Debug.LogError("Final number size and target number size are not equal.");
                 return;
@@ -90,7 +95,7 @@ namespace Scripts
                 correctPosCount = numOfCorrectPos,
                 wrongPosCount = numOfWrongPos
             });
-            if (numOfCorrectPos == _numOfBoardHolders)
+            if (numOfCorrectPos == finalCards.Count)
             {
                 LevelSuccessEvent?.Invoke(this, EventArgs.Empty);
             }
@@ -108,9 +113,9 @@ namespace Scripts
 
     public interface IResultManager
     {
-        void Initialize(int removedBoardHolderCount);
         event EventHandler LevelSuccessEvent;
         event EventHandler WrongGuessEvent;
         List<List<int>> GetTriedCardsList();
+        void TryAddTriedCards();
     }
 }

@@ -9,15 +9,12 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private BoundaryView boundaryPrefab;
         [SerializeField] private SlicedFilledImage image;
+        [SerializeField] private CanvasGroup canvasGroup;
         
         private Tween _currentTween;
         private float _currentPercentage;
-
-        public void Init()
-        {
-            _currentPercentage = 1f;
-            image.fillAmount = _currentPercentage;
-        }
+        
+        public CanvasGroup GetCanvasGroup() => canvasGroup;
 
         public void DisableStarProgressBar()
         {
@@ -60,12 +57,12 @@ namespace Scripts
 
     public interface ILifeBarView
     {
-        void Init();
         RectTransform GetRectTransform();
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
         Tween SetProgress(float targetPercentage, float duration, Action onComplete);
         void DisableStarProgressBar();
         void InitProgress(float targetPercentage);
+        CanvasGroup GetCanvasGroup();
     }
 }

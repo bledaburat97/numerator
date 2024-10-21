@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Game;
 using Zenject;
 
@@ -9,18 +10,20 @@ namespace Scripts
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
         private ILevelSaveDataManager _levelSaveDataManager;
         private IInitialCardAreaController _initialCardAreaController;
+        private IBoardAreaController _boardAreaController;
 
-        private int _numOfBoardHolders;
         [Inject]
-        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController)
+        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController, 
+            IPowerUpMessageController powerUpMessageController, IBoardAreaController boardAreaController)
         {
             _levelSaveDataManager = levelSaveDataManager;
             _initialCardAreaController = initialCardAreaController;
+            _boardAreaController = boardAreaController;
+            powerUpMessageController.RevealWagonEvent += OnRevealWagon;
         }
         
-        public void Initialize(int numOfBoardHolders)
+        public void Initialize()
         {
-            _numOfBoardHolders = numOfBoardHolders;
             _cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
         }
 
@@ -49,6 +52,11 @@ namespace Scripts
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             cardItemInfo.isExisted = false;
+        }
+
+        private void OnRevealWagon(object sender, LockedCardInfo lockedCardInfo)
+        {
+            MakeCardCertain(lockedCardInfo.TargetCardIndex, new List<int>(lockedCardInfo.BoardHolderIndex));
         }
 
         public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)
@@ -130,7 +138,7 @@ namespace Scripts
         private List<int> GetAllPossibleCardHolderIndicatorIndexes()
         {
             List<int> possibleCardHolderIndexes = new List<int>();
-            for (int i = 0; i < _numOfBoardHolders; i++)
+            for (int i = 0; i < _boardAreaController.GetNumOfBoardHolders(); i++)
             {
                 possibleCardHolderIndexes.Add(i);
             }
@@ -141,7 +149,7 @@ namespace Scripts
 
     public interface ICardItemInfoManager
     {
-        void Initialize(int numOfBoardHolders);
+        void Initialize();
         List<CardItemInfo> GetCardItemInfoList();
         void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes);
         void MakeCardNotExisted(int cardIndex);

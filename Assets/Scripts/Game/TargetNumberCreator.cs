@@ -5,7 +5,6 @@ using Game;
 using Unity.Netcode;
 using UnityEngine;
 using Zenject;
-using Random = System.Random;
 
 namespace Scripts
 {
@@ -15,6 +14,28 @@ namespace Scripts
         private List<int> _targetCardsList;
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private ILevelSaveDataManager _levelSaveDataManager;
+        [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private ILevelTracker _levelTracker;
+
+        public void SetTargetNumber(int numOfBoardHolders)
+        {
+            if (_levelTracker.IsFirstLevelTutorial())
+            {
+                SetSavedTargetCardList(new List<int>(){4,1});
+            }
+            else if (_levelTracker.IsCardInfoTutorial())
+            {
+                SetSavedTargetCardList(new List<int>(){4,6});
+            }
+            else if (_gameSaveService.GetSavedLevel() != null)
+            {
+                SetSavedTargetCardList(_gameSaveService.GetSavedLevel().TargetCards);
+            }
+            else
+            {
+                CreateTargetNumber(numOfBoardHolders);
+            }
+        }
         
         public override void OnNetworkSpawn()
         {
@@ -43,7 +64,7 @@ namespace Scripts
             _targetCardsList = targetCardsList;
         }
 
-        public void SetSavedTargetCardList(List<int> targetCardsList)
+        private void SetSavedTargetCardList(List<int> targetCardsList)
         {
             _targetCardsList = targetCardsList;
         }
@@ -58,10 +79,10 @@ namespace Scripts
             }
         }
         
-        public void CreateTargetNumber(int removedBoardHolderCount)
+        private void CreateTargetNumber(int numOfBoardHolders)
         {
             LevelData levelData = _levelDataCreator.GetLevelData();
-            SetTargetCardsList(GetTargetNumber(levelData.NumOfCards, levelData.NumOfBoardHolders - removedBoardHolderCount));
+            SetTargetCardsList(GetTargetNumber(levelData.NumOfCards, numOfBoardHolders));
         }
         
         [ServerRpc (RequireOwnership = false)]
@@ -96,8 +117,7 @@ namespace Scripts
     public interface ITargetNumberCreator
     {
         void CreateMultiplayerTargetNumber();
-        void CreateTargetNumber(int removedBoardHolderCount);
         List<int> GetTargetCardsList();
-        void SetSavedTargetCardList(List<int> targetCardsList);
+        void SetTargetNumber(int numOfBoardHolders);
     }
 }

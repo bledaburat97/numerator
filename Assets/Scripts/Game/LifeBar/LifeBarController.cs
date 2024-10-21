@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Game;
 using UnityEngine;
+using Zenject;
 
 namespace Scripts
 {
@@ -12,19 +13,31 @@ namespace Scripts
         private List<IBoundaryController> _boundaryControllerList;
         private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
         private List<LifeBarStarInfo> _lifeBarStarInfoList;
-        public LifeBarController(ILifeBarView view)
+        private ILevelDataCreator _levelDataCreator;
+        
+        [Inject]
+        public LifeBarController(ILifeBarView view, ILevelDataCreator levelDataCreator)
         {
             _view = view;
             _boundaryControllerList = new List<IBoundaryController>();
             _lifeBarStarInfoList = new List<LifeBarStarInfo>();
+            _levelDataCreator = levelDataCreator;
         }
         
-        public void Initialize(int maxGuessCount, int remainingGuessCount, int rewardStarCount)
+        public void SetFade(bool isNewGame)
         {
-            ClearBoundaries();
-            ClearLifeBarStarInfoList();
-            _view.Init();
+            _view.GetCanvasGroup().alpha = isNewGame ? 0 : 1;
+        }
+
+        public Sequence FadeIn(float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(1f, duration));
+        }
+
+        public void SetLifeBar(int maxGuessCount, int remainingGuessCount)
+        {
             CreateBoundaries(maxGuessCount);
+            int rewardStarCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
             CreateLifeBarStarInfoList(maxGuessCount, remainingGuessCount, rewardStarCount);
             CreateStars(_lifeBarStarInfoList);
             InitProgressBar((float) remainingGuessCount / maxGuessCount);
@@ -144,13 +157,15 @@ namespace Scripts
 
     public interface ILifeBarController
     {
-        void Initialize(int maxGuessCount, int remainingGuessCount, int rewardStarCount);
         void DisableStarProgressBar();
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
         void SetStarStatus(bool status, int lifeBarStarInfoIndex);
         IStarImageView GetStarImage(int boundaryIndex);
         void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
         List<LifeBarStarInfo> GetLifeBarStarInfoList();
+        Sequence FadeIn(float duration);
+        void SetFade(bool isNewGame);
+        void SetLifeBar(int maxGuessCount, int remainingGuessCount);
     }
     
     public class LifeBarStarInfo

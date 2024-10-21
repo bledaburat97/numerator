@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using Game;
 using UnityEngine;
 using Zenject;
@@ -21,13 +22,24 @@ namespace Scripts
             _turnOrderDeterminer = turnOrderDeterminer;
             _multiplayerGameController = multiplayerGameController;
             _view = view;
-            _view.Init();
             _resultBlockControllers = new List<IResultBlockController>();
         }
 
-        public void Initialize()
+        public void Initialize(bool isNewGame)
         {
-            RemoveResultBlocks();
+            if (isNewGame)
+            {
+                _view.GetCanvasGroup().alpha = 0f;
+            }
+            else
+            {
+                _view.GetCanvasGroup().alpha = 1f;
+            }
+        }
+
+        public Sequence FadeIn(float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(1f, duration));
         }
 
         public void AddResultBlock(ResultBlockModel resultBlockModel)
@@ -94,7 +106,8 @@ namespace Scripts
     {
         ResultAreaInfo GetResultAreaInfo();
         void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount);
-        void Initialize();
+        void Initialize(bool isNewGame);
         void AddResultBlock(ResultBlockModel resultBlockModel);
+        Sequence FadeIn(float duration);
     }
 }

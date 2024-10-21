@@ -1,4 +1,5 @@
 using System;
+using Game;
 using Zenject;
 
 namespace Scripts
@@ -8,17 +9,19 @@ namespace Scripts
         private IBoardAreaController _boardAreaController;
         private ICardItemLocator _cardItemLocator;
         private IGameUIController _gameUIController;
+        private IBoardCardIndexManager _boardCardIndexManager;
         private Func<int, INormalCardItemController> _getCardItem;
         private int _numOfCards;
         public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
         
         [Inject]
-        public BoxMovementHandler(IBoardAreaController boardAreaController, ICardItemLocator cardItemLocator, IGameUIController gameUIController)
+        public BoxMovementHandler(IBoardAreaController boardAreaController, ICardItemLocator cardItemLocator, IGameUIController gameUIController, IBoardCardIndexManager boardCardIndexManager)
         {
             _boardAreaController = boardAreaController;
             _cardItemLocator = cardItemLocator;
             _gameUIController = gameUIController;
+            _boardCardIndexManager = boardCardIndexManager;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
         }
 
@@ -47,7 +50,7 @@ namespace Scripts
             if (cardIndex != -1 && boardCardHolderIndex != -1)
             {
                 _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToBoard(_boardAreaController.GetRectTransformOfWagon(boardCardHolderIndex));
-                _boardAreaController.SetCardIndex(boardCardHolderIndex, cardIndex);
+                _boardCardIndexManager.SetCardIndexOnBoardHolder(boardCardHolderIndex, cardIndex);
             }
         }
 
@@ -67,12 +70,12 @@ namespace Scripts
         private void OnCardDragStarted(int cardIndex)
         {
             OnCardDragStartedEvent?.Invoke(this, EventArgs.Empty);
-            _boardAreaController.TryResetCardIndexOnBoard(cardIndex);
+            _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
         }
 
         public void TryResetPositionOfCardOnExplodedBoardHolder()
         {
-            if (_boardAreaController.CheckFirstBoardHolderHasAnyCard(out int cardIndex))
+            if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(0, out int cardIndex))
             {
                 TryResetPosition(cardIndex);
             }

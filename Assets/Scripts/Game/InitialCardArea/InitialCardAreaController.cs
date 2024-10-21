@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using Game;
 using UnityEngine;
 using Zenject;
@@ -16,17 +17,20 @@ namespace Scripts
         private INormalCardItemController[] _normalCardItemControllerList;
         private IBoxMovementHandler _boxMovementHandler;
         private ILevelDataCreator _levelDataCreator;
+        private ILevelSaveDataManager _levelSaveDataManager;
         //private List<Vector2> _initialHolderLocalPositionList;
         private List<Vector2> _holderIndicatorLocalPositionList;
         private int _numOfInitialHolders;
         private const float SpacingToInitialHolderWidthRatio = 0.8f / 3f;
         private const float SpacingToHolderIndicatorWidthRatio = 1f / 11f;
         private ISizeManager _sizeManager;
+        private IBoardCardIndexManager _boardCardIndexManager;
         
         [Inject]
-        public InitialCardAreaController(IHapticController hapticController, ICardItemLocator cardItemLocator, IInitialCardAreaView view, 
-            ILevelTracker levelTracker, IBoxMovementHandler boxMovementHandler, ISizeManager sizeManager,
-            IBoardAreaController boardAreaController, ILevelDataCreator levelDataCreator)
+        public InitialCardAreaController(IHapticController hapticController, IInitialCardAreaView view, 
+            ILevelTracker levelTracker, IBoxMovementHandler boxMovementHandler, ISizeManager sizeManager, IBoardCardIndexManager boardCardIndexManager,
+            IBoardAreaController boardAreaController, ILevelDataCreator levelDataCreator, IPowerUpMessageController powerUpMessageController,
+            ILevelSaveDataManager levelSaveDataManager)
         {
             _view = view;
             _hapticController = hapticController;
@@ -35,23 +39,50 @@ namespace Scripts
             _boxMovementHandler = boxMovementHandler;
             _levelDataCreator = levelDataCreator;
             _sizeManager = sizeManager;
+            _boardCardIndexManager = boardCardIndexManager;
+            _levelSaveDataManager = levelSaveDataManager;
             //_initialHolderLocalPositionList = new List<Vector2>();
             _holderIndicatorLocalPositionList = new List<Vector2>();
+            powerUpMessageController.RevealWagonEvent += SetLockedCardController;
         }
         
-        public void Initialize(List<CardItemInfo> cardItemInfoList)
+        public void Initialize(bool isNewGame)
         {
-            ClearInitialCardHolders();
-            ClearInitialCards();
-            _view.Init();
+            List<CardItemInfo> cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
             _numOfInitialHolders = _levelDataCreator.GetLevelData().NumOfCards;
             //SetInitialHolderPositionList();
-            SetHolderIndicatorPositionList();
             CreateCardHolders(cardItemInfoList);
             CreateCardItemsData(cardItemInfoList);
             _boxMovementHandler.Initialize(_normalCardItemControllerList.Length, (i) => _normalCardItemControllerList[i]);
             _boxMovementHandler.AddCardActions();
+            SetHolderIndicatorPositionList();
+
+            if (isNewGame)
+            {
+                foreach (INormalCardItemController cardItem in _normalCardItemControllerList)
+                {
+                    cardItem.GetCardViewHandler().SetLocalPosition(new Vector2(1000f, 0f));
+                }
+                _view.GetCanvasGroup().alpha = 0f;
+            }
         }
+
+        public Sequence FallToInitialHolders(float duration)
+        {
+            Sequence sequence = DOTween.Sequence();
+            foreach (INormalCardItemController cardItem in _normalCardItemControllerList)
+            {
+                sequence.Join(cardItem.GetCardViewHandler().FallToTarget(Vector2.zero, duration - 0.1f, 0.1f));
+            }
+
+            return sequence;
+        }
+
+        public Sequence FadeInInitialArea(float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(1f, duration));
+        }
+        
         /*
         private void SetInitialHolderPositionList()
         {
@@ -173,16 +204,16 @@ namespace Scripts
             _normalCardItemControllerList[cardItemData.CardItemIndex] = normalCardItemController;
         }
         
-        public void SetLockedCardController(LockedCardInfo lockedCardInfo)
+        private void SetLockedCardController(object sender, LockedCardInfo lockedCardInfo)
         {
             _levelTracker.DecreaseRevealingPowerUpCount();
-            INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.targetCardIndex];
-            normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfWagon(lockedCardInfo.boardHolderIndex));
+            INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.TargetCardIndex];
+            normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfWagon(lockedCardInfo.BoardHolderIndex));
             normalCardItemController.GetView().InitLocalScale();
             normalCardItemController.GetView().SetLocalPosition(Vector3.zero);
             normalCardItemController.GetView().SetSize(_sizeManager.GetSizeRatio() * _view.GetSizeOfBoxPrefab());
-            SetProbabilityOfCardItem(lockedCardInfo.targetCardIndex, ProbabilityType.Certain, true);
-            SetHolderIndicatorListOfCardHolder(lockedCardInfo.targetCardIndex, new List<int>{lockedCardInfo.boardHolderIndex});
+            SetProbabilityOfCardItem(lockedCardInfo.TargetCardIndex, ProbabilityType.Certain, true);
+            SetHolderIndicatorListOfCardHolder(lockedCardInfo.TargetCardIndex, new List<int>{lockedCardInfo.BoardHolderIndex});
         }
         
         public Vector3 GetNormalCardHolderPositionAtIndex(int index)
@@ -202,7 +233,7 @@ namespace Scripts
 
         public List<ICardViewHandler> GetFinalCardItems()
         {
-            List<int> finalCardIndexes = _boardAreaController.GetCardIndexesOnBoard();
+            List<int> finalCardIndexes = _boardCardIndexManager.GetCardIndexesOnBoard();
             List<ICardViewHandler> cards = new List<ICardViewHandler>();
             for (int i = 0; i < finalCardIndexes.Count; i++)
             {
@@ -262,11 +293,10 @@ namespace Scripts
     
     public interface IInitialCardAreaController
     {
-        void Initialize(List<CardItemInfo> cardItemInfoList);
+        void Initialize(bool isNewGame);
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
         void SetCardAnimation(int cardIndex, bool status);
         IInvisibleClickHandler GetInvisibleClickHandler();
-        void SetLockedCardController(LockedCardInfo lockedCardInfo);
         List<ICardViewHandler> GetFinalCardItems();
         void DeleteOneHolderIndicator();
 
@@ -279,6 +309,8 @@ namespace Scripts
         void DestroyCard(int cardIndex);
         List<ICardViewHandler> GetCardsOnInitialHolder();
         Vector2 GetSizeOfInitialHolder();
+        Sequence FadeInInitialArea(float duration);
+        Sequence FallToInitialHolders(float duration);
     }
     
     public class CardItemData

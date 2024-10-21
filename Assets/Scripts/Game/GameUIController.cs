@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using Zenject;
 
@@ -35,21 +36,10 @@ namespace Scripts
             CreateGameUiButtons(OnButtonClick);
         }
 
-        public void Initialize()
+        public void Initialize(bool isNewGame)
         {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                SetUserText("Level " + (_levelTracker.GetLevelId() + 1));
-                SetOpponentInfoStatus(false);
-            }
-
-            else
-            {
-                SetUserText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).playerName.ToString());
-                SetOpponentText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).playerName.ToString());
-                SetOpponentInfoStatus(true);
-            }
-            
+            SetUserText("Level " + (_levelTracker.GetLevelId() + 1));
+            SetOpponentInfoStatus(false);
             if (_levelTracker.GetLevelId() > 8)
             {
                 SetCardInfoButtonStatus(true);
@@ -59,6 +49,27 @@ namespace Scripts
             {
                 SetCardInfoButtonStatus(false);
             }
+            _view.GetTopButtonsCanvasGroup().alpha = isNewGame ? 0 : 1;
+            _view.GetMiddleButtonsCanvasGroup().alpha = isNewGame ? 0 : 1;
+        }
+
+        public Sequence FadeInTopButtons(float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetTopButtonsCanvasGroup().DOFade(1f, duration));
+        }
+        
+        public Sequence FadeInMiddleButtons(float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetMiddleButtonsCanvasGroup().DOFade(1f, duration));
+        }
+
+        public void InitializeForMultiplayer()
+        {
+            SetUserText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).playerName.ToString());
+            SetOpponentText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).playerName.ToString());
+            SetOpponentInfoStatus(true);
+            SetCardInfoButtonStatus(true);
+            InitializeCardInfoButton(OnCardInfoButtonClick);
         }
 
         private void SetUserText(string text)
@@ -197,17 +208,21 @@ namespace Scripts
         Reset,
         RevealingPowerUp,
         LifePowerUp,
-        BombPowerUp
+        BombPowerUp,
+        Default
     }
 
     public interface IGameUIController
     {
-        void Initialize();
+        void Initialize(bool isNewGame);
+        void InitializeForMultiplayer();
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
         RectTransform GetCardInfoButtonRectTransform();
         void SetAllButtonsUnclickable();
         void SetButtonClickable(bool isClickable, GameUIButtonType type);
+        Sequence FadeInTopButtons(float duration);
+        Sequence FadeInMiddleButtons(float duration);
         IBaseButtonController GetButton(GameUIButtonType buttonType);
         event EventHandler CheckFinalNumbers;
         event EventHandler NotAbleToCheck;

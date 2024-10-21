@@ -1,14 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Scripts;
+using Zenject;
 
 namespace Game
 {
-    public class BoardCardIndexManager
+    public class BoardCardIndexManager : IBoardCardIndexManager
     {
         private List<int> _cardIndexesOnBoardHolders;
 
-        public BoardCardIndexManager(int numOfBoardHolders)
+        [Inject]
+        public BoardCardIndexManager(IGameUIController gameUIController, IPowerUpMessageController powerUpMessageController)
         {
             _cardIndexesOnBoardHolders = new List<int>();
+            gameUIController.ResetNumbers += ResetBoard;
+            powerUpMessageController.RevealWagonEvent += OnRevealWagon;
+        }
+
+        public void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders)
+        {
+            _cardIndexesOnBoardHolders.Clear();
             for (int i = 0; i < numOfBoardHolders; i++)
             {
                 _cardIndexesOnBoardHolders.Add(-1);
@@ -20,7 +31,7 @@ namespace Game
             _cardIndexesOnBoardHolders.RemoveAt(0);
         }
 
-        public void ResetBoard()
+        private void ResetBoard(object sender, EventArgs args)
         {
             for(int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
             {
@@ -55,6 +66,11 @@ namespace Game
             _cardIndexesOnBoardHolders[boardHolderIndex] = -1;
         }
 
+        private void OnRevealWagon(object sender, LockedCardInfo args)
+        {
+            SetCardIndexOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex);
+        }
+
         public void SetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex)
         {
             _cardIndexesOnBoardHolders[boardHolderIndex] = cardIndex;
@@ -74,20 +90,28 @@ namespace Game
             return emptyBoardHolderIndexes;
         }
 
-        public List<int> GetFinalNumbers()
-        {
-            List<int> finalNumbers = new List<int>();
-            foreach (int cardIndex in _cardIndexesOnBoardHolders)
-            {
-                finalNumbers.Add(cardIndex + 1);
-            }
-
-            return finalNumbers;
-        }
-
         public List<int> GetCardIndexesOnBoard()
         {
             return _cardIndexesOnBoardHolders;
         }
+        
+        public void TryResetCardIndexOnBoard(int cardIndex)
+        {
+            if (!CheckCardIsOnBoard(cardIndex, out int boardHolderIndex)) return;
+            ResetBoardHolder(boardHolderIndex);
+        }
+    }
+
+    public interface IBoardCardIndexManager
+    {
+        void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders);
+        void DeleteFirstBoardHolder();
+        bool CheckCardIsOnBoard(int checkingCardIndex, out int boardHolderIndex);
+        void ResetBoardHolder(int boardHolderIndex);
+        void SetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex);
+        List<int> GetEmptyBoardHolderIndexList();
+        List<int> GetCardIndexesOnBoard();
+        void TryResetCardIndexOnBoard(int cardIndex);
+        bool CheckBoardHolderHasAnyCard(int boardHolderIndex, out int cardIndex);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using DG.Tweening;
 using UnityEngine;
 
 namespace Scripts
@@ -13,11 +14,24 @@ namespace Scripts
             _view.SetCamera(cam);
         }
 
-        public void Initialize(Action onClickAction, Vector2 localPosition, float sizeRatio)
+        public void SetSize(float sizeRatio)
         {
             _view.SetLocalScale();
-            _view.SetLocalPosition(localPosition);
             _view.SetSize(_view.GetRectTransform().sizeDelta * sizeRatio);
+        }
+
+        public void SetLocalPosition(Vector2 localPosition)
+        {
+            _view.SetLocalPosition(localPosition);
+        }
+
+        public Sequence Move(Vector2 targetLocalPosition, float duration)
+        {
+            return DOTween.Sequence().Append(_view.GetRectTransform().DOLocalMove(targetLocalPosition, duration));
+        }
+
+        public void SetOnClick(Action onClickAction)
+        {
             _view.SetOnClick(onClickAction);
         }
     
@@ -45,10 +59,13 @@ namespace Scripts
 
     public interface IBoardCardHolderController
     {
-        void Initialize(Action onClickAction, Vector2 localPosition, float sizeRatio);
+        void SetSize(float sizeRatio);
         void SetHighlightStatus(bool status);
         IBoardHolderView GetView();
         Vector3 GetPositionOfCardHolder();
         void DestroyObject();
+        void SetLocalPosition(Vector2 localPosition);
+        void SetOnClick(Action onClickAction);
+        Sequence Move(Vector2 targetLocalPosition, float duration);
     }
 }

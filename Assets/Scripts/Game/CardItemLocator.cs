@@ -9,6 +9,7 @@ namespace Scripts
     public class CardItemLocator : ICardItemLocator
     {
         private IBoardAreaController _boardAreaController;
+        private IBoardCardIndexManager _boardCardIndexManager;
         private int _activeCardIndex;
         private int _probableBoardHolderIndex;
         
@@ -17,19 +18,25 @@ namespace Scripts
 
 
         [Inject]
-        public CardItemLocator(IBoardAreaController boardAreaController, IGameUIController gameUIController)
+        public CardItemLocator(IBoardAreaController boardAreaController, IGameUIController gameUIController, 
+            IBoardCardIndexManager boardCardIndexManager)
         {
             _boardAreaController = boardAreaController;
-            gameUIController.ResetNumbers += Reset;
-        }
-        
-        public void Initialize()
-        {
-            _activeCardIndex = -1;
-            _probableBoardHolderIndex = -1;
+            _boardCardIndexManager = boardCardIndexManager;
+            gameUIController.ResetNumbers += OnResetNumbers;
         }
 
-        private void Reset(object sender, EventArgs args)
+        public void Initialize()
+        {
+            Reset();
+        }
+        
+        private void OnResetNumbers(object sender, EventArgs args)
+        {
+            Reset();
+        }
+        
+        private void Reset()
         {
             _activeCardIndex = -1;
             _probableBoardHolderIndex = -1;
@@ -66,7 +73,7 @@ namespace Scripts
             if (_activeCardIndex == cardIndex)
             {
                 CardPlacedBoardEvent?.Invoke(this, EventArgs.Empty);
-                _boardAreaController.SetCardIndex(_probableBoardHolderIndex, cardIndex);
+                _boardCardIndexManager.SetCardIndexOnBoardHolder(_probableBoardHolderIndex, cardIndex);
                 _boardAreaController.HighlightBoardHolder(_probableBoardHolderIndex, false);
                 int boardHolderIndex = _probableBoardHolderIndex;
                 _probableBoardHolderIndex = -1;
@@ -84,11 +91,5 @@ namespace Scripts
         int OnDragComplete(int cardIndex);
         event EventHandler CardPlacedBoardEvent;
         event EventHandler CardReturnedToInitialEvent;
-    }
-
-    public class LockedCardInfo
-    {
-        public int boardHolderIndex;
-        public int targetCardIndex;
     }
 }

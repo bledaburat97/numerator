@@ -11,12 +11,10 @@ namespace Scripts
         [SerializeField] private Camera cam;
         [SerializeField] private RectTransform upperHolder;
         [SerializeField] private RectTransform lowerHolder;
+        [SerializeField] private CanvasGroup canvasGroup;
         
-        public void Init()
-        {
-            transform.localScale = Vector3.one;
-        }
-
+        public CanvasGroup GetCanvasGroup() => canvasGroup;
+        
         public Camera GetCamera()
         {
             return cam;
@@ -70,7 +68,6 @@ namespace Scripts
     
     public interface IInitialCardAreaView
     {
-        void Init();
         IInitialHolderView CreateCardHolderViewOnUpperHolder();
         IInitialHolderView CreateCardHolderViewOnLowerHolder();
 
@@ -81,5 +78,6 @@ namespace Scripts
         Vector2 GetSizeOfInitialHolderPrefab();
         Vector2 GetSizeOfBoxPrefab();
         Vector2 GetSizeOfHolderIndicatorPrefab();
+        CanvasGroup GetCanvasGroup();
     }
 }

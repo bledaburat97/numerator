@@ -33,6 +33,11 @@ namespace Scripts
             SetProbability(cardItemData.InitialProbabilityType, cardItemData.InitialIsLocked);
         }
 
+        public void SetLocalPosition(Vector2 localPosition)
+        {
+            _view.SetLocalPosition(localPosition);
+        }
+
         private void OnDrag(PointerEventData data)
         {
             if (!_cardMoveHandler.IsDragStarted())
@@ -156,20 +161,6 @@ namespace Scripts
             }).AppendInterval(duration).AppendCallback(_view.DestroyObject);
         }
 
-        public Sequence AnimateFall(float fallDuration, float bounceDuration, RectTransform targetRectTransform)
-        {
-            var sequence = DOTween.Sequence();
-
-            // Simulate falling with acceleration (Ease.InQuad)
-            sequence.Append(_view.GetRectTransform().DOMove(targetRectTransform.position, fallDuration).SetEase(Ease.InQuad));
-
-            // Add a slight bounce after the fall (using bounce ease)
-            sequence.Append(_view.GetRectTransform().DOMove(targetRectTransform.position, bounceDuration).SetEase(Ease.OutBounce));
-
-            // Start the sequence
-            return sequence;
-        }
-
         public void AnimateTurnIntoCertain(float delayDuration, float colorChangeDuration,
             float ribbonImageDuration)
         {
@@ -222,6 +213,13 @@ namespace Scripts
         {
             _view.GetImage().gameObject.SetActive(status);
         }
+        
+        public Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration)
+        {
+            return DOTween.Sequence()
+                .Append(_view.GetRectTransform().DOLocalMove(targetPosition, fallDuration).SetEase(Ease.InQuad))
+                .Append(_view.GetRectTransform().DOLocalMove(targetPosition, bounceDuration).SetEase(Ease.OutBounce));
+        }
 
     }
 
@@ -241,5 +239,7 @@ namespace Scripts
             float ribbonImageDuration);
 
         Sequence AnimateExplosion(float duration);
+        Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration);
+        void SetLocalPosition(Vector2 localPosition);
     }
 }

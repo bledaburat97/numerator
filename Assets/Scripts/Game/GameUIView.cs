@@ -17,6 +17,11 @@ namespace Scripts
         [SerializeField] private PowerUpButtonView lifePowerUpButton;
         [SerializeField] private PowerUpButtonView hintPowerUpButton;
         [SerializeField] private GameObject opponentInfo;
+        [SerializeField] private CanvasGroup topButtonsCanvasGroup;
+        [SerializeField] private CanvasGroup middleButtonsCanvasGroup;
+
+        public CanvasGroup GetTopButtonsCanvasGroup() => topButtonsCanvasGroup;
+        public CanvasGroup GetMiddleButtonsCanvasGroup() => middleButtonsCanvasGroup;
         
         public void SetUserText(string text)
         {
@@ -83,5 +88,7 @@ namespace Scripts
         IBaseButtonView GetLifePowerUpButton();
         IBaseButtonView GetHintPowerUpButton();
         void SetOpponentInfoStatus(bool status);
+        CanvasGroup GetTopButtonsCanvasGroup();
+        CanvasGroup GetMiddleButtonsCanvasGroup();
     }
 }

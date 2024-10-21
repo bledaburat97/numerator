@@ -20,9 +20,9 @@ namespace Scripts
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
-        [Inject] private IGameInitializer _gameInitializer;
+        [Inject] private ILevelStartManager _levelStartManager;
         [Inject] private ILevelSuccessManager _levelSuccessManager;
-        [Inject] private IPowerUpMessageController _powerUpMessageController;
+        [Inject] private IBoardAreaController _boardAreaController;
         void Start()
         {
             InitializeHapticController();
@@ -51,7 +51,7 @@ namespace Scripts
         
         private void InitializeGame()
         {
-            _gameInitializer.Initialize();
+            _levelStartManager.StartLevel();
         }
 
         private void OnDestroy()
@@ -82,7 +82,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelSuccessManager, _powerUpMessageController);
+                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelSuccessManager, _boardAreaController);
             }
             
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR

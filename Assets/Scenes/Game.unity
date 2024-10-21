@@ -5937,10 +5937,7 @@ RectTransform:
   - {fileID: 2064214269}
   - {fileID: 1491976862}
   - {fileID: 14637282}
-  - {fileID: 6475787619579147278}
-  - {fileID: 659338944}
-  - {fileID: 1422517101}
-  - {fileID: 299123714}
+  - {fileID: 1016820115}
   m_Father: {fileID: 962908610}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
@@ -6431,7 +6428,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 234328961}
+    m_TransformParent: {fileID: 1016820115}
     m_Modifications:
     - target: {fileID: 4431620355779069582, guid: 350720368f85b8349b786aee73d13a6f, type: 3}
       propertyPath: m_Sprite
@@ -12583,7 +12580,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 234328961}
+    m_TransformParent: {fileID: 1016820115}
     m_Modifications:
     - target: {fileID: 4431620355779069582, guid: 350720368f85b8349b786aee73d13a6f, type: 3}
       propertyPath: m_Sprite
@@ -12705,6 +12702,7 @@ GameObject:
   - component: {fileID: 712370581}
   - component: {fileID: 712370582}
   - component: {fileID: 712370583}
+  - component: {fileID: 712370584}
   m_Layer: 0
   m_Name: InitialCardAreaHolder
   m_TagString: Untagged
@@ -12756,6 +12754,7 @@ MonoBehaviour:
   cam: {fileID: 1272574426}
   upperHolder: {fileID: 2095867913}
   lowerHolder: {fileID: 930325305}
+  canvasGroup: {fileID: 712370584}
 --- !u!222 &712370583
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -12764,6 +12763,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 712370580}
   m_CullTransparentMesh: 1
+--- !u!225 &712370584
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 712370580}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &758197753
 GameObject:
   m_ObjectHideFlags: 0
@@ -19088,6 +19099,58 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 992438053}
   m_CullTransparentMesh: 1
+--- !u!1 &1016820114
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1016820115}
+  - component: {fileID: 1016820116}
+  m_Layer: 0
+  m_Name: TopButtonArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1016820115
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1016820114}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6475787619579147278}
+  - {fileID: 659338944}
+  - {fileID: 1422517101}
+  - {fileID: 299123714}
+  m_Father: {fileID: 234328961}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &1016820116
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1016820114}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1040902320
 GameObject:
   m_ObjectHideFlags: 0
@@ -24328,6 +24391,8 @@ MonoBehaviour:
   lifePowerUpButton: {fileID: 1422517102}
   hintPowerUpButton: {fileID: 299123715}
   opponentInfo: {fileID: 14637281}
+  topButtonsCanvasGroup: {fileID: 1016820116}
+  middleButtonsCanvasGroup: {fileID: 132028566}
 --- !u!224 &1119310796
 RectTransform:
   m_ObjectHideFlags: 0
@@ -25079,6 +25144,7 @@ MonoBehaviour:
   resultBlockPrefab: {fileID: 2424187574287040640, guid: c3be73362540cab4c98fae001d84a333, type: 3}
   scrollRect: {fileID: 943878276}
   verticalLayoutGroup: {fileID: 1280983162}
+  canvasGroup: {fileID: 141836111}
 --- !u!114 &1280983162
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25808,7 +25874,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 234328961}
+    m_TransformParent: {fileID: 1016820115}
     m_Modifications:
     - target: {fileID: 4431620355779069582, guid: 350720368f85b8349b786aee73d13a6f, type: 3}
       propertyPath: m_Sprite
@@ -32922,6 +32988,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2064214269}
   - component: {fileID: 2064214270}
+  - component: {fileID: 2064214271}
   m_Layer: 0
   m_Name: LifeBar
   m_TagString: Untagged
@@ -32966,6 +33033,19 @@ MonoBehaviour:
   rectTransform: {fileID: 2064214269}
   boundaryPrefab: {fileID: 7266938262060809855, guid: 702778895f24c854297335a4128d381a, type: 3}
   image: {fileID: 1422310648}
+  canvasGroup: {fileID: 2064214271}
+--- !u!225 &2064214271
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2064214268}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &2064828890
 GameObject:
   m_ObjectHideFlags: 0
@@ -33556,7 +33636,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 234328961}
+    m_TransformParent: {fileID: 1016820115}
     m_Modifications:
     - target: {fileID: 6957826606458527209, guid: 4c37d68c0c22a794188c885061ce33dc, type: 3}
       propertyPath: m_Name

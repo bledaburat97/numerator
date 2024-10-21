@@ -27,9 +27,10 @@ namespace Game
             _levelStartManager = levelStartManager;
             _levelEndPopupController = levelEndPopupController;
             _levelSuccessAnimationManager = levelSuccessAnimationManager;
+            _levelStartManager.LevelStartedEvent += OnLevelStarted;
         }
         
-        public void Initialize()
+        private void OnLevelStarted(object sender, EventArgs args)
         {
             _isGameOver = false;
         }
@@ -77,6 +78,5 @@ namespace Game
     public interface ILevelSuccessManager
     {
         bool IsGameOver();
-        void Initialize();
     }
 }

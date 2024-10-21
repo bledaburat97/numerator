@@ -13,10 +13,11 @@ namespace Scripts
         [SerializeField] private ResultBlockView resultBlockPrefab;
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private VerticalLayoutGroup verticalLayoutGroup;
+        [SerializeField] private CanvasGroup canvasGroup;
         
-        public void Init()
+        public CanvasGroup GetCanvasGroup()
         {
-
+            return canvasGroup;
         }
 
         public void SetScrollPositionToBottom()
@@ -59,10 +60,10 @@ namespace Scripts
 
     public interface IResultAreaView
     {
-        void Init();
         ResultAreaInfo GetResultAreaInfo();
         IResultBlockView CreateResultBlock();
         void SetScrollPositionToBottom();
+        CanvasGroup GetCanvasGroup();
     }
 
     public struct ResultAreaInfo

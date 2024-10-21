@@ -13,6 +13,7 @@ namespace Scripts
         private IInitialCardAreaController _initialCardAreaController;
         private IHapticController _hapticController;
         private IBoxMovementHandler _boxMovementHandler;
+        private IBoardCardIndexManager _boardCardIndexManager;
         
         private int _selectedCardIndex = -1;
         private List<int> _lockedCardIndexList;
@@ -21,13 +22,15 @@ namespace Scripts
 
         [Inject]
         public CardInteractionManager(IGameUIController gameUIController, IBoardAreaController boardAreaController,
-            IInitialCardAreaController initialCardAreaController, IHapticController hapticController, IBoxMovementHandler boxMovementHandler)
+            IInitialCardAreaController initialCardAreaController, IHapticController hapticController, 
+            IBoxMovementHandler boxMovementHandler, IBoardCardIndexManager boardCardIndexManager)
         {
             _gameUIController = gameUIController;
             _boardAreaController = boardAreaController;
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
             _boxMovementHandler = boxMovementHandler;
+            _boardCardIndexManager = boardCardIndexManager;
             _lockedCardIndexList = new List<int>();
             Subscribe();
         }
@@ -83,11 +86,11 @@ namespace Scripts
             }
             else
             {
-                if (_boardAreaController.GetEmptyBoardHolderIndexList().Count > 0)
+                if (_boardCardIndexManager.GetEmptyBoardHolderIndexList().Count > 0)
                 {
-                    int boardCardHolderIndex = _boardAreaController.GetEmptyBoardHolderIndexList()[0];
+                    int boardCardHolderIndex = _boardCardIndexManager.GetEmptyBoardHolderIndexList()[0];
                     _boxMovementHandler.TryMoveCardToBoard(cardIndex, boardCardHolderIndex);
-                    _boardAreaController.SetCardIndex(boardCardHolderIndex, cardIndex);
+                    _boardCardIndexManager.SetCardIndexOnBoardHolder(boardCardHolderIndex, cardIndex);
                 }
                 else
                 {
@@ -134,8 +137,8 @@ namespace Scripts
 
     public interface ICardInteractionManager
     {
+        public void Initialize();
         event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
         void Unsubscribe();
-        void Initialize();
     }
 }

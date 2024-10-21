@@ -46,7 +46,6 @@ namespace Scripts
             Container.Bind<IUnmaskServiceAreaView>().To<UnmaskServiceAreaView>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
-            Container.Bind<IGameInitializer>().To<GameInitializer>().AsSingle();
             Container.Bind<ILevelFinishController>().To<LevelFinishController>().AsSingle().WithArguments(levelFinishPopup);
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
@@ -57,7 +56,9 @@ namespace Scripts
             Container.Bind<ILevelSuccessManager>().To<LevelSuccessManager>().AsSingle();
             Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();
             Container.Bind<ILevelStartManager>().To<LevelStartManager>().AsSingle();
+            Container.Bind<ILevelStartAnimationManager>().To<LevelStartAnimationManager>().AsSingle();
             Container.Bind<ISizeManager>().To<SizeManager>().AsSingle();
+            Container.Bind<IBoardCardIndexManager>().To<BoardCardIndexManager>().AsSingle();
         }
     }
 }
