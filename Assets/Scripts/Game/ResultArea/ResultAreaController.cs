@@ -37,9 +37,9 @@ namespace Scripts
             }
         }
 
-        public Sequence FadeIn(float duration)
+        public Sequence ChangeFade(float duration, float finalAlpha)
         {
-            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(1f, duration));
+            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
         }
 
         public void AddResultBlock(ResultBlockModel resultBlockModel)
@@ -90,7 +90,7 @@ namespace Scripts
             return _view.GetResultAreaInfo();
         }
 
-        private void RemoveResultBlocks()
+        public void RemoveResultBlocks()
         {
             while (_resultBlockControllers.Count > 0)
             {
@@ -99,7 +99,6 @@ namespace Scripts
                 _resultBlockControllers.Remove(_resultBlockControllers[0]);
             }
         }
-
     }
 
     public interface IResultAreaController
@@ -108,6 +107,7 @@ namespace Scripts
         void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount);
         void Initialize(bool isNewGame);
         void AddResultBlock(ResultBlockModel resultBlockModel);
-        Sequence FadeIn(float duration);
+        Sequence ChangeFade(float duration, float finalAlpha);
+        void RemoveResultBlocks();
     }
 }

@@ -11,14 +11,26 @@ namespace Game
         private ILevelEndPopupController _levelEndPopupController;
         private IInitialCardAreaController _initialCardAreaController;
         private IFadePanelController _fadePanelController;
+        private IGameUIController _gameUIController;
+        private ILifeBarController _lifeBarController;
+        private IResultAreaController _resultAreaController;
+        private IBoardAreaController _boardAreaController;
         
+        private List<ICardViewHandler> _cardsOnBoard;
+
         [Inject]
         public LevelSuccessAnimationManager(ILevelEndPopupController levelEndPopupController, IInitialCardAreaController initialCardAreaController,
-        IFadePanelController fadePanelController)
+        IFadePanelController fadePanelController, IGameUIController gameUIController, ILifeBarController lifeBarController, 
+        IResultAreaController resultAreaController, IBoardAreaController boardAreaController)
         {
             _levelEndPopupController = levelEndPopupController;
             _initialCardAreaController = initialCardAreaController;
             _fadePanelController = fadePanelController;
+            _gameUIController = gameUIController;
+            _lifeBarController = lifeBarController;
+            _resultAreaController = resultAreaController;
+            _boardAreaController = boardAreaController;
+            _cardsOnBoard = new List<ICardViewHandler>();
         }
         
         public void SuccessLevelAnimation(int numOfStars, int newRewardStarCount, int currentRewardStarCount)
@@ -32,19 +44,20 @@ namespace Game
             float fadeAmount = 0.4f;
             float movementDurationOfCircleProgressBar = 0.8f;
             float scalingUpDurationOfText = 0.3f;
-            List<ICardViewHandler> cards = _initialCardAreaController.GetFinalCardItems();
+            float buttonsFadeOutDuration = 0.3f;
+            float wagonMoveDuration = 1f;
+            _cardsOnBoard = _initialCardAreaController.GetCardsOnBoard();
             DOTween.Sequence()
-                .AppendCallback(() => TurnCardsIntoCertain(cards, cardDelayDuration, cardColorChangingDuration))
-                .AppendInterval(cardColorChangingDuration + cardDelayDuration * (cards.Count - 1))
+                .AppendCallback(() => TurnCardsIntoCertain(_cardsOnBoard, cardDelayDuration, cardColorChangingDuration))
+                .AppendInterval(cardColorChangingDuration + cardDelayDuration * (_cardsOnBoard.Count - 1))
                 .Append(ExplodeCardsOnInitialHolders(explosionDuration))
-                .Append(FadeOutPowerUpButtons())
-                .Join(FadeOutLifeBar())
-                .Join(FadeOutSettingsButton())
-                .Join(FadeOutLevelId())
-                .Join(FadeOutResultArea())
-                .Join(FadeOutInitialHolders())
-                .Join(FadeOutGameButtons())
-                .Join(SendBoardHolders())
+                .Append(FadeOutTopAreaButtons(buttonsFadeOutDuration))
+                .Join(FadeOutLifeBar(buttonsFadeOutDuration))
+                .Join(FadeOutLevelId(buttonsFadeOutDuration))
+                .Join(FadeOutResultArea(buttonsFadeOutDuration))
+                .Join(FadeOutInitialHolders(buttonsFadeOutDuration))
+                .Join(FadeOutGameButtons(buttonsFadeOutDuration))
+                .Join(SendBoardHolders(wagonMoveDuration))
                 .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
                 .Append(_fadePanelController.AnimateFade(fadeAmount, fadeDuration))
                 .Append(newRewardStarCount > 0
@@ -83,48 +96,51 @@ namespace Game
             return sequence;
         }
 
-        private Sequence FadeOutPowerUpButtons()
+        private Sequence FadeOutTopAreaButtons(float duration)
         {
-            return DOTween.Sequence();
+            return _gameUIController.ChangeFadeTopAreaButtons(duration, 0f);
         }
 
-        private Sequence FadeOutLifeBar()
+        private Sequence FadeOutLifeBar(float duration)
         {
-            return DOTween.Sequence();
+            return _lifeBarController.ChangeFade(duration, 0f).OnComplete(() =>
+            {
+                _lifeBarController.ClearBoundaries();
+                _lifeBarController.ClearLifeBarStarInfoList();
+            });
         }
 
-        private Sequence FadeOutSettingsButton()
+        private Sequence FadeOutLevelId(float duration)
         {
-            return DOTween.Sequence();
+            return _gameUIController.ChangeFadeUserText(duration, 0f);
         }
 
-        private Sequence FadeOutLevelId()
+        private Sequence FadeOutResultArea(float duration)
         {
-            return DOTween.Sequence();
-
+            return _resultAreaController.ChangeFade(duration, 0f)
+                .OnComplete(() => _resultAreaController.RemoveResultBlocks());
         }
 
-        private Sequence FadeOutResultArea()
+        private Sequence FadeOutInitialHolders(float duration)
         {
-            return DOTween.Sequence();
-
+            return _initialCardAreaController.ChangeFadeInitialArea(duration, 0f).OnComplete(()=>_initialCardAreaController.ClearInitialCardHolders());
         }
 
-        private Sequence FadeOutInitialHolders()
+        private Sequence FadeOutGameButtons(float duration)
         {
-            return DOTween.Sequence();
-
+            return _gameUIController.ChangeFadeMiddleAreaButtons(duration, 0f);
         }
 
-        private Sequence FadeOutGameButtons()
+        private Sequence SendBoardHolders(float duration)
         {
-            return DOTween.Sequence();
-        }
-
-        private Sequence SendBoardHolders()
-        {
-            return DOTween.Sequence();
-
+            return _boardAreaController.MoveBoardHoldersToOutsideScene(duration).OnComplete(()=>
+            {
+                foreach (ICardViewHandler card in _cardsOnBoard)
+                {
+                    card.DestroyObject();
+                }
+                _boardAreaController.ClearBoardHolders();
+            });
         }
     }
 

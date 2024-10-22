@@ -29,9 +29,9 @@ namespace Scripts
             _view.GetCanvasGroup().alpha = isNewGame ? 0 : 1;
         }
 
-        public Sequence FadeIn(float duration)
+        public Sequence ChangeFade(float duration, float finalAlpha)
         {
-            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(1f, duration));
+            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
         }
 
         public void SetLifeBar(int maxGuessCount, int remainingGuessCount)
@@ -48,7 +48,7 @@ namespace Scripts
             _view.DisableStarProgressBar();
         }
 
-        private void ClearBoundaries()
+        public void ClearBoundaries()
         {
             foreach (IBoundaryController boundary in _boundaryControllerList)
             {
@@ -57,7 +57,7 @@ namespace Scripts
             _boundaryControllerList.Clear();
         }
 
-        private void ClearLifeBarStarInfoList()
+        public void ClearLifeBarStarInfoList()
         {
             _lifeBarStarInfoList.Clear();
         }
@@ -163,9 +163,11 @@ namespace Scripts
         IStarImageView GetStarImage(int boundaryIndex);
         void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
         List<LifeBarStarInfo> GetLifeBarStarInfoList();
-        Sequence FadeIn(float duration);
+        Sequence ChangeFade(float duration, float finalAlpha);
         void SetFade(bool isNewGame);
         void SetLifeBar(int maxGuessCount, int remainingGuessCount);
+        void ClearBoundaries();
+        void ClearLifeBarStarInfoList();
     }
     
     public class LifeBarStarInfo

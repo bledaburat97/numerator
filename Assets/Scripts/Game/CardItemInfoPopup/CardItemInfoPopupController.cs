@@ -40,9 +40,10 @@ namespace Scripts
         public void Initialize()
         {
             _view.SetStatus(false);
+            CreateCardHolderIndicatorButtons();
         }
 
-        private void ClearCardHolderIndicatorButtons()
+        public void ClearCardHolderIndicatorButtons()
         {
             foreach (IBaseButtonController button in _cardHolderIndicatorButtonControllers)
             {
@@ -162,6 +163,7 @@ namespace Scripts
         event EventHandler<ProbabilityButtonClickedEventArgs> ProbabilityButtonClickedEvent;
         event EventHandler<HolderIndicatorClickedEventArgs> HolderIndicatorClickedEvent;
         void Initialize();
+        void ClearCardHolderIndicatorButtons();
     }
 
     public class ProbabilityButtonClickedEventArgs : EventArgs

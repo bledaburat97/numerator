@@ -52,7 +52,7 @@ namespace Scripts
             _view.GetStarCanvasGroup().gameObject.SetActive(false);
             _view.GetRewardItem().gameObject.SetActive(false);
             _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
-            FailLevelAnimation(_targetNumberCreator.GetTargetCardsList(), _initialCardAreaController.GetFinalCardItems());
+            //FailLevelAnimation(_targetNumberCreator.GetTargetCardsList(), _initialCardAreaController.GetFinalCardItems());
         }
         
         private void InitLevelEnd()

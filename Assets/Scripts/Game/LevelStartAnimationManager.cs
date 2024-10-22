@@ -42,12 +42,12 @@ namespace Game
 
         private Sequence FadeInResultArea(float duration)
         {
-            return _resultAreaController.FadeIn(duration);
+            return _resultAreaController.ChangeFade(duration, 1f);
         }
 
         private Sequence FadeInInitialHolderArea(float duration)
         {
-            return _initialCardAreaController.FadeInInitialArea(duration);
+            return _initialCardAreaController.ChangeFadeInitialArea(duration, 1f);
         }
 
         private Sequence FallBoxes(float duration)
@@ -57,17 +57,17 @@ namespace Game
 
         private Sequence FadeInTopAreaButtons(float duration)
         {
-            return _gameUIController.FadeInTopButtons(duration);
+            return _gameUIController.ChangeFadeTopAreaButtons(duration, 1f);
         }
 
         private Sequence FadeInLifeBar(float duration)
         {
-            return _lifeBarController.FadeIn(duration);
+            return _lifeBarController.ChangeFade(duration, 1f);
         }
 
         private Sequence FadeInMiddleGameButtons(float duration)
         {
-            return _gameUIController.FadeInMiddleButtons(duration);
+            return _gameUIController.ChangeFadeMiddleAreaButtons(duration, 1f);
         }
 
         private Sequence MoveWagons(float duration)

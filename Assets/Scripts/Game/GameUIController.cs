@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using DG.Tweening;
 using UnityEngine;
 using Zenject;
@@ -49,18 +50,25 @@ namespace Scripts
             {
                 SetCardInfoButtonStatus(false);
             }
+
+            _view.GetUserText().alpha = 1f;
             _view.GetTopButtonsCanvasGroup().alpha = isNewGame ? 0 : 1;
             _view.GetMiddleButtonsCanvasGroup().alpha = isNewGame ? 0 : 1;
         }
 
-        public Sequence FadeInTopButtons(float duration)
+        public Sequence ChangeFadeTopAreaButtons(float duration, float finalAlpha)
         {
-            return DOTween.Sequence().Append(_view.GetTopButtonsCanvasGroup().DOFade(1f, duration));
+            return DOTween.Sequence().Append(_view.GetTopButtonsCanvasGroup().DOFade(finalAlpha, duration));
         }
         
-        public Sequence FadeInMiddleButtons(float duration)
+        public Sequence ChangeFadeMiddleAreaButtons(float duration, float finalAlpha)
         {
-            return DOTween.Sequence().Append(_view.GetMiddleButtonsCanvasGroup().DOFade(1f, duration));
+            return DOTween.Sequence().Append(_view.GetMiddleButtonsCanvasGroup().DOFade(finalAlpha, duration));
+        }
+
+        public Sequence ChangeFadeUserText(float duration, float finalAlpha)
+        {
+            return DOTween.Sequence().Append(_view.GetUserText().DOFade(finalAlpha, duration));
         }
 
         public void InitializeForMultiplayer()
@@ -221,9 +229,10 @@ namespace Scripts
         RectTransform GetCardInfoButtonRectTransform();
         void SetAllButtonsUnclickable();
         void SetButtonClickable(bool isClickable, GameUIButtonType type);
-        Sequence FadeInTopButtons(float duration);
-        Sequence FadeInMiddleButtons(float duration);
+        Sequence ChangeFadeTopAreaButtons(float duration, float finalAlpha);
+        Sequence ChangeFadeMiddleAreaButtons(float duration, float finalAlpha);
         IBaseButtonController GetButton(GameUIButtonType buttonType);
+        Sequence ChangeFadeUserText(float duration, float finalAlpha);
         event EventHandler CheckFinalNumbers;
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;

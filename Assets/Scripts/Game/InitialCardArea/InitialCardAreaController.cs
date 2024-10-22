@@ -78,29 +78,10 @@ namespace Scripts
             return sequence;
         }
 
-        public Sequence FadeInInitialArea(float duration)
+        public Sequence ChangeFadeInitialArea(float duration, float finalAlpha)
         {
-            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(1f, duration));
+            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
         }
-        
-        /*
-        private void SetInitialHolderPositionList()
-        {
-            _initialHolderLocalPositionList.Clear();
-            List<Vector2> localPositionsOfSecondLine = new List<Vector2>();
-            Vector2 size = _sizeManager.GetSizeRatio() * _view.GetSizeOfInitialHolderPrefab();
-            
-            float spacing = size.x * SpacingToInitialHolderWidthRatio;
-
-            float firstLineYPos = size.y / 2 + 4f;
-            float secondLineYPos = -size.y / 2 - 1f;
-            
-            _initialHolderLocalPositionList = _initialHolderLocalPositionList.GetLocalPositionList(_numOfInitialHolders / 2, spacing, size, firstLineYPos);
-            localPositionsOfSecondLine = localPositionsOfSecondLine.GetLocalPositionList(_numOfInitialHolders - _numOfInitialHolders / 2, spacing, size, secondLineYPos);
-            
-            _initialHolderLocalPositionList.AddRange(localPositionsOfSecondLine);
-        }
-        */
 
         private void SetHolderIndicatorPositionList()
         {
@@ -122,7 +103,7 @@ namespace Scripts
             }
         }
 
-        private void ClearInitialCardHolders()
+        public void ClearInitialCardHolders()
         {
             if(_normalCardHolderControllerList == null) return;
             
@@ -231,23 +212,32 @@ namespace Scripts
             return _view.GetInvisibleClickHandler();
         }
 
-        public List<ICardViewHandler> GetFinalCardItems()
-        {
-            List<int> finalCardIndexes = _boardCardIndexManager.GetCardIndexesOnBoard();
-            List<ICardViewHandler> cards = new List<ICardViewHandler>();
-            for (int i = 0; i < finalCardIndexes.Count; i++)
-            {
-                if (finalCardIndexes[i] != -1)
-                {
-                    cards.Add(_normalCardItemControllerList[finalCardIndexes[i]].GetCardViewHandler());
-                }
-            }
-            return cards;
-        }
-
         public List<ICardViewHandler> GetCardsOnInitialHolder()
         {
-            return new List<ICardViewHandler>();
+            List<ICardViewHandler> cardsOnInitialHolder = new List<ICardViewHandler>();
+            for (int i = 0; i <_normalCardItemControllerList.Length; i++)
+            {
+                if (_normalCardItemControllerList[i] != null &&
+                    !_boardCardIndexManager.CheckCardIsOnBoard(i, out int boardHolderIndex))
+                {
+                    cardsOnInitialHolder.Add(_normalCardItemControllerList[i].GetCardViewHandler());
+                }
+            }
+            return cardsOnInitialHolder;
+        }
+
+        public List<ICardViewHandler> GetCardsOnBoard()
+        {
+            List<ICardViewHandler> cardsOnBoard = new List<ICardViewHandler>();
+            for (int i = 0; i <_normalCardItemControllerList.Length; i++)
+            {
+                if (_normalCardItemControllerList[i] != null &&
+                    _boardCardIndexManager.CheckCardIsOnBoard(i, out int boardHolderIndex))
+                {
+                    cardsOnBoard.Add(_normalCardItemControllerList[i].GetCardViewHandler());
+                }
+            }
+            return cardsOnBoard;
         }
 
         public void AnimateProbabilityChangeOfCardItem(int cardIndex, float duration, ProbabilityType probabilityType, bool isLocked)
@@ -297,7 +287,6 @@ namespace Scripts
         Vector3 GetNormalCardHolderPositionAtIndex(int index);
         void SetCardAnimation(int cardIndex, bool status);
         IInvisibleClickHandler GetInvisibleClickHandler();
-        List<ICardViewHandler> GetFinalCardItems();
         void DeleteOneHolderIndicator();
 
         void AnimateProbabilityChangeOfCardItem(int cardIndex, float duration, ProbabilityType probabilityType,
@@ -308,9 +297,11 @@ namespace Scripts
         RectTransform GetRectTransformOfCardItem(int cardIndex);
         void DestroyCard(int cardIndex);
         List<ICardViewHandler> GetCardsOnInitialHolder();
+        List<ICardViewHandler> GetCardsOnBoard();
         Vector2 GetSizeOfInitialHolder();
-        Sequence FadeInInitialArea(float duration);
+        Sequence ChangeFadeInitialArea(float duration, float finalAlpha);
         Sequence FallToInitialHolders(float duration);
+        void ClearInitialCardHolders();
     }
     
     public class CardItemData

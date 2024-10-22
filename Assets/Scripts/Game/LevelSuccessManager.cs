@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using Scripts;
 using UnityEngine.SceneManagement;
 using Zenject;
@@ -14,11 +15,14 @@ namespace Game
         private ILevelStartManager _levelStartManager;
         private ILevelEndPopupController _levelEndPopupController;
         private ILevelSuccessAnimationManager _levelSuccessAnimationManager;
-        
+        private ICardItemInfoPopupController _cardItemInfoPopupController;
+        private IFadePanelController _fadePanelController;
+
         [Inject]
         public LevelSuccessManager(IResultManager resultManager, IGameSaveService gameSaveService,
         ILevelTracker levelTracker, IGuessManager guessManager, ILevelStartManager levelStartManager,
-        ILevelEndPopupController levelEndPopupController, ILevelSuccessAnimationManager levelSuccessAnimationManager)
+        ILevelEndPopupController levelEndPopupController, ILevelSuccessAnimationManager levelSuccessAnimationManager, 
+        ICardItemInfoPopupController cardItemInfoPopupController, IFadePanelController fadePanelController)
         {
             resultManager.LevelSuccessEvent += OnLevelSuccess;
             _gameSaveService = gameSaveService;
@@ -27,6 +31,8 @@ namespace Game
             _levelStartManager = levelStartManager;
             _levelEndPopupController = levelEndPopupController;
             _levelSuccessAnimationManager = levelSuccessAnimationManager;
+            _cardItemInfoPopupController = cardItemInfoPopupController;
+            _fadePanelController = fadePanelController;
             _levelStartManager.LevelStartedEvent += OnLevelStarted;
         }
         
@@ -48,6 +54,7 @@ namespace Game
             _levelEndPopupController.CreateRewardCircle(rewardStarCount);
             _levelEndPopupController.InitStarsAndParticles(totalStarCount, newRewardStarCount);
             _levelEndPopupController.InitRewardItem(rewardType);
+            _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             _levelSuccessAnimationManager.SuccessLevelAnimation(totalStarCount, newRewardStarCount, rewardStarCount);
         }
         
@@ -57,7 +64,6 @@ namespace Game
             _levelEndPopupController.SetGameButtonText("Level " + (_levelTracker.GetLevelId() + 1));
             _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, OnMenuButtonClicked);
         }
-        
 
         private void OnMenuButtonClicked()
         {
@@ -66,7 +72,10 @@ namespace Game
 
         private void OnNextLevelButtonClicked()
         {
-            _levelStartManager.StartLevel();
+            DOTween.Sequence().AppendCallback(() => _levelEndPopupController.SetPopupStatus(false))
+                .Append(_fadePanelController.AnimateFade(0f, 0.2f))
+                .AppendCallback(() => _fadePanelController.SetFadeImageStatus(false))
+                .AppendCallback(() => _levelStartManager.StartLevel());
         }
         
         public bool IsGameOver()

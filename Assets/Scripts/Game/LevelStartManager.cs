@@ -67,51 +67,6 @@ namespace Game
                 _gameUIController.InitializeForMultiplayer();
             }
         }
-        
-        //levelcontinue eventi saved level varsa atılır.
-    //levelstart eventi saved level yoksa atılır.
-
-    //tutoriallevellar save edilmez.
-    //resultareacontrollerın initializeını sil
-    //Resultmanager resultareacontrollerı yönetsin .
-    //boardAreanın initializeını dinleyecekler:
-
-    //boardareainitialize()
-    //  numOfBoardHolderı leveldatadan
-    //  removeBoardCounti levelsavedatamanagerdan çek 
-    // savedlevel varsa:
-    // wagonların ilk pozisyonlarını ve sahne pozisyonlarını set et.
-    //saved level yoksa
-    //wagonların sahne pozisyonlarını set et.
-    // BoardCreatedEventi at.
-
-    //targetnumbercreator
-    //    BoardCreated eventini dinler.
-    // first levelsa default target seti
-    // cardinfoysa default target seti
-    // saved levelsa saved target seti
-    //else numOfBoardHolder uzunluğunda target yaratışı
-
-    //resultmanager()
-    //initializeı kaldır, _numOfBoardHolders'ı kaldır, _targetCards'ı kaldır.
-    //levelcontinue eventini dinler
-    //resultareacontrollera triedcardsı ekletir.
-
-    //carditemlocator hem levelcontinue hem levelstart eventini dinler
-    //guessmanager hem levelcontinue hem levelstart eventini dinler
-
-    //carditeminfomanager hem levelcontinue hem levelstart eventini dinler
-    //_numOfBoardHolderı kaldır, _boardAreaControllerdan aktif numOfboardholder çekilsin.
-
-//initialareacontroller initialize()
-//levelcontinue:
-//createcardholders
-// createcarditems on cardholders
-//levelstart:
-//create cardholders. Setfade to zero
-//create carditems at the location of top area.
-
-
     }
 
     public interface ILevelStartManager

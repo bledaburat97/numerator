@@ -74,6 +74,11 @@ namespace Scripts
         {
             return hintPowerUpButton;
         }
+
+        public TMP_Text GetUserText()
+        {
+            return userText;
+        }
     }
 
     public interface IGameUIView
@@ -90,5 +95,6 @@ namespace Scripts
         void SetOpponentInfoStatus(bool status);
         CanvasGroup GetTopButtonsCanvasGroup();
         CanvasGroup GetMiddleButtonsCanvasGroup();
+        TMP_Text GetUserText();
     }
 }

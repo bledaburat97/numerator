@@ -190,8 +190,18 @@ namespace Scripts
 
             return sequence;
         }
+
+        public Sequence MoveBoardHoldersToOutsideScene(float duration)
+        {
+            Sequence sequence = DOTween.Sequence();
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+            {
+                sequence.Join(_boardHolderControllerList[i].Move(_boardHolderSceneLocalPositionList[i] + new Vector2(400, 0), duration));
+            }
+            return sequence;
+        }
         
-        private void ClearBoardHolders()
+        public void ClearBoardHolders()
         {
             foreach (IBoardCardHolderController boardHolder in _boardHolderControllerList)
             {
@@ -296,5 +306,7 @@ namespace Scripts
         int GetRemovedBoardHolderCount();
         void CreateBoard(bool isNewLevel);
         Sequence MoveBoardHoldersToScene(float duration);
+        Sequence MoveBoardHoldersToOutsideScene(float duration);
+        void ClearBoardHolders();
     }
 }
