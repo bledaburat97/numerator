@@ -20,33 +20,44 @@ namespace Game
             _circleProgressBarController =
                 new CircleProgressBarController(_view.GetCircleProgressBar(), _hapticController);
         }
-        
-        public void InitButton(LevelFinishButtonType buttonType, Action onClick)
+
+        public void SetAllStatusFalse()
         {
+            _view.GetText().gameObject.SetActive(false);
+            _view.GetStarCanvasGroup().gameObject.SetActive(false);
+            _view.GetRewardItem().gameObject.SetActive(false);
+            _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
+            _view.GetButton(LevelFinishButtonType.Game).SetButtonStatus(false);
+            _view.GetButton(LevelFinishButtonType.Menu).SetButtonStatus(false);
+            _view.GetButton(LevelFinishButtonType.Claim).SetButtonStatus(false);
+        }
+        
+        public void InitButton(LevelFinishButtonType buttonType, string text, Action onClick)
+        {
+            _view.GetButton(buttonType).SetButtonStatus(true);
             IFadeButtonView buttonView = _view.GetButton(buttonType);
             buttonView.Init(onClick);
             buttonView.SetAlpha(0f);
-        }
-
-        public void SetGameButtonText(string text)
-        {
-            _view.GetButton(LevelFinishButtonType.Game).SetText(text);
+            buttonView.SetText(text);
         }
 
         public void InitText(string text)
         {
+            _view.GetText().gameObject.SetActive(true);
             _view.SetText(text);
             _view.GetText().rectTransform.localScale = Vector3.zero;
         }
         
         public void CreateRewardCircle(int rewardStarCount)
         {
+            _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(true);
             _circleProgressBarController.Initialize(rewardStarCount);
             _circleProgressBarController.CreateInitialStarImages();
         }
         
         public void InitStarsAndParticles(int numOfStars, int numOfRewardStars)
         {
+            _view.GetStarCanvasGroup().gameObject.SetActive(true);
             Vector2[] starsPosition = new Vector2[numOfStars];
             Vector2 size = new Vector2(ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS,
                 ConstantValues.SIZE_OF_STARS_ON_LEVEL_SUCCESS);
@@ -55,7 +66,6 @@ namespace Game
             for (int i = 0; i < _view.GetStarList().Length; i++)
             {
                 _view.GetStarList()[i].gameObject.SetActive(i < numOfStars);
-
             }
 
             for (int i = 0; i < numOfStars; i++)
@@ -75,6 +85,7 @@ namespace Game
         
         public void InitRewardItem(RewardType rewardType)
         {
+            _view.GetRewardItem().gameObject.SetActive(true);
             _view.GetRewardItem().rectTransform.localScale = Vector3.zero;
             _view.GetRewardItem().rectTransform.localPosition = Vector3.zero;
             Color color = Color.white;
@@ -119,9 +130,10 @@ namespace Game
 
         public Sequence TryCreateReward(int newRewardStarCount, int currentRewardStarCount)
         {
+            float buttonFadeDuration = 0.3f;
             if (newRewardStarCount + currentRewardStarCount < ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
-                return DOTween.Sequence().Append(AnimateButtons());
+                return DOTween.Sequence().Append(ChangeFadeButtons(buttonFadeDuration, 1f));
             }
 
             Action onClickClaim = () =>
@@ -130,10 +142,10 @@ namespace Game
                 DOTween.Sequence().AppendInterval(0.2f)
                     .AppendCallback(() => _view.GetStarCanvasGroup().alpha = 1f)
                     .AppendCallback(() => _view.GetButton(LevelFinishButtonType.Claim).SetButtonStatus(false))
-                    .Append(AnimateButtons());
+                    .Append(ChangeFadeButtons(buttonFadeDuration, 1f));
             };
 
-            InitButton(LevelFinishButtonType.Claim, onClickClaim);
+            InitButton(LevelFinishButtonType.Claim, "Claim", onClickClaim);
 
             return DOTween.Sequence()
                 .Append(DOTween.Sequence().AppendInterval(0.4f).SetEase(Ease.OutQuad))
@@ -155,11 +167,11 @@ namespace Game
                 .Append(_view.GetButton(LevelFinishButtonType.Claim).GetCanvasGroup().DOFade(1f, 0.3f));
         }
 
-        private Sequence AnimateButtons()
+        public Sequence ChangeFadeButtons(float duration, float finalAlpha)
         {
             return DOTween.Sequence()
-                .Append(_view.GetButton(LevelFinishButtonType.Game).GetCanvasGroup().DOFade(1f, 0.3f))
-                .Join(_view.GetButton(LevelFinishButtonType.Menu).GetCanvasGroup().DOFade(1f, 0.3f));
+                .Append(_view.GetButton(LevelFinishButtonType.Game).GetCanvasGroup().DOFade(finalAlpha, duration))
+                .Join(_view.GetButton(LevelFinishButtonType.Menu).GetCanvasGroup().DOFade(finalAlpha, duration));
         }
 
         public void SetPopupStatus(bool status)
@@ -185,8 +197,7 @@ namespace Game
 
     public interface ILevelEndPopupController
     {
-        void InitButton(LevelFinishButtonType buttonType, Action onClick);
-        void SetGameButtonText(string text);
+        void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);
         void CreateRewardCircle(int rewardStarCount);
         void InitStarsAndParticles(int numOfStars, int numOfRewardStars);
@@ -197,5 +208,14 @@ namespace Game
         Sequence AnimateStarCreation(int numOfStars, float durationBetweenParticleAndStar, float duration);
         Sequence AddNewStarsToCircleProgressBar(int newRewardStarCount, int numOfStars);
         Sequence TryCreateReward(int newRewardStarCount, int currentRewardStarCount);
+        Sequence ChangeFadeButtons(float duration, float finalAlpha);
+        void SetAllStatusFalse();
+    }
+    
+    public enum RewardType
+    {
+        Retrieval,
+        Life,
+        Hint
     }
 }

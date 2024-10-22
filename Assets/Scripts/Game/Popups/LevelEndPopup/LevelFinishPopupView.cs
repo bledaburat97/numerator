@@ -15,11 +15,6 @@ namespace Scripts
         [SerializeField] private CircleProgressBarView circleProgressBarView;
         [SerializeField] private Image rewardItem;
         [SerializeField] private ParticleSystem rewardParticle;
-        [SerializeField] private CanvasGroup topArea;
-        [SerializeField] private CanvasGroup scrollArea;
-        [SerializeField] private CanvasGroup boardArea;
-        [SerializeField] private CanvasGroup bottomArea;
-        [SerializeField] private CanvasGroup buttonArea;
         [SerializeField] private CanvasGroup starCanvasGroup;
 
         public void SetStatus(bool status)
@@ -75,31 +70,6 @@ namespace Scripts
             return starCanvasGroup;
         }
         
-        public CanvasGroup GetTopArea()
-        {
-            return topArea;
-        }
-
-        public CanvasGroup GetScrollArea()
-        {
-            return scrollArea;
-        }
-
-        public CanvasGroup GetBoardArea()
-        {
-            return boardArea;
-        }
-        
-        public CanvasGroup GetBottomArea()
-        {
-            return bottomArea;
-        }
-        
-        public CanvasGroup GetButtonArea()
-        {
-            return buttonArea;
-        }
-        
         public TMP_Text GetText()
         {
             return text;
@@ -116,11 +86,6 @@ namespace Scripts
         void SetText(string text);
         Image GetRewardItem();
         CanvasGroup GetStarCanvasGroup();
-        CanvasGroup GetTopArea();
-        CanvasGroup GetScrollArea();
-        CanvasGroup GetBoardArea();
-        CanvasGroup GetBottomArea();
-        CanvasGroup GetButtonArea();
         TMP_Text GetText();
         void SetStatus(bool status);
     }

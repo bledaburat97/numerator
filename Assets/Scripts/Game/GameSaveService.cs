@@ -26,10 +26,10 @@ namespace Scripts
             PlayerPrefs.DeleteKey(_saveGameKey);
         }
         
-        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager, ILevelSuccessManager levelSuccessManager, IBoardAreaController boardAreaController)
+        public void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager, ICardItemInfoManager cardItemInfoManager, ILevelEndManager levelEndManager, IBoardAreaController boardAreaController)
         {
             if (resultManager.GetTriedCardsList().Count == 0) return;
-            if (levelSuccessManager.IsGameOver()) return;
+            if (levelEndManager.IsGameOver()) return;
             LevelSaveData levelSaveData = new LevelSaveData()
             {
                 TriedCardsList = resultManager.GetTriedCardsList(),
@@ -50,7 +50,7 @@ namespace Scripts
         LevelSaveData GetSavedLevel();
         void DeleteSave();
         void Save(IResultManager resultManager, ITargetNumberCreator targetNumberCreator, IGuessManager guessManager,
-            ICardItemInfoManager cardItemInfoManager, ILevelSuccessManager levelSuccessManager, IBoardAreaController boardAreaController);
+            ICardItemInfoManager cardItemInfoManager, ILevelEndManager levelEndManager, IBoardAreaController boardAreaController);
         bool HasSavedGame();
     }
 

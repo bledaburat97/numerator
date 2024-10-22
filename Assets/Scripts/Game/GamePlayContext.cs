@@ -21,7 +21,7 @@ namespace Scripts
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
         [Inject] private ILevelStartManager _levelStartManager;
-        [Inject] private ILevelSuccessManager _levelSuccessManager;
+        [Inject] private ILevelEndManager _levelEndManager;
         [Inject] private IBoardAreaController _boardAreaController;
         void Start()
         {
@@ -82,7 +82,7 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelSuccessManager, _boardAreaController);
+                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController);
             }
             
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR

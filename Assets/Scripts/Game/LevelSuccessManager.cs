@@ -9,7 +9,6 @@ namespace Game
     public class LevelSuccessManager : ILevelSuccessManager
     {
         private bool _isGameOver;
-        private IGameSaveService _gameSaveService;
         private ILevelTracker _levelTracker;
         private IGuessManager _guessManager;
         private ILevelStartManager _levelStartManager;
@@ -19,13 +18,11 @@ namespace Game
         private IFadePanelController _fadePanelController;
 
         [Inject]
-        public LevelSuccessManager(IResultManager resultManager, IGameSaveService gameSaveService,
+        public LevelSuccessManager(IResultManager resultManager,
         ILevelTracker levelTracker, IGuessManager guessManager, ILevelStartManager levelStartManager,
         ILevelEndPopupController levelEndPopupController, ILevelSuccessAnimationManager levelSuccessAnimationManager, 
         ICardItemInfoPopupController cardItemInfoPopupController, IFadePanelController fadePanelController)
         {
-            resultManager.LevelSuccessEvent += OnLevelSuccess;
-            _gameSaveService = gameSaveService;
             _levelTracker = levelTracker;
             _guessManager = guessManager;
             _levelStartManager = levelStartManager;
@@ -33,36 +30,27 @@ namespace Game
             _levelSuccessAnimationManager = levelSuccessAnimationManager;
             _cardItemInfoPopupController = cardItemInfoPopupController;
             _fadePanelController = fadePanelController;
-            _levelStartManager.LevelStartedEvent += OnLevelStarted;
         }
-        
-        private void OnLevelStarted(object sender, EventArgs args)
+
+        public void LevelSuccess()
         {
-            _isGameOver = false;
-        }
-        
-        private void OnLevelSuccess(object sender, EventArgs args)
-        {
-            _isGameOver = true;
-            _gameSaveService.DeleteSave();
             int rewardStarCount = _levelTracker.GetGiftStarCount();
             RewardType rewardType = _levelTracker.GetCurrentRewardType();
             _guessManager.GetActiveStarCounts(out int totalStarCount, out int newRewardStarCount);
             _levelTracker.IncrementLevelId(totalStarCount, newRewardStarCount);
+            _levelEndPopupController.SetAllStatusFalse();
             InitButtons();
             _levelEndPopupController.InitText("Well Done");
             _levelEndPopupController.CreateRewardCircle(rewardStarCount);
             _levelEndPopupController.InitStarsAndParticles(totalStarCount, newRewardStarCount);
             _levelEndPopupController.InitRewardItem(rewardType);
-            _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             _levelSuccessAnimationManager.SuccessLevelAnimation(totalStarCount, newRewardStarCount, rewardStarCount);
         }
         
         private void InitButtons()
         {
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Game, OnNextLevelButtonClicked);
-            _levelEndPopupController.SetGameButtonText("Level " + (_levelTracker.GetLevelId() + 1));
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, OnMenuButtonClicked);
+            _levelEndPopupController.InitButton(LevelFinishButtonType.Game, "Level " + (_levelTracker.GetLevelId() + 1), OnNextLevelButtonClicked);
+            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menu", OnMenuButtonClicked);
         }
 
         private void OnMenuButtonClicked()
@@ -77,15 +65,10 @@ namespace Game
                 .AppendCallback(() => _fadePanelController.SetFadeImageStatus(false))
                 .AppendCallback(() => _levelStartManager.StartLevel());
         }
-        
-        public bool IsGameOver()
-        {
-            return _isGameOver;
-        }
     }
 
     public interface ILevelSuccessManager
     {
-        bool IsGameOver();
+        void LevelSuccess();
     }
 }

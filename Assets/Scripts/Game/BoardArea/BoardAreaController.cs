@@ -84,7 +84,7 @@ namespace Scripts
             Vector2 localPositionOfFrontWagon = _boardHolderSceneLocalPositionList[^1];
             foreach (Vector2 sceneLocalPosition in _boardHolderSceneLocalPositionList)
             {
-                boardHolderInitialLocalPositionList.Add(sceneLocalPosition - localPositionOfFrontWagon - new Vector2(_view.GetRectTransform().rect.width / 2, 0));
+                boardHolderInitialLocalPositionList.Add(sceneLocalPosition - localPositionOfFrontWagon - new Vector2(_view.GetRectTransform().rect.width, 0));
             }
             return boardHolderInitialLocalPositionList;
         }

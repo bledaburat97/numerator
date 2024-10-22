@@ -25,12 +25,13 @@ namespace Scripts
         private const float SpacingToHolderIndicatorWidthRatio = 1f / 11f;
         private ISizeManager _sizeManager;
         private IBoardCardIndexManager _boardCardIndexManager;
+        private ITargetNumberCreator _targetNumberCreator;
         
         [Inject]
         public InitialCardAreaController(IHapticController hapticController, IInitialCardAreaView view, 
             ILevelTracker levelTracker, IBoxMovementHandler boxMovementHandler, ISizeManager sizeManager, IBoardCardIndexManager boardCardIndexManager,
             IBoardAreaController boardAreaController, ILevelDataCreator levelDataCreator, IPowerUpMessageController powerUpMessageController,
-            ILevelSaveDataManager levelSaveDataManager)
+            ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator)
         {
             _view = view;
             _hapticController = hapticController;
@@ -41,6 +42,7 @@ namespace Scripts
             _sizeManager = sizeManager;
             _boardCardIndexManager = boardCardIndexManager;
             _levelSaveDataManager = levelSaveDataManager;
+            _targetNumberCreator = targetNumberCreator;
             //_initialHolderLocalPositionList = new List<Vector2>();
             _holderIndicatorLocalPositionList = new List<Vector2>();
             powerUpMessageController.RevealWagonEvent += SetLockedCardController;
@@ -61,7 +63,7 @@ namespace Scripts
             {
                 foreach (INormalCardItemController cardItem in _normalCardItemControllerList)
                 {
-                    cardItem.GetCardViewHandler().SetLocalPosition(new Vector2(1000f, 0f));
+                    cardItem.GetCardViewHandler().SetLocalPosition(new Vector2(0f, 1000f));
                 }
                 _view.GetCanvasGroup().alpha = 0f;
             }
@@ -177,6 +179,29 @@ namespace Scripts
                 CreateCardItem(cardItemData);
             }
         }
+
+        public List<ICardViewHandler> CreateTempCards()
+        {
+            List<ICardViewHandler> tempCards = new List<ICardViewHandler>();
+            int numOfBoardHolders = _boardAreaController.GetNumOfBoardHolders();
+            for (int boardHolderIndex = 0; boardHolderIndex < numOfBoardHolders; boardHolderIndex++)
+            {
+                CardItemData cardItemData = new CardItemData(
+                    _boardAreaController.GetRectTransformOfWagon(boardHolderIndex),
+                    _view.GetTempRectTransform(),
+                    boardHolderIndex,
+                    _targetNumberCreator.GetTargetCardsList()[boardHolderIndex],
+                    ProbabilityType.Certain,
+                    true,
+                    _sizeManager.GetSizeRatio() * _view.GetSizeOfBoxPrefab());
+                INormalCardItemView cardItemView = _view.CreateCardItemView(cardItemData.Parent);
+                INormalCardItemController cardItem = new NormalCardItemController(cardItemView, _view.GetCamera(), _hapticController, cardItemData, _boardAreaController);
+                cardItem.GetCardViewHandler().SetLocalPosition(new Vector2(0f, 1000f));
+                tempCards.Add(cardItem.GetCardViewHandler());
+            }
+
+            return tempCards;
+        }
         
         private void CreateCardItem(CardItemData cardItemData)
         {
@@ -279,6 +304,7 @@ namespace Scripts
         {
             return _sizeManager.GetSizeRatio() * _view.GetSizeOfInitialHolderPrefab();
         }
+        
     }
     
     public interface IInitialCardAreaController
@@ -302,6 +328,7 @@ namespace Scripts
         Sequence ChangeFadeInitialArea(float duration, float finalAlpha);
         Sequence FallToInitialHolders(float duration);
         void ClearInitialCardHolders();
+        List<ICardViewHandler> CreateTempCards();
     }
     
     public class CardItemData
