@@ -118,12 +118,12 @@ namespace Scripts
             _lifeBarStarInfoList[lifeBarStarInfoIndex].SetIsActive(status);
             if (status)
             {
-                //create movingrewarditem.
                 _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(true);
+                _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].AddMovingRewardItem();
             }
             else
             {
-                
+                _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(false);
             }
         }
         

@@ -23,6 +23,7 @@ namespace Game
         [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private IResultManager _resultManager;
+        [Inject] private IHintProvider _hintProvider;
 
         public event EventHandler LevelStartedEvent;
         public void StartLevel()

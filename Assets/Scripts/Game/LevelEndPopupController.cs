@@ -75,7 +75,6 @@ namespace Game
                 _view.GetStarList()[i].SetLocalPosition(starsPosition[i]);
                 _view.GetStarList()[i].SetSize(size);
                 _view.GetStarList()[i].SetColor(isOriginal);
-                _view.GetStarList()[i].GetMovingRewardItem().SetStatus(false);
                 _view.GetStarParticleList()[i].transform.localPosition = starsPosition[i];
                 _view.GetStarParticleList()[i].gameObject.SetActive(false);
                 var mainModule = _view.GetStarParticleList()[i].main;

@@ -21,7 +21,12 @@ namespace Scripts
             _starImageView.SetLocalPosition(starLocalPosition);
             _starImageView.SetLocalScale(Vector3.one);
             _starImageView.SetColor(isOriginal);
-            _starImageView.GetMovingRewardItem().SetStatus(false);
+            if (!isOriginal) AddMovingRewardItem();
+        }
+
+        public void AddMovingRewardItem()
+        {
+            _starImageView.CreateMovingRewardItem(new Vector2(_starImageView.GetRectTransform().rect.width* 0.5f, _starImageView.GetRectTransform().rect.width* 0.5f), _starImageView.GetRectTransform().rect.width * 0.8f);
         }
 
         public void SetStarStatus(bool status)
@@ -47,6 +52,7 @@ namespace Scripts
         void SetStarStatus(bool status);
         void DestroyObject();
         IStarImageView GetStarImage();
+        void AddMovingRewardItem();
     }
 
     public class BoundaryModel

@@ -9,11 +9,26 @@ namespace Scripts
         [SerializeField] private Image star;
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
-        [SerializeField] private MovingRewardItemView movingRewardItemView;
+        [SerializeField] private MovingRewardItemView movingRewardItemPrefab;
         
+        private MovingRewardItemView _movingRewardItemView;
         public void SetLocalPosition(Vector2 localPosition)
         {
             transform.localPosition = localPosition;
+        }
+
+        public void CreateMovingRewardItem(Vector2 size, float orbitRadius)
+        {
+            _movingRewardItemView = Instantiate(movingRewardItemPrefab, rectTransform);
+            _movingRewardItemView.Init();
+            _movingRewardItemView.SetSize(size);
+            _movingRewardItemView.SetOrbitRadius(orbitRadius);
+            _movingRewardItemView.SetIsRotating(true);
+        }
+
+        public MovingRewardItemView GetMovingRewardItem()
+        {
+            return _movingRewardItemView;
         }
 
         public void SetLocalScale(Vector3 localScale)
@@ -55,11 +70,6 @@ namespace Scripts
         {
             star.color = originalColor ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR;
         }
-
-        public MovingRewardItemView GetMovingRewardItem()
-        {
-            return movingRewardItemView;
-        }
     }
 
     public interface IStarImageView
@@ -74,5 +84,6 @@ namespace Scripts
         CurvedAnimationPreset GetCurvedAnimationPreset();
         void SetColor(bool originalColor);
         MovingRewardItemView GetMovingRewardItem();
+        void CreateMovingRewardItem(Vector2 size, float orbitRadius);
     }
 }
