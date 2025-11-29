@@ -1,9 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Game;
-using Newtonsoft.Json;
+﻿using Game;
 using UnityEngine;
-using Random = System.Random;
 namespace Scripts
 {
     public class LevelTracker : MonoBehaviour, ILevelTracker

@@ -12,7 +12,7 @@ namespace Scripts
         private IBoardAreaView _view;
         private List<IBoardCardHolderController> _boardHolderControllerList;
         private int _numOfBoardHolders;
-        private const float WagonSpacingToBoardHolderWidthRatio = 0.1f / 3.5f;
+        private const float GardenSpacingToHolderWidthRatio = 0.1f / 3.5f;
         private List<Vector2> _boardHolderSceneLocalPositionList;
         private ISizeManager _sizeManager;
         private int _removedBoardHolderCount;
@@ -33,7 +33,7 @@ namespace Scripts
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
             _sizeManager = sizeManager;
-            _sizeManager.SetSizeRatio(new Vector2(_view.GetRectTransform().rect.width, _view.GetRectTransform().rect.height), _view.GetSizeOfBoardHolder(), WagonSpacingToBoardHolderWidthRatio);
+            _sizeManager.SetSizeRatio(new Vector2(_view.GetRectTransform().rect.width, _view.GetRectTransform().rect.height), _view.GetSizeOfBoardHolder(), GardenSpacingToHolderWidthRatio);
             _boardHolderSceneLocalPositionList = new List<Vector2>();
             _levelSaveDataManager = levelSaveDataManager;
             _levelDataCreator = levelDataCreator;
@@ -50,15 +50,8 @@ namespace Scripts
         {
             SetNumOfBoardHolders();
             SetBoardHolderSceneLocalPositionList();
-            if (isNewLevel)
-            {
-                List<Vector2> initialLocalPositionList = GetBoardHolderInitialLocalPositionList();
-                CreateBoardHolders(initialLocalPositionList);
-            }
-            else
-            {
-                CreateBoardHolders(_boardHolderSceneLocalPositionList);
-            }
+            ClearBoardHolders();
+            CreateBoardHolders(_boardHolderSceneLocalPositionList);
             _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(_numOfBoardHolders);
             _targetNumberCreator.SetTargetNumber(_numOfBoardHolders);
         }
@@ -73,20 +66,9 @@ namespace Scripts
         {
             _boardHolderSceneLocalPositionList.Clear();
             Vector2 cardHolderSize = _sizeManager.GetSizeRatio() * _view.GetSizeOfBoardHolder();
-            float spacing = cardHolderSize.x * WagonSpacingToBoardHolderWidthRatio;
+            float spacing = cardHolderSize.x * GardenSpacingToHolderWidthRatio;
             float verticalLocalPos = 0f;
             _boardHolderSceneLocalPositionList = _boardHolderSceneLocalPositionList.GetLocalPositionList(_numOfBoardHolders, spacing, cardHolderSize, verticalLocalPos);
-        }
-
-        private List<Vector2> GetBoardHolderInitialLocalPositionList()
-        {
-            List<Vector2> boardHolderInitialLocalPositionList = new List<Vector2>();
-            Vector2 localPositionOfFrontWagon = _boardHolderSceneLocalPositionList[^1];
-            foreach (Vector2 sceneLocalPosition in _boardHolderSceneLocalPositionList)
-            {
-                boardHolderInitialLocalPositionList.Add(sceneLocalPosition - localPositionOfFrontWagon - new Vector2(_view.GetRectTransform().rect.width, 0));
-            }
-            return boardHolderInitialLocalPositionList;
         }
         
         private void CreateBoardHolders(List<Vector2> boardHolderLocalPositionList)
@@ -228,9 +210,9 @@ namespace Scripts
             return _boardHolderControllerList[boardHolderIndex].GetView();
         }
 
-        public RectTransform GetRectTransformOfWagon(int boardHolderIndex)
+        public RectTransform GetRectTransformOfGarden(int boardHolderIndex)
         {
-            return _boardHolderControllerList[boardHolderIndex].GetView().GetWagonRectTransform();
+            return _boardHolderControllerList[boardHolderIndex].GetView().GetGardenRectTransform();
         }
         
         public Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex)
@@ -295,7 +277,7 @@ namespace Scripts
     public interface IBoardAreaController
     {
         event EventHandler<int> BoardHolderClickedEvent;
-        RectTransform GetRectTransformOfWagon(int boardHolderIndex);
+        RectTransform GetRectTransformOfGarden(int boardHolderIndex);
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);

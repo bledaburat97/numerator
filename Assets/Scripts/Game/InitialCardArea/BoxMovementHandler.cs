@@ -47,10 +47,9 @@ namespace Scripts
         
         public void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
-            if (cardIndex != -1 && boardCardHolderIndex != -1)
+            if (cardIndex != -1 && boardCardHolderIndex != -1 && _getCardItem(cardIndex) != null)
             {
-                _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToBoard(_boardAreaController.GetRectTransformOfWagon(boardCardHolderIndex));
-                _boardCardIndexManager.SetCardIndexOnBoardHolder(boardCardHolderIndex, cardIndex);
+                _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToBoard(_boardAreaController.GetRectTransformOfGarden(boardCardHolderIndex));
             }
         }
 

@@ -53,11 +53,11 @@ namespace Scripts
             List<CardItemInfo> cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
             _numOfInitialHolders = _levelDataCreator.GetLevelData().NumOfCards;
             //SetInitialHolderPositionList();
+            SetHolderIndicatorPositionList();
             CreateCardHolders(cardItemInfoList);
             CreateCardItemsData(cardItemInfoList);
             _boxMovementHandler.Initialize(_normalCardItemControllerList.Length, (i) => _normalCardItemControllerList[i]);
             _boxMovementHandler.AddCardActions();
-            SetHolderIndicatorPositionList();
 
             if (isNewGame)
             {
@@ -187,7 +187,7 @@ namespace Scripts
             for (int boardHolderIndex = 0; boardHolderIndex < numOfBoardHolders; boardHolderIndex++)
             {
                 CardItemData cardItemData = new CardItemData(
-                    _boardAreaController.GetRectTransformOfWagon(boardHolderIndex),
+                    _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
                     _view.GetTempRectTransform(),
                     boardHolderIndex,
                     _targetNumberCreator.GetTargetCardsList()[boardHolderIndex],
@@ -214,7 +214,7 @@ namespace Scripts
         {
             _levelTracker.DecreaseRevealingPowerUpCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.TargetCardIndex];
-            normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfWagon(lockedCardInfo.BoardHolderIndex));
+            normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfGarden(lockedCardInfo.BoardHolderIndex));
             normalCardItemController.GetView().InitLocalScale();
             normalCardItemController.GetView().SetLocalPosition(Vector3.zero);
             normalCardItemController.GetView().SetSize(_sizeManager.GetSizeRatio() * _view.GetSizeOfBoxPrefab());

@@ -28,12 +28,10 @@ namespace Game
         {
             float initialAreaFadeInDuration = 0.2f;
             float fallBoxesDuration = 2f;
-            float moveWagonsDuration = 1f;
             float buttonsFadeInDuration = 0.3f;
 
             DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
                 .Append(FallBoxes(fallBoxesDuration))
-                .Append(MoveWagons(moveWagonsDuration))
                 .Append(FadeInTopAreaButtons(buttonsFadeInDuration))
                 .Join(FadeInLifeBar(buttonsFadeInDuration))
                 .Join(FadeInMiddleGameButtons(buttonsFadeInDuration))

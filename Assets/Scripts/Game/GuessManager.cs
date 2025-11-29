@@ -65,7 +65,7 @@ namespace Game
                                 return;
                             }
 
-                            HintRewardStarEvent.Invoke(this, new HintRewardStarEventArgs(starImageView, false));
+                            HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, false));
                         }
                         
                         else if (i == 1)
@@ -76,7 +76,7 @@ namespace Game
                                 Debug.LogError("StarImageView is null");
                                 return;
                             }
-                            HintRewardStarEvent.Invoke(this, new HintRewardStarEventArgs(starImageView, true));
+                            HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, true));
                         }
                     }
 

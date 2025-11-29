@@ -377,3 +377,4 @@ MonoBehaviour:
   highlightImage: {fileID: 1851901743060746559}
   tutorialCanvas: {fileID: 4306062196406110339}
   tutorialRaycaster: {fileID: 7019271253805497377}
+  garden: {fileID: 2689086186499319326}

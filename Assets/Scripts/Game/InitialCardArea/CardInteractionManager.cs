@@ -103,6 +103,7 @@ namespace Scripts
         {
             if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn) return;
             _boxMovementHandler.TryMoveCardToBoard(_selectedCardIndex, boardCardHolderIndex);
+            _boardCardIndexManager.SetCardIndexOnBoardHolder(boardCardHolderIndex, _selectedCardIndex);
             SetSelectedIndex(-1);
         }
         

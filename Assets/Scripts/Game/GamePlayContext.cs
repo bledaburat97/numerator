@@ -1,6 +1,4 @@
-﻿using System;
-using Game;
-using Unity.Netcode;
+﻿using Game;
 using UnityEngine;
 using Zenject;
 
@@ -61,19 +59,27 @@ namespace Scripts
             _cardItemInfoPopupController.Unsubscribe();
         }
         
-#if UNITY_EDITOR
-        private void OnApplicationFocus(bool pauseStatus)
+        private void TrySave()
         {
-            pauseStatus = !pauseStatus;
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController);
+            }
+        }
+        
+#if UNITY_EDITOR
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                TrySave();
+            }
 #else
         private void OnApplicationPause(bool pauseStatus)
         {
             if (pauseStatus)
             {
-                if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-                {
-                    _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager);
-                }
+                TrySave();
             }
 #endif
         }

@@ -61,9 +61,13 @@ namespace Scripts
         private IMessagePopupView _newGameOfferPopup;
         private IMessagePopupView _notAbleToMovePopup;
         private IMessagePopupView _ableToMovePopup;
-
+        private bool _initialized;
+        
         public void Initialize()
         {
+            if (_initialized) return;
+            _initialized = true;
+
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
             _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
@@ -73,12 +77,20 @@ namespace Scripts
             _waitingOpponentPopupControllerFactory = new WaitingOpponentPopupControllerFactory();
             _waitingOpponentPopupViewFactory = new WaitingOpponentPopupViewFactory();
             _messagePopupViewFactory = new MessagePopupViewFactory();
-            
+    
             _gameUIController.OpenSettings += CreateSettingsPopup;
-            
             _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
-            _saveGameAction += _levelTracker.GetGameOption() == GameOption.SinglePlayer ? () => _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController) : null;
-            _deleteSaveAction += _gameSaveService.DeleteSave;
+
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
+            {
+                _saveGameAction = () => _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController);
+            }
+            else
+            {
+                _saveGameAction = null;
+            }
+
+            _deleteSaveAction = _gameSaveService.DeleteSave;
             
             if (_levelTracker.IsFirstLevelTutorial())
             {

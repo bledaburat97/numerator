@@ -1,6 +1,5 @@
 ﻿using Game;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Zenject;
 
 namespace Scripts

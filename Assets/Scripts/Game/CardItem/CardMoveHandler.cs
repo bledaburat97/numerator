@@ -74,7 +74,7 @@ public class CardMoveHandler : ICardMoveHandler
             int boardHolderIndex = _onDragComplete(_cardIndex);
             if (boardHolderIndex != -1)
             {
-                MoveCardToBoardEvent?.Invoke(this, _boardAreaController.GetRectTransformOfWagon(boardHolderIndex));
+                MoveCardToBoardEvent?.Invoke(this, _boardAreaController.GetRectTransformOfGarden(boardHolderIndex));
             }
             else
             {

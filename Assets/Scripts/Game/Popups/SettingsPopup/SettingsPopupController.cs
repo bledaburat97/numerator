@@ -52,11 +52,13 @@ namespace Scripts
         
         private void OnMenuButtonClick(Action saveGameAction)
         {
+            Debug.Log("OnMenuButtonClick");
             saveGameAction?.Invoke();
             if (NetworkManager.Singleton != null)
             {
                 NetworkManager.Singleton.Shutdown();
             }
+            Debug.Log("OnMenuButtonClick2");
             SceneManager.LoadScene("Menu");
         }
     }

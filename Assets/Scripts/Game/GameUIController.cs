@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using DG.Tweening;
 using UnityEngine;
 using Zenject;
@@ -107,11 +106,12 @@ namespace Scripts
 
         private void InitializeCardInfoButton(Action<bool> onClickAction)
         {
-            if (_cardInfoButtonController != null)
+            if (_cardInfoButtonController == null)
             {
-                _cardInfoButtonController.Initialize();
+                _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton(), onClickAction);
             }
-            _cardInfoButtonController = new CardInfoButtonController(_view.GetCardInfoButton(), onClickAction);
+
+            _cardInfoButtonController.Initialize();
         }
 
         private void SetCardInfoButtonStatus(bool status)
@@ -132,14 +132,21 @@ namespace Scripts
             {
                 pair.Value.SetButtonClickable(false);
             }
-            _cardInfoButtonController.SetButtonClickable(false);
+
+            if (_cardInfoButtonController != null)
+            {
+                _cardInfoButtonController.SetButtonClickable(false);
+            }
         }
 
         public void SetButtonClickable(bool isClickable, GameUIButtonType type)
         {
             if (type == GameUIButtonType.CardInfo)
             {
-                _cardInfoButtonController.SetButtonClickable(isClickable);
+                if (_cardInfoButtonController != null)
+                {
+                    _cardInfoButtonController.SetButtonClickable(isClickable);
+                }
             }
             else
             {
