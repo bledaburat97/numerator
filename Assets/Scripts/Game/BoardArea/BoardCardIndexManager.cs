@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Scripts;
+using UnityEngine;
 using Zenject;
 
 namespace Game
@@ -73,7 +74,9 @@ namespace Game
 
         public void SetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex)
         {
+            Debug.Log("SetCardIndexOnBoardHolder BoardHolderIndex" + boardHolderIndex + "CardIndex" + cardIndex);
             _cardIndexesOnBoardHolders[boardHolderIndex] = cardIndex;
+            Debug.Log("SetCardIndexOnBoardHolder" + _cardIndexesOnBoardHolders[boardHolderIndex]);
         }
         
         public List<int> GetEmptyBoardHolderIndexList()

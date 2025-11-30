@@ -68,6 +68,7 @@ namespace Scripts
     
         public void SetLocalPosition(Vector2 localXPos)
         {
+            Debug.Log(localXPos);
             _view.SetLocalPosition(localXPos);
         }
     

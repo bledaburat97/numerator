@@ -41,7 +41,6 @@ namespace Scripts
         [SerializeField] private HandTutorialView handTutorialPrefab;
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
         [SerializeField] private PowerUpMessagePopupView powerUpMessagePopupView;
-        [SerializeField] private LevelEndPopupView levelEndPopupView;
 
         private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;

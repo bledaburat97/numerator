@@ -233,7 +233,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 72, y: 90}
+  m_SizeDelta: {x: 52, y: 65}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7642969658505783194
 CanvasRenderer:
@@ -259,6 +259,7 @@ MonoBehaviour:
   possibleHolderIndicatorHolderTransform: {fileID: 59102977178097501}
   possibleHolderIndicatorPrefab: {fileID: 8870391522471995952, guid: c631ae9e591e3904181e740f084ff183, type: 3}
   text: {fileID: 3551134613469955369}
+  boxHolder: {fileID: 2689086186499319326}
 --- !u!1 &6614214458048269381
 GameObject:
   m_ObjectHideFlags: 0
@@ -352,7 +353,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 72
+  m_fontSize: 58.15
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

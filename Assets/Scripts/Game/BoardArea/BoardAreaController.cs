@@ -9,18 +9,20 @@ namespace Scripts
 {
     public class BoardAreaController : IBoardAreaController
     {
+        private const float GardenSpacingToHolderWidthRatio = 0.1f / 3.5f;
+        private int _numOfBoardHolders;
+        private int _removedBoardHolderCount;
+        
         private IBoardAreaView _view;
         private List<IBoardCardHolderController> _boardHolderControllerList;
-        private int _numOfBoardHolders;
-        private const float GardenSpacingToHolderWidthRatio = 0.1f / 3.5f;
+        private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
+
         private List<Vector2> _boardHolderSceneLocalPositionList;
         private ISizeManager _sizeManager;
-        private int _removedBoardHolderCount;
         private ILevelSaveDataManager _levelSaveDataManager;
         private ILevelDataCreator _levelDataCreator;
         private IBoardCardIndexManager _boardCardIndexManager;
         private ITargetNumberCreator _targetNumberCreator;
-        private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
         private IPowerUpMessageController _powerUpMessageController;
         public event EventHandler<int> BoardHolderClickedEvent;
 
