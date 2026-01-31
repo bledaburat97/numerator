@@ -23,6 +23,11 @@ namespace Scripts
             _view.GetTutorialFadeImage().gameObject.SetActive(status);
         }
         
+        public void SetBoardFadeImageStatus(bool status)
+        {
+            _view.GetBoardFadeImage().gameObject.SetActive(status);
+        }
+        
         public Sequence AnimateFade(float finalAlpha, float duration)
         {
             return DOTween.Sequence().Append(_view.GetFadeImage().DOFade(finalAlpha, duration));
@@ -57,6 +62,7 @@ namespace Scripts
     {
         void SetFadeImageStatus(bool status);
         void SetTutorialFadeImageStatus(bool status);
+        void SetBoardFadeImageStatus(bool status);
         void SetFadeImageAlpha(float alpha);
         void SetTutorialFadeImageAlpha(float alpha);
         void InitMaskSystem(IUnmaskServiceView unmaskService, float fade);

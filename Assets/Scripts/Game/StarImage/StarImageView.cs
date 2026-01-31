@@ -20,11 +20,16 @@ namespace Scripts
         public void CreateMovingRewardItem(Vector2 size, float orbitRadius)
         {
             _movingRewardItemView = Instantiate(movingRewardItemPrefab, rectTransform);
-            _movingRewardItemView.Init();
+            _movingRewardItemView.Init(rectTransform);
             _movingRewardItemView.SetSize(size);
-            _movingRewardItemView.SetOrbitRadius(orbitRadius);
-            _movingRewardItemView.SetIsRotating(true);
         }
+
+        public void SetMovingRewardItemStatus(bool status)
+        {
+            if (_movingRewardItemView != null)
+                _movingRewardItemView.SetStatus(status);
+        }
+
 
         public MovingRewardItemView GetMovingRewardItem()
         {
@@ -85,5 +90,6 @@ namespace Scripts
         void SetColor(bool originalColor);
         MovingRewardItemView GetMovingRewardItem();
         void CreateMovingRewardItem(Vector2 size, float orbitRadius);
+        void SetMovingRewardItemStatus(bool status);
     }
 }

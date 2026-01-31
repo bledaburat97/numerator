@@ -52,7 +52,9 @@ namespace Game
             {
                 if (_remainingGuessCount == lifeBarStarInfoList[i].BoundaryIndex)
                 {
-                    _lifeBarController.SetStarStatus(false, i);
+                    bool isRewardStar = !lifeBarStarInfoList[i].IsOriginal;
+
+                    _lifeBarController.SetStarStatus(false, i, keepRewardItemVisibleWhenDisabled: isRewardStar);
                     
                     if (!lifeBarStarInfoList[i].IsOriginal)
                     {

@@ -17,7 +17,6 @@ namespace Game
             }
             DOTween.Sequence().AppendCallback(() =>
                 {
-                    rewardItem.SetIsRotating(false);
                     rewardItem.GetRectTransform().SetParent(targetRectTransform);
                     starImage.SetStarStatus(false);
                     //rewardItem.StartFlame();
@@ -40,7 +39,6 @@ namespace Game
             }
             DOTween.Sequence().AppendCallback(() =>
                 {
-                    rewardItem.SetIsRotating(false);
                     rewardItem.GetRectTransform().SetParent(targetRectTransform);
                     starImage.SetStarStatus(false);
                     //rewardItem.StartFlame();

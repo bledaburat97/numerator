@@ -25,10 +25,15 @@ namespace Scripts
         {
             return rectTransform;
         }
+        
+        public RectTransform GetFilledImageRectTransform()
+        {
+            return image.rectTransform;
+        }
 
         public IBoundaryView CreateBoundaryView()
         {
-            return Instantiate(boundaryPrefab, transform);
+            return Instantiate(boundaryPrefab, image.rectTransform);
         }
 
         public RectTransform GetBoundaryRectTransform()
@@ -58,6 +63,7 @@ namespace Scripts
     public interface ILifeBarView
     {
         RectTransform GetRectTransform();
+        RectTransform GetFilledImageRectTransform();
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
         Tween SetProgress(float targetPercentage, float duration, Action onComplete);

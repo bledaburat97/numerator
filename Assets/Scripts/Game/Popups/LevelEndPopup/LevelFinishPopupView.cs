@@ -13,7 +13,8 @@ namespace Scripts
         [SerializeField] private StarImageView[] starList;
         [SerializeField] private ParticleSystem[] starParticleList;
         [SerializeField] private CircleProgressBarView circleProgressBarView;
-        [SerializeField] private Image rewardItem;
+        [SerializeField] private RectTransform[] rewardItemList;
+        [SerializeField] private RectTransform rewardItemHolder;
         [SerializeField] private ParticleSystem rewardParticle;
         [SerializeField] private CanvasGroup starCanvasGroup;
 
@@ -60,9 +61,14 @@ namespace Scripts
             this.text.SetText(text);
         }
 
-        public Image GetRewardItem()
+        public RectTransform[] GetRewardItemList()
         {
-            return rewardItem;
+            return rewardItemList;
+        }
+        
+        public RectTransform GetRewardItemHolder()
+        {
+            return rewardItemHolder;
         }
 
         public CanvasGroup GetStarCanvasGroup()
@@ -84,7 +90,8 @@ namespace Scripts
         ICircleProgressBarView GetCircleProgressBar();
         ParticleSystem GetRewardParticle();
         void SetText(string text);
-        Image GetRewardItem();
+        RectTransform[] GetRewardItemList();
+        RectTransform GetRewardItemHolder();
         CanvasGroup GetStarCanvasGroup();
         TMP_Text GetText();
         void SetStatus(bool status);

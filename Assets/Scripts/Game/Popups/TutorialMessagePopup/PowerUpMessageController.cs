@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Game;
 using UnityEngine;
 using Zenject;
@@ -8,12 +7,8 @@ namespace Scripts
 {
     public class PowerUpMessageController : IPowerUpMessageController
     {
-        private IPowerUpMessagePopupView _view;
         private IHapticController _hapticController;
         private IFadePanelController _fadePanelController;
-        private Dictionary<GameUIButtonType, BasePowerUpController> _powerUps;
-        private IBaseButtonController _closeButton;
-        private IBaseButtonController _continueButton;
         private IBoardCardIndexManager _boardCardIndexManager;
         private ITargetNumberCreator _targetNumberCreator;
         private GameUIButtonType _activePowerUpType;
@@ -24,62 +19,59 @@ namespace Scripts
         public event EventHandler<GameUIButtonType> ClosePowerUpEvent;
         public event EventHandler AddLifeEvent;
         [Inject]
-        public PowerUpMessageController(IHapticController hapticController,
-            IGameUIController gameUIController, BaseButtonControllerFactory baseButtonControllerFactory,
-            IFadePanelController fadePanelController, IPowerUpMessagePopupView view,
-            ITargetNumberCreator targetNumberCreator)
+        public PowerUpMessageController(IHapticController hapticController, IGameUIController gameUIController,
+            IFadePanelController fadePanelController, ITargetNumberCreator targetNumberCreator)
         {
             _hapticController = hapticController;
             _fadePanelController = fadePanelController;
-            _view = view;
             gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
-            _closeButton = baseButtonControllerFactory.Create(_view.GetCloseButton(), OnClosePowerUp);
-            _continueButton = baseButtonControllerFactory.Create(_view.GetContinueButton(), OnUsePowerUp);
             _targetNumberCreator = targetNumberCreator;
-            CreatePowerUps();
-        }
-
-        private void CreatePowerUps()
-        {
-            _powerUps = new Dictionary<GameUIButtonType, BasePowerUpController>();
-            _powerUps.Add(GameUIButtonType.RevealingPowerUp, new RevealingPowerUpController(_hapticController, _view, _fadePanelController));
-            _powerUps.Add(GameUIButtonType.LifePowerUp, new LifePowerUpController(_hapticController, _view, _fadePanelController));
-            _powerUps.Add(GameUIButtonType.BombPowerUp, new BombPowerUpController(_hapticController, _view, _fadePanelController));
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
         {
-            _activePowerUpType = powerUpType;
-            _powerUps[powerUpType].Activate(_continueButton);
-            OpenPowerUpEvent?.Invoke(this, powerUpType);
+            switch (powerUpType)
+            {
+                case GameUIButtonType.LifePowerUp:
+                    if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
+                    {
+                        OnClosePowerUp();
+                    }
+                    AddLifeEvent?.Invoke(this, EventArgs.Empty);
+                    //_guessManager.AddExtraLives(3);
+                    break;
+                case GameUIButtonType.BombPowerUp:
+                    if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
+                    {
+                        OnClosePowerUp();
+                    }
+                    RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
+                    break;
+                case GameUIButtonType.RevealingPowerUp:
+                    if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
+                    {
+                        OnClosePowerUp();
+                    }
+                    else
+                    {
+                        _activePowerUpType = GameUIButtonType.RevealingPowerUp;
+                        _fadePanelController.SetBoardFadeImageStatus(true);
+                        OpenPowerUpEvent?.Invoke(this, powerUpType);
+                    }
+                    break;
+            }
+            
         }
 
         private void OnClosePowerUp()
         {
             if (_activePowerUpType == GameUIButtonType.Default) return;
-            _fadePanelController.SetFadeImageStatus(false);
-            _view.SetStatus(false);
+            _fadePanelController.SetBoardFadeImageStatus(false);
             ClosePowerUpEvent?.Invoke(this, _activePowerUpType);
+            _activePowerUpType = GameUIButtonType.Default;
         }
 
-        private void OnUsePowerUp()
-        {
-            switch (_activePowerUpType)
-            {
-                case GameUIButtonType.LifePowerUp:
-                    AddLifeEvent?.Invoke(this, EventArgs.Empty);
-                    OnClosePowerUp();
-                    //_guessManager.AddExtraLives(3);
-                    break;
-                case GameUIButtonType.BombPowerUp:
-                    RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
-                    OnClosePowerUp();
-                    break;
-                default:
-                    break;
-            }
-        }
-
+        
         public void BoardIsClicked(int boardHolderIndex)
         {
             if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
@@ -87,6 +79,7 @@ namespace Scripts
                 _hapticController.Vibrate(HapticType.CardRelease);
                 int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
                 int cardIndex = cardNumber - 1;
+                Debug.Log($"Reveal Card Index: {cardIndex}");
                 RevealWagonEvent?.Invoke(this, new LockedCardInfo(boardHolderIndex, cardIndex));
                 OnClosePowerUp();
             }

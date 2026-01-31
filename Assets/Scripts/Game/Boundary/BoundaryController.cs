@@ -26,7 +26,19 @@ namespace Scripts
 
         public void AddMovingRewardItem()
         {
-            _starImageView.CreateMovingRewardItem(new Vector2(_starImageView.GetRectTransform().rect.width* 0.5f, _starImageView.GetRectTransform().rect.width* 0.5f), _starImageView.GetRectTransform().rect.width * 0.8f);
+            if (_starImageView == null) return;
+            if (_starImageView.GetMovingRewardItem() != null) return;
+
+            _starImageView.CreateMovingRewardItem(
+                new Vector2(_starImageView.GetRectTransform().rect.width * 1f, _starImageView.GetRectTransform().rect.width * 1f),
+                _starImageView.GetRectTransform().rect.width * 0.7f
+            );
+        }
+
+        public void SetMovingRewardItemStatus(bool status)
+        {
+            if (_starImageView == null) return;
+            _starImageView.SetMovingRewardItemStatus(status);
         }
 
         public void SetStarStatus(bool status)
@@ -53,6 +65,7 @@ namespace Scripts
         void DestroyObject();
         IStarImageView GetStarImage();
         void AddMovingRewardItem();
+        void SetMovingRewardItemStatus(bool status);
     }
 
     public class BoundaryModel

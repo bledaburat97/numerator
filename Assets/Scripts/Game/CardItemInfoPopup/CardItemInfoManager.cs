@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Game;
+using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -53,10 +54,11 @@ namespace Scripts
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             cardItemInfo.isExisted = false;
         }
-
+        
         private void OnRevealWagon(object sender, LockedCardInfo lockedCardInfo)
         {
-            MakeCardCertain(lockedCardInfo.TargetCardIndex, new List<int>(lockedCardInfo.BoardHolderIndex));
+            List<int> cardHolders = new List<int> { lockedCardInfo.BoardHolderIndex };
+            MakeCardCertain(lockedCardInfo.TargetCardIndex, cardHolders);
         }
 
         public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)

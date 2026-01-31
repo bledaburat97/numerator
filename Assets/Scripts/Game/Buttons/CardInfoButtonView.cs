@@ -22,7 +22,7 @@ namespace Scripts
         {
             colorIcon.gameObject.SetActive(status);
             crossIcon.gameObject.SetActive(!status);
-            SetPointerImagePosition(new Vector3(status ? 15 : -15, 0, 0), animationDuration);
+            SetPointerImagePosition(new Vector3(0, status ? -15 : 15, 0), animationDuration);
         }
         
         private void SetPointerImagePosition(Vector3 localPos, float duration)

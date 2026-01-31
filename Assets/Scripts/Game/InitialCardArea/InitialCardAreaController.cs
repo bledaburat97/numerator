@@ -21,7 +21,7 @@ namespace Scripts
         //private List<Vector2> _initialHolderLocalPositionList;
         private List<Vector2> _holderIndicatorLocalPositionList;
         private int _numOfInitialHolders;
-        private const float SpacingToInitialHolderWidthRatio = 0.8f / 3f;
+        private const float SpacingToInitialHolderWidthRatio = 13f / 60f;
         private const float SpacingToHolderIndicatorWidthRatio = 1f / 11f;
         private ISizeManager _sizeManager;
         private IBoardCardIndexManager _boardCardIndexManager;

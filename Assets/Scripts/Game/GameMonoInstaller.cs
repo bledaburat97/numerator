@@ -12,12 +12,10 @@ namespace Scripts
         [SerializeField] private ResultAreaView resultAreaView;
         [SerializeField] private InitialCardAreaView initialCardAreaView;
         [SerializeField] private FadePanelView fadePanelView;
-        [SerializeField] private FadePanelView nonGlowFadePanelView;
         [SerializeField] private LifeBarView lifeBarView;
         [SerializeField] private GameClockView gameClockView;
         [SerializeField] private GameUIView gameUI;
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
-        [SerializeField] private PowerUpMessagePopupView powerUpMessagePopup;
         public override void InstallBindings()
         {
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
@@ -46,8 +44,7 @@ namespace Scripts
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
-            Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle()
-                .WithArguments(powerUpMessagePopup);
+            Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
             Container.Bind<IBoxMovementHandler>().To<BoxMovementHandler>().AsSingle();
             Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);;

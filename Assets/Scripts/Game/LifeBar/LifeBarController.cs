@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
-using Game;
 using UnityEngine;
 using Zenject;
 
@@ -66,9 +65,10 @@ namespace Scripts
         {
             List<Vector2> boundaryLocalPositionList = new List<Vector2>();
             Vector2 boundarySize = _view.GetBoundaryRectTransform().sizeDelta;
-            Vector2 progressBarSize = _view.GetRectTransform().sizeDelta;
+            Vector2 progressBarSize = _view.GetFilledImageRectTransform().sizeDelta;
+            Debug.Log("progressBarSize" + progressBarSize.x);
             float spacing = progressBarSize.x / maxGuessCount - boundarySize.x;
-            boundaryLocalPositionList = boundaryLocalPositionList.GetLocalPositionList(maxGuessCount - 1, spacing, boundarySize, 0);
+            boundaryLocalPositionList = boundaryLocalPositionList.GetLocalPositionList(maxGuessCount - 1, spacing, boundarySize, -0.14f);
 
             foreach (Vector2 boundaryLocalPos in boundaryLocalPositionList)
             {
@@ -95,13 +95,22 @@ namespace Scripts
         {
             for (int i = 0; i < lifeBarStarInfoList.Count; i++)
             {
-                _boundaryControllerList[lifeBarStarInfoList[i].BoundaryIndex].AddStarImage(_localPositionOfStar, lifeBarStarInfoList[i].IsOriginal);
+                int bIndex = lifeBarStarInfoList[i].BoundaryIndex;
+                bool isOriginal = lifeBarStarInfoList[i].IsOriginal;
+
+                _boundaryControllerList[bIndex].AddStarImage(_localPositionOfStar, isOriginal);
+
                 if (!lifeBarStarInfoList[i].IsActive)
                 {
-                    _boundaryControllerList[lifeBarStarInfoList[i].BoundaryIndex].SetStarStatus(false);
+                    _boundaryControllerList[bIndex].SetStarStatus(false);
+
+                    // ⬇️ reward star ise moving item da gizlensin (resume vs.)
+                    if (!isOriginal)
+                        _boundaryControllerList[bIndex].SetMovingRewardItemStatus(false);
                 }
             }
         }
+
 
         private void InitProgressBar(float targetPercentage)
         {
@@ -113,19 +122,38 @@ namespace Scripts
             return _view.SetProgress(targetPercentage, animationDuration, onComplete);
         }
 
-        public void SetStarStatus(bool status, int lifeBarStarInfoIndex)
+        public void SetStarStatus(bool status, int lifeBarStarInfoIndex, bool keepRewardItemVisibleWhenDisabled = false)
         {
             _lifeBarStarInfoList[lifeBarStarInfoIndex].SetIsActive(status);
+
+            int boundaryIndex = _lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex;
+            bool isRewardStar = !_lifeBarStarInfoList[lifeBarStarInfoIndex].IsOriginal;
+
             if (status)
             {
-                _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(true);
-                _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].AddMovingRewardItem();
+                _boundaryControllerList[boundaryIndex].SetStarStatus(true);
+
+                if (isRewardStar)
+                {
+                    _boundaryControllerList[boundaryIndex].AddMovingRewardItem();
+                    _boundaryControllerList[boundaryIndex].SetMovingRewardItemStatus(true);
+                }
             }
             else
             {
-                _boundaryControllerList[_lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex].SetStarStatus(false);
+                _boundaryControllerList[boundaryIndex].SetStarStatus(false);
+
+                if (isRewardStar && !keepRewardItemVisibleWhenDisabled)
+                {
+                    _boundaryControllerList[boundaryIndex].SetMovingRewardItemStatus(false);
+                }
+                else if (!isRewardStar)
+                {
+                    _boundaryControllerList[boundaryIndex].SetMovingRewardItemStatus(false);
+                }
             }
         }
+
         
         public IStarImageView GetStarImage(int boundaryIndex)
         {
@@ -159,7 +187,7 @@ namespace Scripts
     {
         void DisableStarProgressBar();
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
-        void SetStarStatus(bool status, int lifeBarStarInfoIndex);
+        void SetStarStatus(bool status, int lifeBarStarInfoIndex, bool keepRewardItemVisibleWhenDisabled = false);
         IStarImageView GetStarImage(int boundaryIndex);
         void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
         List<LifeBarStarInfo> GetLifeBarStarInfoList();

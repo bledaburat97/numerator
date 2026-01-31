@@ -9,7 +9,7 @@ namespace Scripts
 {
     public class BoardAreaController : IBoardAreaController
     {
-        private const float GardenSpacingToHolderWidthRatio = 0.1f / 3.5f;
+        private const float GardenSpacingToHolderWidthRatio = 3f / 70f;
         private int _numOfBoardHolders;
         private int _removedBoardHolderCount;
         
@@ -126,7 +126,8 @@ namespace Scripts
                _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
                _cardItemInfoManager.RemoveLastCardHolderIndicator();
                _cardItemInfoPopupController.Initialize();
-               _levelSuccessManager.Initialize();            if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
+               _levelSuccessManager.Initialize();
+               if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
                {
                    Debug.LogError("You shouldn't have clicked the bomb button");
                    return;

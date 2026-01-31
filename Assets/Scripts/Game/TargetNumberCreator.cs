@@ -54,6 +54,8 @@ namespace Scripts
 
         private void SetTargetCardsList(int targetNumber)
         {
+            Debug.Log("targetNumber " + targetNumber);
+
             List<int> targetCardsList = new List<int>();
             while (targetNumber != 0)
             {

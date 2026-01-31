@@ -75,6 +75,7 @@ namespace Game
         public void SetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex)
         {
             Debug.Log("SetCardIndexOnBoardHolder BoardHolderIndex" + boardHolderIndex + "CardIndex" + cardIndex);
+            TryResetCardIndexOnBoard(cardIndex);
             _cardIndexesOnBoardHolders[boardHolderIndex] = cardIndex;
             Debug.Log("SetCardIndexOnBoardHolder" + _cardIndexesOnBoardHolders[boardHolderIndex]);
         }

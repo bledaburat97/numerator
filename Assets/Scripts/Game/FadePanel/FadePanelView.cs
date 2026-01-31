@@ -8,7 +8,8 @@ namespace Scripts
     {
         [SerializeField] private Image fadeImage;
         [SerializeField] private Image tutorialFadeImage;
-        
+        [SerializeField] private Image boardFadeImage;
+
         public Image GetFadeImage()
         {
             return fadeImage;
@@ -18,11 +19,17 @@ namespace Scripts
         {
             return tutorialFadeImage;
         }
+
+        public Image GetBoardFadeImage()
+        {
+            return boardFadeImage;
+        }
     }
 
     public interface IFadePanelView
     {
         Image GetFadeImage();
         Image GetTutorialFadeImage();
+        Image GetBoardFadeImage();
     }
 }

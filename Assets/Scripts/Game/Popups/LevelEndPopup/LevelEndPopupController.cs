@@ -25,7 +25,11 @@ namespace Game
         {
             _view.GetText().gameObject.SetActive(false);
             _view.GetStarCanvasGroup().gameObject.SetActive(false);
-            _view.GetRewardItem().gameObject.SetActive(false);
+            _view.GetRewardItemHolder().gameObject.SetActive(false);
+            foreach (RectTransform rewardItem in _view.GetRewardItemList())
+            {
+                rewardItem.gameObject.SetActive(false);
+            }
             _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
             _view.GetButton(LevelFinishButtonType.Game).SetButtonStatus(false);
             _view.GetButton(LevelFinishButtonType.Menu).SetButtonStatus(false);
@@ -84,24 +88,22 @@ namespace Game
         
         public void InitRewardItem(RewardType rewardType)
         {
-            _view.GetRewardItem().gameObject.SetActive(true);
-            _view.GetRewardItem().rectTransform.localScale = Vector3.zero;
-            _view.GetRewardItem().rectTransform.localPosition = Vector3.zero;
-            Color color = Color.white;
+            _view.GetRewardItemHolder().gameObject.SetActive(true);
+            _view.GetRewardItemHolder().localScale = Vector3.zero;
+            _view.GetRewardItemHolder().localPosition = Vector3.zero;
             switch (rewardType)
             {
-                case RewardType.Retrieval:
-                    color = Color.blue;
+                case RewardType.Revealing:
+                    _view.GetRewardItemList()[0].gameObject.SetActive(true);
                     break;
                 case RewardType.Life:
-                    color = Color.red;
+                    _view.GetRewardItemList()[1].gameObject.SetActive(true);
                     break;
-                case RewardType.Hint:
-                    color = Color.yellow;
+                case RewardType.Bomb:
+                    _view.GetRewardItemList()[2].gameObject.SetActive(true);
                     break;
             }
 
-            _view.GetRewardItem().color = color;
         }
         
         public Sequence AnimateStarCreation(int numOfStars, float durationBetweenParticleAndStar, float duration)
@@ -137,7 +139,7 @@ namespace Game
 
             Action onClickClaim = () =>
             {
-                _view.GetRewardItem().rectTransform.localScale = Vector3.zero;
+                _view.GetRewardItemHolder().localScale = Vector3.zero;
                 DOTween.Sequence().AppendInterval(0.2f)
                     .AppendCallback(() => _view.GetStarCanvasGroup().alpha = 1f)
                     .AppendCallback(() => _view.GetButton(LevelFinishButtonType.Claim).SetButtonStatus(false))
@@ -148,9 +150,9 @@ namespace Game
 
             return DOTween.Sequence()
                 .Append(DOTween.Sequence().AppendInterval(0.4f).SetEase(Ease.OutQuad))
-                .Append(_view.GetRewardItem().rectTransform.DOScale(Vector3.one * 5 / 3f, 1.6f)).SetEase(Ease.OutQuad)
+                .Append(_view.GetRewardItemHolder().DOScale(Vector3.one * 5 / 3f, 1.6f)).SetEase(Ease.OutQuad)
                 .Join(DOTween.Sequence().AppendInterval(1f))
-                .Append(DOTween.Sequence().Append(_view.GetRewardItem().rectTransform.DOLocalMoveY(-190f, 1f))
+                .Append(DOTween.Sequence().Append(_view.GetRewardItemHolder().DOLocalMoveY(-190f, 1f))
                     .OnComplete(() => _hapticController.Vibrate(HapticType.Success)))
                 .Join(_view.GetText().DOFade(0f, 0.6f))
                 .Join(_view.GetStarCanvasGroup().DOFade(0f, 0.6f))
@@ -213,8 +215,8 @@ namespace Game
     
     public enum RewardType
     {
-        Retrieval,
+        Revealing,
         Life,
-        Hint
+        Bomb
     }
 }
