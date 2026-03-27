@@ -8,27 +8,74 @@ namespace Scripts
     {
         private IResultBlockView _view;
         private ResultBlockModel _model;
-        public void Initialize(IResultBlockView view, ResultBlockModel model)
+        public void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth)
         {
             _view = view;
             _model = model;
-            _view.Init(new NonDraggableCardItemViewFactory(), new ResultViewFactory());
+            _view.Init(new NonDraggableCardItemViewFactory(), new ResultImageViewFactory(), resultAreaWidth);
             CreateCardItems();
             CreateResults();
         }
 
         private void CreateResults()
         {
-            _view.SetResultHolderLocalPosition();
-            IResultView correctPosResultView = _view.CreateResult();
-            correctPosResultView.Init(CardPositionCorrectness.Correct, _model.correctPosCount);
-            IResultView wrongPosResultView = _view.CreateResult();
-            wrongPosResultView.Init(CardPositionCorrectness.Wrong, _model.wrongPosCount);
+            //_view.SetResultHolderLocalPosition();
+            
+            if (_model.correctPosCount + _model.wrongPosCount == 0)
+            {
+                return;
+            }
+            if (_model.correctPosCount + _model.wrongPosCount < 3)
+            {
+                for (int i = 0; i < _model.correctPosCount; i++)
+                {
+                    IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Middle);
+                    resultImage.Init(CardPositionCorrectness.Correct);
+                }
+                
+                for (int i = 0; i < _model.wrongPosCount; i++)
+                {
+                    IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Middle);
+                    resultImage.Init(CardPositionCorrectness.Wrong);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < _model.correctPosCount + _model.wrongPosCount; i++)
+                {
+                    if (i < (_model.correctPosCount + _model.wrongPosCount) / 2)
+                    {
+                        if (i < _model.correctPosCount)
+                        {
+                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Top);
+                            resultImage.Init(CardPositionCorrectness.Correct);
+                        }
+                        else
+                        {
+                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Top);
+                            resultImage.Init(CardPositionCorrectness.Wrong);
+                        }
+                    }
+                    else
+                    {
+                        if (i < _model.correctPosCount)
+                        {
+                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Bottom);
+                            resultImage.Init(CardPositionCorrectness.Correct);
+                        }
+                        else
+                        {
+                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Bottom);
+                            resultImage.Init(CardPositionCorrectness.Wrong);
+                        }
+                    }
+                }
+            }
         }
 
         private void CreateCardItems()
         {
-            _view.SetCardsHolderLocalPosition();
+            //_view.SetCardsHolderLocalPosition();
             for (int i = 0; i < _model.finalNumbers.Count; i++)
             {
                 INonDraggableCardItemView cardItemView = _view.CreateCardItem();
@@ -48,7 +95,7 @@ namespace Scripts
 
     public interface IResultBlockController
     {
-        void Initialize(IResultBlockView view, ResultBlockModel model);
+        void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth);
         void DestroyResultBlock();
     }
     

@@ -77,7 +77,7 @@ namespace Scripts
                 finalNumbers = finalNumbers,
                 correctPosCount = correctPosCount,
                 wrongPosCount = wrongPosCount
-            });
+            }, _view.GetWidth());
             _resultBlockControllers.Add(resultBlockController);
             
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())

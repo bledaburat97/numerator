@@ -20,6 +20,11 @@ namespace Scripts
             return canvasGroup;
         }
 
+        public float GetWidth()
+        {
+            return rectTransform.rect.width;
+        }
+
         public void SetScrollPositionToBottom()
         {
             StartCoroutine(ScrollToBottomCoroutine());
@@ -64,6 +69,7 @@ namespace Scripts
         IResultBlockView CreateResultBlock();
         void SetScrollPositionToBottom();
         CanvasGroup GetCanvasGroup();
+        float GetWidth();
     }
 
     public struct ResultAreaInfo

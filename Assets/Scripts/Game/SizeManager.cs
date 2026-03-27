@@ -11,7 +11,7 @@ namespace Game
         public void SetSizeRatio(Vector2 sizeOfTheBoardArea, Vector2 sizeOfTheBoardHolder, float wagonSpacingToBoardHolderWidthRatio)
         {
             float idealBoardHolderAreaWidthToHeightRatio =
-                (MaxBoardHolderCount + wagonSpacingToBoardHolderWidthRatio * (MaxBoardHolderCount - 1)
+                (MaxBoardHolderCount + 0 * (MaxBoardHolderCount - 1)
                                      + ExtraSpacingToBoardHolderWidthRatio) * sizeOfTheBoardHolder.x / sizeOfTheBoardHolder.y;
             float boardAreaRatio = sizeOfTheBoardArea.x / sizeOfTheBoardArea.y;
     

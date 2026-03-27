@@ -10,7 +10,6 @@ namespace Scripts
     public class GamePopupCreator : MonoBehaviour, IGamePopupCreator
     {
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-        //[Inject] private FadeButtonControllerFactory _fadeButtonControllerFactory;
         [Inject] private IHapticController _hapticController;
 
         [Inject] private IFadePanelController _fadePanelController;

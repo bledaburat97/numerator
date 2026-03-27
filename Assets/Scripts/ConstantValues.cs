@@ -13,8 +13,8 @@ namespace Scripts
         public static float INITIAL_CARD_HOLDER_WIDTH = 44f;
         public static float INITIAL_CARD_HOLDER_HEIGHT = 55f;
 
-        public static float RESULT_CARD_WIDTH = 32f;
-        public static float RESULT_CARD_HEIGHT = 40f;
+        public static float RESULT_CARD_WIDTH = 48f;
+        public static float RESULT_CARD_HEIGHT = 48f;
         public static float POSSIBLE_HOLDER_INDICATOR_WIDTH = 8f;
         public static float POSSIBLE_HOLDER_INDICATOR_HEIGHT = 14f;
         public static List<string> HOLDER_ID_LIST = new List<string>(){ "A", "B", "C", "D",  "E" };
