@@ -173,6 +173,11 @@ namespace Scripts
         {
             return _view.GetCardInfoButton().GetRectTransform();
         }
+
+        public void TriggerResetNumbers()
+        {
+            ResetNumbers?.Invoke(this, EventArgs.Empty);
+        }
         
         private void OnButtonClick(GameUIButtonType buttonType)
         {
@@ -189,7 +194,7 @@ namespace Scripts
                     }
                     break;
                 case GameUIButtonType.Reset:
-                    ResetNumbers?.Invoke(this,  EventArgs.Empty);
+                    TriggerResetNumbers();
                     break;
                 case GameUIButtonType.Settings:
                     OpenSettings?.Invoke(this,  EventArgs.Empty);
@@ -234,6 +239,7 @@ namespace Scripts
         RectTransform GetCheckButtonRectTransform();
         RectTransform GetResetButtonRectTransform();
         RectTransform GetCardInfoButtonRectTransform();
+        void TriggerResetNumbers();
         void SetAllButtonsUnclickable();
         void SetButtonClickable(bool isClickable, GameUIButtonType type);
         Sequence ChangeFadeTopAreaButtons(float duration, float finalAlpha);

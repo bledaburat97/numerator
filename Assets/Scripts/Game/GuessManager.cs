@@ -9,9 +9,10 @@ namespace Game
 {
     public class GuessManager : IGuessManager
     {
-        private ILifeBarController _lifeBarController;
-        private ILevelDataCreator _levelDataCreator;
-        private ILevelSaveDataManager _levelSaveDataManager;
+        private readonly ILifeBarController _lifeBarController;
+        private readonly ILevelDataCreator _levelDataCreator;
+        private readonly ILevelSaveDataManager _levelSaveDataManager;
+        private readonly IGameUIController _gameUIController;
         
         private int _remainingGuessCount;
         private int _maxGuessCount;
@@ -23,12 +24,13 @@ namespace Game
         public GuessManager(IResultManager resultManager, ILifeBarController lifeBarController,
             ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager,
             ILevelDataCreator levelDataCreator, ILevelSaveDataManager levelSaveDataManager,
-            IPowerUpMessageController powerUpMessageController)
+            IPowerUpMessageController powerUpMessageController, IGameUIController gameUIController)
         {
             resultManager.WrongGuessEvent += OnWrongGuess;
             _lifeBarController = lifeBarController;
             _levelDataCreator = levelDataCreator;
             _levelSaveDataManager = levelSaveDataManager;
+            _gameUIController = gameUIController;
             powerUpMessageController.AddLifeEvent += AddExtraLives;
         }
         
@@ -88,6 +90,9 @@ namespace Game
             
             _lifeBarController.UpdateProgressBar((float)_remainingGuessCount / _maxGuessCount, 1f,
                 _remainingGuessCount == 0 ? () => LevelFailEvent?.Invoke(this,EventArgs.Empty) : null).Play();
+
+
+            _gameUIController.TriggerResetNumbers();
         }
         
         private void AddExtraLives(object sender, EventArgs args)
