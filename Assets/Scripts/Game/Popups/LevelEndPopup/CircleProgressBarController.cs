@@ -17,12 +17,11 @@ namespace Scripts
         private MovingRewardItemView _movingRewardItemPrefab;
         private float _currentPercentage;
 
-        public CircleProgressBarController(ICircleProgressBarView view, IHapticController hapticController,
-            MovingRewardItemView movingRewardItemPrefab)
+        public CircleProgressBarController(ICircleProgressBarView view, IHapticController hapticController)
         {
             _view = view;
             _hapticController = hapticController;
-            _movingRewardItemPrefab = movingRewardItemPrefab;
+            _movingRewardItemPrefab = view.GetMovingRewardItemPrefab();
             _rewardItemTargetViewList = new List<IRewardItemTargetView>();
         }
         

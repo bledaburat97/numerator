@@ -13,6 +13,7 @@ namespace Scripts
         private ITurnOrderDeterminer _turnOrderDeterminer;
         private IHapticController _hapticController;
         private IGameUIView _view;
+        private IGamePowerUpAreaController _gamePowerUpAreaController;
         private ICardInfoButtonController _cardInfoButtonController;
 
         private Dictionary<GameUIButtonType, IBaseButtonController> _buttonDictionary;
@@ -21,11 +22,12 @@ namespace Scripts
         public event EventHandler NotAbleToCheck;
         public event EventHandler ResetNumbers;
         public event EventHandler OpenSettings;
-        public event EventHandler<GameUIButtonType> PowerUpClickedEvent;
         public event EventHandler<bool> CardInfoToggleChanged;
         
         [Inject]
-        public GameUIController(BaseButtonControllerFactory baseButtonControllerFactory, ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController, IGameUIView view)
+        public GameUIController(BaseButtonControllerFactory baseButtonControllerFactory, ILevelTracker levelTracker,
+            ITurnOrderDeterminer turnOrderDeterminer, IHapticController hapticController, IGameUIView view,
+            IGamePowerUpAreaController gamePowerUpAreaController)
         {
             _view = view;
             _buttonDictionary = new Dictionary<GameUIButtonType, IBaseButtonController>();
@@ -33,6 +35,7 @@ namespace Scripts
             _levelTracker = levelTracker;
             _turnOrderDeterminer = turnOrderDeterminer;
             _hapticController = hapticController;
+            _gamePowerUpAreaController = gamePowerUpAreaController;
             CreateGameUiButtons(OnButtonClick);
         }
 
@@ -99,9 +102,6 @@ namespace Scripts
             CreateButtonController(_view.GetCheckButton(), GameUIButtonType.Check, buttonClickAction);
             CreateButtonController(_view.GetResetButton(), GameUIButtonType.Reset, buttonClickAction);
             CreateButtonController(_view.GetSettingsButton(), GameUIButtonType.Settings, buttonClickAction);
-            CreateButtonController(_view.GetRevealingPowerUpButton(), GameUIButtonType.RevealingPowerUp, buttonClickAction);
-            CreateButtonController(_view.GetLifePowerUpButton(), GameUIButtonType.LifePowerUp, buttonClickAction);
-            CreateButtonController(_view.GetHintPowerUpButton(), GameUIButtonType.BombPowerUp, buttonClickAction);
         }
 
         private void InitializeCardInfoButton(Action<bool> onClickAction)
@@ -137,6 +137,8 @@ namespace Scripts
             {
                 _cardInfoButtonController.SetButtonClickable(false);
             }
+
+            _gamePowerUpAreaController.SetButtonsClickable(false);
         }
 
         public void SetButtonClickable(bool isClickable, GameUIButtonType type)
@@ -150,7 +152,10 @@ namespace Scripts
             }
             else
             {
-                _buttonDictionary[type].SetButtonClickable(isClickable);
+                if (_buttonDictionary.ContainsKey(type))
+                {
+                    _buttonDictionary[type].SetButtonClickable(isClickable);
+                }
             }
         }
         
@@ -199,15 +204,6 @@ namespace Scripts
                 case GameUIButtonType.Settings:
                     OpenSettings?.Invoke(this,  EventArgs.Empty);
                     break;
-                case GameUIButtonType.RevealingPowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.RevealingPowerUp);
-                    break;
-                case GameUIButtonType.LifePowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.LifePowerUp);
-                    break;
-                case GameUIButtonType.BombPowerUp:
-                    PowerUpClickedEvent?.Invoke(this, GameUIButtonType.BombPowerUp);
-                    break;
                 default:
                     break;
             }
@@ -250,7 +246,6 @@ namespace Scripts
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;
         event EventHandler OpenSettings;
-        event EventHandler<GameUIButtonType> PowerUpClickedEvent;
         event EventHandler<bool> CardInfoToggleChanged;
     }
 }

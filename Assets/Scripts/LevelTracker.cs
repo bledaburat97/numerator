@@ -8,7 +8,7 @@ namespace Scripts
         private int _giftStarCount;
         private int _revealingPowerUpCount;
         private int _lifePowerUpCount;
-        private int _hintPowerUpCount;
+        private int _bombPowerUpCount;
         private int _levelId;
         private RewardType _currentRewardType;
         
@@ -20,10 +20,20 @@ namespace Scripts
             _levelId = PlayerPrefs.GetInt("level_id", 0);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _giftStarCount = PlayerPrefs.GetInt("gift_star_count", 0);
-            _revealingPowerUpCount = PlayerPrefs.GetInt("revealing_power_up_count", 0);
-            _lifePowerUpCount = PlayerPrefs.GetInt("life_power_up_count", 0);
-            _hintPowerUpCount = PlayerPrefs.GetInt("hint_power_up_count", 0);
+            _revealingPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("revealing_power_up_count", 0));
+            _lifePowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("life_power_up_count", 0));
+            _bombPowerUpCount = Mathf.Max(0, PlayerPrefs.HasKey("bomb_power_up_count", 0));
             _currentRewardType = (RewardType)PlayerPrefs.GetInt("reward_type", 0);
+
+            bool shouldSaveSanitizedCounts =
+                _revealingPowerUpCount != PlayerPrefs.GetInt("revealing_power_up_count", 0) ||
+                _lifePowerUpCount != PlayerPrefs.GetInt("life_power_up_count", 0) ||
+                _bombPowerUpCount != PlayerPrefs.GetInt("bomb_power_up_count", 0);
+
+            if (shouldSaveSanitizedCounts)
+            {
+                SavePlayerPrefs();
+            }
         }
         
         public void ClearPlayerPrefs()
@@ -32,7 +42,9 @@ namespace Scripts
             PlayerPrefs.DeleteKey("gift_star_count");
             PlayerPrefs.DeleteKey("revealing_power_up_count");
             PlayerPrefs.DeleteKey("life_power_up_count");
+            PlayerPrefs.DeleteKey("bomb_power_up_count");
             PlayerPrefs.DeleteKey("hint_power_up_count");
+            PlayerPrefs.DeleteKey("reward_type");
         }
         
         public void SavePlayerPrefs()
@@ -42,8 +54,10 @@ namespace Scripts
             PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
             PlayerPrefs.SetInt("revealing_power_up_count", _revealingPowerUpCount);
             PlayerPrefs.SetInt("life_power_up_count", _lifePowerUpCount);
-            PlayerPrefs.SetInt("hint_power_up_count", _hintPowerUpCount);
+            PlayerPrefs.SetInt("bomb_power_up_count", _bombPowerUpCount);
+            PlayerPrefs.DeleteKey("hint_power_up_count");
             PlayerPrefs.SetInt("reward_type", (int)_currentRewardType);
+            PlayerPrefs.Save();
         }
 
         public void SetGameOption(GameOption gameOption)
@@ -80,42 +94,51 @@ namespace Scripts
         {
             _levelId++;
             _starCount += starCount;
-            if (_giftStarCount + giftStarCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
+            int totalGiftStarCount = _giftStarCount + giftStarCount;
+            while (totalGiftStarCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
-                int newRewardType = ((int)_currentRewardType + 1) % 3;
-                _currentRewardType = (RewardType)newRewardType;
+                IncreasePowerUpCount(_currentRewardType);
+                totalGiftStarCount -= ConstantValues.NUM_OF_STARS_FOR_WILD;
+                _currentRewardType = GetNextRewardType(_currentRewardType);
             }
-            _giftStarCount = (_giftStarCount + giftStarCount) % ConstantValues.NUM_OF_STARS_FOR_WILD;
+            _giftStarCount = totalGiftStarCount;
+            SavePlayerPrefs();
         }
         
         public void IncreaseRevealingPowerUpCount()
         {
             _revealingPowerUpCount++;
+            SavePlayerPrefs();
         }
         
         public void IncreaseLifePowerUpCount()
         {
             _lifePowerUpCount++;
-        }
-        
-        public void IncreaseHintPowerUpCount()
-        {
-            _hintPowerUpCount++;
+            SavePlayerPrefs();
         }
         
         public void DecreaseRevealingPowerUpCount()
         {
-            _revealingPowerUpCount -= 1;
+            _revealingPowerUpCount = Mathf.Max(0, _revealingPowerUpCount - 1);
+            SavePlayerPrefs();
         }
         
         public void DecreaseLifePowerUpCount()
         {
-            _lifePowerUpCount -= 1;
+            _lifePowerUpCount = Mathf.Max(0, _lifePowerUpCount - 1);
+            SavePlayerPrefs();
         }
         
-        public void DecreaseHintPowerUpCount()
+        public void IncreaseBombPowerUpCount()
         {
-            _hintPowerUpCount -= 1;
+            _bombPowerUpCount++;
+            SavePlayerPrefs();
+        }
+
+        public void DecreaseBombPowerUpCount()
+        {
+            _bombPowerUpCount = Mathf.Max(0, _bombPowerUpCount - 1);
+            SavePlayerPrefs();
         }
 
         public int GetLevelId()
@@ -135,22 +158,57 @@ namespace Scripts
         
         public int GetRevealingPowerUpCount()
         {
-            return _revealingPowerUpCount;
+            return Mathf.Max(0, _revealingPowerUpCount);
         }
 
         public int GetLifePowerUpCount()
         {
-            return _lifePowerUpCount;
+            return Mathf.Max(0, _lifePowerUpCount);
         }
 
-        public int GetHintPowerUpCount()
+        public int GetBombPowerUpCount()
         {
-            return _hintPowerUpCount;
+            return Mathf.Max(0, _bombPowerUpCount);
         }
 
         public RewardType GetCurrentRewardType()
         {
             return _currentRewardType;
+        }
+
+        public int GetPowerUpCount(RewardType rewardType)
+        {
+            switch (rewardType)
+            {
+                case RewardType.Revealing:
+                    return GetRevealingPowerUpCount();
+                case RewardType.Life:
+                    return GetLifePowerUpCount();
+                case RewardType.Bomb:
+                    return GetBombPowerUpCount();
+                default:
+                    return 0;
+            }
+        }
+
+        public bool TryConsumePowerUp(RewardType rewardType)
+        {
+            if (GetPowerUpCount(rewardType) <= 0) return false;
+
+            switch (rewardType)
+            {
+                case RewardType.Revealing:
+                    DecreaseRevealingPowerUpCount();
+                    break;
+                case RewardType.Life:
+                    DecreaseLifePowerUpCount();
+                    break;
+                case RewardType.Bomb:
+                    DecreaseBombPowerUpCount();
+                    break;
+            }
+
+            return true;
         }
 
         public bool IsFirstLevelTutorial()
@@ -161,6 +219,27 @@ namespace Scripts
         public bool IsCardInfoTutorial()
         {
             return false; //_levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
+        }
+
+        private void IncreasePowerUpCount(RewardType rewardType)
+        {
+            switch (rewardType)
+            {
+                case RewardType.Revealing:
+                    _revealingPowerUpCount++;
+                    break;
+                case RewardType.Life:
+                    _lifePowerUpCount++;
+                    break;
+                case RewardType.Bomb:
+                    _bombPowerUpCount++;
+                    break;
+            }
+        }
+
+        private static RewardType GetNextRewardType(RewardType rewardType)
+        {
+            return (RewardType)(((int)rewardType + 1) % 3);
         }
     }
 
@@ -177,16 +256,18 @@ namespace Scripts
         void IncrementLevelId(int starCount, int giftStarCount);
         void IncreaseRevealingPowerUpCount();
         void IncreaseLifePowerUpCount();
-        void IncreaseHintPowerUpCount();
+        void IncreaseBombPowerUpCount();
         void DecreaseRevealingPowerUpCount();
         void DecreaseLifePowerUpCount();
-        void DecreaseHintPowerUpCount();
+        void DecreaseBombPowerUpCount();
         int GetLevelId();
         int GetGiftStarCount();
         int GetStarCount();
         int GetRevealingPowerUpCount();
         int GetLifePowerUpCount();
-        int GetHintPowerUpCount();
+        int GetBombPowerUpCount();
+        int GetPowerUpCount(RewardType rewardType);
+        bool TryConsumePowerUp(RewardType rewardType);
         RewardType GetCurrentRewardType();
     }
 

@@ -1,4 +1,5 @@
-﻿using Menu;
+﻿using Game;
+using Menu;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
@@ -12,6 +13,8 @@ namespace Scripts
         //[Inject] private IActiveLevelIdController _activeLevelIdController;
         [Inject] private IMenuHeaderController _menuHeaderController;
         [Inject] private IMenuUIController _menuUIController;
+        [Inject] private IMenuPowerUpCountHolderController _menuPowerUpCountHolderController;
+        [Inject] private IRewardProgressDisplayController _rewardProgressDisplayController;
         [Inject] private IHapticController _hapticController;
 
         void Awake()
@@ -20,8 +23,12 @@ namespace Scripts
             {
                 PlayerPrefs.SetInt("level_id", 0);
                 PlayerPrefs.SetInt("star_count", 0);
-                PlayerPrefs.SetInt("blue_star_count", 0);
-                PlayerPrefs.SetInt("wild_card_count", 0);
+                PlayerPrefs.SetInt("gift_star_count", 0);
+                PlayerPrefs.SetInt("revealing_power_up_count", 0);
+                PlayerPrefs.SetInt("life_power_up_count", 0);
+                PlayerPrefs.SetInt("bomb_power_up_count", 0);
+                PlayerPrefs.SetInt("reward_type", (int)RewardType.Revealing);
+                PlayerPrefs.DeleteKey("hint_power_up_count");
                 PlayerPrefs.SetString("star_count_of_levels", "");
                 _levelTracker.SetGameOption(GameOption.SinglePlayer);
                 //SceneManager.LoadScene("Game");
@@ -49,6 +56,8 @@ namespace Scripts
         private void CreateMenuHeader()
         {
             _menuHeaderController.Initialize(_levelTracker);
+            _menuPowerUpCountHolderController.Initialize();
+            _rewardProgressDisplayController.Initialize();
         }
     }
 }

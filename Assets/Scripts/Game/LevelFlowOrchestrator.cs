@@ -18,6 +18,8 @@ namespace Game
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly IGamePopupCreator _gamePopupCreator;
         private readonly IGameUIController _gameUIController;
+        private readonly IGamePowerUpAreaController _gamePowerUpAreaController;
+        private readonly IRewardProgressDisplayController _rewardProgressDisplayController;
         private readonly ILevelStartAnimationManager _levelStartAnimationManager;
         private readonly ICardItemLocator _cardItemLocator;
         private readonly IGuessManager _guessManager;
@@ -46,6 +48,8 @@ namespace Game
             IInitialCardAreaController initialCardAreaController,
             IGamePopupCreator gamePopupCreator,
             IGameUIController gameUIController,
+            IGamePowerUpAreaController gamePowerUpAreaController,
+            IRewardProgressDisplayController rewardProgressDisplayController,
             ILevelStartAnimationManager levelStartAnimationManager,
             ICardItemLocator cardItemLocator,
             IGuessManager guessManager,
@@ -69,6 +73,8 @@ namespace Game
             _initialCardAreaController = initialCardAreaController;
             _gamePopupCreator = gamePopupCreator;
             _gameUIController = gameUIController;
+            _gamePowerUpAreaController = gamePowerUpAreaController;
+            _rewardProgressDisplayController = rewardProgressDisplayController;
             _levelStartAnimationManager = levelStartAnimationManager;
             _cardItemLocator = cardItemLocator;
             _guessManager = guessManager;
@@ -92,6 +98,8 @@ namespace Game
             _gamePopupCreator.Initialize();
             _levelEndPopupController.SetPopupStatus(false);
             _levelEndPopupController.SetAllStatusFalse();
+            _gamePowerUpAreaController.Refresh();
+            _rewardProgressDisplayController.Refresh();
             _isGameOver = false;
             _state = LevelFlowState.Building;
 
@@ -255,7 +263,7 @@ namespace Game
                 GoToNextLevel);
             _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menu", OnMenuButtonClicked);
             _levelEndPopupController.InitText("Well Done");
-            _levelEndPopupController.CreateRewardCircle(rewardStarCount);
+            _levelEndPopupController.CreateRewardCircle(rewardStarCount, rewardType);
             _levelEndPopupController.InitStarsAndParticles(totalStarCount, newRewardStarCount);
             _levelEndPopupController.InitRewardItem(rewardType);
             _levelSuccessAnimationManager.SuccessLevelAnimation(

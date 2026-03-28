@@ -143,7 +143,6 @@ namespace Scripts
         
         private void SetLockedCardController(object sender, LockedCardInfo lockedCardInfo)
         {
-            _levelTracker.DecreaseRevealingPowerUpCount();
             INormalCardItemController normalCardItemController = _normalCardItemControllerList[lockedCardInfo.TargetCardIndex];
             normalCardItemController.GetView().SetParent(_boardAreaController.GetRectTransformOfGarden(lockedCardInfo.BoardHolderIndex));
             normalCardItemController.GetView().InitLocalScale();

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1763071385077760327}
   - component: {fileID: 305839149966976749}
   m_Layer: 5
-  m_Name: RewarItemTarget
+  m_Name: RewardItemTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -9,8 +9,9 @@ namespace Scripts
     {
         private IHapticController _hapticController;
         private IFadePanelController _fadePanelController;
-        private IBoardCardIndexManager _boardCardIndexManager;
         private ITargetNumberCreator _targetNumberCreator;
+        private ILevelTracker _levelTracker;
+        private IGamePowerUpAreaController _gamePowerUpAreaController;
         private GameUIButtonType _activePowerUpType;
         
         public event EventHandler RemoveBoardHolderEvent;
@@ -19,13 +20,16 @@ namespace Scripts
         public event EventHandler<GameUIButtonType> ClosePowerUpEvent;
         public event EventHandler AddLifeEvent;
         [Inject]
-        public PowerUpMessageController(IHapticController hapticController, IGameUIController gameUIController,
-            IFadePanelController fadePanelController, ITargetNumberCreator targetNumberCreator)
+        public PowerUpMessageController(IHapticController hapticController,
+            IGamePowerUpAreaController gamePowerUpAreaController, IFadePanelController fadePanelController,
+            ITargetNumberCreator targetNumberCreator, ILevelTracker levelTracker)
         {
             _hapticController = hapticController;
             _fadePanelController = fadePanelController;
-            gameUIController.PowerUpClickedEvent += OnPowerUpClicked;
+            gamePowerUpAreaController.PowerUpClickedEvent += OnPowerUpClicked;
+            _gamePowerUpAreaController = gamePowerUpAreaController;
             _targetNumberCreator = targetNumberCreator;
+            _levelTracker = levelTracker;
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
@@ -37,20 +41,27 @@ namespace Scripts
                     {
                         OnClosePowerUp();
                     }
+                    if (!_levelTracker.TryConsumePowerUp(RewardType.Life)) return;
+                    _gamePowerUpAreaController.Refresh();
                     AddLifeEvent?.Invoke(this, EventArgs.Empty);
-                    //_guessManager.AddExtraLives(3);
                     break;
                 case GameUIButtonType.BombPowerUp:
                     if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
                     {
                         OnClosePowerUp();
                     }
+                    if (!_levelTracker.TryConsumePowerUp(RewardType.Bomb)) return;
+                    _gamePowerUpAreaController.Refresh();
                     RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
                     break;
                 case GameUIButtonType.RevealingPowerUp:
                     if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
                     {
                         OnClosePowerUp();
+                    }
+                    else if (_levelTracker.GetPowerUpCount(RewardType.Revealing) <= 0)
+                    {
+                        return;
                     }
                     else
                     {
@@ -76,6 +87,14 @@ namespace Scripts
         {
             if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
             {
+                if (!_levelTracker.TryConsumePowerUp(RewardType.Revealing))
+                {
+                    OnClosePowerUp();
+                    return;
+                }
+
+                _gamePowerUpAreaController.Refresh();
+
                 _hapticController.Vibrate(HapticType.CardRelease);
                 int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
                 int cardIndex = cardNumber - 1;

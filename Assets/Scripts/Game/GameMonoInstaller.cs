@@ -15,6 +15,8 @@ namespace Scripts
         [SerializeField] private LifeBarView lifeBarView;
         [SerializeField] private GameClockView gameClockView;
         [SerializeField] private GameUIView gameUI;
+        [SerializeField] private PowerUpListHolderView powerUpAreaView;
+        [SerializeField] private CircleProgressBarView rewardProgressBarView;
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
         public override void InstallBindings()
         {
@@ -47,6 +49,10 @@ namespace Scripts
             Container.Bind<ITargetNumberCreator>().To<TargetNumberCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IGameUIController>().To<GameUIController>().AsSingle()
                 .WithArguments(gameUI);
+            Container.Bind<IGamePowerUpAreaController>().To<GamePowerUpAreaController>().AsSingle()
+                .WithArguments(ResolvePowerUpAreaView());
+            Container.Bind<IRewardProgressDisplayController>().To<RewardProgressDisplayController>().AsSingle()
+                .WithArguments(ResolveRewardProgressBarView());
             Container.Bind<IUnmaskServiceAreaView>().To<UnmaskServiceAreaView>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
@@ -63,6 +69,29 @@ namespace Scripts
             Container.Bind<ILevelFailAnimationManager>().To<LevelFailAnimationManager>().AsSingle();
             Container.Bind<ILevelFlowOrchestrator>().To<LevelFlowOrchestrator>().AsSingle();
             Container.Bind<IBoardCardIndexManager>().To<BoardCardIndexManager>().AsSingle();
+        }
+
+        private PowerUpListHolderView ResolvePowerUpAreaView()
+        {
+            if (powerUpAreaView != null) return powerUpAreaView;
+
+            return FindObjectOfType<PowerUpListHolderView>(true);
+        }
+
+        private CircleProgressBarView ResolveRewardProgressBarView()
+        {
+            if (rewardProgressBarView != null) return rewardProgressBarView;
+
+            CircleProgressBarView[] circleProgressBarViews = FindObjectsOfType<CircleProgressBarView>(true);
+            foreach (CircleProgressBarView circleProgressBar in circleProgressBarViews)
+            {
+                if (circleProgressBar.GetComponentInParent<LevelFinishPopupView>() == null)
+                {
+                    return circleProgressBar;
+                }
+            }
+
+            return null;
         }
     }
 }

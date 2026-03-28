@@ -17,6 +17,8 @@ namespace Scripts
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
+        [Inject] private IGamePowerUpAreaController _gamePowerUpAreaController;
+        [Inject] private IRewardProgressDisplayController _rewardProgressDisplayController;
         [Inject] private ILevelFlowOrchestrator _levelFlowOrchestrator;
 
         void Start()
@@ -24,6 +26,7 @@ namespace Scripts
             InitializeHapticController();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
+            InitializePowerUpUi();
             InitializeGame();
         }
 
@@ -56,6 +59,12 @@ namespace Scripts
             }
 
             _levelFlowOrchestrator.Begin(entryMode);
+        }
+
+        private void InitializePowerUpUi()
+        {
+            _gamePowerUpAreaController.Initialize();
+            _rewardProgressDisplayController.Initialize();
         }
 
         private void OnDestroy()

@@ -13,9 +13,6 @@ namespace Scripts
         [SerializeField] private BaseButtonView resetButton;
         [SerializeField] private BaseButtonView settingsButton;
         [SerializeField] private CardInfoButtonView cardInfoButton;
-        [SerializeField] private PowerUpButtonView revealingPowerUpButton;
-        [SerializeField] private PowerUpButtonView lifePowerUpButton;
-        [SerializeField] private PowerUpButtonView hintPowerUpButton;
         [SerializeField] private GameObject opponentInfo;
         [SerializeField] private CanvasGroup topButtonsCanvasGroup;
         [SerializeField] private CanvasGroup middleButtonsCanvasGroup;
@@ -60,21 +57,6 @@ namespace Scripts
             return cardInfoButton;
         }
         
-        public IBaseButtonView GetRevealingPowerUpButton()
-        {
-            return revealingPowerUpButton;
-        }
-        
-        public IBaseButtonView GetLifePowerUpButton()
-        {
-            return lifePowerUpButton;
-        }
-        
-        public IBaseButtonView GetHintPowerUpButton()
-        {
-            return hintPowerUpButton;
-        }
-
         public TMP_Text GetUserText()
         {
             return userText;
@@ -89,9 +71,6 @@ namespace Scripts
         IBaseButtonView GetResetButton();
         IBaseButtonView GetSettingsButton();
         ICardInfoButtonView GetCardInfoButton();
-        IBaseButtonView GetRevealingPowerUpButton();
-        IBaseButtonView GetLifePowerUpButton();
-        IBaseButtonView GetHintPowerUpButton();
         void SetOpponentInfoStatus(bool status);
         CanvasGroup GetTopButtonsCanvasGroup();
         CanvasGroup GetMiddleButtonsCanvasGroup();
