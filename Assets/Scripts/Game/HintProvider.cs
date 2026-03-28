@@ -8,18 +8,16 @@ namespace Game
 {
     public class HintProvider : IHintProvider
     {
-        private IBoardAreaController _boardAreaController;
         private ITargetNumberCreator _targetNumberCreator;
         private ICardItemInfoManager _cardItemInfoManager;
         private IInitialCardAreaController _initialCardAreaController;
         private IBoardCardIndexManager _boardCardIndexManager;
         
         [Inject]
-        public HintProvider(IGuessManager guessManager, IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator,
+        public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController, IBoardCardIndexManager boardCardIndexManager)
         {
             guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
-            _boardAreaController = boardAreaController;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;

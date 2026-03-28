@@ -27,7 +27,9 @@ namespace Scripts
             Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()
                 .WithArguments(lifeBarView);
             Container.Bind<IGuessManager>().To<GuessManager>().AsSingle();
-            Container.Bind<IBoardAreaController>().To<BoardAreaController>().AsSingle().WithArguments(boardAreaView);
+            Container.Bind<BoardAreaController>().AsSingle().WithArguments(boardAreaView);
+            Container.Bind<IBoardAreaController>().To<BoardAreaController>().FromResolve();
+            Container.Bind<IBoardStateReader>().To<BoardAreaController>().FromResolve();
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();
             Container.Bind<ICardItemInfoPopupController>().To<CardItemInfoPopupController>().AsSingle()
                 .WithArguments(cardItemInfoPopupView);
@@ -44,9 +46,11 @@ namespace Scripts
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
+            Container.Bind<IGameSaveSnapshotProvider>().To<GameSaveSnapshotProvider>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
-            Container.Bind<IBoxMovementHandler>().To<BoxMovementHandler>().AsSingle();
+            Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
+            Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();
             Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);;
             Container.Bind<ILevelSuccessManager>().To<LevelSuccessManager>().AsSingle();
             Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();

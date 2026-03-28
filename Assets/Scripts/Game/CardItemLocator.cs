@@ -9,7 +9,6 @@ namespace Scripts
     public class CardItemLocator : ICardItemLocator
     {
         private IBoardAreaController _boardAreaController;
-        private IBoardCardIndexManager _boardCardIndexManager;
         private int _activeCardIndex;
         private int _probableBoardHolderIndex;
         
@@ -18,11 +17,9 @@ namespace Scripts
 
 
         [Inject]
-        public CardItemLocator(IBoardAreaController boardAreaController, IGameUIController gameUIController, 
-            IBoardCardIndexManager boardCardIndexManager)
+        public CardItemLocator(IBoardAreaController boardAreaController, IGameUIController gameUIController)
         {
             _boardAreaController = boardAreaController;
-            _boardCardIndexManager = boardCardIndexManager;
             gameUIController.ResetNumbers += OnResetNumbers;
         }
 
@@ -73,7 +70,6 @@ namespace Scripts
             if (_activeCardIndex == cardIndex)
             {
                 CardPlacedBoardEvent?.Invoke(this, EventArgs.Empty);
-                _boardCardIndexManager.SetCardIndexOnBoardHolder(_probableBoardHolderIndex, cardIndex);
                 _boardAreaController.HighlightBoardHolder(_probableBoardHolderIndex, false);
                 int boardHolderIndex = _probableBoardHolderIndex;
                 _probableBoardHolderIndex = -1;

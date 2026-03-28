@@ -7,20 +7,18 @@ namespace Scripts
 public class CardMoveHandler : ICardMoveHandler
 {
     private readonly IHapticController _hapticController;
-    private readonly IBoardAreaController _boardAreaController;
     private Action<int> _onDragStart;
     private Action<Vector2, int> _onDragContinue;
     private Func<int, int> _onDragComplete;
+    private Action<int, int> _onMoveToBoardRequested;
+    private Action<int> _onMoveToInitialRequested;
     private Action<int> _onClick;
     private bool _isDragStart;
     private int _cardIndex;
-    public event EventHandler<RectTransform> MoveCardToBoardEvent;
-    public event EventHandler MoveCardToInitialEvent;
 
-    public CardMoveHandler(IHapticController hapticController, IBoardAreaController boardAreaController, int cardIndex)
+    public CardMoveHandler(IHapticController hapticController, int cardIndex)
     {
         _hapticController = hapticController;
-        _boardAreaController = boardAreaController;
         _cardIndex = cardIndex;
     }
 
@@ -34,12 +32,6 @@ public class CardMoveHandler : ICardMoveHandler
 
         _isDragStart = true;
         _onDragContinue(position, _cardIndex);
-    }
-
-    public void MoveCardToBoard(RectTransform wagonTransform)
-    {
-        _onDragStart?.Invoke(_cardIndex);
-        MoveCardToBoardEvent?.Invoke(this, wagonTransform);
     }
 
     public void SetOnClick(Action<int> onClick)
@@ -61,6 +53,16 @@ public class CardMoveHandler : ICardMoveHandler
     {
         _onDragContinue = onDragContinue;
     }
+
+    public void SetOnMoveToBoardRequested(Action<int, int> onMoveToBoardRequested)
+    {
+        _onMoveToBoardRequested = onMoveToBoardRequested;
+    }
+
+    public void SetOnMoveToInitialRequested(Action<int> onMoveToInitialRequested)
+    {
+        _onMoveToInitialRequested = onMoveToInitialRequested;
+    }
     
     public void OnPointerUp(PointerEventData data)
     {
@@ -74,11 +76,11 @@ public class CardMoveHandler : ICardMoveHandler
             int boardHolderIndex = _onDragComplete(_cardIndex);
             if (boardHolderIndex != -1)
             {
-                MoveCardToBoardEvent?.Invoke(this, _boardAreaController.GetRectTransformOfGarden(boardHolderIndex));
+                _onMoveToBoardRequested?.Invoke(_cardIndex, boardHolderIndex);
             }
             else
             {
-                MoveCardToInitialEvent?.Invoke(this, EventArgs.Empty);
+                _onMoveToInitialRequested?.Invoke(_cardIndex);
             }
         }
     }
@@ -92,16 +94,10 @@ public class CardMoveHandler : ICardMoveHandler
     {
         _isDragStart = false;
     }
-
-    public void MoveCardToInitial()
-    {
-        MoveCardToInitialEvent?.Invoke(this, EventArgs.Empty);
-    }
 }
 
 public interface ICardMoveHandler
 {
-    void MoveCardToBoard(RectTransform wagonTransform);
     bool IsDragStarted();
     void OnPointerDown(PointerEventData data);
     void OnPointerUp(PointerEventData data);
@@ -109,9 +105,8 @@ public interface ICardMoveHandler
     void SetOnClick(Action<int> onClick);
     void SetOnDragComplete(Func<int, int> onDragComplete);
     void SetOnDragContinue(Action<Vector2, int> onDragContinue);
+    void SetOnMoveToBoardRequested(Action<int, int> onMoveToBoardRequested);
+    void SetOnMoveToInitialRequested(Action<int> onMoveToInitialRequested);
     void HandleDrag(Vector2 position);
-    void MoveCardToInitial();
-    event EventHandler<RectTransform> MoveCardToBoardEvent;
-    event EventHandler MoveCardToInitialEvent;
 }
 }

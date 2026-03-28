@@ -12,10 +12,11 @@ namespace Scripts
         private IHapticController _hapticController;
         private ILevelTracker _levelTracker;
         private IBoardAreaController _boardAreaController;
+        private IBoardStateReader _boardStateReader;
         private IInitialCardAreaView _view;
         private IInitialCardHolderController[] _normalCardHolderControllerList;
         private INormalCardItemController[] _normalCardItemControllerList;
-        private IBoxMovementHandler _boxMovementHandler;
+        private ICardPlacementCoordinator _cardPlacementCoordinator;
         private ILevelDataCreator _levelDataCreator;
         private ILevelSaveDataManager _levelSaveDataManager;
         //private List<Vector2> _initialHolderLocalPositionList;
@@ -29,15 +30,16 @@ namespace Scripts
         
         [Inject]
         public InitialCardAreaController(IHapticController hapticController, IInitialCardAreaView view, 
-            ILevelTracker levelTracker, IBoxMovementHandler boxMovementHandler, ISizeManager sizeManager, IBoardCardIndexManager boardCardIndexManager,
-            IBoardAreaController boardAreaController, ILevelDataCreator levelDataCreator, IPowerUpMessageController powerUpMessageController,
+            ILevelTracker levelTracker, ICardPlacementCoordinator cardPlacementCoordinator, ISizeManager sizeManager, IBoardCardIndexManager boardCardIndexManager,
+            IBoardAreaController boardAreaController, IBoardStateReader boardStateReader, ILevelDataCreator levelDataCreator, IPowerUpMessageController powerUpMessageController,
             ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator)
         {
             _view = view;
             _hapticController = hapticController;
             _levelTracker = levelTracker;
             _boardAreaController = boardAreaController;
-            _boxMovementHandler = boxMovementHandler;
+            _boardStateReader = boardStateReader;
+            _cardPlacementCoordinator = cardPlacementCoordinator;
             _levelDataCreator = levelDataCreator;
             _sizeManager = sizeManager;
             _boardCardIndexManager = boardCardIndexManager;
@@ -56,8 +58,8 @@ namespace Scripts
             SetHolderIndicatorPositionList();
             CreateCardHolders(cardItemInfoList);
             CreateCardItemsData(cardItemInfoList);
-            _boxMovementHandler.Initialize(_normalCardItemControllerList.Length, (i) => _normalCardItemControllerList[i]);
-            _boxMovementHandler.AddCardActions();
+            _cardPlacementCoordinator.Initialize(_normalCardItemControllerList.Length, (i) => _normalCardItemControllerList[i]);
+            _cardPlacementCoordinator.AddCardActions();
 
             if (isNewGame)
             {
@@ -93,7 +95,7 @@ namespace Scripts
             
             float verticalLocalPos = 0f;
             _holderIndicatorLocalPositionList = _holderIndicatorLocalPositionList.GetLocalPositionList(
-                _boardAreaController.GetNumOfBoardHolders(), spacing, holderIndicatorSize, verticalLocalPos);
+                _boardStateReader.GetNumOfBoardHolders(), spacing, holderIndicatorSize, verticalLocalPos);
         }
 
         public void DeleteOneHolderIndicator()
@@ -183,7 +185,7 @@ namespace Scripts
         public List<ICardViewHandler> CreateTempCards()
         {
             List<ICardViewHandler> tempCards = new List<ICardViewHandler>();
-            int numOfBoardHolders = _boardAreaController.GetNumOfBoardHolders();
+            int numOfBoardHolders = _boardStateReader.GetNumOfBoardHolders();
             for (int boardHolderIndex = 0; boardHolderIndex < numOfBoardHolders; boardHolderIndex++)
             {
                 CardItemData cardItemData = new CardItemData(
@@ -195,7 +197,7 @@ namespace Scripts
                     true,
                     _sizeManager.GetSizeRatio() * _view.GetSizeOfBoxPrefab());
                 INormalCardItemView cardItemView = _view.CreateCardItemView(cardItemData.Parent);
-                INormalCardItemController cardItem = new NormalCardItemController(cardItemView, _view.GetCamera(), _hapticController, cardItemData, _boardAreaController);
+                INormalCardItemController cardItem = new NormalCardItemController(cardItemView, _view.GetCamera(), _hapticController, cardItemData);
                 cardItem.GetCardViewHandler().SetLocalPosition(new Vector2(0f, 1000f));
                 tempCards.Add(cardItem.GetCardViewHandler());
             }
@@ -206,7 +208,7 @@ namespace Scripts
         private void CreateCardItem(CardItemData cardItemData)
         {
             INormalCardItemView normalCardItemView = _view.CreateCardItemView(cardItemData.Parent);
-            INormalCardItemController normalCardItemController = new NormalCardItemController(normalCardItemView, _view.GetCamera(), _hapticController, cardItemData, _boardAreaController);
+            INormalCardItemController normalCardItemController = new NormalCardItemController(normalCardItemView, _view.GetCamera(), _hapticController, cardItemData);
             _normalCardItemControllerList[cardItemData.CardItemIndex] = normalCardItemController;
         }
         

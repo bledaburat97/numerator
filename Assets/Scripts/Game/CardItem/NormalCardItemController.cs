@@ -9,9 +9,9 @@ namespace Scripts
         private CardItemData _cardItemData;
         
         public NormalCardItemController(INormalCardItemView cardItemView, Camera cam,
-            IHapticController hapticController, CardItemData cardItemData, IBoardAreaController boardAreaController)
+            IHapticController hapticController, CardItemData cardItemData)
         {
-            _cardMoveHandler = new CardMoveHandler(hapticController, boardAreaController, cardItemData.CardItemIndex);
+            _cardMoveHandler = new CardMoveHandler(hapticController, cardItemData.CardItemIndex);
             _cardViewHandler = new CardViewHandler(cardItemView, cam, hapticController, _cardMoveHandler, cardItemData);
         }
         

@@ -1,4 +1,5 @@
 ﻿using Game;
+using Unity.Netcode;
 using UnityEngine;
 using Zenject;
 
@@ -7,20 +8,17 @@ namespace Scripts
     public class GamePlayContext : MonoBehaviour
     {
         [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private IGameSaveSnapshotProvider _gameSaveSnapshotProvider;
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private IResultManager _resultManager;
-        [Inject] private IGuessManager _guessManager;
-        [Inject] private ICardItemInfoManager _cardItemInfoManager;
         [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
-        [Inject] private IBoxMovementHandler _boxMovementHandler;
+        [Inject] private ICardPlacementCoordinator _cardPlacementCoordinator;
         [Inject] private ICardInteractionManager _cardInteractionManager;
-        [Inject] private ITargetNumberCreator _targetNumberCreator;
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
         [Inject] private ILevelStartManager _levelStartManager;
-        [Inject] private ILevelEndManager _levelEndManager;
-        [Inject] private IBoardAreaController _boardAreaController;
+
         void Start()
         {
             InitializeHapticController();
@@ -31,6 +29,7 @@ namespace Scripts
 
         private void InitializeHapticController() //TODO: set in global installer
         {
+            if (_hapticController == null) return;
             _hapticController.Initialize();
         }
         
@@ -54,16 +53,21 @@ namespace Scripts
 
         private void OnDestroy()
         {
-            _boxMovementHandler.Unsubscribe();
+            _cardPlacementCoordinator.Unsubscribe();
             _cardInteractionManager.Unsubscribe();
             _cardItemInfoPopupController.Unsubscribe();
         }
         
         private void TrySave()
         {
+            if (_levelTracker == null || _gameSaveSnapshotProvider == null || _gameSaveService == null) return;
+
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController);
+                if (_gameSaveSnapshotProvider.TryCreateSnapshot(out LevelSaveData levelSaveData))
+                {
+                    _gameSaveService.Save(levelSaveData);
+                }
             }
         }
         
@@ -86,10 +90,7 @@ namespace Scripts
         
         private void OnApplicationQuit()
         {
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController);
-            }
+            TrySave();
             
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)

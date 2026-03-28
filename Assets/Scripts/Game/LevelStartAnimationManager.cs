@@ -7,17 +7,15 @@ namespace Game
 {
     public class LevelStartAnimationManager : ILevelStartAnimationManager
     {
-        private IBoardAreaController _boardAreaController;
         private IResultAreaController _resultAreaController;
         private ILifeBarController _lifeBarController;
         private IInitialCardAreaController _initialCardAreaController;
         private IGameUIController _gameUIController;
 
         [Inject] 
-        public LevelStartAnimationManager(IBoardAreaController boardAreaController, IResultAreaController resultAreaController,
+        public LevelStartAnimationManager(IResultAreaController resultAreaController,
             ILifeBarController lifeBarController, IInitialCardAreaController initialCardAreaController, IGameUIController gameUIController)
         {
-            _boardAreaController = boardAreaController;
             _resultAreaController = resultAreaController;
             _lifeBarController = lifeBarController;
             _initialCardAreaController = initialCardAreaController;
@@ -66,11 +64,6 @@ namespace Game
         private Sequence FadeInMiddleGameButtons(float duration)
         {
             return _gameUIController.ChangeFadeMiddleAreaButtons(duration, 1f);
-        }
-
-        private Sequence MoveWagons(float duration)
-        {
-            return _boardAreaController.MoveBoardHoldersToScene(duration);
         }
     }
 

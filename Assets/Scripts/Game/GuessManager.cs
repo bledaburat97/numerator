@@ -21,7 +21,7 @@ namespace Game
 
         [Inject]
         public GuessManager(IResultManager resultManager, ILifeBarController lifeBarController,
-            IBoardAreaController boardAreaController, ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager,
+            ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager,
             ILevelDataCreator levelDataCreator, ILevelSaveDataManager levelSaveDataManager,
             IPowerUpMessageController powerUpMessageController)
         {

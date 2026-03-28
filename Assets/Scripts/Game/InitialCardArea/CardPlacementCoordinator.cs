@@ -4,7 +4,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class BoxMovementHandler : IBoxMovementHandler
+    public class CardPlacementCoordinator : ICardPlacementCoordinator
     {
         private IBoardAreaController _boardAreaController;
         private ICardItemLocator _cardItemLocator;
@@ -16,7 +16,7 @@ namespace Scripts
         public event EventHandler OnCardDragStartedEvent;
         
         [Inject]
-        public BoxMovementHandler(IBoardAreaController boardAreaController, ICardItemLocator cardItemLocator, IGameUIController gameUIController, IBoardCardIndexManager boardCardIndexManager)
+        public CardPlacementCoordinator(IBoardAreaController boardAreaController, ICardItemLocator cardItemLocator, IGameUIController gameUIController, IBoardCardIndexManager boardCardIndexManager)
         {
             _boardAreaController = boardAreaController;
             _cardItemLocator = cardItemLocator;
@@ -35,30 +35,32 @@ namespace Scripts
         {
             for (int i = 0; i < _numOfCards; i++)
             {
-                if (_getCardItem(i) != null)
-                {
-                    _getCardItem(i).GetCardMoveHandler().SetOnClick(OnCardClicked);
-                    _getCardItem(i).GetCardMoveHandler().SetOnDragContinue(_cardItemLocator.OnDragContinue);
-                    _getCardItem(i).GetCardMoveHandler().SetOnDragStart(OnCardDragStarted);
-                    _getCardItem(i).GetCardMoveHandler().SetOnDragComplete(_cardItemLocator.OnDragComplete);
-                }
+                INormalCardItemController cardItem = _getCardItem(i);
+                if (cardItem == null) continue;
+
+                ICardMoveHandler cardMoveHandler = cardItem.GetCardMoveHandler();
+                cardMoveHandler.SetOnClick(OnCardClicked);
+                cardMoveHandler.SetOnDragContinue(_cardItemLocator.OnDragContinue);
+                cardMoveHandler.SetOnDragStart(OnCardDragStarted);
+                cardMoveHandler.SetOnDragComplete(_cardItemLocator.OnDragComplete);
+                cardMoveHandler.SetOnMoveToBoardRequested(OnMoveToBoardRequested);
+                cardMoveHandler.SetOnMoveToInitialRequested(OnMoveToInitialRequested);
             }
         }
         
-        public void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1)
+        public void TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
             if (cardIndex != -1 && boardCardHolderIndex != -1 && _getCardItem(cardIndex) != null)
             {
-                _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToBoard(_boardAreaController.GetRectTransformOfGarden(boardCardHolderIndex));
-                _boardCardIndexManager.SetCardIndexOnBoardHolder(boardCardHolderIndex, cardIndex);
+                PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
             }
         }
 
-        private void TryResetPosition(int cardIndex)
+        private void TryReturnCardToInitial(int cardIndex)
         {
             if (_getCardItem(cardIndex) != null)
             {
-                _getCardItem(cardIndex).GetCardMoveHandler().MoveCardToInitial();
+                ReturnCardToInitial(cardIndex);
             }
         }
 
@@ -73,11 +75,32 @@ namespace Scripts
             _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
         }
 
+        private void OnMoveToBoardRequested(int cardIndex, int boardHolderIndex)
+        {
+            PlaceCardOnBoard(cardIndex, boardHolderIndex);
+        }
+
+        private void OnMoveToInitialRequested(int cardIndex)
+        {
+            ReturnCardToInitial(cardIndex);
+        }
+
+        private void PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
+        {
+            _boardCardIndexManager.SetCardIndexOnBoardHolder(boardHolderIndex, cardIndex);
+            _getCardItem(cardIndex).GetCardViewHandler().MoveToParent(_boardAreaController.GetRectTransformOfGarden(boardHolderIndex));
+        }
+
+        private void ReturnCardToInitial(int cardIndex)
+        {
+            _getCardItem(cardIndex).GetCardViewHandler().MoveToInitialParent();
+        }
+
         public void TryResetPositionOfCardOnExplodedBoardHolder()
         {
             if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(0, out int cardIndex))
             {
-                TryResetPosition(cardIndex);
+                TryReturnCardToInitial(cardIndex);
             }
         }
         
@@ -90,16 +113,16 @@ namespace Scripts
         {
             for (int i = 0; i < _numOfCards; i++)
             {
-                TryResetPosition(i);
+                TryReturnCardToInitial(i);
             }
         }
     }
     
-    public interface IBoxMovementHandler
+    public interface ICardPlacementCoordinator
     {
         void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem);
         void AddCardActions();
-        void TryMoveCardToBoard(int cardIndex, int boardCardHolderIndex = -1);
+        void TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
         void Unsubscribe();
         void TryResetPositionOfCardOnExplodedBoardHolder();
         event EventHandler<int> OnCardClickedEvent;

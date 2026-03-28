@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Game;
-using Unity.Netcode;
 using UnityEngine;
 using Zenject;
 
@@ -14,23 +11,10 @@ namespace Scripts
 
         [Inject] private IFadePanelController _fadePanelController;
         [Inject] private IGameSaveService _gameSaveService;
+        [Inject] private IGameSaveSnapshotProvider _gameSaveSnapshotProvider;
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private IGameUIController _gameUIController;
-        [Inject] private IInitialCardAreaController _initialCardAreaController;
-        [Inject] private ICardItemLocator _cardItemLocator;
-        [Inject] private IUnmaskServiceAreaView _unmaskServiceAreaView;
-        [Inject] private IResultAreaController _resultAreaController;
-        [Inject] private ICardItemInfoPopupController _cardItemInfoPopupController;
-        [Inject] private ICardItemInfoManager _cardItemInfoManager;
-        [Inject] private ILevelDataCreator _levelDataCreator;
-        [Inject] private ICardInteractionManager _cardInteractionManager;
-        [Inject] private IBoardAreaController _boardAreaController;
-        [Inject] private ITargetNumberCreator _targetNumberCreator;
-        [Inject] private IResultManager _resultManager;
-        [Inject] private IGuessManager _guessManager;
-        [Inject] private ILevelEndManager _levelEndManager;
-        [Inject] private IPowerUpMessageController _powerUpMessageController;
-        [Inject] private IBoxMovementHandler _boxMovementHandler;
+        [Inject] private ITutorialBootstrapper _tutorialBootstrapper;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -80,7 +64,7 @@ namespace Scripts
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
             {
-                _saveGameAction = () => _gameSaveService.Save(_resultManager, _targetNumberCreator, _guessManager, _cardItemInfoManager, _levelEndManager, _boardAreaController);
+                _saveGameAction = TrySaveGame;
             }
             else
             {
@@ -88,40 +72,12 @@ namespace Scripts
             }
 
             _deleteSaveAction = _gameSaveService.DeleteSave;
-            
-            if (_levelTracker.IsFirstLevelTutorial())
-            {
-                IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
-                handTutorialView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
-                _unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
-                ITutorialMessagePopupView tutorialMessagePopupView =
-                    new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
-
-                ITutorialController firstLevelTutorialController = new FirstLevelTutorialController();
-                firstLevelTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardInteractionManager, _boardAreaController, _boxMovementHandler);
-            }
-            
-            else if (_levelTracker.IsCardInfoTutorial())
-            {
-                IHandTutorialView handTutorialView = new HandTutorialViewFactory().Spawn(transform, handTutorialPrefab);
-                handTutorialView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
-                _unmaskServiceAreaView.Init(safeAreaRectTransform.anchorMax.y, canvasRectTransform.rect.height);
-                ITutorialMessagePopupView tutorialMessagePopupView =
-                    new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
-
-                ITutorialController cardInfoTutorialController = new CardInfoTutorialController();
-                cardInfoTutorialController.Initialize(_initialCardAreaController, _cardItemLocator, handTutorialView, _unmaskServiceAreaView, tutorialMessagePopupView, _gameUIController, _resultAreaController, _cardItemInfoPopupController, _cardInteractionManager, _boardAreaController, _boxMovementHandler);
-            }
-            /*
-            else if (_levelTracker.IsWildCardTutorial())
-            {
-                ITutorialMessagePopupView tutorialMessagePopupView =
-                    new TutorialMessagePopupViewFactory().Spawn(transform, tutorialMessagePopupPrefab);
-
-                IWildCardTutorialController wildCardTutorialController = new WildCardTutorialController();
-                wildCardTutorialController.Initialize(_unmaskServiceAreaView, tutorialMessagePopupView);
-            }
-            */
+            _tutorialBootstrapper.Bootstrap(
+                transform,
+                safeAreaRectTransform,
+                canvasRectTransform,
+                handTutorialPrefab,
+                tutorialMessagePopupPrefab);
         }
 
         public RectTransform GetSafeAreaRectTransform()
@@ -226,6 +182,14 @@ namespace Scripts
         private void OnClosePopup()
         {
             _fadePanelController.SetFadeImageStatus(false);
+        }
+
+        private void TrySaveGame()
+        {
+            if (_gameSaveSnapshotProvider.TryCreateSnapshot(out LevelSaveData levelSaveData))
+            {
+                _gameSaveService.Save(levelSaveData);
+            }
         }
     }
 

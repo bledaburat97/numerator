@@ -55,13 +55,6 @@ namespace Scripts
         {
             return garden;
         }
-
-        /*
-        public void SetColor()
-        {
-            frame.color = ConstantValues.BOARD_CARD_HOLDER_COLOR;
-        }
-        */
         
         public void SetOnClick(Action onClick)
         {

@@ -12,7 +12,7 @@ namespace Scripts
         private IBoardAreaController _boardAreaController;
         private IInitialCardAreaController _initialCardAreaController;
         private IHapticController _hapticController;
-        private IBoxMovementHandler _boxMovementHandler;
+        private ICardPlacementCoordinator _cardPlacementCoordinator;
         private IBoardCardIndexManager _boardCardIndexManager;
         
         private int _selectedCardIndex = -1;
@@ -23,13 +23,13 @@ namespace Scripts
         [Inject]
         public CardInteractionManager(IGameUIController gameUIController, IBoardAreaController boardAreaController,
             IInitialCardAreaController initialCardAreaController, IHapticController hapticController, 
-            IBoxMovementHandler boxMovementHandler, IBoardCardIndexManager boardCardIndexManager)
+            ICardPlacementCoordinator cardPlacementCoordinator, IBoardCardIndexManager boardCardIndexManager)
         {
             _gameUIController = gameUIController;
             _boardAreaController = boardAreaController;
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
-            _boxMovementHandler = boxMovementHandler;
+            _cardPlacementCoordinator = cardPlacementCoordinator;
             _boardCardIndexManager = boardCardIndexManager;
             _lockedCardIndexList = new List<int>();
             Subscribe();
@@ -45,13 +45,13 @@ namespace Scripts
         private void Subscribe()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked += OnInvisibleClicked;
-            _boxMovementHandler.OnCardDragStartedEvent += RemoveSelection;
+            _cardPlacementCoordinator.OnCardDragStartedEvent += RemoveSelection;
             _gameUIController.CheckFinalNumbers += RemoveSelection;
             _gameUIController.NotAbleToCheck += RemoveSelection;
             _gameUIController.ResetNumbers += RemoveSelection;
             _gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
             _boardAreaController.BoardHolderClickedEvent += MoveSelectedCard;
-            _boxMovementHandler.OnCardClickedEvent += OnCardClicked;
+            _cardPlacementCoordinator.OnCardClickedEvent += OnCardClicked;
         }
         
         private void OnCardInfoToggleChanged(object sender, bool isCardInfoToggleOn)
@@ -89,7 +89,7 @@ namespace Scripts
                 if (_boardCardIndexManager.GetEmptyBoardHolderIndexList().Count > 0)
                 {
                     int boardCardHolderIndex = _boardCardIndexManager.GetEmptyBoardHolderIndexList()[0];
-                    _boxMovementHandler.TryMoveCardToBoard(cardIndex, boardCardHolderIndex);
+                    _cardPlacementCoordinator.TryPlaceCardOnBoard(cardIndex, boardCardHolderIndex);
                 }
                 else
                 {
@@ -101,7 +101,7 @@ namespace Scripts
         private void MoveSelectedCard(object sender, int boardCardHolderIndex)
         {
             if (_selectedCardIndex == -1 || !_isCardItemInfoPopupToggleOn) return;
-            _boxMovementHandler.TryMoveCardToBoard(_selectedCardIndex, boardCardHolderIndex);
+            _cardPlacementCoordinator.TryPlaceCardOnBoard(_selectedCardIndex, boardCardHolderIndex);
             SetSelectedIndex(-1);
         }
         
@@ -124,13 +124,13 @@ namespace Scripts
         public void Unsubscribe()
         {
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked -= OnInvisibleClicked;
-            _boxMovementHandler.OnCardDragStartedEvent -= RemoveSelection;
+            _cardPlacementCoordinator.OnCardDragStartedEvent -= RemoveSelection;
             _gameUIController.CheckFinalNumbers -= RemoveSelection;
             _gameUIController.NotAbleToCheck -= RemoveSelection;
             _gameUIController.ResetNumbers -= RemoveSelection;
             _gameUIController.CardInfoToggleChanged -= OnCardInfoToggleChanged;
             _boardAreaController.BoardHolderClickedEvent -= MoveSelectedCard;
-            _boxMovementHandler.OnCardClickedEvent -= OnCardClicked;
+            _cardPlacementCoordinator.OnCardClickedEvent -= OnCardClicked;
         }
     }
 

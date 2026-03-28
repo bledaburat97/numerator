@@ -1,5 +1,4 @@
-﻿using System;
-using DG.Tweening;
+﻿using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -21,8 +20,6 @@ namespace Scripts
             _hapticController = hapticController;
             _cardMoveHandler = cardMoveHandler;
             _cardItemData = cardItemData;
-            _cardMoveHandler.MoveCardToBoardEvent += MoveCardToBoard;
-            _cardMoveHandler.MoveCardToInitialEvent += MoveCardToInitial;
             _view.Init(cardItemData.CardNumber);
             _view.InitLocalScale();
             _view.SetLocalPosition(Vector3.zero);
@@ -78,12 +75,12 @@ namespace Scripts
             _view.SetAnchoredPosition(localPosition);
         }
 
-        private void MoveCardToBoard(object sender, RectTransform boardHolderRectTransform)
+        public void MoveToParent(RectTransform parentTransform)
         {
-            PlaceCard(boardHolderRectTransform);
+            PlaceCard(parentTransform);
         }
 
-        private void MoveCardToInitial(object sender, EventArgs args)
+        public void MoveToInitialParent()
         {
             PlaceCard(_cardItemData.Parent);
         }
@@ -241,5 +238,7 @@ namespace Scripts
         Sequence AnimateExplosion(float duration);
         Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration);
         void SetLocalPosition(Vector2 localPosition);
+        void MoveToParent(RectTransform parentTransform);
+        void MoveToInitialParent();
     }
 }

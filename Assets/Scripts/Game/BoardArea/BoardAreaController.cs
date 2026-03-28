@@ -7,7 +7,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class BoardAreaController : IBoardAreaController
+    public class BoardAreaController : IBoardAreaController, IBoardStateReader
     {
         private const float GardenSpacingToHolderWidthRatio = 3f / 70f;
         private int _numOfBoardHolders;
@@ -53,7 +53,7 @@ namespace Scripts
             SetNumOfBoardHolders();
             SetBoardHolderSceneLocalPositionList();
             ClearBoardHolders();
-            CreateBoardHolders(_boardHolderSceneLocalPositionList);
+            CreateBoardHolders();
             _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(_numOfBoardHolders);
             _targetNumberCreator.SetTargetNumber(_numOfBoardHolders);
         }
@@ -73,7 +73,7 @@ namespace Scripts
             _boardHolderSceneLocalPositionList = _boardHolderSceneLocalPositionList.GetLocalPositionList(_numOfBoardHolders, spacing, cardHolderSize, verticalLocalPos);
         }
         
-        private void CreateBoardHolders(List<Vector2> boardHolderLocalPositionList)
+        private void CreateBoardHolders()
         {
             for (int i = 0; i < _numOfBoardHolders; i++)
             {
@@ -82,7 +82,7 @@ namespace Scripts
                 int index = i;
                 boardHolderController.SetSize(_sizeManager.GetSizeRatio());
                 boardHolderController.SetOnClick(() => BoardHolderClickCallBack(index));
-                boardHolderController.SetLocalPosition(boardHolderLocalPositionList[index]);
+                boardHolderController.SetLocalPosition(_boardHolderSceneLocalPositionList[index]);
                 _boardHolderControllerList.Add(boardHolderController);
             }
         }
@@ -107,75 +107,7 @@ namespace Scripts
             }
         }
 
-        private void RemoveLastBoardHolder(object sender, EventArgs args)
-        {
-            DeleteOneBoardHolder();
-            /*
-             if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
-               {
-                   Debug.LogError("You shouldn't have clicked the bomb button");
-                   return;
-               }
-               _targetNumberCreator.CreateTargetNumber(_removedBoardHolderCount);
-               _gameUIController.Initialize(); //check which powerup button is pressable
-               _resultManager.Initialize(_removedBoardHolderCount);
-               _cardItemLocator.Initialize();
-               _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
-               _boardAreaController.DeleteOneBoardHolder();
-               _initialCardAreaController.DeleteOneHolderIndicator();
-               _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
-               _cardItemInfoManager.RemoveLastCardHolderIndicator();
-               _cardItemInfoPopupController.Initialize();
-               _levelSuccessManager.Initialize();
-               if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
-               {
-                   Debug.LogError("You shouldn't have clicked the bomb button");
-                   return;
-               }
-               _targetNumberCreator.CreateTargetNumber(_removedBoardHolderCount);
-               _gameUIController.Initialize(); //check which powerup button is pressable
-               _resultManager.Initialize(_removedBoardHolderCount);
-               _cardItemLocator.Initialize();
-               _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
-               _boardAreaController.DeleteOneBoardHolder();
-               _initialCardAreaController.DeleteOneHolderIndicator();
-               _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
-               _cardItemInfoManager.RemoveLastCardHolderIndicator();
-               _cardItemInfoPopupController.Initialize();
-               _levelSuccessManager.Initialize();
-             */
-        }
-
-        private void DeleteOneBoardHolder()
-        {
-            _removedBoardHolderCount++;
-            _numOfBoardHolders -= 1;
-            IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
-            _boardHolderControllerList.Remove(boardHolderController);
-            boardHolderController.DestroyObject();
-            SetBoardHolderSceneLocalPositionList();
-            for (int i = 0; i < _boardHolderControllerList.Count; i++)
-            {
-                int index = i;
-                _boardHolderControllerList[i].SetSize(_sizeManager.GetSizeRatio());
-                _boardHolderControllerList[i].SetOnClick(() => BoardHolderClickCallBack(index));
-            }
-
-            MoveBoardHoldersToScene(1f);
-            _boardCardIndexManager.DeleteFirstBoardHolder();
-        }
-
-        public Sequence MoveBoardHoldersToScene(float duration)
-        {
-            Sequence sequence = DOTween.Sequence();
-            for (int i = 0; i < _boardHolderControllerList.Count; i++)
-            {
-                sequence.Join(_boardHolderControllerList[i].Move(_boardHolderSceneLocalPositionList[i], duration));
-            }
-
-            return sequence;
-        }
-
+        
         public Sequence MoveBoardHoldersToOutsideScene(float duration)
         {
             Sequence sequence = DOTween.Sequence();
@@ -195,7 +127,6 @@ namespace Scripts
             _boardHolderControllerList.Clear();
         }
         
-
         private void BoardHolderClickCallBack(int boardHolderIndex)
         {
             if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(boardHolderIndex, out int boardHolderCardIndex)) return;
@@ -275,6 +206,82 @@ namespace Scripts
         {
             return _removedBoardHolderCount;
         }
+
+        //----- Aktif kullanılmıyor
+        
+        private void RemoveLastBoardHolder(object sender, EventArgs args)
+        {
+            DeleteOneBoardHolder();
+            /*
+             if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
+               {
+                   Debug.LogError("You shouldn't have clicked the bomb button");
+                   return;
+               }
+               _targetNumberCreator.CreateTargetNumber(_removedBoardHolderCount);
+               _gameUIController.Initialize(); //check which powerup button is pressable
+               _resultManager.Initialize(_removedBoardHolderCount);
+               _cardItemLocator.Initialize();
+               _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
+               _boardAreaController.DeleteOneBoardHolder();
+               _initialCardAreaController.DeleteOneHolderIndicator();
+               _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
+               _cardItemInfoManager.RemoveLastCardHolderIndicator();
+               _cardItemInfoPopupController.Initialize();
+               _levelSuccessManager.Initialize();
+               if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
+               {
+                   Debug.LogError("You shouldn't have clicked the bomb button");
+                   return;
+               }
+               _targetNumberCreator.CreateTargetNumber(_removedBoardHolderCount);
+               _gameUIController.Initialize(); //check which powerup button is pressable
+               _resultManager.Initialize(_removedBoardHolderCount);
+               _cardItemLocator.Initialize();
+               _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
+               _boardAreaController.DeleteOneBoardHolder();
+               _initialCardAreaController.DeleteOneHolderIndicator();
+               _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
+               _cardItemInfoManager.RemoveLastCardHolderIndicator();
+               _cardItemInfoPopupController.Initialize();
+               _levelSuccessManager.Initialize();
+             */
+        }
+
+        private void DeleteOneBoardHolder()
+        {
+            _removedBoardHolderCount++;
+            _numOfBoardHolders -= 1;
+            IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
+            _boardHolderControllerList.Remove(boardHolderController);
+            boardHolderController.DestroyObject();
+            SetBoardHolderSceneLocalPositionList();
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+            {
+                int index = i;
+                _boardHolderControllerList[i].SetSize(_sizeManager.GetSizeRatio());
+                _boardHolderControllerList[i].SetOnClick(() => BoardHolderClickCallBack(index));
+            }
+
+            MoveBoardHoldersToScene(1f);
+            _boardCardIndexManager.DeleteFirstBoardHolder();
+        }
+
+        private void MoveBoardHoldersToScene(float duration)
+        {
+            Sequence sequence = DOTween.Sequence();
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+            {
+                sequence.Join(_boardHolderControllerList[i].Move(_boardHolderSceneLocalPositionList[i], duration));
+            }
+        }
+        
+    }
+
+    public interface IBoardStateReader
+    {
+        int GetNumOfBoardHolders();
+        int GetRemovedBoardHolderCount();
     }
 
     public interface IBoardAreaController
@@ -287,10 +294,7 @@ namespace Scripts
         List<IBoardCardHolderController> GetEmptyBoardHolders();
         List<Vector2> GetBoardHolderSceneLocalPositionList();
         Vector2 GetSizeOfBoardHolder();
-        int GetNumOfBoardHolders();
-        int GetRemovedBoardHolderCount();
         void CreateBoard(bool isNewLevel);
-        Sequence MoveBoardHoldersToScene(float duration);
         Sequence MoveBoardHoldersToOutsideScene(float duration);
         void ClearBoardHolders();
     }

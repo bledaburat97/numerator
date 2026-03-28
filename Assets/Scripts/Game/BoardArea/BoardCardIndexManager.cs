@@ -62,7 +62,7 @@ namespace Game
             return true;
         }
 
-        public void ResetBoardHolder(int boardHolderIndex)
+        private void ResetBoardHolder(int boardHolderIndex)
         {
             _cardIndexesOnBoardHolders[boardHolderIndex] = -1;
         }
@@ -111,7 +111,6 @@ namespace Game
         void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders);
         void DeleteFirstBoardHolder();
         bool CheckCardIsOnBoard(int checkingCardIndex, out int boardHolderIndex);
-        void ResetBoardHolder(int boardHolderIndex);
         void SetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex);
         List<int> GetEmptyBoardHolderIndexList();
         List<int> GetCardIndexesOnBoard();
