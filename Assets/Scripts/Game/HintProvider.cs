@@ -8,20 +8,23 @@ namespace Game
 {
     public class HintProvider : IHintProvider
     {
-        private ITargetNumberCreator _targetNumberCreator;
-        private ICardItemInfoManager _cardItemInfoManager;
-        private IInitialCardAreaController _initialCardAreaController;
-        private IBoardCardIndexManager _boardCardIndexManager;
+        private readonly ITargetNumberCreator _targetNumberCreator;
+        private readonly ICardItemInfoManager _cardItemInfoManager;
+        private readonly IInitialCardAreaController _initialCardAreaController;
+        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
         
         [Inject]
         public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
-            ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController, IBoardCardIndexManager boardCardIndexManager)
+            ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
+            IBoardCardIndexManager boardCardIndexManager, ICardPlacementCoordinator cardPlacementCoordinator)
         {
             guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
             _boardCardIndexManager = boardCardIndexManager;
+            _cardPlacementCoordinator = cardPlacementCoordinator;
         }
 
         private void OnHintRewardStarEvent(object sender, HintRewardStarEventArgs args)
@@ -52,7 +55,7 @@ namespace Game
                 if (TryGetNonExistedCardIndex(out int cardIndex))
                 {
                     _cardItemInfoManager.MakeCardNotExisted(cardIndex);
-                    _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
+                    _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
                     RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
                     Action destroyCardAction = () =>
                     {

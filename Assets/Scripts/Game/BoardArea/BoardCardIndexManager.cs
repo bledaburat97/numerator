@@ -1,22 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using Scripts;
-using UnityEngine;
-using Zenject;
+﻿using System.Collections.Generic;
 
 namespace Game
 {
     public class BoardCardIndexManager : IBoardCardIndexManager
     {
-        private List<int> _cardIndexesOnBoardHolders;
-
-        [Inject]
-        public BoardCardIndexManager(IGameUIController gameUIController, IPowerUpMessageController powerUpMessageController)
-        {
-            _cardIndexesOnBoardHolders = new List<int>();
-            gameUIController.ResetNumbers += ResetBoard;
-            powerUpMessageController.RevealWagonEvent += OnRevealWagon;
-        }
+        private readonly List<int> _cardIndexesOnBoardHolders = new List<int>();
 
         public void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders)
         {
@@ -30,14 +18,6 @@ namespace Game
         public void DeleteFirstBoardHolder()
         {
             _cardIndexesOnBoardHolders.RemoveAt(0);
-        }
-
-        private void ResetBoard(object sender, EventArgs args)
-        {
-            for(int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
-            {
-                ResetBoardHolder(i);
-            }
         }
 
         public bool CheckCardIsOnBoard(int checkingCardIndex, out int boardHolderIndex)
@@ -67,17 +47,10 @@ namespace Game
             _cardIndexesOnBoardHolders[boardHolderIndex] = -1;
         }
 
-        private void OnRevealWagon(object sender, LockedCardInfo args)
-        {
-            SetCardIndexOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex);
-        }
-
         public void SetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex)
         {
-            Debug.Log("SetCardIndexOnBoardHolder BoardHolderIndex" + boardHolderIndex + "CardIndex" + cardIndex);
             TryResetCardIndexOnBoard(cardIndex);
             _cardIndexesOnBoardHolders[boardHolderIndex] = cardIndex;
-            Debug.Log("SetCardIndexOnBoardHolder" + _cardIndexesOnBoardHolders[boardHolderIndex]);
         }
         
         public List<int> GetEmptyBoardHolderIndexList()
@@ -104,6 +77,14 @@ namespace Game
             if (!CheckCardIsOnBoard(cardIndex, out int boardHolderIndex)) return;
             ResetBoardHolder(boardHolderIndex);
         }
+
+        public void ResetAllBoardHolders()
+        {
+            for (int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
+            {
+                ResetBoardHolder(i);
+            }
+        }
     }
 
     public interface IBoardCardIndexManager
@@ -116,5 +97,6 @@ namespace Game
         List<int> GetCardIndexesOnBoard();
         void TryResetCardIndexOnBoard(int cardIndex);
         bool CheckBoardHolderHasAnyCard(int boardHolderIndex, out int cardIndex);
+        void ResetAllBoardHolders();
     }
 }

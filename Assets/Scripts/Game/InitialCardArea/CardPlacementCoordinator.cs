@@ -6,23 +6,31 @@ namespace Scripts
 {
     public class CardPlacementCoordinator : ICardPlacementCoordinator
     {
-        private IBoardAreaController _boardAreaController;
-        private ICardItemLocator _cardItemLocator;
-        private IGameUIController _gameUIController;
-        private IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IBoardAreaController _boardAreaController;
+        private readonly ICardItemLocator _cardItemLocator;
+        private readonly IGameUIController _gameUIController;
+        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IPowerUpMessageController _powerUpMessageController;
         private Func<int, INormalCardItemController> _getCardItem;
         private int _numOfCards;
         public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
         
         [Inject]
-        public CardPlacementCoordinator(IBoardAreaController boardAreaController, ICardItemLocator cardItemLocator, IGameUIController gameUIController, IBoardCardIndexManager boardCardIndexManager)
+        public CardPlacementCoordinator(
+            IBoardAreaController boardAreaController,
+            ICardItemLocator cardItemLocator,
+            IGameUIController gameUIController,
+            IBoardCardIndexManager boardCardIndexManager,
+            IPowerUpMessageController powerUpMessageController)
         {
             _boardAreaController = boardAreaController;
             _cardItemLocator = cardItemLocator;
             _gameUIController = gameUIController;
             _boardCardIndexManager = boardCardIndexManager;
+            _powerUpMessageController = powerUpMessageController;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
+            _powerUpMessageController.RevealWagonEvent += OnRevealWagon;
         }
 
         public void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem)
@@ -72,7 +80,7 @@ namespace Scripts
         private void OnCardDragStarted(int cardIndex)
         {
             OnCardDragStartedEvent?.Invoke(this, EventArgs.Empty);
-            _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
+            RemoveCardFromBoard(cardIndex);
         }
 
         private void OnMoveToBoardRequested(int cardIndex, int boardHolderIndex)
@@ -93,7 +101,28 @@ namespace Scripts
 
         private void ReturnCardToInitial(int cardIndex)
         {
+            RemoveCardFromBoard(cardIndex);
             _getCardItem(cardIndex).GetCardViewHandler().MoveToInitialParent();
+        }
+
+        private void OnRevealWagon(object sender, LockedCardInfo args)
+        {
+            if (_getCardItem == null || args.TargetCardIndex < 0 || args.TargetCardIndex >= _numOfCards) return;
+            if (_getCardItem(args.TargetCardIndex) == null) return;
+
+            // Reveal power-up places the card view elsewhere; coordinator keeps board occupancy in sync.
+            _boardCardIndexManager.SetCardIndexOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex);
+        }
+
+        public void TryRemoveCardFromBoard(int cardIndex)
+        {
+            if (cardIndex < 0) return;
+            RemoveCardFromBoard(cardIndex);
+        }
+
+        private void RemoveCardFromBoard(int cardIndex)
+        {
+            _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
         }
 
         public void TryResetPositionOfCardOnExplodedBoardHolder()
@@ -107,10 +136,12 @@ namespace Scripts
         public void Unsubscribe()
         {
             _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
+            _powerUpMessageController.RevealWagonEvent -= OnRevealWagon;
         }
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
+            _boardCardIndexManager.ResetAllBoardHolders();
             for (int i = 0; i < _numOfCards; i++)
             {
                 TryReturnCardToInitial(i);
@@ -123,6 +154,7 @@ namespace Scripts
         void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem);
         void AddCardActions();
         void TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
+        void TryRemoveCardFromBoard(int cardIndex);
         void Unsubscribe();
         void TryResetPositionOfCardOnExplodedBoardHolder();
         event EventHandler<int> OnCardClickedEvent;
