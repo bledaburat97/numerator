@@ -17,7 +17,7 @@ namespace Scripts
         [Inject] private ITurnOrderDeterminer _turnOrderDeterminer;
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
-        [Inject] private ILevelStartManager _levelStartManager;
+        [Inject] private ILevelFlowOrchestrator _levelFlowOrchestrator;
 
         void Start()
         {
@@ -48,7 +48,14 @@ namespace Scripts
         
         private void InitializeGame()
         {
-            _levelStartManager.StartLevel();
+            LevelEntryMode entryMode = LevelEntryMode.New;
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer &&
+                _gameSaveService.GetSavedLevel() != null)
+            {
+                entryMode = LevelEntryMode.Resume;
+            }
+
+            _levelFlowOrchestrator.Begin(entryMode);
         }
 
         private void OnDestroy()

@@ -22,13 +22,13 @@ namespace Game
             _gameUIController = gameUIController;
         }
 
-        public void StartLevelStartAnimation()
+        public Sequence StartLevelStartAnimation()
         {
             float initialAreaFadeInDuration = 0.2f;
             float fallBoxesDuration = 2f;
             float buttonsFadeInDuration = 0.3f;
 
-            DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
+            return DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
                 .Append(FallBoxes(fallBoxesDuration))
                 .Append(FadeInTopAreaButtons(buttonsFadeInDuration))
                 .Join(FadeInLifeBar(buttonsFadeInDuration))
@@ -69,6 +69,6 @@ namespace Game
 
     public interface ILevelStartAnimationManager
     {
-        void StartLevelStartAnimation();
+        Sequence StartLevelStartAnimation();
     }
 }

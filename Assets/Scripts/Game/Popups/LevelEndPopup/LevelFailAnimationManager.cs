@@ -33,7 +33,7 @@ namespace Game
             _trueCards = new List<ICardViewHandler>();
         }
 
-        public void FailLevelAnimation()
+        public Sequence FailLevelAnimation()
         {
             float explosionDuration = 0.3f;
             float fadeDuration = 0.4f;
@@ -42,7 +42,7 @@ namespace Game
             float buttonsFadeOutDuration = 0.3f;
             float levelEndButtonsFadeInDuration = 0.3f;
             _trueCards = _initialCardAreaController.CreateTempCards();
-            DOTween.Sequence()
+            return DOTween.Sequence()
                 .Append(ExplodeAllCards(explosionDuration))
                 .Append(FadeOutTopAreaButtons(buttonsFadeOutDuration))
                 .Join(FadeOutLifeBar(buttonsFadeOutDuration))
@@ -137,6 +137,6 @@ namespace Game
     {
         Sequence FadeOutResultArea(float duration);
         Sequence SendBoardHolders(float duration);
-        void FailLevelAnimation();
+        Sequence FailLevelAnimation();
     }
 }

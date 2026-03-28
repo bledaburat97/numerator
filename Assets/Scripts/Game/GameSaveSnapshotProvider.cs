@@ -9,7 +9,7 @@ namespace Scripts
     {
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
-        private readonly ILevelEndManager _levelEndManager;
+        private readonly ILevelFlowOrchestrator _levelFlowOrchestrator;
         private readonly IBoardStateManager _boardStateManager;
         private readonly IRoundStateManager _roundStateManager;
 
@@ -17,13 +17,13 @@ namespace Scripts
         public GameSaveSnapshotProvider(
             ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager,
-            ILevelEndManager levelEndManager,
+            ILevelFlowOrchestrator levelFlowOrchestrator,
             IBoardStateManager boardStateManager,
             IRoundStateManager roundStateManager)
         {
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
-            _levelEndManager = levelEndManager;
+            _levelFlowOrchestrator = levelFlowOrchestrator;
             _boardStateManager = boardStateManager;
             _roundStateManager = roundStateManager;
         }
@@ -33,7 +33,8 @@ namespace Scripts
             levelSaveData = null;
 
             if (_roundStateManager.GetTriedCardsList().Count == 0) return false;
-            if (_levelEndManager.IsGameOver()) return false;
+            if (_levelFlowOrchestrator.IsGameOver()) return false;
+            if (_levelFlowOrchestrator.IsTransitioning()) return false;
 
             levelSaveData = new LevelSaveData
             {

@@ -33,7 +33,7 @@ namespace Game
             _cardsOnBoard = new List<ICardViewHandler>();
         }
         
-        public void SuccessLevelAnimation(int numOfStars, int newRewardStarCount, int currentRewardStarCount)
+        public Sequence SuccessLevelAnimation(int numOfStars, int newRewardStarCount, int currentRewardStarCount)
         {
             _fadePanelController.SetFadeImageStatus(true);
             _fadePanelController.SetFadeImageAlpha(0f);
@@ -47,7 +47,7 @@ namespace Game
             float buttonsFadeOutDuration = 0.3f;
             float wagonMoveDuration = 1f;
             _cardsOnBoard = _initialCardAreaController.GetCardsOnBoard();
-            DOTween.Sequence()
+            return DOTween.Sequence()
                 .AppendCallback(() => TurnCardsIntoCertain(_cardsOnBoard, cardDelayDuration, cardColorChangingDuration))
                 .AppendInterval(cardColorChangingDuration + cardDelayDuration * (_cardsOnBoard.Count - 1))
                 .Append(ExplodeCardsOnInitialHolders(explosionDuration))
@@ -66,7 +66,7 @@ namespace Game
                 .AppendInterval(0.2f)
                 .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText))
                 .AppendInterval(0.2f)
-                .Append(_levelEndPopupController.AnimateStarCreation(numOfStars, 0.1f, 0.5f)).Play()
+                .Append(_levelEndPopupController.AnimateStarCreation(numOfStars, 0.1f, 0.5f))
                 .AppendInterval(0.2f)
                 .Append(_levelEndPopupController.AddNewStarsToCircleProgressBar(newRewardStarCount, numOfStars))
                 .AppendInterval(0.2f)
@@ -146,6 +146,6 @@ namespace Game
 
     public interface ILevelSuccessAnimationManager
     {
-        void SuccessLevelAnimation(int numOfStars, int newRewardStarCount, int currentRewardStarCount);
+        Sequence SuccessLevelAnimation(int numOfStars, int newRewardStarCount, int currentRewardStarCount);
     }
 }

@@ -57,14 +57,11 @@ namespace Scripts
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
             Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
             Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();
-            Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);;
-            Container.Bind<ILevelSuccessManager>().To<LevelSuccessManager>().AsSingle();
+            Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);
             Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();
-            Container.Bind<ILevelStartManager>().To<LevelStartManager>().AsSingle();
             Container.Bind<ILevelStartAnimationManager>().To<LevelStartAnimationManager>().AsSingle();
-            Container.Bind<ILevelFailManager>().To<LevelFailManager>().AsSingle();
             Container.Bind<ILevelFailAnimationManager>().To<LevelFailAnimationManager>().AsSingle();
-            Container.Bind<ILevelEndManager>().To<LevelEndManager>().AsSingle();
+            Container.Bind<ILevelFlowOrchestrator>().To<LevelFlowOrchestrator>().AsSingle();
             Container.Bind<IBoardCardIndexManager>().To<BoardCardIndexManager>().AsSingle();
         }
     }
