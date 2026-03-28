@@ -10,52 +10,45 @@ namespace Game
     public class GuessManager : IGuessManager
     {
         private readonly ILifeBarController _lifeBarController;
-        private readonly ILevelDataCreator _levelDataCreator;
-        private readonly ILevelSaveDataManager _levelSaveDataManager;
         private readonly IGameUIController _gameUIController;
+        private readonly IRoundStateManager _roundStateManager;
         
-        private int _remainingGuessCount;
-        private int _maxGuessCount;
-
         public event EventHandler LevelFailEvent;
         public event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
 
         [Inject]
         public GuessManager(IResultManager resultManager, ILifeBarController lifeBarController,
             ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager,
-            ILevelDataCreator levelDataCreator, ILevelSaveDataManager levelSaveDataManager,
-            IPowerUpMessageController powerUpMessageController, IGameUIController gameUIController)
+            IPowerUpMessageController powerUpMessageController, IGameUIController gameUIController,
+            IRoundStateManager roundStateManager)
         {
             resultManager.WrongGuessEvent += OnWrongGuess;
             _lifeBarController = lifeBarController;
-            _levelDataCreator = levelDataCreator;
-            _levelSaveDataManager = levelSaveDataManager;
             _gameUIController = gameUIController;
+            _roundStateManager = roundStateManager;
             powerUpMessageController.AddLifeEvent += AddExtraLives;
         }
         
         public void Initialize()
         {
-            _maxGuessCount = _levelDataCreator.GetLevelData().MaxNumOfTries;
-            _remainingGuessCount = _levelSaveDataManager.GetLevelSaveData().RemainingGuessCount;
-            _lifeBarController.SetLifeBar(_maxGuessCount, _remainingGuessCount);
-        }
-
-        public void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount)
-        {
-            _lifeBarController.GetActiveStarCounts(out activeTotalStarCount, out activeRewardStarCount);
+            _lifeBarController.SetLifeBar(
+                _roundStateManager.GetMaxGuessCount(),
+                _roundStateManager.GetLifeBarStarInfoList(),
+                _roundStateManager.GetRemainingGuessCount());
         }
         
         private void OnWrongGuess(object sender, EventArgs args)
         {
-            _remainingGuessCount--;
-            List<LifeBarStarInfo> lifeBarStarInfoList = _lifeBarController.GetLifeBarStarInfoList();
-            for (int i = 0; i < _lifeBarController.GetLifeBarStarInfoList().Count; i++)
+            _roundStateManager.DecreaseRemainingGuessCount();
+            int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
+            IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList = _roundStateManager.GetLifeBarStarInfoList();
+            for (int i = 0; i < lifeBarStarInfoList.Count; i++)
             {
-                if (_remainingGuessCount == lifeBarStarInfoList[i].BoundaryIndex)
+                if (remainingGuessCount == lifeBarStarInfoList[i].BoundaryIndex)
                 {
                     bool isRewardStar = !lifeBarStarInfoList[i].IsOriginal;
 
+                    _roundStateManager.SetLifeBarStarStatus(i, false);
                     _lifeBarController.SetStarStatus(false, i, keepRewardItemVisibleWhenDisabled: isRewardStar);
                     
                     if (!lifeBarStarInfoList[i].IsOriginal)
@@ -66,10 +59,11 @@ namespace Game
                             if (starImageView == null)
                             {
                                 Debug.LogError("StarImageView is null");
-                                return;
                             }
-
-                            HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, false));
+                            else
+                            {
+                                HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, false));
+                            }
                         }
                         
                         else if (i == 1)
@@ -78,9 +72,11 @@ namespace Game
                             if (starImageView == null)
                             {
                                 Debug.LogError("StarImageView is null");
-                                return;
                             }
-                            HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, true));
+                            else
+                            {
+                                HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, true));
+                            }
                         }
                     }
 
@@ -88,8 +84,10 @@ namespace Game
                 }
             }
             
-            _lifeBarController.UpdateProgressBar((float)_remainingGuessCount / _maxGuessCount, 1f,
-                _remainingGuessCount == 0 ? () => LevelFailEvent?.Invoke(this,EventArgs.Empty) : null).Play();
+            _lifeBarController.UpdateProgressBar(
+                (float)remainingGuessCount / _roundStateManager.GetMaxGuessCount(),
+                1f,
+                remainingGuessCount == 0 ? () => LevelFailEvent?.Invoke(this, EventArgs.Empty) : null).Play();
 
 
             _gameUIController.TriggerResetNumbers();
@@ -98,21 +96,25 @@ namespace Game
         private void AddExtraLives(object sender, EventArgs args)
         {
             int numOfLives = 3;
-            if (_remainingGuessCount + numOfLives > _maxGuessCount) return;
-            int lastStarLifeBarIndex = _remainingGuessCount;
+            int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
+            int maxGuessCount = _roundStateManager.GetMaxGuessCount();
+            if (remainingGuessCount + numOfLives > maxGuessCount) return;
+            int lastStarLifeBarIndex = remainingGuessCount;
             Sequence sequence = DOTween.Sequence();
-            List<LifeBarStarInfo> lifeBarStarInfoList = _lifeBarController.GetLifeBarStarInfoList();
+            IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList = _roundStateManager.GetLifeBarStarInfoList();
             for (int i = 0; i < lifeBarStarInfoList.Count; i++)
             {
-                if (lifeBarStarInfoList[i].BoundaryIndex >= _remainingGuessCount &&
-                    lifeBarStarInfoList[i].BoundaryIndex < _remainingGuessCount + numOfLives)
+                if (lifeBarStarInfoList[i].BoundaryIndex >= remainingGuessCount &&
+                    lifeBarStarInfoList[i].BoundaryIndex < remainingGuessCount + numOfLives)
                 {
                     int index = i;
+                    int boundaryIndex = lifeBarStarInfoList[i].BoundaryIndex;
                     sequence.Append(_lifeBarController.UpdateProgressBar(
-                        (float)(lifeBarStarInfoList[i].BoundaryIndex + 1) / _maxGuessCount,
-                        lifeBarStarInfoList[i].BoundaryIndex - _remainingGuessCount + 1,
+                        (float)(boundaryIndex + 1) / maxGuessCount,
+                        boundaryIndex - remainingGuessCount + 1,
                         () =>
                         {
+                            _roundStateManager.SetLifeBarStarStatus(index, true);
                             _lifeBarController.SetStarStatus(true, index);
                             lastStarLifeBarIndex = lifeBarStarInfoList[index].BoundaryIndex;
                         }));
@@ -120,26 +122,19 @@ namespace Game
             }
 
             sequence.Append(_lifeBarController.UpdateProgressBar(
-                (float)(_remainingGuessCount + numOfLives) / _maxGuessCount,
-                _remainingGuessCount + numOfLives - lastStarLifeBarIndex,
+                (float)(remainingGuessCount + numOfLives) / maxGuessCount,
+                remainingGuessCount + numOfLives - lastStarLifeBarIndex,
                 () =>
                 {
-                    _remainingGuessCount += numOfLives;
+                    _roundStateManager.IncreaseRemainingGuessCount(numOfLives);
                 }));
             sequence.Play();
-        }
-
-        public int GetRemainingGuessCount()
-        {
-            return _remainingGuessCount;
         }
     }
 
     public interface IGuessManager
     {
         void Initialize();
-        int GetRemainingGuessCount();
-        void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
         event EventHandler LevelFailEvent;
         event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
     }

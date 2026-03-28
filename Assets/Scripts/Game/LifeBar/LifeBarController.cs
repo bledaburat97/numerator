@@ -8,19 +8,17 @@ namespace Scripts
 {
     public class LifeBarController : ILifeBarController
     {
-        private ILifeBarView _view;
-        private List<IBoundaryController> _boundaryControllerList;
-        private Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
+        private readonly ILifeBarView _view;
+        private readonly List<IBoundaryController> _boundaryControllerList;
+        private readonly Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
         private List<LifeBarStarInfo> _lifeBarStarInfoList;
-        private ILevelDataCreator _levelDataCreator;
         
         [Inject]
-        public LifeBarController(ILifeBarView view, ILevelDataCreator levelDataCreator)
+        public LifeBarController(ILifeBarView view)
         {
             _view = view;
             _boundaryControllerList = new List<IBoundaryController>();
             _lifeBarStarInfoList = new List<LifeBarStarInfo>();
-            _levelDataCreator = levelDataCreator;
         }
         
         public void SetFade(bool isNewGame)
@@ -33,11 +31,10 @@ namespace Scripts
             return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
         }
 
-        public void SetLifeBar(int maxGuessCount, int remainingGuessCount)
+        public void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList, int remainingGuessCount)
         {
             CreateBoundaries(maxGuessCount);
-            int rewardStarCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - 2;
-            CreateLifeBarStarInfoList(maxGuessCount, remainingGuessCount, rewardStarCount);
+            _lifeBarStarInfoList = CreateLifeBarStarInfoListSnapshot(lifeBarStarInfoList);
             CreateStars(_lifeBarStarInfoList);
             InitProgressBar((float) remainingGuessCount / maxGuessCount);
         }
@@ -82,15 +79,6 @@ namespace Scripts
             }
         }
         
-        private void CreateLifeBarStarInfoList(int maxGuessCount, int remainingGuessCount, int rewardStarCount)
-        {
-            List<int> lifeBarStarIndexes = new List<int>(){0, (maxGuessCount - 2) / 4, (maxGuessCount - 2) / 2};
-            for (int i = 0; i < lifeBarStarIndexes.Count; i++)
-            {
-                _lifeBarStarInfoList.Add(new LifeBarStarInfo(lifeBarStarIndexes[i], rewardStarCount < 3 - i, remainingGuessCount > i));
-            }
-        }
-        
         private void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList)
         {
             for (int i = 0; i < lifeBarStarInfoList.Count; i++)
@@ -124,8 +112,6 @@ namespace Scripts
 
         public void SetStarStatus(bool status, int lifeBarStarInfoIndex, bool keepRewardItemVisibleWhenDisabled = false)
         {
-            _lifeBarStarInfoList[lifeBarStarInfoIndex].SetIsActive(status);
-
             int boundaryIndex = _lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex;
             bool isRewardStar = !_lifeBarStarInfoList[lifeBarStarInfoIndex].IsOriginal;
 
@@ -160,26 +146,18 @@ namespace Scripts
             return _boundaryControllerList[boundaryIndex].GetStarImage();
         }
 
-        public void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount)
+        private static List<LifeBarStarInfo> CreateLifeBarStarInfoListSnapshot(IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList)
         {
-            activeTotalStarCount = 0;
-            activeRewardStarCount = 0;
-            foreach (LifeBarStarInfo lifeBarStarInfo in _lifeBarStarInfoList)
+            List<LifeBarStarInfo> copiedLifeBarStarInfoList = new List<LifeBarStarInfo>();
+            foreach (LifeBarStarInfo lifeBarStarInfo in lifeBarStarInfoList)
             {
-                if (lifeBarStarInfo.IsActive)
-                {
-                    activeTotalStarCount++;
-                    if (!lifeBarStarInfo.IsOriginal)
-                    {
-                        activeRewardStarCount++;
-                    }
-                }
+                copiedLifeBarStarInfoList.Add(new LifeBarStarInfo(
+                    lifeBarStarInfo.BoundaryIndex,
+                    lifeBarStarInfo.IsOriginal,
+                    lifeBarStarInfo.IsActive));
             }
-        }
 
-        public List<LifeBarStarInfo> GetLifeBarStarInfoList()
-        {
-            return _lifeBarStarInfoList;
+            return copiedLifeBarStarInfoList;
         }
     }
 
@@ -189,11 +167,9 @@ namespace Scripts
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
         void SetStarStatus(bool status, int lifeBarStarInfoIndex, bool keepRewardItemVisibleWhenDisabled = false);
         IStarImageView GetStarImage(int boundaryIndex);
-        void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
-        List<LifeBarStarInfo> GetLifeBarStarInfoList();
         Sequence ChangeFade(float duration, float finalAlpha);
         void SetFade(bool isNewGame);
-        void SetLifeBar(int maxGuessCount, int remainingGuessCount);
+        void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList, int remainingGuessCount);
         void ClearBoundaries();
         void ClearLifeBarStarInfoList();
     }

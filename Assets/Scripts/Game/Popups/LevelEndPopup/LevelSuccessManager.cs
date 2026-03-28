@@ -10,7 +10,7 @@ namespace Game
     {
         private bool _isGameOver;
         private ILevelTracker _levelTracker;
-        private IGuessManager _guessManager;
+        private IRoundStateManager _roundStateManager;
         private ILevelStartManager _levelStartManager;
         private ILevelEndPopupController _levelEndPopupController;
         private ILevelSuccessAnimationManager _levelSuccessAnimationManager;
@@ -19,12 +19,12 @@ namespace Game
 
         [Inject]
         public LevelSuccessManager(IResultManager resultManager,
-        ILevelTracker levelTracker, IGuessManager guessManager, ILevelStartManager levelStartManager,
+        ILevelTracker levelTracker, IRoundStateManager roundStateManager, ILevelStartManager levelStartManager,
         ILevelEndPopupController levelEndPopupController, ILevelSuccessAnimationManager levelSuccessAnimationManager, 
         ICardItemInfoPopupController cardItemInfoPopupController, IFadePanelController fadePanelController)
         {
             _levelTracker = levelTracker;
-            _guessManager = guessManager;
+            _roundStateManager = roundStateManager;
             _levelStartManager = levelStartManager;
             _levelEndPopupController = levelEndPopupController;
             _levelSuccessAnimationManager = levelSuccessAnimationManager;
@@ -36,7 +36,7 @@ namespace Game
         {
             int rewardStarCount = _levelTracker.GetGiftStarCount();
             RewardType rewardType = _levelTracker.GetCurrentRewardType();
-            _guessManager.GetActiveStarCounts(out int totalStarCount, out int newRewardStarCount);
+            _roundStateManager.GetActiveStarCounts(out int totalStarCount, out int newRewardStarCount);
             _levelTracker.IncrementLevelId(totalStarCount, newRewardStarCount);
             _levelEndPopupController.SetAllStatusFalse();
             InitButtons();

@@ -24,6 +24,7 @@ namespace Game
         [Inject] private ICardInteractionManager _cardInteractionManager;
         [Inject] private IResultManager _resultManager;
         [Inject] private IHintProvider _hintProvider;
+        [Inject] private IRoundStateManager _roundStateManager;
 
         public event EventHandler LevelStartedEvent;
         public void StartLevel()
@@ -36,6 +37,7 @@ namespace Game
                 if (_gameSaveService.GetSavedLevel() != null)
                 {
                     _levelSaveDataManager.SetLevelSaveDataAsSaved(_gameSaveService.GetSavedLevel());
+                    _roundStateManager.Initialize();
                     _boardAreaController.CreateBoard(false);
                     _resultAreaController.Initialize(false);
                     _lifeBarController.SetFade(false);
@@ -45,6 +47,7 @@ namespace Game
                 else
                 {
                     _levelSaveDataManager.CreateDefaultLevelSaveData();
+                    _roundStateManager.Initialize();
                     _boardAreaController.CreateBoard(true);
                     _resultAreaController.Initialize(true);
                     _lifeBarController.SetFade(true);

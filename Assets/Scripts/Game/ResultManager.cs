@@ -8,31 +8,29 @@ namespace Scripts
 {
     public class ResultManager : IResultManager
     {
-        private IResultAreaController _resultAreaController;
-        private ILevelSaveDataManager _levelSaveDataManager;
-        private ITargetNumberCreator _targetNumberCreator;
-        private IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IResultAreaController _resultAreaController;
+        private readonly ITargetNumberCreator _targetNumberCreator;
+        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IRoundStateManager _roundStateManager;
         
-        private List<List<int>> _triedCardsList = new List<List<int>>();
         public event EventHandler LevelSuccessEvent;
         public event EventHandler WrongGuessEvent;
 
         [Inject]
         public ResultManager(IGameUIController gameUIController, 
-            IResultAreaController resultAreaController, ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator,
-            IBoardCardIndexManager boardCardIndexManager)
+            IResultAreaController resultAreaController, ITargetNumberCreator targetNumberCreator,
+            IBoardCardIndexManager boardCardIndexManager, IRoundStateManager roundStateManager)
         {
             gameUIController.CheckFinalNumbers += CheckFinalCards;
             _resultAreaController = resultAreaController;
-            _levelSaveDataManager = levelSaveDataManager;
             _targetNumberCreator = targetNumberCreator;
             _boardCardIndexManager = boardCardIndexManager;
+            _roundStateManager = roundStateManager;
         }
 
         public void TryAddTriedCards()
         {
-            _triedCardsList = _levelSaveDataManager.GetLevelSaveData().TriedCardsList;
-            foreach (List<int> triedCards in _triedCardsList)
+            foreach (List<int> triedCards in _roundStateManager.GetTriedCardsList())
             {
                 CalculatePositionCounts(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
                 _resultAreaController.AddResultBlock(new ResultBlockModel()
@@ -82,7 +80,7 @@ namespace Scripts
             }
             
             //TODO: check _triedCardList contains finalCardList
-            _triedCardsList.Add(finalCards);
+            _roundStateManager.AddTriedCards(finalCards);
             CalculatePositionCounts(finalCards, out int numOfCorrectPos, out int numOfWrongPos);
             DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);
         }
@@ -104,18 +102,12 @@ namespace Scripts
                 WrongGuessEvent?.Invoke(this, EventArgs.Empty);
             }
         }
-        
-        public List<List<int>> GetTriedCardsList()
-        {
-            return _triedCardsList;
-        }
     }
 
     public interface IResultManager
     {
         event EventHandler LevelSuccessEvent;
         event EventHandler WrongGuessEvent;
-        List<List<int>> GetTriedCardsList();
         void TryAddTriedCards();
     }
 }

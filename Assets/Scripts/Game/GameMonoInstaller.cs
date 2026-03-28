@@ -51,6 +51,7 @@ namespace Scripts
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
             Container.Bind<ILevelSaveDataManager>().To<LevelSaveDataManager>().AsSingle();
+            Container.Bind<IRoundStateManager>().To<RoundStateManager>().AsSingle();
             Container.Bind<IGameSaveSnapshotProvider>().To<GameSaveSnapshotProvider>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
