@@ -1,4 +1,5 @@
-﻿using Game;
+﻿using DG.Tweening;
+using Game;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,33 +8,54 @@ namespace Scripts
     public class StarImageView : MonoBehaviour, IStarImageView
     {
         [SerializeField] private Image star;
+        [SerializeField] private Image frame;
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
         [SerializeField] private MovingRewardItemView movingRewardItemPrefab;
-        
-        private MovingRewardItemView _movingRewardItemView;
+
         public void SetLocalPosition(Vector2 localPosition)
         {
             transform.localPosition = localPosition;
         }
 
-        public void CreateMovingRewardItem(Vector2 size, float orbitRadius)
+        public MovingRewardItemView SpawnTransientMovingRewardItem(Vector2 size)
         {
-            _movingRewardItemView = Instantiate(movingRewardItemPrefab, rectTransform);
-            _movingRewardItemView.Init(rectTransform);
-            _movingRewardItemView.SetSize(size);
+            if (movingRewardItemPrefab == null) return null;
+
+            MovingRewardItemView movingRewardItemView = Instantiate(movingRewardItemPrefab, rectTransform);
+            movingRewardItemView.Init(rectTransform);
+            movingRewardItemView.SetSize(size);
+            movingRewardItemView.SetStatus(true);
+            movingRewardItemView.SnapToCenter();
+            return movingRewardItemView;
         }
 
-        public void SetMovingRewardItemStatus(bool status)
+        public Sequence AnimateRewardActivation(Vector2 movingRewardItemSize)
         {
-            if (_movingRewardItemView != null)
-                _movingRewardItemView.SetStatus(status);
+            SetStarStatus(true);
+            SetColor(true);
+            MovingRewardItemView movingRewardItemView = SpawnTransientMovingRewardItem(movingRewardItemSize);
+            if (movingRewardItemView == null)
+            {
+                return DOTween.Sequence();
+            }
+
+            RectTransform movingRewardItemRectTransform = movingRewardItemView.GetRectTransform();
+            float startOffsetY = Mathf.Max(rectTransform.rect.height, movingRewardItemSize.y) * 1.15f;
+            movingRewardItemRectTransform.anchoredPosition = new Vector2(0f, startOffsetY);
+
+            return DOTween.Sequence()
+                .Append(movingRewardItemView.AnimateSpawn(0.18f))
+                .Join(movingRewardItemRectTransform.DOAnchorPos(Vector2.zero, 1f).SetEase(Ease.OutCubic))
+                .AppendCallback(() => SetColor(false))
+                .Append(rectTransform.DOPunchScale(Vector3.one * 0.08f, 0.16f, 4, 0.65f))
+                .Append(movingRewardItemView.AnimateDissolve(0.18f, 1.05f))
+                .OnComplete(movingRewardItemView.DestroyObject);
         }
 
-
-        public MovingRewardItemView GetMovingRewardItem()
+        public MovingRewardItemView GetMovingRewardItemPrefab()
         {
-            return _movingRewardItemView;
+            return movingRewardItemPrefab;
         }
 
         public void SetLocalScale(Vector3 localScale)
@@ -54,6 +76,16 @@ namespace Scripts
         public void SetStarStatus(bool status)
         {
             star.gameObject.SetActive(status);
+            if (frame != null)
+            {
+                frame.gameObject.SetActive(status);
+            }
+
+            if (status)
+            {
+                SetImageAlpha(star, 1f);
+                SetImageAlpha(frame, 1f);
+            }
         }
 
         public RectTransform GetRectTransform()
@@ -74,6 +106,36 @@ namespace Scripts
         public void SetColor(bool originalColor)
         {
             star.color = originalColor ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR;
+            SetImageAlpha(star, 1f);
+        }
+
+        public Tween AnimateColor(bool originalColor, float duration)
+        {
+            SetStarStatus(true);
+            return star.DOColor(originalColor ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR, duration);
+        }
+
+        public Sequence AnimateFadeOut(float duration)
+        {
+            SetStarStatus(true);
+            Sequence sequence = DOTween.Sequence()
+                .Append(star.DOFade(0f, duration));
+
+            if (frame != null)
+            {
+                sequence.Join(frame.DOFade(0f, duration));
+            }
+
+            return sequence.OnComplete(() => SetStarStatus(false));
+        }
+
+        private static void SetImageAlpha(Image image, float alpha)
+        {
+            if (image == null) return;
+
+            Color color = image.color;
+            color.a = alpha;
+            image.color = color;
         }
     }
 
@@ -88,8 +150,10 @@ namespace Scripts
         void Destroy();
         CurvedAnimationPreset GetCurvedAnimationPreset();
         void SetColor(bool originalColor);
-        MovingRewardItemView GetMovingRewardItem();
-        void CreateMovingRewardItem(Vector2 size, float orbitRadius);
-        void SetMovingRewardItemStatus(bool status);
+        Tween AnimateColor(bool originalColor, float duration);
+        Sequence AnimateFadeOut(float duration);
+        Sequence AnimateRewardActivation(Vector2 movingRewardItemSize);
+        MovingRewardItemView SpawnTransientMovingRewardItem(Vector2 size);
+        MovingRewardItemView GetMovingRewardItemPrefab();
     }
 }

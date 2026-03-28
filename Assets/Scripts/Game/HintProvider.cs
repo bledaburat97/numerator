@@ -29,47 +29,56 @@ namespace Game
 
         private void OnHintRewardStarEvent(object sender, HintRewardStarEventArgs args)
         {
-            if (args.CanRevealCard)
-            {
-                if (TryGetExistedCardIndex(out int cardIndex, out int boardHolderIndex))
-                {
-                    _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int>(){boardHolderIndex});
-                    RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
-                    Action makeCardCertainAction = () =>
-                    {
-                        _initialCardAreaController.SetProbabilityOfCardItem(cardIndex, ProbabilityType.Certain,
-                            true);
-                        _initialCardAreaController.SetHolderIndicatorListOfCardHolder(cardIndex, new List<int>(){boardHolderIndex});
-                    };
-                    
-                    new StarAnimationManager().RevealCard(args.StarImageView, cardRectTransform, makeCardCertainAction);
-                }
-                else
-                {
-                    
-                }
-            }
+            bool hintApplied = args.CanRevealCard
+                ? TryApplyRevealHint(args.StarImageView) || TryApplyDestroyHint(args.StarImageView)
+                : TryApplyDestroyHint(args.StarImageView) || TryApplyRevealHint(args.StarImageView);
 
-            else
+            if (!hintApplied)
             {
-                if (TryGetNonExistedCardIndex(out int cardIndex))
-                {
-                    _cardItemInfoManager.MakeCardNotExisted(cardIndex);
-                    _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
-                    RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
-                    Action destroyCardAction = () =>
-                    {
-                        _initialCardAreaController.DestroyCard(cardIndex);
-                    };
-                    new StarAnimationManager().DestroyCard(args.StarImageView, cardRectTransform, destroyCardAction);
-                }
-                else
-                {
-                    
-                }
+                ConsumeRewardItem(args.StarImageView);
             }
         }
-        
+
+        private bool TryApplyRevealHint(IStarImageView starImageView)
+        {
+            if (!TryGetExistedCardIndex(out int cardIndex, out int boardHolderIndex))
+            {
+                return false;
+            }
+
+            _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int>() { boardHolderIndex });
+            RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
+            Action makeCardCertainAction = () =>
+            {
+                _initialCardAreaController.SetProbabilityOfCardItem(cardIndex, ProbabilityType.Certain, true);
+                _initialCardAreaController.SetHolderIndicatorListOfCardHolder(cardIndex,
+                    new List<int>() { boardHolderIndex });
+            };
+
+            new StarAnimationManager().RevealCard(starImageView, cardRectTransform, makeCardCertainAction);
+            return true;
+        }
+
+        private bool TryApplyDestroyHint(IStarImageView starImageView)
+        {
+            if (!TryGetNonExistedCardIndex(out int cardIndex))
+            {
+                return false;
+            }
+
+            _cardItemInfoManager.MakeCardNotExisted(cardIndex);
+            _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
+            RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
+            Action destroyCardAction = () => { _initialCardAreaController.DestroyCard(cardIndex); };
+            new StarAnimationManager().DestroyCard(starImageView, cardRectTransform, destroyCardAction);
+            return true;
+        }
+
+        private static void ConsumeRewardItem(IStarImageView starImageView)
+        {
+            starImageView.AnimateFadeOut(0.25f);
+        }
+
         private bool TryGetNonExistedCardIndex(out int cardIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();

@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using Game;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,10 +9,20 @@ namespace Scripts
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private Image circleImage;
-        [SerializeField] private StarImageView starImagePrefab;
-        public IStarImageView CreateStarImage(StarImageViewFactory starImageViewFactory)
+        [SerializeField] private RewardItemTargetView rewardItemTargetPrefab;
+
+        public IRewardItemTargetView CreateRewardItemTarget(RewardItemTargetViewFactory rewardItemTargetViewFactory)
         {
-            return starImageViewFactory.Spawn(circleImage.rectTransform, starImagePrefab);
+            if (rewardItemTargetPrefab != null)
+            {
+                return rewardItemTargetViewFactory.Spawn(circleImage.rectTransform, rewardItemTargetPrefab);
+            }
+
+            GameObject targetObject = new GameObject("RewardItemTarget", typeof(RectTransform), typeof(CanvasRenderer),
+                typeof(RewardItemTargetView));
+            RectTransform targetRectTransform = targetObject.GetComponent<RectTransform>();
+            targetRectTransform.SetParent(circleImage.rectTransform, false);
+            return targetObject.GetComponent<RewardItemTargetView>();
         }
 
         public RectTransform GetRectTransform()
@@ -34,7 +45,7 @@ namespace Scripts
     {
         RectTransform GetRectTransform();
         Image GetImage();
-        IStarImageView CreateStarImage(StarImageViewFactory starImageViewFactory);
+        IRewardItemTargetView CreateRewardItemTarget(RewardItemTargetViewFactory rewardItemTargetViewFactory);
         void SetStatus(bool status);
     }
 }

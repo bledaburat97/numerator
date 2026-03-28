@@ -104,10 +104,11 @@ namespace Game
             List<int> lifeBarStarIndexes = new List<int> { 0, (maxGuessCount - 2) / 4, (maxGuessCount - 2) / 2 };
             for (int i = 0; i < lifeBarStarIndexes.Count; i++)
             {
+                int boundaryIndex = lifeBarStarIndexes[i];
                 lifeBarStarInfoList.Add(new LifeBarStarInfo(
-                    lifeBarStarIndexes[i],
+                    boundaryIndex,
                     rewardStarCount < 3 - i,
-                    remainingGuessCount > i));
+                    remainingGuessCount > boundaryIndex));
             }
 
             return lifeBarStarInfoList;

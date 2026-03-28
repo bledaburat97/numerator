@@ -13563,7 +13563,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 1874878712}
   circleImage: {fileID: 1309531431}
-  starImagePrefab: {fileID: 9201243238752170526, guid: 942eaa5968ed2f34db94179d1166d0bd, type: 3}
+  rewardItemTargetPrefab: {fileID: 0}
 --- !u!222 &1874878714
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -13629,26 +13629,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d20b7309193847a193ca3ed243a01eba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelButtonPrefab: {fileID: 371490860433157135, guid: 697180a6a86c21d46b453ada54100f46, type: 3}
-  galaxyLockPrefab: {fileID: -1688787972815164294, guid: 0095ab8c585ae6549bdb2d103c8b5671, type: 3}
-  forwardButtonPrefab: {fileID: 1262325741221006247, guid: 5003074683a20e4428d4f5829f11e6ff, type: 3}
-  backwardButtonPrefab: {fileID: 1262325741221006247, guid: b9a0407ebf78ee047b4d0eaa792c104b, type: 3}
-  planetSprites:
-  - {fileID: -1425557167, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
-  - {fileID: 48310095, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
-  - {fileID: -1420440437, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
-  - {fileID: 642963911, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
-  - {fileID: -85162551, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
-  - {fileID: 738064108, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: 85282187, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: 47332821, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: -860290998, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: 377625328, guid: 2347a34a9d3e0a5418934ad64b776113, type: 3}
-  - {fileID: 1960700029, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: 78632635, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: 654591986, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: 1787646661, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
-  - {fileID: -1866768185, guid: aac091d4c73a6e646ab51458d2ea5804, type: 3}
 --- !u!1 &1881874541
 GameObject:
   m_ObjectHideFlags: 0
@@ -14077,7 +14057,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 1971734494}
   circleImage: {fileID: 1828605991}
-  starImagePrefab: {fileID: 9201243238752170526, guid: 942eaa5968ed2f34db94179d1166d0bd, type: 3}
+  rewardItemTargetPrefab: {fileID: 305839149966976749, guid: b2c2695457f454a50a0d3fb282f200bd, type: 3}
 --- !u!222 &1971734496
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -14138,7 +14118,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 0}
   circleImage: {fileID: 0}
-  starImagePrefab: {fileID: 9201243238752170526, guid: 942eaa5968ed2f34db94179d1166d0bd, type: 3}
+  rewardItemTargetPrefab: {fileID: 0}
 --- !u!114 &1991301860
 MonoBehaviour:
   m_ObjectHideFlags: 0

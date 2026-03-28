@@ -5096,6 +5096,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   star: {fileID: 6486002998265864464}
+  frame: {fileID: 6486002996921589824}
   rectTransform: {fileID: 6486002996941193330}
   curvedAnimationPreset: {fileID: 11400000, guid: 35f0c7338da754296b7f0de190686df2, type: 2}
   movingRewardItemPrefab: {fileID: 5359729010305207633, guid: 2bac5e7a4a62348a3a46e65b3b1895fc, type: 3}

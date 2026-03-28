@@ -18,7 +18,8 @@ namespace Game
             _view = view;
             _hapticController = hapticController;
             _circleProgressBarController =
-                new CircleProgressBarController(_view.GetCircleProgressBar(), _hapticController);
+                new CircleProgressBarController(_view.GetCircleProgressBar(), _hapticController,
+                    _view.GetStarList()[0].GetMovingRewardItemPrefab());
         }
 
         public void SetAllStatusFalse()
@@ -30,6 +31,7 @@ namespace Game
             {
                 rewardItem.gameObject.SetActive(false);
             }
+
             _view.GetCircleProgressBar().GetRectTransform().gameObject.SetActive(false);
             _view.GetButton(LevelFinishButtonType.Game).SetButtonStatus(false);
             _view.GetButton(LevelFinishButtonType.Menu).SetButtonStatus(false);
@@ -74,15 +76,16 @@ namespace Game
 
             for (int i = 0; i < numOfStars; i++)
             {
-                bool isOriginal = numOfRewardStars < numOfStars - i;
                 _view.GetStarList()[i].SetLocalScale(Vector3.zero);
                 _view.GetStarList()[i].SetLocalPosition(starsPosition[i]);
                 _view.GetStarList()[i].SetSize(size);
-                _view.GetStarList()[i].SetColor(isOriginal);
+                _view.GetStarList()[i].SetColor(i >= numOfStars - numOfRewardStars ? false : true);
                 _view.GetStarParticleList()[i].transform.localPosition = starsPosition[i];
                 _view.GetStarParticleList()[i].gameObject.SetActive(false);
                 var mainModule = _view.GetStarParticleList()[i].main;
-                mainModule.startColor = isOriginal ? ConstantValues.YELLOW_STAR_COLOR : ConstantValues.BLUE_STAR_COLOR;
+                mainModule.startColor = i >= numOfStars - numOfRewardStars
+                    ? ConstantValues.BLUE_STAR_COLOR
+                    : ConstantValues.YELLOW_STAR_COLOR;
             }
         }
         

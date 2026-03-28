@@ -15,30 +15,12 @@ namespace Scripts
             _view.Init(_model.localPosition, new StarImageViewFactory());
         }
 
-        public void AddStarImage(Vector2 starLocalPosition, bool isOriginal)
+        public void AddStarImage(Vector2 starLocalPosition)
         {
             _starImageView = _view.CreateStarImage();
             _starImageView.SetLocalPosition(starLocalPosition);
             _starImageView.SetLocalScale(Vector3.one);
-            _starImageView.SetColor(isOriginal);
-            if (!isOriginal) AddMovingRewardItem();
-        }
-
-        public void AddMovingRewardItem()
-        {
-            if (_starImageView == null) return;
-            if (_starImageView.GetMovingRewardItem() != null) return;
-
-            _starImageView.CreateMovingRewardItem(
-                new Vector2(_starImageView.GetRectTransform().rect.width * 1f, _starImageView.GetRectTransform().rect.width * 1f),
-                _starImageView.GetRectTransform().rect.width * 0.7f
-            );
-        }
-
-        public void SetMovingRewardItemStatus(bool status)
-        {
-            if (_starImageView == null) return;
-            _starImageView.SetMovingRewardItemStatus(status);
+            _starImageView.SetColor(true);
         }
 
         public void SetStarStatus(bool status)
@@ -60,12 +42,10 @@ namespace Scripts
     public interface IBoundaryController
     {
         void Initialize(IBoundaryView view, BoundaryModel model);
-        void AddStarImage(Vector2 starLocalPosition, bool isOriginal);
+        void AddStarImage(Vector2 starLocalPosition);
         void SetStarStatus(bool status);
         void DestroyObject();
         IStarImageView GetStarImage();
-        void AddMovingRewardItem();
-        void SetMovingRewardItemStatus(bool status);
     }
 
     public class BoundaryModel

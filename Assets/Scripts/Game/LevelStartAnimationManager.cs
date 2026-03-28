@@ -58,7 +58,9 @@ namespace Game
 
         private Sequence FadeInLifeBar(float duration)
         {
-            return _lifeBarController.ChangeFade(duration, 1f);
+            return DOTween.Sequence()
+                .Append(_lifeBarController.ChangeFade(duration, 1f))
+                .Append(_lifeBarController.PlayRewardStarIntroAnimation());
         }
 
         private Sequence FadeInMiddleGameButtons(float duration)

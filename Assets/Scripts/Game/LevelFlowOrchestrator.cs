@@ -159,7 +159,7 @@ namespace Game
             _initialCardAreaController.Initialize(!isResumeFlow);
             _gameUIController.Initialize(!isResumeFlow);
 
-            InitializeGameplaySystems();
+            InitializeGameplaySystems(!isResumeFlow);
 
             if (isResumeFlow)
             {
@@ -208,10 +208,10 @@ namespace Game
             return false;
         }
 
-        private void InitializeGameplaySystems()
+        private void InitializeGameplaySystems(bool deferRewardStarIntroAnimation)
         {
             _cardItemLocator.Initialize();
-            _guessManager.Initialize();
+            _guessManager.Initialize(deferRewardStarIntroAnimation);
             _cardItemInfoManager.Initialize();
             _cardItemInfoPopupController.Initialize();
             _cardInteractionManager.Initialize();

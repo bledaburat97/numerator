@@ -29,12 +29,13 @@ namespace Game
             powerUpMessageController.AddLifeEvent += AddExtraLives;
         }
         
-        public void Initialize()
+        public void Initialize(bool deferRewardStarIntroAnimation = false)
         {
             _lifeBarController.SetLifeBar(
                 _roundStateManager.GetMaxGuessCount(),
                 _roundStateManager.GetLifeBarStarInfoList(),
-                _roundStateManager.GetRemainingGuessCount());
+                _roundStateManager.GetRemainingGuessCount(),
+                deferRewardStarIntroAnimation);
         }
         
         private void OnWrongGuess(object sender, EventArgs args)
@@ -49,35 +50,24 @@ namespace Game
                     bool isRewardStar = !lifeBarStarInfoList[i].IsOriginal;
 
                     _roundStateManager.SetLifeBarStarStatus(i, false);
-                    _lifeBarController.SetStarStatus(false, i, keepRewardItemVisibleWhenDisabled: isRewardStar);
                     
-                    if (!lifeBarStarInfoList[i].IsOriginal)
+                    if (isRewardStar)
                     {
-                        if (i == 2)
+                        IStarImageView starImageView = _lifeBarController.GetStarImage(lifeBarStarInfoList[i].BoundaryIndex);
+                        if (starImageView == null)
                         {
-                            IStarImageView starImageView = _lifeBarController.GetStarImage(lifeBarStarInfoList[i].BoundaryIndex);
-                            if (starImageView == null)
-                            {
-                                Debug.LogError("StarImageView is null");
-                            }
-                            else
-                            {
-                                HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, false));
-                            }
+                            Debug.LogError("StarImageView is null");
+                            _lifeBarController.SetStarStatus(false, i);
                         }
-                        
-                        else if (i == 1)
+                        else
                         {
-                            IStarImageView starImageView = _lifeBarController.GetStarImage(lifeBarStarInfoList[i].BoundaryIndex);
-                            if (starImageView == null)
-                            {
-                                Debug.LogError("StarImageView is null");
-                            }
-                            else
-                            {
-                                HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, true));
-                            }
+                            bool canRevealCard = i % 2 == 1;
+                            HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, canRevealCard));
                         }
+                    }
+                    else
+                    {
+                        _lifeBarController.SetStarStatus(false, i);
                     }
 
                     break;
@@ -134,7 +124,7 @@ namespace Game
 
     public interface IGuessManager
     {
-        void Initialize();
+        void Initialize(bool deferRewardStarIntroAnimation = false);
         event EventHandler LevelFailEvent;
         event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
     }

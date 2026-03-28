@@ -54,7 +54,7 @@ namespace Scripts
             Container.Bind<IRoundStateManager>().To<RoundStateManager>().AsSingle();
             Container.Bind<IGameSaveSnapshotProvider>().To<GameSaveSnapshotProvider>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle();
-            Container.Bind<IHintProvider>().To<HintProvider>().AsSingle();
+            Container.Bind<IHintProvider>().To<HintProvider>().AsSingle().NonLazy();
             Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
             Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();
             Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);
