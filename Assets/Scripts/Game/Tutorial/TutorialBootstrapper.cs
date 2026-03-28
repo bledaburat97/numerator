@@ -14,6 +14,7 @@ namespace Scripts
         private readonly ICardItemInfoPopupController _cardItemInfoPopupController;
         private readonly ICardInteractionManager _cardInteractionManager;
         private readonly IBoardAreaController _boardAreaController;
+        private readonly IBoardLayoutManager _boardLayoutManager;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
 
         [Inject]
@@ -27,6 +28,7 @@ namespace Scripts
             ICardItemInfoPopupController cardItemInfoPopupController,
             ICardInteractionManager cardInteractionManager,
             IBoardAreaController boardAreaController,
+            IBoardLayoutManager boardLayoutManager,
             ICardPlacementCoordinator cardPlacementCoordinator)
         {
             _levelTracker = levelTracker;
@@ -38,6 +40,7 @@ namespace Scripts
             _cardItemInfoPopupController = cardItemInfoPopupController;
             _cardInteractionManager = cardInteractionManager;
             _boardAreaController = boardAreaController;
+            _boardLayoutManager = boardLayoutManager;
             _cardPlacementCoordinator = cardPlacementCoordinator;
         }
 
@@ -67,6 +70,7 @@ namespace Scripts
                     _cardItemInfoPopupController,
                     _cardInteractionManager,
                     _boardAreaController,
+                    _boardLayoutManager,
                     _cardPlacementCoordinator);
             }
             else if (_levelTracker.IsCardInfoTutorial())
@@ -88,6 +92,7 @@ namespace Scripts
                     _cardItemInfoPopupController,
                     _cardInteractionManager,
                     _boardAreaController,
+                    _boardLayoutManager,
                     _cardPlacementCoordinator);
             }
         }

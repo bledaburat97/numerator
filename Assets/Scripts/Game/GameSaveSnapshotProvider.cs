@@ -10,7 +10,7 @@ namespace Scripts
         private readonly IGuessManager _guessManager;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly ILevelEndManager _levelEndManager;
-        private readonly IBoardStateReader _boardStateReader;
+        private readonly IBoardStateManager _boardStateManager;
 
         [Inject]
         public GameSaveSnapshotProvider(
@@ -19,14 +19,14 @@ namespace Scripts
             IGuessManager guessManager,
             ICardItemInfoManager cardItemInfoManager,
             ILevelEndManager levelEndManager,
-            IBoardStateReader boardStateReader)
+            IBoardStateManager boardStateManager)
         {
             _resultManager = resultManager;
             _targetNumberCreator = targetNumberCreator;
             _guessManager = guessManager;
             _cardItemInfoManager = cardItemInfoManager;
             _levelEndManager = levelEndManager;
-            _boardStateReader = boardStateReader;
+            _boardStateManager = boardStateManager;
         }
 
         public bool TryCreateSnapshot(out LevelSaveData levelSaveData)
@@ -42,7 +42,7 @@ namespace Scripts
                 TargetCards = _targetNumberCreator.GetTargetCardsList(),
                 RemainingGuessCount = _guessManager.GetRemainingGuessCount(),
                 CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList(),
-                RemovedBoardHolderCount = _boardStateReader.GetRemovedBoardHolderCount()
+                RemovedBoardHolderCount = _boardStateManager.GetRemovedBoardHolderCount()
             };
 
             return true;

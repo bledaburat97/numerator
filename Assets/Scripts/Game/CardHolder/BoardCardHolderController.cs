@@ -14,10 +14,10 @@ namespace Scripts
             _view.SetCamera(cam);
         }
 
-        public void SetSize(float sizeRatio)
+        public void SetSize(Vector2 size)
         {
             _view.SetLocalScale();
-            _view.SetSize(_view.GetRectTransform().sizeDelta * sizeRatio);
+            _view.SetSize(size);
         }
 
         public void SetLocalPosition(Vector2 localPosition)
@@ -59,7 +59,7 @@ namespace Scripts
 
     public interface IBoardCardHolderController
     {
-        void SetSize(float sizeRatio);
+        void SetSize(Vector2 size);
         void SetHighlightStatus(bool status);
         IBoardHolderView GetView();
         Vector3 GetPositionOfCardHolder();

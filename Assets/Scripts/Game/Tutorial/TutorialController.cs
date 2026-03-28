@@ -19,6 +19,7 @@ namespace Scripts
         protected ICardItemInfoPopupController _cardItemInfoPopupController;
         protected ICardInteractionManager _cardInteractionManager;
         protected IBoardAreaController _boardAreaController;
+        protected IBoardLayoutManager _boardLayoutManager;
         protected Vector2 _sizeOfInitialHolder;
         protected Vector2 _sizeOfBoardHolder;
         private ICardPlacementCoordinator _cardPlacementCoordinator;
@@ -27,7 +28,8 @@ namespace Scripts
             IHandTutorialView handTutorialView, IUnmaskServiceAreaView unmaskServiceAreaView,
             ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, IResultAreaController resultAreaController, 
             ICardItemInfoPopupController cardItemInfoPopupController, ICardInteractionManager cardInteractionManager, 
-            IBoardAreaController boardAreaController, ICardPlacementCoordinator cardPlacementCoordinator)
+            IBoardAreaController boardAreaController, IBoardLayoutManager boardLayoutManager,
+            ICardPlacementCoordinator cardPlacementCoordinator)
         {
             _unmaskServiceAreaView = unmaskServiceAreaView;
             _handTutorialView = handTutorialView;
@@ -39,12 +41,13 @@ namespace Scripts
             _cardItemInfoPopupController = cardItemInfoPopupController;
             _cardInteractionManager = cardInteractionManager;
             _boardAreaController = boardAreaController;
+            _boardLayoutManager = boardLayoutManager;
             _cardPlacementCoordinator = cardPlacementCoordinator;
             _unmaskServiceAreaView.InstantiateTutorialFade();
             _tutorialMessagePopupView.Init();
             _tutorialAnimationActions = new Queue<Action>();
             _sizeOfInitialHolder = _initialCardAreaController.GetSizeOfInitialHolder() + Vector2.one;
-            _sizeOfBoardHolder = _boardAreaController.GetSizeOfBoardHolder() + Vector2.one;
+            _sizeOfBoardHolder = _boardLayoutManager.GetSizeOfBoardHolder() + Vector2.one;
             InitializeTutorialAnimationActions();
         }
 
@@ -212,6 +215,7 @@ namespace Scripts
             ITutorialMessagePopupView tutorialMessagePopupView, IGameUIController gameUIController, 
             IResultAreaController resultAreaController, ICardItemInfoPopupController cardItemInfoPopupController, 
             ICardInteractionManager cardInteractionManager, IBoardAreaController boardAreaController,
+            IBoardLayoutManager boardLayoutManager,
             ICardPlacementCoordinator cardPlacementCoordinator);
     }
 }

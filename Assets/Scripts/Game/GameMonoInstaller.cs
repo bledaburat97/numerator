@@ -18,6 +18,9 @@ namespace Scripts
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
         public override void InstallBindings()
         {
+            Container.Bind<IBoardAreaView>().FromInstance(boardAreaView).AsSingle();
+            Container.Bind<IInitialCardAreaView>().FromInstance(initialCardAreaView).AsSingle();
+            Container.Bind<ISizeManager>().To<SizeManager>().AsSingle();
             Container.Bind<IGameClockController>().To<GameClockController>().AsSingle().WithArguments(gameClockView);
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
@@ -27,14 +30,16 @@ namespace Scripts
             Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()
                 .WithArguments(lifeBarView);
             Container.Bind<IGuessManager>().To<GuessManager>().AsSingle();
-            Container.Bind<BoardAreaController>().AsSingle().WithArguments(boardAreaView);
+            Container.Bind<IBoardLayoutManager>().To<BoardLayoutManager>().AsSingle();
+            Container.Bind<IBoardStateManager>().To<BoardStateManager>().AsSingle();
+            Container.Bind<BoardAreaController>().AsSingle();
             Container.Bind<IBoardAreaController>().To<BoardAreaController>().FromResolve();
-            Container.Bind<IBoardStateReader>().To<BoardAreaController>().FromResolve();
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();
             Container.Bind<ICardItemInfoPopupController>().To<CardItemInfoPopupController>().AsSingle()
                 .WithArguments(cardItemInfoPopupView);
-            Container.Bind<IInitialCardAreaController>().To<InitialCardAreaController>().AsSingle()
-                .WithArguments(initialCardAreaView);
+            Container.Bind<IInitialCardAreaLayoutManager>().To<InitialCardAreaLayoutManager>().AsSingle();
+            Container.Bind<IInitialCardAreaFactory>().To<InitialCardAreaFactory>().AsSingle();
+            Container.Bind<IInitialCardAreaController>().To<InitialCardAreaController>().AsSingle();
             Container.Bind<ICardInteractionManager>().To<CardInteractionManager>().AsSingle();
             Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView);
             Container.Bind<IGamePopupCreator>().To<GamePopupCreator>().FromComponentInHierarchy().AsSingle();
@@ -59,7 +64,6 @@ namespace Scripts
             Container.Bind<ILevelFailManager>().To<LevelFailManager>().AsSingle();
             Container.Bind<ILevelFailAnimationManager>().To<LevelFailAnimationManager>().AsSingle();
             Container.Bind<ILevelEndManager>().To<LevelEndManager>().AsSingle();
-            Container.Bind<ISizeManager>().To<SizeManager>().AsSingle();
             Container.Bind<IBoardCardIndexManager>().To<BoardCardIndexManager>().AsSingle();
         }
     }

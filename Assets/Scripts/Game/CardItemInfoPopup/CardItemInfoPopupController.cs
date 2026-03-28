@@ -11,8 +11,8 @@ namespace Scripts
         private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ICardInteractionManager _cardInteractionManager;
         private ICardItemInfoManager _cardItemInfoManager;
-        private IBoardStateReader _boardStateReader;
-        private IBoardAreaController _boardAreaController;
+        private IBoardStateManager _boardStateManager;
+        private IBoardLayoutManager _boardLayoutManager;
         private ICardItemInfoPopupView _view;
         private List<IBaseButtonController> _cardHolderIndicatorButtonControllers;
         private Dictionary<int, IBaseButtonController> _probabilityButtonControllers;
@@ -23,7 +23,7 @@ namespace Scripts
         
         [Inject]
         public CardItemInfoPopupController(BaseButtonControllerFactory baseButtonControllerFactory, ICardInteractionManager cardInteractionManager, ICardItemInfoManager cardItemInfoManager, 
-            IBoardAreaController boardAreaController, IBoardStateReader boardStateReader, ICardItemInfoPopupView view)
+            IBoardLayoutManager boardLayoutManager, IBoardStateManager boardStateManager, ICardItemInfoPopupView view)
         {
             _view = view;
             BaseButtonViewFactory cardHolderIndicatorButtonViewFactory = new BaseButtonViewFactory();
@@ -34,8 +34,8 @@ namespace Scripts
             _cardInteractionManager = cardInteractionManager;
             _cardInteractionManager.OpenCardItemInfoPopupEvent += OpenCardItemInfoPopup;
             _cardItemInfoManager = cardItemInfoManager;
-            _boardAreaController = boardAreaController;
-            _boardStateReader = boardStateReader;
+            _boardLayoutManager = boardLayoutManager;
+            _boardStateManager = boardStateManager;
             CreateProbabilityButtons();
         }
 
@@ -98,13 +98,13 @@ namespace Scripts
         
         private void CreateCardHolderIndicatorButtons()
         {
-            for (int i = 0; i < _boardStateReader.GetNumOfBoardHolders(); i++)
+            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
             {
                 IBaseButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
                 int index = i;
                 IBaseButtonController cardHolderIndicatorButtonController = _baseButtonControllerFactory.Create(cardHolderIndicatorButtonView, () => OnCardHolderIndicatorButtonClicked(index));
                 cardHolderIndicatorButtonController.SetText(ConstantValues.HOLDER_ID_LIST[index]);
-                cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(_boardAreaController.GetBoardHolderSceneLocalPositionList()[index].x, 0));
+                cardHolderIndicatorButtonController.SetLocalPosition(new Vector2(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[index].x, 0));
                 _cardHolderIndicatorButtonControllers.Add(cardHolderIndicatorButtonController);
             }
         }
@@ -192,4 +192,3 @@ namespace Scripts
         }
     }
 }
-

@@ -11,15 +11,15 @@ namespace Scripts
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
         private ILevelSaveDataManager _levelSaveDataManager;
         private IInitialCardAreaController _initialCardAreaController;
-        private IBoardStateReader _boardStateReader;
+        private IBoardStateManager _boardStateManager;
 
         [Inject]
         public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController, 
-            IPowerUpMessageController powerUpMessageController, IBoardStateReader boardStateReader)
+            IPowerUpMessageController powerUpMessageController, IBoardStateManager boardStateManager)
         {
             _levelSaveDataManager = levelSaveDataManager;
             _initialCardAreaController = initialCardAreaController;
-            _boardStateReader = boardStateReader;
+            _boardStateManager = boardStateManager;
             powerUpMessageController.RevealWagonEvent += OnRevealWagon;
         }
         
@@ -140,7 +140,7 @@ namespace Scripts
         private List<int> GetAllPossibleCardHolderIndicatorIndexes()
         {
             List<int> possibleCardHolderIndexes = new List<int>();
-            for (int i = 0; i < _boardStateReader.GetNumOfBoardHolders(); i++)
+            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
             {
                 possibleCardHolderIndexes.Add(i);
             }

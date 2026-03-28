@@ -7,38 +7,31 @@ using Zenject;
 
 namespace Scripts
 {
-    public class BoardAreaController : IBoardAreaController, IBoardStateReader
+    public class BoardAreaController : IBoardAreaController
     {
-        private const float GardenSpacingToHolderWidthRatio = 3f / 70f;
-        private int _numOfBoardHolders;
-        private int _removedBoardHolderCount;
-        
-        private IBoardAreaView _view;
-        private List<IBoardCardHolderController> _boardHolderControllerList;
+        private readonly IBoardAreaView _view;
+        private readonly IBoardLayoutManager _boardLayoutManager;
+        private readonly IBoardStateManager _boardStateManager;
+        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly ITargetNumberCreator _targetNumberCreator;
+        private readonly IPowerUpMessageController _powerUpMessageController;
+        private readonly List<IBoardCardHolderController> _boardHolderControllerList;
         private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
 
-        private List<Vector2> _boardHolderSceneLocalPositionList;
-        private ISizeManager _sizeManager;
-        private ILevelSaveDataManager _levelSaveDataManager;
-        private ILevelDataCreator _levelDataCreator;
-        private IBoardCardIndexManager _boardCardIndexManager;
-        private ITargetNumberCreator _targetNumberCreator;
-        private IPowerUpMessageController _powerUpMessageController;
         public event EventHandler<int> BoardHolderClickedEvent;
 
         [Inject]
-        public BoardAreaController(IGameUIController gameUIController, ILevelDataCreator levelDataCreator,
-            IBoardAreaView view, ISizeManager sizeManager, ILevelSaveDataManager levelSaveDataManager, 
+        public BoardAreaController(
+            IBoardAreaView view,
+            IBoardLayoutManager boardLayoutManager,
+            IBoardStateManager boardStateManager,
             IBoardCardIndexManager boardCardIndexManager,
             ITargetNumberCreator targetNumberCreator, IPowerUpMessageController powerUpMessageController)
         {
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
-            _sizeManager = sizeManager;
-            _sizeManager.SetSizeRatio(new Vector2(_view.GetRectTransform().rect.width, _view.GetRectTransform().rect.height), _view.GetSizeOfBoardHolder(), GardenSpacingToHolderWidthRatio);
-            _boardHolderSceneLocalPositionList = new List<Vector2>();
-            _levelSaveDataManager = levelSaveDataManager;
-            _levelDataCreator = levelDataCreator;
+            _boardLayoutManager = boardLayoutManager;
+            _boardStateManager = boardStateManager;
             _boardCardIndexManager = boardCardIndexManager;
             _targetNumberCreator = targetNumberCreator;
             _shinyBoardCardHolderControllers = new List<IBoardCardHolderController>();
@@ -50,39 +43,24 @@ namespace Scripts
 
         public void CreateBoard(bool isNewLevel)
         {
-            SetNumOfBoardHolders();
-            SetBoardHolderSceneLocalPositionList();
+            _boardStateManager.Initialize();
+            _boardLayoutManager.Initialize(_boardStateManager.GetNumOfBoardHolders());
             ClearBoardHolders();
             CreateBoardHolders();
-            _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(_numOfBoardHolders);
-            _targetNumberCreator.SetTargetNumber(_numOfBoardHolders);
-        }
-
-        private void SetNumOfBoardHolders()
-        {
-            _removedBoardHolderCount = _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount;
-            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount;
-        }
-        
-        private void SetBoardHolderSceneLocalPositionList()
-        {
-            _boardHolderSceneLocalPositionList.Clear();
-            Vector2 cardHolderSize = _sizeManager.GetSizeRatio() * _view.GetSizeOfBoardHolder();
-            float spacing = cardHolderSize.x * GardenSpacingToHolderWidthRatio;
-            float verticalLocalPos = 0f;
-            _boardHolderSceneLocalPositionList = _boardHolderSceneLocalPositionList.GetLocalPositionList(_numOfBoardHolders, spacing, cardHolderSize, verticalLocalPos);
+            _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(_boardStateManager.GetNumOfBoardHolders());
+            _targetNumberCreator.SetTargetNumber(_boardStateManager.GetNumOfBoardHolders());
         }
         
         private void CreateBoardHolders()
         {
-            for (int i = 0; i < _numOfBoardHolders; i++)
+            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
             {
                 IBoardHolderView boardHolderView = _view.CreateBoardHolderView();
                 IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
                 int index = i;
-                boardHolderController.SetSize(_sizeManager.GetSizeRatio());
+                boardHolderController.SetSize(GetSizeOfBoardHolder());
                 boardHolderController.SetOnClick(() => BoardHolderClickCallBack(index));
-                boardHolderController.SetLocalPosition(_boardHolderSceneLocalPositionList[index]);
+                boardHolderController.SetLocalPosition(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[index]);
                 _boardHolderControllerList.Add(boardHolderController);
             }
         }
@@ -113,7 +91,7 @@ namespace Scripts
             Sequence sequence = DOTween.Sequence();
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
             {
-                sequence.Join(_boardHolderControllerList[i].Move(_boardHolderSceneLocalPositionList[i] + new Vector2(400, 0), duration));
+                sequence.Join(_boardHolderControllerList[i].Move(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[i] + new Vector2(400, 0), duration));
             }
             return sequence;
         }
@@ -167,12 +145,12 @@ namespace Scripts
         
         public int GetClosestBoardHolderIndex(Vector2 cardItemPosition)
         {
-            for (int i = 0; i < _numOfBoardHolders; i++)
+            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
             {
                 if(_boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
                 IBoardHolderView view = GetBoardHolderView(i);
                 Vector2 position = view.GetPosition();
-                Vector2 size = GetSizeOfBoardHolder() * _view.GetCanvas().scaleFactor;
+                Vector2 size = _boardLayoutManager.GetSizeOfBoardHolder() * _view.GetCanvas().scaleFactor;
                 if (position.x + size.x / 2 > cardItemPosition.x &&
                     position.x - size.x / 2 < cardItemPosition.x)
                 {
@@ -186,25 +164,10 @@ namespace Scripts
 
             return -1;
         }
-
-        public Vector2 GetSizeOfBoardHolder()
-        {
-            return _view.GetSizeOfBoardHolder() * _sizeManager.GetSizeRatio();
-        }
-
-        public List<Vector2> GetBoardHolderSceneLocalPositionList()
-        {
-            return _boardHolderSceneLocalPositionList;
-        }
-
-        public int GetNumOfBoardHolders()
-        {
-            return _numOfBoardHolders;
-        }
         
-        public int GetRemovedBoardHolderCount()
+        private Vector2 GetSizeOfBoardHolder()
         {
-            return _removedBoardHolderCount;
+            return _boardLayoutManager.GetSizeOfBoardHolder();
         }
 
         //----- Aktif kullanılmıyor
@@ -250,16 +213,15 @@ namespace Scripts
 
         private void DeleteOneBoardHolder()
         {
-            _removedBoardHolderCount++;
-            _numOfBoardHolders -= 1;
+            _boardStateManager.RemoveFirstBoardHolder();
             IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
             _boardHolderControllerList.Remove(boardHolderController);
             boardHolderController.DestroyObject();
-            SetBoardHolderSceneLocalPositionList();
+            _boardLayoutManager.Initialize(_boardStateManager.GetNumOfBoardHolders());
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
             {
                 int index = i;
-                _boardHolderControllerList[i].SetSize(_sizeManager.GetSizeRatio());
+                _boardHolderControllerList[i].SetSize(GetSizeOfBoardHolder());
                 _boardHolderControllerList[i].SetOnClick(() => BoardHolderClickCallBack(index));
             }
 
@@ -272,16 +234,9 @@ namespace Scripts
             Sequence sequence = DOTween.Sequence();
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
             {
-                sequence.Join(_boardHolderControllerList[i].Move(_boardHolderSceneLocalPositionList[i], duration));
+                sequence.Join(_boardHolderControllerList[i].Move(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[i], duration));
             }
         }
-        
-    }
-
-    public interface IBoardStateReader
-    {
-        int GetNumOfBoardHolders();
-        int GetRemovedBoardHolderCount();
     }
 
     public interface IBoardAreaController
@@ -292,8 +247,6 @@ namespace Scripts
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         List<IBoardCardHolderController> GetEmptyBoardHolders();
-        List<Vector2> GetBoardHolderSceneLocalPositionList();
-        Vector2 GetSizeOfBoardHolder();
         void CreateBoard(bool isNewLevel);
         Sequence MoveBoardHoldersToOutsideScene(float duration);
         void ClearBoardHolders();
