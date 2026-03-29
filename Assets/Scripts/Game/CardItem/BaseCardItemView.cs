@@ -10,6 +10,9 @@ namespace Scripts
         [SerializeField] protected RectTransform rectTransform;
         [SerializeField] protected TMP_Text cardNumberText;
         [SerializeField] protected Image image;
+        [SerializeField] private Image fruitImage;
+        [SerializeField] private Sprite[] fruitSprites;
+
         
         public virtual void Init(int cardNumber)
         {
@@ -33,7 +36,8 @@ namespace Scripts
         
         private void SetCardNumberText(int number)
         {
-            cardNumberText.text = number.ToString();
+            fruitImage.sprite = fruitSprites[number - 1];
+            cardNumberText.gameObject.SetActive(false);
         }
     }
 
