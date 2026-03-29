@@ -79,7 +79,6 @@ namespace Scripts
                 return;
             }
             
-            //TODO: check _triedCardList contains finalCardList
             _roundStateManager.AddTriedCards(finalCards);
             CalculatePositionCounts(finalCards, out int numOfCorrectPos, out int numOfWrongPos);
             DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);

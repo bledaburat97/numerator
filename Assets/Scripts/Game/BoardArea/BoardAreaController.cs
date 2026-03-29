@@ -41,7 +41,7 @@ namespace Scripts
             _powerUpMessageController.RemoveBoardHolderEvent += RemoveLastBoardHolder;
         }
 
-        public void CreateBoard(bool isNewLevel)
+        public void CreateBoard()
         {
             _boardStateManager.Initialize();
             _boardLayoutManager.Initialize(_boardStateManager.GetNumOfBoardHolders());
@@ -247,7 +247,7 @@ namespace Scripts
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         List<IBoardCardHolderController> GetEmptyBoardHolders();
-        void CreateBoard(bool isNewLevel);
+        void CreateBoard();
         Sequence MoveBoardHoldersToOutsideScene(float duration);
         void ClearBoardHolders();
     }

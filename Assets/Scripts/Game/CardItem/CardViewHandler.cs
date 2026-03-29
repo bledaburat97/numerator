@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -10,6 +11,7 @@ namespace Scripts
         private readonly IHapticController _hapticController;
         private readonly ICardMoveHandler _cardMoveHandler;
         private readonly CardItemData _cardItemData;
+        private Sequence _activeMoveSequence;
         private Camera _cam;
 
         public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController,
@@ -55,6 +57,7 @@ namespace Scripts
 
         public void InitializeDrag(RectTransform parent)
         {
+            KillActiveMoveSequence();
             SetParent(parent);
         }
 
@@ -75,23 +78,32 @@ namespace Scripts
             _view.SetAnchoredPosition(localPosition);
         }
 
-        public void MoveToParent(RectTransform parentTransform)
+        public void MoveToParent(RectTransform parentTransform, Action onComplete = null)
         {
-            PlaceCard(parentTransform);
+            PlaceCard(parentTransform, onComplete);
         }
 
-        public void MoveToInitialParent()
+        public void MoveToInitialParent(Action onComplete = null)
         {
-            PlaceCard(_cardItemData.Parent);
+            PlaceCard(_cardItemData.Parent, onComplete);
         }
 
-        private void PlaceCard(RectTransform parentTransform)
+        private void PlaceCard(RectTransform parentTransform, Action onComplete = null)
         {
+            KillActiveMoveSequence();
             SetParent(_cardItemData.TempParent);
             _view.InitLocalScale();
-            DOTween.Sequence().Append(_view.ChangePosition(parentTransform.position, 0.3f))
-                .OnComplete(() => _view.SetParent(parentTransform));
-            //_view.SetSize(parentTransform.sizeDelta);
+            _activeMoveSequence = DOTween.Sequence()
+                .Append(_view.ChangePosition(parentTransform.position, 0.3f))
+                .OnComplete(() =>
+                {
+                    _view.SetParent(parentTransform);
+                    _view.InitLocalScale();
+                    _view.SetLocalPosition(Vector3.zero);
+                    _activeMoveSequence = null;
+                    onComplete?.Invoke();
+                })
+                .OnKill(() => _activeMoveSequence = null);
         }
 
         public void SuccessAnimation(float delayDuration)
@@ -134,6 +146,7 @@ namespace Scripts
 
         public void DestroyObject()
         {
+            KillActiveMoveSequence();
             _view.DestroyObject();
         }
 
@@ -213,9 +226,16 @@ namespace Scripts
         
         public Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration)
         {
+            KillActiveMoveSequence();
             return DOTween.Sequence()
                 .Append(_view.GetRectTransform().DOLocalMove(targetPosition, fallDuration).SetEase(Ease.InQuad))
                 .Append(_view.GetRectTransform().DOLocalMove(targetPosition, bounceDuration).SetEase(Ease.OutBounce));
+        }
+
+        private void KillActiveMoveSequence()
+        {
+            if (_activeMoveSequence == null || !_activeMoveSequence.IsActive()) return;
+            _activeMoveSequence.Kill();
         }
 
     }
@@ -238,7 +258,7 @@ namespace Scripts
         Sequence AnimateExplosion(float duration);
         Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration);
         void SetLocalPosition(Vector2 localPosition);
-        void MoveToParent(RectTransform parentTransform);
-        void MoveToInitialParent();
+        void MoveToParent(RectTransform parentTransform, Action onComplete = null);
+        void MoveToInitialParent(Action onComplete = null);
     }
 }

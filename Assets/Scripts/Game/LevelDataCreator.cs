@@ -24,16 +24,35 @@ namespace Scripts
             if (levelId < 30)
             {
                 _levelData = _startingLevelsDataList.Find(level => level.LevelId == levelId);
+                if (_levelData == null)
+                {
+                    _levelData = GetFallbackLevelData(_startingLevelsDataList, levelId);
+                }
             }
             else
             {
-                _levelData = _loopLevelsDataList.Find(level => level.LevelId == levelId % 15);
+                int loopLevelId = _loopLevelsDataList.Count == 0 ? 0 : levelId % _loopLevelsDataList.Count;
+                _levelData = _loopLevelsDataList.Find(level => level.LevelId == loopLevelId);
+                if (_levelData == null)
+                {
+                    _levelData = GetFallbackLevelData(_loopLevelsDataList, loopLevelId);
+                }
+            }
+
+            if (_levelData == null)
+            {
+                _levelData = CreateDefaultLevelData(levelId);
             }
         }
 
         public override void OnNetworkSpawn()
         {
             _numOfBoardHolders.OnValueChanged += UpdateMultiplayerLevelData;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            _numOfBoardHolders.OnValueChanged -= UpdateMultiplayerLevelData;
         }
         
         private void UpdateMultiplayerLevelData(int oldValue, int newValue)
@@ -65,6 +84,28 @@ namespace Scripts
         private void SetMultiplayerLevelDataServerRpc(int numOfBoardHolders)
         {
             _numOfBoardHolders.Value = numOfBoardHolders;
+        }
+
+        private static LevelData GetFallbackLevelData(IReadOnlyList<LevelData> levelDataList, int preferredIndex)
+        {
+            if (levelDataList == null || levelDataList.Count == 0) return null;
+            if (preferredIndex >= 0 && preferredIndex < levelDataList.Count)
+            {
+                return levelDataList[preferredIndex];
+            }
+
+            return levelDataList[levelDataList.Count - 1];
+        }
+
+        private static LevelData CreateDefaultLevelData(int levelId)
+        {
+            return new LevelData
+            {
+                LevelId = levelId,
+                NumOfBoardHolders = 3,
+                NumOfCards = 9,
+                MaxNumOfTries = 6
+            };
         }
         
     }

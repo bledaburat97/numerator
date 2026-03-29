@@ -13,7 +13,6 @@ namespace Scripts
         private NetworkVariable<int> _targetNumber = new NetworkVariable<int>();
         private List<int> _targetCardsList;
         [Inject] private ILevelDataCreator _levelDataCreator;
-        [Inject] private ILevelSaveDataManager _levelSaveDataManager;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private ILevelTracker _levelTracker;
 
@@ -40,6 +39,11 @@ namespace Scripts
         public override void OnNetworkSpawn()
         {
             _targetNumber.OnValueChanged += SetTargetNumber;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            _targetNumber.OnValueChanged -= SetTargetNumber;
         }
 
         public List<int> GetTargetCardsList()
@@ -97,11 +101,6 @@ namespace Scripts
         {
             List<int> cards = Enumerable.Range(1, numOfCards).ToList();
             ListRandomizer.Randomize(cards);
-
-            for (int i = 0; i < numOfBoardHolders; i++)
-            {
-                Debug.Log(cards[i]);
-            }
 
             List<int> targetCardsList = cards.Take(numOfBoardHolders).ToList();
 

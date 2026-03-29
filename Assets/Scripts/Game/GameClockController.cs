@@ -7,7 +7,6 @@ namespace Scripts
     public class GameClockController : IGameClockController
     {
         [Inject] private IHapticController _hapticController;
-        [Inject] private IGuessManager _guessManager;
         
         private IGameClockView _view;
         public GameClockController(IGameClockView view)

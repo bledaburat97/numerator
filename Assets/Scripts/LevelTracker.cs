@@ -22,7 +22,7 @@ namespace Scripts
             _giftStarCount = PlayerPrefs.GetInt("gift_star_count", 0);
             _revealingPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("revealing_power_up_count", 0));
             _lifePowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("life_power_up_count", 0));
-            _bombPowerUpCount = Mathf.Max(0, PlayerPrefs.HasKey("bomb_power_up_count", 0));
+            _bombPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("bomb_power_up_count", 0));
             _currentRewardType = (RewardType)PlayerPrefs.GetInt("reward_type", 0);
 
             bool shouldSaveSanitizedCounts =

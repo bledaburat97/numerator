@@ -1,6 +1,5 @@
 ﻿using System;
 using Game;
-using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -11,6 +10,7 @@ namespace Scripts
         private IFadePanelController _fadePanelController;
         private ITargetNumberCreator _targetNumberCreator;
         private ILevelTracker _levelTracker;
+        private IRoundStateManager _roundStateManager;
         private IGamePowerUpAreaController _gamePowerUpAreaController;
         private GameUIButtonType _activePowerUpType;
         
@@ -22,7 +22,7 @@ namespace Scripts
         [Inject]
         public PowerUpMessageController(IHapticController hapticController,
             IGamePowerUpAreaController gamePowerUpAreaController, IFadePanelController fadePanelController,
-            ITargetNumberCreator targetNumberCreator, ILevelTracker levelTracker)
+            ITargetNumberCreator targetNumberCreator, ILevelTracker levelTracker, IRoundStateManager roundStateManager)
         {
             _hapticController = hapticController;
             _fadePanelController = fadePanelController;
@@ -30,6 +30,7 @@ namespace Scripts
             _gamePowerUpAreaController = gamePowerUpAreaController;
             _targetNumberCreator = targetNumberCreator;
             _levelTracker = levelTracker;
+            _roundStateManager = roundStateManager;
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
@@ -41,6 +42,7 @@ namespace Scripts
                     {
                         OnClosePowerUp();
                     }
+                    if (!CanAddExtraLives()) return;
                     if (!_levelTracker.TryConsumePowerUp(RewardType.Life)) return;
                     _gamePowerUpAreaController.Refresh();
                     AddLifeEvent?.Invoke(this, EventArgs.Empty);
@@ -98,10 +100,15 @@ namespace Scripts
                 _hapticController.Vibrate(HapticType.CardRelease);
                 int cardNumber = _targetNumberCreator.GetTargetCardsList()[boardHolderIndex];
                 int cardIndex = cardNumber - 1;
-                Debug.Log($"Reveal Card Index: {cardIndex}");
                 RevealWagonEvent?.Invoke(this, new LockedCardInfo(boardHolderIndex, cardIndex));
                 OnClosePowerUp();
             }
+        }
+
+        private bool CanAddExtraLives()
+        {
+            const int extraLifeCount = 3;
+            return _roundStateManager.GetRemainingGuessCount() + extraLifeCount <= _roundStateManager.GetMaxGuessCount();
         }
     }
 

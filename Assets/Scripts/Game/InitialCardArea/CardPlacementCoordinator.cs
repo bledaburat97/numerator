@@ -95,8 +95,10 @@ namespace Scripts
 
         private void PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
         {
-            _boardCardIndexManager.SetCardIndexOnBoardHolder(boardHolderIndex, cardIndex);
-            _getCardItem(cardIndex).GetCardViewHandler().MoveToParent(_boardAreaController.GetRectTransformOfGarden(boardHolderIndex));
+            _boardCardIndexManager.ReserveBoardHolderForCard(boardHolderIndex, cardIndex);
+            _getCardItem(cardIndex).GetCardViewHandler().MoveToParent(
+                _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
+                () => _boardCardIndexManager.SetCardIndexOnBoardHolder(boardHolderIndex, cardIndex));
         }
 
         private void ReturnCardToInitial(int cardIndex)

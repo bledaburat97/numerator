@@ -31,7 +31,7 @@ public class CardMoveHandler : ICardMoveHandler
         }
 
         _isDragStart = true;
-        _onDragContinue(position, _cardIndex);
+        _onDragContinue?.Invoke(position, _cardIndex);
     }
 
     public void SetOnClick(Action<int> onClick)
@@ -73,7 +73,7 @@ public class CardMoveHandler : ICardMoveHandler
         else
         {
             _hapticController.Vibrate(HapticType.CardRelease);
-            int boardHolderIndex = _onDragComplete(_cardIndex);
+            int boardHolderIndex = _onDragComplete != null ? _onDragComplete(_cardIndex) : -1;
             if (boardHolderIndex != -1)
             {
                 _onMoveToBoardRequested?.Invoke(_cardIndex, boardHolderIndex);

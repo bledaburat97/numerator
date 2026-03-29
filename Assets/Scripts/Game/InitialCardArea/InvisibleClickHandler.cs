@@ -10,7 +10,6 @@ namespace Scripts
         
         public void OnPointerClick(PointerEventData eventData)
         {
-            Debug.Log("InvisibleClick");
             OnInvisibleClicked?.Invoke(this, EventArgs.Empty);
         }
     }

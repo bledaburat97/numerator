@@ -123,7 +123,6 @@ namespace Game
                 .Append(_fadePanelController.AnimateFade(0f, animationDuration))
                 .Join(_levelFailAnimationManager.FadeOutResultArea(animationDuration))
                 .Join(_levelFailAnimationManager.SendBoardHolders(animationDuration))
-                .AppendCallback(() => _levelEndPopupController.SetPopupStatus(false))
                 .AppendCallback(() => _fadePanelController.SetFadeImageStatus(false))
                 .AppendCallback(() => Begin(LevelEntryMode.Retry));
         }
@@ -161,7 +160,7 @@ namespace Game
             bool isResumeFlow = TryPrepareSinglePlayerSaveData(mode);
 
             _roundStateManager.Initialize();
-            _boardAreaController.CreateBoard(!isResumeFlow);
+            _boardAreaController.CreateBoard();
             _resultAreaController.Initialize(!isResumeFlow);
             _lifeBarController.SetFade(!isResumeFlow);
             _initialCardAreaController.Initialize(!isResumeFlow);

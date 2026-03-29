@@ -92,7 +92,6 @@ namespace Scripts
             List<Vector2> boundaryLocalPositionList = new List<Vector2>();
             Vector2 boundarySize = _view.GetBoundaryRectTransform().sizeDelta;
             Vector2 progressBarSize = _view.GetFilledImageRectTransform().sizeDelta;
-            Debug.Log("progressBarSize" + progressBarSize.x);
             float spacing = progressBarSize.x / maxGuessCount - boundarySize.x;
             boundaryLocalPositionList = boundaryLocalPositionList.GetLocalPositionList(maxGuessCount - 1, spacing, boundarySize, -0.14f);
 

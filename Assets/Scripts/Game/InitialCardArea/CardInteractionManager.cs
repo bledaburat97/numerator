@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Game;
 using UnityEngine;
 using Zenject;
@@ -16,7 +15,6 @@ namespace Scripts
         private IBoardCardIndexManager _boardCardIndexManager;
         
         private int _selectedCardIndex = -1;
-        private List<int> _lockedCardIndexList;
         private bool _isCardItemInfoPopupToggleOn = false;
         public event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
 
@@ -31,14 +29,12 @@ namespace Scripts
             _hapticController = hapticController;
             _cardPlacementCoordinator = cardPlacementCoordinator;
             _boardCardIndexManager = boardCardIndexManager;
-            _lockedCardIndexList = new List<int>();
             Subscribe();
         }
 
         public void Initialize()
         {
             _selectedCardIndex = -1;
-            _lockedCardIndexList.Clear();
             _isCardItemInfoPopupToggleOn = false;
         }
         
@@ -74,7 +70,7 @@ namespace Scripts
         {
             if (_isCardItemInfoPopupToggleOn)
             {
-                if (_selectedCardIndex == cardIndex || _lockedCardIndexList.Contains(cardIndex))
+                if (_selectedCardIndex == cardIndex)
                 {
                     SetSelectedIndex(-1);
                 }
