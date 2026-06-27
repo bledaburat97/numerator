@@ -51,8 +51,22 @@ namespace Scripts
 
         public void SetProbability(ProbabilityType probabilityType, bool isLocked)
         {
-            _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType]);
-            _view.SetLockImageStatus(isLocked);
+            _view.SetLockImageStatus(false);
+            switch (probabilityType)
+            {
+                case ProbabilityType.Certain:
+                    _view.SetAlpha(1f);
+                    _view.SetFrameStatus(false);
+                    break;
+                case ProbabilityType.NotExisted:
+                    _view.SetAlpha(0.5f);
+                    _view.SetFrameStatus(false);
+                    break;
+                default:
+                    _view.SetAlpha(1f);
+                    _view.SetFrameStatus(false);
+                    break;
+            }
         }
 
         public void InitializeDrag(RectTransform parent)
@@ -110,9 +124,7 @@ namespace Scripts
         {
             DOTween.Sequence()
                 .AppendInterval(delayDuration)
-                .Append(_view.AnimateColorChange(
-                    ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain], 0.5f))
-                .Join(_view.AnimateLockImage(0.2f))
+                .Append(_view.GetRectTransform().DOPunchScale(Vector3.one * 0.12f, 0.22f, 5, 0.75f))
                 .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
         }
 
@@ -123,9 +135,7 @@ namespace Scripts
             {
                 DOTween.Sequence()
                     .AppendInterval(delayDuration)
-                    .Append(_view.AnimateColorChange(
-                        ConstantValues.GetProbabilityTypeToColorMapping()[(int)ProbabilityType.Certain], 0.5f))
-                    .Join(_view.AnimateLockImage(0.2f))
+                    .Append(_view.GetRectTransform().DOPunchScale(Vector3.one * 0.12f, 0.22f, 5, 0.75f))
                     .OnComplete(() => _hapticController.Vibrate(HapticType.CardGrab));
             }
             else
@@ -153,8 +163,24 @@ namespace Scripts
         public void AnimateProbabilityChange(float duration, ProbabilityType probabilityType, bool isLocked)
         {
             DOTween.Sequence().AppendCallback(() =>
-                    _view.SetColor(ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType]))
-                .AppendCallback(() => _view.SetLockImageStatus(isLocked));
+            {
+                _view.SetLockImageStatus(false);
+                switch (probabilityType)
+                {
+                    case ProbabilityType.Certain:
+                        _view.SetAlpha(1f);
+                        _view.SetFrameStatus(false);
+                        break;
+                    case ProbabilityType.NotExisted:
+                        _view.SetAlpha(0.5f);
+                        _view.SetFrameStatus(false);
+                        break;
+                    default:
+                        _view.SetAlpha(1f);
+                        _view.SetFrameStatus(false);
+                        break;
+                }
+            });
         }
 
         public RectTransform GetRectTransform()
@@ -164,64 +190,23 @@ namespace Scripts
 
         public Sequence AnimateExplosion(float duration)
         {
-            return DOTween.Sequence().AppendCallback(() =>
-            {
-                ActivateExplosionParticle();
-                SetStatusOfImage(false);
-            }).AppendInterval(duration).AppendCallback(_view.DestroyObject);
+            float popDuration = Mathf.Min(0.08f, duration * 0.4f);
+            float fadeDuration = Mathf.Max(0.01f, duration - popDuration);
+            RectTransform rectTransform = _view.GetRectTransform();
+
+            return DOTween.Sequence()
+                .Append(rectTransform.DOScale(Vector3.one * 1.15f, popDuration).SetEase(Ease.OutQuad))
+                .Append(DOTween.To(() => 1f, _view.SetAlpha, 0f, fadeDuration))
+                .Join(rectTransform.DOScale(Vector3.zero, fadeDuration).SetEase(Ease.InBack))
+                .AppendCallback(_view.DestroyObject);
         }
 
         public void AnimateTurnIntoCertain(float delayDuration, float colorChangeDuration,
             float ribbonImageDuration)
         {
             DOTween.Sequence().AppendInterval(delayDuration)
-                .Append(AnimateColorChange(colorChangeDuration, ProbabilityType.Certain))
-                .Join(DOTween.Sequence().AppendInterval(colorChangeDuration - ribbonImageDuration)
-                    .Append(AnimateRibbonImage(ribbonImageDuration)))
-                .AppendCallback(ActivateGlitteringParticle);
-        }
-
-        public Sequence AnimateColorChange(float duration, ProbabilityType probabilityType)
-        {
-            Color newColor = ConstantValues.GetProbabilityTypeToColorMapping()[(int)probabilityType];
-            SetColorOfInnerImage(newColor);
-            return DOTween.Sequence()
-                .Append(_view.GetInnerImage().rectTransform.DOSizeDelta(_view.GetImage().rectTransform.sizeDelta * 2, duration))
-                .AppendCallback(() =>
-                {
-                    SetColorOfImage(newColor);
-                    _view.GetInnerImage().rectTransform.sizeDelta = Vector2.zero;
-                });
-        }
-
-        private Sequence AnimateRibbonImage(float duration)
-        {
-            return DOTween.Sequence();
-        }
-
-        private void ActivateGlitteringParticle()
-        {
-
-        }
-
-        private void ActivateExplosionParticle()
-        {
-
-        }
-
-        private void SetColorOfInnerImage(Color color)
-        {
-            _view.GetInnerImage().color = color;
-        }
-
-        private void SetColorOfImage(Color color)
-        {
-            _view.GetImage().color = color;
-        }
-
-        private void SetStatusOfImage(bool status)
-        {
-            _view.GetImage().gameObject.SetActive(status);
+                .Append(_view.GetRectTransform().DOPunchScale(Vector3.one * 0.12f, colorChangeDuration, 5, 0.75f))
+                .AppendCallback(() => _hapticController.Vibrate(HapticType.Success));
         }
         
         public Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration)

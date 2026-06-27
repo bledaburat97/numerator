@@ -10,35 +10,23 @@ namespace Scripts
         [SerializeField] private Image ribbonImage;
         [SerializeField] private Animator animator;
         [SerializeField] protected Image innerImage;
-
-        //[SerializeField] private Image backImage;
-        //[SerializeField] private TMP_Text backText;
+        [SerializeField] private Image frame;
         private const string IsSelected = "IsSelected";
 
         public override void Init(int cardNumber)
         {
             base.Init(cardNumber);
             innerImage.rectTransform.sizeDelta = Vector2.zero;
-        }
-        
-        public Sequence AnimateColorChange(Color color, float duration)
-        {
-            innerImage.color = color;
-            return DOTween.Sequence().Append(innerImage.rectTransform.DOSizeDelta(image.rectTransform.sizeDelta * 2, duration)).AppendCallback(
-                () =>
-                {
-                    image.color = color;
-                    innerImage.rectTransform.sizeDelta = Vector2.zero;
-                });
-        }
-
-        public void SetColor(Color color)
-        {
-            image.color = color;
+            if (frame != null)
+            {
+                frame.gameObject.SetActive(false);
+            }
         }
 
         public Sequence AnimateLockImage(float duration)
         {
+            if (ribbonImage == null) return DOTween.Sequence();
+
             Color currentColor = ribbonImage.color;
             currentColor.a = 0f;
             ribbonImage.color = currentColor;
@@ -48,6 +36,8 @@ namespace Scripts
 
         public void SetLockImageStatus(bool status)
         {
+            if (ribbonImage == null) return;
+
             ribbonImage.gameObject.SetActive(status);
         }
 
@@ -60,12 +50,14 @@ namespace Scripts
         {
             return rectTransform;
         }
-        /*
-        public void SetBackImageStatus(bool status)
-        {
-            backImage.gameObject.SetActive(status);
-        }
         
+        public void SetFrameStatus(bool status)
+        {
+            if (frame == null) return;
+
+            frame.gameObject.SetActive(status);
+        }
+        /*
         public void SetBackText(string text)
         {
             backText.gameObject.SetActive(true);
@@ -124,13 +116,12 @@ namespace Scripts
 
     public interface INormalCardItemView : IDraggableCardItemView
     {
-        void SetColor(Color color);
+        void SetFrameStatus(bool status);
         void SetLockImageStatus(bool status);
         void SetCardAnimation(bool isSelected);
         RectTransform GetRectTransform();
         void DestroyObject();
         Sequence ChangePosition(Vector3 position, float duration);
-        Sequence AnimateColorChange(Color color, float duration);
         Sequence AnimateLockImage(float duration);
         Image GetRibbonImage();
         Image GetInnerImage();

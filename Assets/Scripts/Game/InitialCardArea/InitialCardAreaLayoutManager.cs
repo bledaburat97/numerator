@@ -7,7 +7,7 @@ namespace Scripts
 {
     public class InitialCardAreaLayoutManager : IInitialCardAreaLayoutManager
     {
-        private const float SpacingToInitialHolderWidthRatio = 13f / 60f;
+        private const float SpacingToInitialHolderWidthRatio = 2f / 54f;
         private const float SpacingToHolderIndicatorWidthRatio = 1f / 11f;
 
         private readonly IInitialCardAreaView _view;

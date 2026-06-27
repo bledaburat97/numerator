@@ -24,9 +24,9 @@ namespace Game
 
         public Sequence StartLevelStartAnimation()
         {
-            float initialAreaFadeInDuration = 0.2f;
-            float fallBoxesDuration = 2f;
-            float buttonsFadeInDuration = 0.3f;
+            float initialAreaFadeInDuration = 0.1f;
+            float fallBoxesDuration = 0.8f;
+            float buttonsFadeInDuration = 0.1f;
 
             return DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
                 .Append(FallBoxes(fallBoxesDuration))

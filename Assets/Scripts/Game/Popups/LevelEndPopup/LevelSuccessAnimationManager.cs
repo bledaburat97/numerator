@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using DG.Tweening;
 using Scripts;
-using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace Game
@@ -37,39 +36,38 @@ namespace Game
         {
             _fadePanelController.SetFadeImageStatus(true);
             _fadePanelController.SetFadeImageAlpha(0f);
-            float cardDelayDuration = 0.3f;
-            float cardColorChangingDuration = 0.5f;
-            float explosionDuration = 0.3f;
-            float fadeDuration = 0.4f;
-            float fadeAmount = 0.4f;
-            float movementDurationOfCircleProgressBar = 0.8f;
-            float scalingUpDurationOfText = 0.3f;
-            float buttonsFadeOutDuration = 0.3f;
-            float wagonMoveDuration = 1f;
+            float cardDelayDuration = 0.1f;
+            float cardColorChangingDuration = 0.24f;
+            float cardDismissDuration = 0.22f;
+            float fadeDuration = 0.28f;
+            float fadeAmount = 0.3f;
+            float movementDurationOfCircleProgressBar = 0.45f;
+            float scalingUpDurationOfText = 0.22f;
+            float buttonsFadeOutDuration = 0.2f;
             _cardsOnBoard = _initialCardAreaController.GetCardsOnBoard();
             return DOTween.Sequence()
                 .AppendCallback(() => TurnCardsIntoCertain(_cardsOnBoard, cardDelayDuration, cardColorChangingDuration))
-                .AppendInterval(cardColorChangingDuration + cardDelayDuration * (_cardsOnBoard.Count - 1))
-                .Append(ExplodeCardsOnInitialHolders(explosionDuration))
+                .Join(_boardAreaController.PlayAllSuccessFrameAnimations(cardDelayDuration))
+                .Insert(0.1f, DOTween.Sequence()
+                    .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
+                    .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText))
+                    .Join(_fadePanelController.AnimateFade(fadeAmount, fadeDuration)))
+                .AppendInterval(0.05f)
+                .Append(DismissCardsOnInitialHolders(cardDismissDuration))
                 .Append(FadeOutTopAreaButtons(buttonsFadeOutDuration))
                 .Join(FadeOutLifeBar(buttonsFadeOutDuration))
                 .Join(FadeOutLevelId(buttonsFadeOutDuration))
                 .Join(FadeOutResultArea(buttonsFadeOutDuration))
                 .Join(FadeOutInitialHolders(buttonsFadeOutDuration))
                 .Join(FadeOutGameButtons(buttonsFadeOutDuration))
-                .Join(SendBoardHolders(wagonMoveDuration))
-                .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
-                .Append(_fadePanelController.AnimateFade(fadeAmount, fadeDuration))
                 .Append(newRewardStarCount > 0
                     ? _levelEndPopupController.MoveCircleProgressBar(movementDurationOfCircleProgressBar)
                     : DOTween.Sequence())
-                .AppendInterval(0.2f)
-                .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText))
-                .AppendInterval(0.2f)
-                .Append(_levelEndPopupController.AnimateStarCreation(numOfStars, 0.1f, 0.5f))
-                .AppendInterval(0.2f)
+                .AppendInterval(0.1f)
+                .Append(_levelEndPopupController.AnimateStarCreation(numOfStars, 0.1f, 0.28f))
+                .AppendInterval(0.1f)
                 .Append(_levelEndPopupController.AddNewStarsToCircleProgressBar(newRewardStarCount, numOfStars))
-                .AppendInterval(0.2f)
+                .AppendInterval(0.1f)
                 .Append(_levelEndPopupController.TryCreateReward(newRewardStarCount, currentRewardStarCount));
         }
 
@@ -83,14 +81,14 @@ namespace Game
             }
         }
 
-        private Sequence ExplodeCardsOnInitialHolders(float explosionDuration)
+        private Sequence DismissCardsOnInitialHolders(float dismissDuration)
         {
             List<ICardViewHandler> cardViewHandlerList = _initialCardAreaController.GetCardsOnInitialHolder();
             Sequence sequence = DOTween.Sequence();
             
             foreach (ICardViewHandler card in cardViewHandlerList)
             {
-                sequence.Join(card.AnimateExplosion(explosionDuration));
+                sequence.Join(card.AnimateExplosion(dismissDuration));
             }
 
             return sequence;
@@ -129,18 +127,6 @@ namespace Game
         private Sequence FadeOutGameButtons(float duration)
         {
             return _gameUIController.ChangeFadeMiddleAreaButtons(duration, 0f);
-        }
-
-        private Sequence SendBoardHolders(float duration)
-        {
-            return _boardAreaController.MoveBoardHoldersToOutsideScene(duration).OnComplete(()=>
-            {
-                foreach (ICardViewHandler card in _cardsOnBoard)
-                {
-                    card.DestroyObject();
-                }
-                _boardAreaController.ClearBoardHolders();
-            });
         }
     }
 

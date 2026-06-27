@@ -45,8 +45,10 @@ namespace Scripts
             SetOpponentInfoStatus(false);
             if (_levelTracker.GetLevelId() > 8)
             {
-                SetCardInfoButtonStatus(true);
-                InitializeCardInfoButton(OnCardInfoButtonClick);
+                //TODO: bu butonu tekrar açmayı düşünebiliriz.
+                //SetCardInfoButtonStatus(true);
+                //InitializeCardInfoButton(OnCardInfoButtonClick);
+                SetCardInfoButtonStatus(false);
             }
             else
             {

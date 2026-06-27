@@ -117,6 +117,27 @@ namespace Scripts
             _boardHolderControllerList[boardHolderIndex].SetHighlightStatus(highlightStatus);
         }
 
+        public Sequence PlaySuccessFrameAnimation(int boardHolderIndex, float delayDuration = 0f)
+        {
+            if (boardHolderIndex < 0 || boardHolderIndex >= _boardHolderControllerList.Count)
+            {
+                return DOTween.Sequence();
+            }
+
+            return _boardHolderControllerList[boardHolderIndex].PlaySuccessFrameAnimation(delayDuration);
+        }
+
+        public Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders)
+        {
+            Sequence sequence = DOTween.Sequence();
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+            {
+                sequence.Join(_boardHolderControllerList[i].PlaySuccessFrameAnimation(delayBetweenHolders * i));
+            }
+
+            return sequence;
+        }
+
         private IBoardHolderView GetBoardHolderView(int boardHolderIndex)
         {
             return _boardHolderControllerList[boardHolderIndex].GetView();
@@ -246,6 +267,8 @@ namespace Scripts
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
+        Sequence PlaySuccessFrameAnimation(int boardHolderIndex, float delayDuration = 0f);
+        Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders);
         List<IBoardCardHolderController> GetEmptyBoardHolders();
         void CreateBoard();
         Sequence MoveBoardHoldersToOutsideScene(float duration);

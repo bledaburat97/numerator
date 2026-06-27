@@ -150,6 +150,7 @@ namespace Scripts
             normalCardItemController.GetView().SetSize(_initialCardAreaLayoutManager.GetBoxSize());
             SetProbabilityOfCardItem(lockedCardInfo.TargetCardIndex, ProbabilityType.Certain, true);
             SetHolderIndicatorListOfCardHolder(lockedCardInfo.TargetCardIndex, new List<int>{lockedCardInfo.BoardHolderIndex});
+            _boardAreaController.PlaySuccessFrameAnimation(lockedCardInfo.BoardHolderIndex);
         }
         
         public Vector3 GetNormalCardHolderPositionAtIndex(int index)

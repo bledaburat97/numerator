@@ -5,20 +5,19 @@ using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class BaseCardItemView : MonoBehaviour, IBaseCardItemView 
+    public class BaseCardItemView : MonoBehaviour, IBaseCardItemView
     {
         [SerializeField] protected RectTransform rectTransform;
-        [SerializeField] protected TMP_Text cardNumberText;
         [SerializeField] protected Image image;
         [SerializeField] private Image fruitImage;
-        [SerializeField] private Sprite[] fruitSprites;
+        [SerializeField] private FruitColorConfig[] fruits;
 
-        
         public virtual void Init(int cardNumber)
         {
             SetCardNumberText(cardNumber);
+            image.color = fruits[cardNumber - 1].fruitColor;
         }
-        
+
         public virtual void SetLocalPosition(Vector3 localPosition)
         {
             rectTransform.localPosition = localPosition;
@@ -33,11 +32,21 @@ namespace Scripts
         {
             rectTransform.sizeDelta = size;
         }
-        
+
+        public void SetAlpha(float alpha)
+        {
+            Color imageColor = image.color;
+            imageColor.a = alpha;
+            image.color = imageColor;
+
+            Color fruitColor = fruitImage.color;
+            fruitColor.a = alpha;
+            fruitImage.color = fruitColor;
+        }
+
         private void SetCardNumberText(int number)
         {
-            fruitImage.sprite = fruitSprites[number - 1];
-            cardNumberText.gameObject.SetActive(false);
+            fruitImage.sprite = fruits[number - 1].fruitImage;
         }
     }
 
@@ -47,5 +56,6 @@ namespace Scripts
         void InitLocalScale();
         void SetSize(Vector2 size);
         void SetLocalPosition(Vector3 localPosition);
+        void SetAlpha(float alpha);
     }
 }

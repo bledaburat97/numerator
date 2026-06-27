@@ -11,18 +11,21 @@ namespace Game
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IInitialCardAreaController _initialCardAreaController;
+        private readonly IBoardAreaController _boardAreaController;
         private readonly IBoardCardIndexManager _boardCardIndexManager;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
         
         [Inject]
         public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
-            IBoardCardIndexManager boardCardIndexManager, ICardPlacementCoordinator cardPlacementCoordinator)
+            IBoardAreaController boardAreaController, IBoardCardIndexManager boardCardIndexManager,
+            ICardPlacementCoordinator cardPlacementCoordinator)
         {
             guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
+            _boardAreaController = boardAreaController;
             _boardCardIndexManager = boardCardIndexManager;
             _cardPlacementCoordinator = cardPlacementCoordinator;
         }
@@ -53,6 +56,7 @@ namespace Game
                 _initialCardAreaController.SetProbabilityOfCardItem(cardIndex, ProbabilityType.Certain, true);
                 _initialCardAreaController.SetHolderIndicatorListOfCardHolder(cardIndex,
                     new List<int>() { boardHolderIndex });
+                _boardAreaController.PlaySuccessFrameAnimation(boardHolderIndex);
             };
 
             new StarAnimationManager().RevealCard(starImageView, cardRectTransform, makeCardCertainAction);
