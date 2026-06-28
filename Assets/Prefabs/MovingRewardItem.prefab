@@ -58,12 +58,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 4146552146633752522}
-  glowSprite: {fileID: 21300000, guid: e8a80c718234d43e1aa69fd7c82815e5, type: 3}
-  ellipseFactor: 0.9
-  orbitSpeed: 100
-  trailSpawnInterval: 0.02
-  trailLifetime: 0.55
-  trailStartAlpha: 0.85
-  trailScaleMultiplier: 1.15
-  midGlowScale: 1.35
-  coreGlowScale: 0.58
+  glowSprite: {fileID: 21300000, guid: e9dfb83460b1148de87772de8bba8fb1, type: 3}

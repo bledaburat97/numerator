@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Strawberry
   m_EditorClassIdentifier: 
   fruitImage: {fileID: -577399120, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
-  fruitColor: {r: 0, g: 0, b: 0, a: 0}
+  fruitColor: {r: 1, g: 0.5990566, b: 0.9024732, a: 1}

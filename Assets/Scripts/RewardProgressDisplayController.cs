@@ -7,7 +7,7 @@ namespace Scripts
     public class RewardProgressDisplayController : IRewardProgressDisplayController
     {
         private const float RewardItemTargetSize = 25f;
-        private const float RewardItemSizeToTargetRatio = 2f;
+        private const float RewardItemSizeToTargetRatio = 1f;
 
         private readonly ICircleProgressBarView _view;
         private readonly ILevelTracker _levelTracker;
@@ -50,7 +50,7 @@ namespace Scripts
             _view.SetStatus(true);
             _view.ShowRewardPreview(_levelTracker.GetCurrentRewardType());
             SyncRewardItems();
-            _view.GetImage().fillAmount =
+            _view.GetInnerCircleImage().fillAmount =
                 _levelTracker.GetGiftStarCount() / (float)ConstantValues.NUM_OF_STARS_FOR_WILD;
         }
 

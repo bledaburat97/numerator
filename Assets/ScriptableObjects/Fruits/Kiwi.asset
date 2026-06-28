@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Kiwi
   m_EditorClassIdentifier: 
   fruitImage: {fileID: 21387777, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
-  fruitColor: {r: 0.48235294, g: 0.21176471, b: 0.07450981, a: 1}
+  fruitColor: {r: 0.6603774, g: 0.33177614, b: 0.16509435, a: 1}

@@ -7,7 +7,7 @@ namespace Game
 {
     public class StarAnimationManager
     {
-        private const float RewardItemSizeMultiplier = 1.86f;
+        private const float RewardItemSizeMultiplier = 1.20f;
 
         public void RevealCard(IStarImageView starImage, RectTransform targetRectTransform, Action makeCardCertainAction)
         {

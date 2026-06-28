@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Watermelon
   m_EditorClassIdentifier: 
   fruitImage: {fileID: 987008931, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
-  fruitColor: {r: 0.1886084, g: 0.29803923, b: 0.05490195, a: 1}
+  fruitColor: {r: 0.43070513, g: 0.754717, b: 0.32395872, a: 1}

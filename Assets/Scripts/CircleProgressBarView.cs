@@ -7,7 +7,7 @@ namespace Scripts
     public class CircleProgressBarView : MonoBehaviour, ICircleProgressBarView
     {
         [SerializeField] private RectTransform rectTransform;
-        [SerializeField] private Image circleImage;
+        [SerializeField] private Image innerCircleImage;
         [SerializeField] private RewardItemTargetView rewardItemTargetPrefab;
         [SerializeField] private MovingRewardItemView movingRewardItemPrefab;
         [SerializeField] private PowerUpButtonView revealingPowerUpButton;
@@ -21,11 +21,11 @@ namespace Scripts
                 GameObject targetObject = new GameObject("RewardItemTarget", typeof(RectTransform), typeof(CanvasRenderer),
                     typeof(RewardItemTargetView));
                 RectTransform targetRectTransform = targetObject.GetComponent<RectTransform>();
-                targetRectTransform.SetParent(circleImage.rectTransform, false);
+                targetRectTransform.SetParent(rectTransform, false);
                 return targetObject.GetComponent<RewardItemTargetView>();
             }
 
-            return rewardItemTargetViewFactory.Spawn(circleImage.rectTransform, rewardItemTargetPrefab);
+            return rewardItemTargetViewFactory.Spawn(rectTransform, rewardItemTargetPrefab);
         }
 
         public MovingRewardItemView GetMovingRewardItemPrefab()
@@ -38,9 +38,9 @@ namespace Scripts
             return rectTransform;
         }
 
-        public Image GetImage()
+        public Image GetInnerCircleImage()
         {
-            return circleImage;
+            return innerCircleImage;
         }
 
         public void SetStatus(bool status)
@@ -89,7 +89,7 @@ namespace Scripts
     public interface ICircleProgressBarView
     {
         RectTransform GetRectTransform();
-        Image GetImage();
+        Image GetInnerCircleImage();
         IRewardItemTargetView CreateRewardItemTarget(RewardItemTargetViewFactory rewardItemTargetViewFactory);
         void SetStatus(bool status);
         IBaseButtonView GetRevealingPowerUpButton();

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5ad5e455f7024f58a394e5e9293ab19, type: 3}
   m_Name: Pear
   m_EditorClassIdentifier: 
-  fruitImage: {fileID: 0}
-  fruitColor: {r: 0, g: 0, b: 0, a: 0}
+  fruitImage: {fileID: 58341014, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
+  fruitColor: {r: 0.8773585, g: 0.63984156, b: 0, a: 1}

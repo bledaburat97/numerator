@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Apple
   m_EditorClassIdentifier: 
   fruitImage: {fileID: 850996174, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
-  fruitColor: {r: 0.92941177, g: 0.14117648, b: 0.07058824, a: 1}
+  fruitColor: {r: 1, g: 0.34627807, b: 0.28773582, a: 1}

@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 49558d54e84a1414c971c8ef9c3d6e18, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 48a3bace4022f4e54879d03cf3b2cb9f, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -128,7 +128,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 61055725573745719}
-  cardNumberText: {fileID: 0}
   image: {fileID: 8531447564666643841}
   fruitImage: {fileID: 2154227808028903759}
   fruits:

@@ -8,7 +8,7 @@ namespace Scripts
     public class CircleProgressBarController : ICircleProgressBarController
     {
         private const float RewardItemTargetSize = 25f;
-        private const float RewardItemSizeToTargetRatio = 2f;
+        private const float RewardItemSizeToTargetRatio = 1f;
 
         private ICircleProgressBarView _view;
         private int _currentStarCount;
@@ -39,7 +39,7 @@ namespace Scripts
         private void SetPercentageOfCircle(float targetPercentage)
         {
             _currentPercentage = targetPercentage;
-            _view.GetImage().fillAmount = targetPercentage;
+            _view.GetInnerCircleImage().fillAmount = targetPercentage;
         }
         
         private void CreateRewardItemTargets()
@@ -147,7 +147,7 @@ namespace Scripts
         {
             return DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
                 .Pause().SetEase(Ease.OutQuad)
-                .OnUpdate(() => { _view.GetImage().fillAmount = _currentPercentage; })
+                .OnUpdate(() => { _view.GetInnerCircleImage().fillAmount = _currentPercentage; })
                 .OnComplete(() =>
                 {
                     _currentPercentage = targetPercentage;
