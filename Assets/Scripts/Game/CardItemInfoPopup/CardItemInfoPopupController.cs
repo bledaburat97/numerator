@@ -11,7 +11,7 @@ namespace Scripts
         private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ICardInteractionManager _cardInteractionManager;
         private ICardItemInfoManager _cardItemInfoManager;
-        private IBoardStateManager _boardStateManager;
+        private IBoardHolderCountManager _boardHolderCountManager;
         private IBoardLayoutManager _boardLayoutManager;
         private ICardItemInfoPopupView _view;
         private List<IBaseButtonController> _cardHolderIndicatorButtonControllers;
@@ -23,7 +23,7 @@ namespace Scripts
         
         [Inject]
         public CardItemInfoPopupController(BaseButtonControllerFactory baseButtonControllerFactory, ICardInteractionManager cardInteractionManager, ICardItemInfoManager cardItemInfoManager, 
-            IBoardLayoutManager boardLayoutManager, IBoardStateManager boardStateManager, ICardItemInfoPopupView view)
+            IBoardLayoutManager boardLayoutManager, IBoardHolderCountManager boardHolderCountManager, ICardItemInfoPopupView view)
         {
             _view = view;
             BaseButtonViewFactory cardHolderIndicatorButtonViewFactory = new BaseButtonViewFactory();
@@ -35,7 +35,7 @@ namespace Scripts
             _cardInteractionManager.OpenCardItemInfoPopupEvent += OpenCardItemInfoPopup;
             _cardItemInfoManager = cardItemInfoManager;
             _boardLayoutManager = boardLayoutManager;
-            _boardStateManager = boardStateManager;
+            _boardHolderCountManager = boardHolderCountManager;
             CreateProbabilityButtons();
         }
 
@@ -98,7 +98,7 @@ namespace Scripts
         
         private void CreateCardHolderIndicatorButtons()
         {
-            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
+            for (int i = 0; i < _boardHolderCountManager.GetBoardHolderCount(); i++)
             {
                 IBaseButtonView cardHolderIndicatorButtonView = _view.CreateCardHolderIndicatorButtonView();
                 int index = i;

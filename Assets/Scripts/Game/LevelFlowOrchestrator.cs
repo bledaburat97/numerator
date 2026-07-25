@@ -13,6 +13,8 @@ namespace Game
         private readonly IGameSaveService _gameSaveService;
         private readonly ILevelSaveDataManager _levelSaveDataManager;
         private readonly IBoardAreaController _boardAreaController;
+        private readonly IBoardHolderCountManager _boardHolderCountManager;
+        private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IResultAreaController _resultAreaController;
         private readonly ILifeBarController _lifeBarController;
         private readonly IInitialCardAreaController _initialCardAreaController;
@@ -43,6 +45,8 @@ namespace Game
             IGameSaveService gameSaveService,
             ILevelSaveDataManager levelSaveDataManager,
             IBoardAreaController boardAreaController,
+            IBoardHolderCountManager boardHolderCountManager,
+            ITargetNumberCreator targetNumberCreator,
             IResultAreaController resultAreaController,
             ILifeBarController lifeBarController,
             IInitialCardAreaController initialCardAreaController,
@@ -68,6 +72,8 @@ namespace Game
             _gameSaveService = gameSaveService;
             _levelSaveDataManager = levelSaveDataManager;
             _boardAreaController = boardAreaController;
+            _boardHolderCountManager = boardHolderCountManager;
+            _targetNumberCreator = targetNumberCreator;
             _resultAreaController = resultAreaController;
             _lifeBarController = lifeBarController;
             _initialCardAreaController = initialCardAreaController;
@@ -161,6 +167,7 @@ namespace Game
 
             _roundStateManager.Initialize();
             _boardAreaController.CreateBoard();
+            _targetNumberCreator.SetTargetNumber(_boardHolderCountManager.GetBoardHolderCount());
             _resultAreaController.Initialize(!isResumeFlow);
             _lifeBarController.SetFade(!isResumeFlow);
             _initialCardAreaController.Initialize(!isResumeFlow);

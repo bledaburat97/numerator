@@ -11,10 +11,8 @@ namespace Scripts
     {
         private readonly IBoardAreaView _view;
         private readonly IBoardLayoutManager _boardLayoutManager;
-        private readonly IBoardStateManager _boardStateManager;
+        private readonly IBoardHolderCountManager _boardHolderCountManager;
         private readonly IBoardCardIndexManager _boardCardIndexManager;
-        private readonly ITargetNumberCreator _targetNumberCreator;
-        private readonly IPowerUpMessageController _powerUpMessageController;
         private readonly List<IBoardCardHolderController> _boardHolderControllerList;
         private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
 
@@ -24,36 +22,30 @@ namespace Scripts
         public BoardAreaController(
             IBoardAreaView view,
             IBoardLayoutManager boardLayoutManager,
-            IBoardStateManager boardStateManager,
-            IBoardCardIndexManager boardCardIndexManager,
-            ITargetNumberCreator targetNumberCreator, IPowerUpMessageController powerUpMessageController)
+            IBoardHolderCountManager boardHolderCountManager,
+            IBoardCardIndexManager boardCardIndexManager)
         {
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
             _boardLayoutManager = boardLayoutManager;
-            _boardStateManager = boardStateManager;
+            _boardHolderCountManager = boardHolderCountManager;
             _boardCardIndexManager = boardCardIndexManager;
-            _targetNumberCreator = targetNumberCreator;
             _shinyBoardCardHolderControllers = new List<IBoardCardHolderController>();
-            _powerUpMessageController = powerUpMessageController;
-            _powerUpMessageController.OpenPowerUpEvent += OpenPowerUp;
-            _powerUpMessageController.ClosePowerUpEvent += ClosePowerUp;
-            _powerUpMessageController.RemoveBoardHolderEvent += RemoveLastBoardHolder;
         }
 
         public void CreateBoard()
         {
-            _boardStateManager.Initialize();
-            _boardLayoutManager.Initialize(_boardStateManager.GetNumOfBoardHolders());
+            _boardHolderCountManager.Initialize();
+            int boardHolderCount = _boardHolderCountManager.GetBoardHolderCount();
+            _boardLayoutManager.Initialize(boardHolderCount);
             ClearBoardHolders();
-            CreateBoardHolders();
-            _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(_boardStateManager.GetNumOfBoardHolders());
-            _targetNumberCreator.SetTargetNumber(_boardStateManager.GetNumOfBoardHolders());
+            CreateBoardHolders(boardHolderCount);
+            _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(boardHolderCount);
         }
         
-        private void CreateBoardHolders()
+        private void CreateBoardHolders(int boardHolderCount)
         {
-            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
+            for (int i = 0; i < boardHolderCount; i++)
             {
                 IBoardHolderView boardHolderView = _view.CreateBoardHolderView();
                 IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
@@ -65,24 +57,27 @@ namespace Scripts
             }
         }
         
-        private void OpenPowerUp(object sender, GameUIButtonType powerUpType)
+        public void SetupTutorialModeOnEmptyBoardHolders()
         {
-            if (powerUpType == GameUIButtonType.RevealingPowerUp)
+            CleanupTutorialModeOnShinyBoardHolders();
+            _shinyBoardCardHolderControllers = GetEmptyBoardHolders();
+            foreach (IBoardCardHolderController boardCardHolder in _shinyBoardCardHolderControllers)
             {
-                _shinyBoardCardHolderControllers = GetEmptyBoardHolders();
-                foreach (IBoardCardHolderController boardCardHolder in _shinyBoardCardHolderControllers)
-                {
-                    boardCardHolder.GetView().SetupTutorialMode();
-                }
+                boardCardHolder.GetView().SetupTutorialMode();
             }
         }
 
-        private void ClosePowerUp(object sender, GameUIButtonType powerUpType)
+        public void CleanupTutorialModeOnShinyBoardHolders()
         {
             foreach (IBoardCardHolderController boardCardHolder in _shinyBoardCardHolderControllers)
             {
-                boardCardHolder.GetView().CleanupTutorialMode();
+                IBoardHolderView boardHolderView = boardCardHolder.GetView();
+                if (boardHolderView == null) continue;
+
+                boardHolderView.CleanupTutorialMode();
             }
+
+            _shinyBoardCardHolderControllers.Clear();
         }
 
         
@@ -95,21 +90,26 @@ namespace Scripts
             }
             return sequence;
         }
-        
+
         public void ClearBoardHolders()
         {
-            foreach (IBoardCardHolderController boardHolder in _boardHolderControllerList)
+            if (_boardHolderControllerList.Count > 0)
             {
-                boardHolder.DestroyObject();
+                foreach (IBoardCardHolderController boardHolder in _boardHolderControllerList)
+                {
+                    boardHolder.DestroyObject();
+                }
+
+                _boardHolderControllerList.Clear();
             }
-            _boardHolderControllerList.Clear();
+
+            _shinyBoardCardHolderControllers.Clear();
         }
         
         private void BoardHolderClickCallBack(int boardHolderIndex)
         {
             if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(boardHolderIndex, out int boardHolderCardIndex)) return;
             BoardHolderClickedEvent?.Invoke(this, boardHolderIndex);
-            _powerUpMessageController.BoardIsClicked(boardHolderIndex);
         }
 
         public void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus)
@@ -153,7 +153,7 @@ namespace Scripts
             return _boardHolderControllerList[boardHolderIndex].GetPositionOfCardHolder();
         }
 
-        public List<IBoardCardHolderController> GetEmptyBoardHolders()
+        private List<IBoardCardHolderController> GetEmptyBoardHolders()
         {
             List<IBoardCardHolderController> boardCardHolderControllers = new List<IBoardCardHolderController>();
             foreach(int i in _boardCardIndexManager.GetEmptyBoardHolderIndexList())
@@ -166,7 +166,7 @@ namespace Scripts
         
         public int GetClosestBoardHolderIndex(Vector2 cardItemPosition)
         {
-            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
+            for (int i = 0; i < _boardHolderCountManager.GetBoardHolderCount(); i++)
             {
                 if(_boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
                 IBoardHolderView view = GetBoardHolderView(i);
@@ -191,54 +191,18 @@ namespace Scripts
             return _boardLayoutManager.GetSizeOfBoardHolder();
         }
 
-        //----- Aktif kullanılmıyor
-        
-        private void RemoveLastBoardHolder(object sender, EventArgs args)
+        public void RemoveLastBoardHolder()
         {
             DeleteOneBoardHolder();
-            /*
-             if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
-               {
-                   Debug.LogError("You shouldn't have clicked the bomb button");
-                   return;
-               }
-               _targetNumberCreator.CreateTargetNumber(_removedBoardHolderCount);
-               _gameUIController.Initialize(); //check which powerup button is pressable
-               _resultManager.Initialize(_removedBoardHolderCount);
-               _cardItemLocator.Initialize();
-               _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
-               _boardAreaController.DeleteOneBoardHolder();
-               _initialCardAreaController.DeleteOneHolderIndicator();
-               _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
-               _cardItemInfoManager.RemoveLastCardHolderIndicator();
-               _cardItemInfoPopupController.Initialize();
-               _levelSuccessManager.Initialize();
-               if (_gameSaveService.GetSavedLevel() != null || _levelTracker.GetGameOption() == GameOption.MultiPlayer)
-               {
-                   Debug.LogError("You shouldn't have clicked the bomb button");
-                   return;
-               }
-               _targetNumberCreator.CreateTargetNumber(_removedBoardHolderCount);
-               _gameUIController.Initialize(); //check which powerup button is pressable
-               _resultManager.Initialize(_removedBoardHolderCount);
-               _cardItemLocator.Initialize();
-               _boxMovementHandler.TryResetPositionOfCardOnExplodedBoardHolder();
-               _boardAreaController.DeleteOneBoardHolder();
-               _initialCardAreaController.DeleteOneHolderIndicator();
-               _cardItemInfoManager.Initialize(_levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount);
-               _cardItemInfoManager.RemoveLastCardHolderIndicator();
-               _cardItemInfoPopupController.Initialize();
-               _levelSuccessManager.Initialize();
-             */
         }
 
         private void DeleteOneBoardHolder()
         {
-            _boardStateManager.RemoveFirstBoardHolder();
+            _boardHolderCountManager.RemoveFirstBoardHolder();
             IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
             _boardHolderControllerList.Remove(boardHolderController);
             boardHolderController.DestroyObject();
-            _boardLayoutManager.Initialize(_boardStateManager.GetNumOfBoardHolders());
+            _boardLayoutManager.Initialize(_boardHolderCountManager.GetBoardHolderCount());
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
             {
                 int index = i;
@@ -269,7 +233,9 @@ namespace Scripts
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         Sequence PlaySuccessFrameAnimation(int boardHolderIndex, float delayDuration = 0f);
         Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders);
-        List<IBoardCardHolderController> GetEmptyBoardHolders();
+        void SetupTutorialModeOnEmptyBoardHolders();
+        void CleanupTutorialModeOnShinyBoardHolders();
+        void RemoveLastBoardHolder();
         void CreateBoard();
         Sequence MoveBoardHoldersToOutsideScene(float duration);
         void ClearBoardHolders();

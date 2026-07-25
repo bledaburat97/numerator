@@ -11,7 +11,7 @@ namespace Scripts
     {
         private ILevelTracker _levelTracker;
         private IBoardAreaController _boardAreaController;
-        private IBoardStateManager _boardStateManager;
+        private IBoardHolderCountManager _boardHolderCountManager;
         private IInitialCardAreaView _view;
         private IInitialCardHolderController[] _normalCardHolderControllerList;
         private INormalCardItemController[] _normalCardItemControllerList;
@@ -28,15 +28,15 @@ namespace Scripts
         [Inject]
         public InitialCardAreaController(IInitialCardAreaView view, ILevelTracker levelTracker,
             ICardPlacementCoordinator cardPlacementCoordinator, IBoardCardIndexManager boardCardIndexManager,
-            IBoardAreaController boardAreaController, IBoardStateManager boardStateManager,
-            ILevelDataCreator levelDataCreator, IPowerUpMessageController powerUpMessageController,
+            IBoardAreaController boardAreaController, IBoardHolderCountManager boardHolderCountManager,
+            ILevelDataCreator levelDataCreator, IRevealingPowerUpController revealingPowerUpController,
             ILevelSaveDataManager levelSaveDataManager, ITargetNumberCreator targetNumberCreator,
             IInitialCardAreaLayoutManager initialCardAreaLayoutManager, IInitialCardAreaFactory initialCardAreaFactory)
         {
             _view = view;
             _levelTracker = levelTracker;
             _boardAreaController = boardAreaController;
-            _boardStateManager = boardStateManager;
+            _boardHolderCountManager = boardHolderCountManager;
             _cardPlacementCoordinator = cardPlacementCoordinator;
             _levelDataCreator = levelDataCreator;
             _boardCardIndexManager = boardCardIndexManager;
@@ -45,7 +45,7 @@ namespace Scripts
             _holderIndicatorLocalPositionList = new List<Vector2>();
             _initialCardAreaLayoutManager = initialCardAreaLayoutManager;
             _initialCardAreaFactory = initialCardAreaFactory;
-            powerUpMessageController.RevealWagonEvent += SetLockedCardController;
+            revealingPowerUpController.RevealCardRequestedEvent += SetLockedCardController;
         }
         
         public void Initialize(bool isNewGame)
@@ -87,7 +87,7 @@ namespace Scripts
         private void SetHolderIndicatorPositionList()
         {
             _holderIndicatorLocalPositionList =
-                _initialCardAreaLayoutManager.GetHolderIndicatorLocalPositions(_boardStateManager.GetNumOfBoardHolders());
+                _initialCardAreaLayoutManager.GetHolderIndicatorLocalPositions(_boardHolderCountManager.GetBoardHolderCount());
         }
 
         public void DeleteOneHolderIndicator()
@@ -136,7 +136,7 @@ namespace Scripts
         public List<ICardViewHandler> CreateTempCards()
         {
             return _initialCardAreaFactory.CreateTempCards(
-                _boardStateManager.GetNumOfBoardHolders(),
+                _boardHolderCountManager.GetBoardHolderCount(),
                 boardHolderIndex => _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
                 _targetNumberCreator.GetTargetCardsList());
         }

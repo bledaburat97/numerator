@@ -9,7 +9,6 @@ namespace Scripts
         [SerializeField] private RectTransform possibleHolderIndicatorHolderTransform;
         [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
         [SerializeField] private TMP_Text text;
-        [SerializeField] private RectTransform boxHolder;
         
         public void SetLocalScale()
         {
@@ -41,14 +40,6 @@ namespace Scripts
             Destroy(gameObject);
         }
         
-        /*
-        public void SetColor()
-        {
-            frame.color = ConstantValues.INITIAL_CARD_HOLDER_COLOR;
-            text.color = ConstantValues.INITIAL_CARD_HOLDER_COLOR;
-        }
-        */
-        
         public void SetText(int number)
         {
             text.SetText(number.ToString());
@@ -59,9 +50,9 @@ namespace Scripts
             return Instantiate(possibleHolderIndicatorPrefab, possibleHolderIndicatorHolderTransform);
         }
 
-        public RectTransform GetBoxHolderRectTransform()
+        public RectTransform GetInitialHolderRectTransform()
         {
-            return boxHolder;
+            return rectTransform;
         }
 
         public Vector2 GetSizeOfHolderIndicatorPrefab()
@@ -75,7 +66,7 @@ namespace Scripts
     {
         void SetText(int number);
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
-        RectTransform GetBoxHolderRectTransform();
+        RectTransform GetInitialHolderRectTransform();
         Vector2 GetSizeOfHolderIndicatorPrefab();
     }
 }

@@ -63,7 +63,7 @@ namespace Scripts
         private void CheckFinalCards(object sender, EventArgs args)
         {
             if (_boardCardIndexManager.GetEmptyBoardHolderIndexList().Count != 0) return;
-            List<int> finalCardIndexes = _boardCardIndexManager.GetCardIndexesOnBoard();
+            IReadOnlyList<int> finalCardIndexes = _boardCardIndexManager.GetCardIndexesOnBoard();
             List<int> finalCards = new List<int>();
             for (int i = 0; i < finalCardIndexes.Count; i++)
             {

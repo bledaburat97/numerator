@@ -10,7 +10,7 @@ namespace Scripts
         private readonly ICardItemLocator _cardItemLocator;
         private readonly IGameUIController _gameUIController;
         private readonly IBoardCardIndexManager _boardCardIndexManager;
-        private readonly IPowerUpMessageController _powerUpMessageController;
+        private readonly IRevealingPowerUpController _revealingPowerUpController;
         private Func<int, INormalCardItemController> _getCardItem;
         private int _numOfCards;
         public event EventHandler<int> OnCardClickedEvent;
@@ -22,15 +22,15 @@ namespace Scripts
             ICardItemLocator cardItemLocator,
             IGameUIController gameUIController,
             IBoardCardIndexManager boardCardIndexManager,
-            IPowerUpMessageController powerUpMessageController)
+            IRevealingPowerUpController revealingPowerUpController)
         {
             _boardAreaController = boardAreaController;
             _cardItemLocator = cardItemLocator;
             _gameUIController = gameUIController;
             _boardCardIndexManager = boardCardIndexManager;
-            _powerUpMessageController = powerUpMessageController;
+            _revealingPowerUpController = revealingPowerUpController;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
-            _powerUpMessageController.RevealWagonEvent += OnRevealWagon;
+            _revealingPowerUpController.RevealCardRequestedEvent += OnRevealCardRequested;
         }
 
         public void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem)
@@ -56,17 +56,26 @@ namespace Scripts
             }
         }
         
-        public void TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1)
+        public bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
-            if (cardIndex != -1 && boardCardHolderIndex != -1 && _getCardItem(cardIndex) != null)
+            if (!CanUseCard(cardIndex) || boardCardHolderIndex == -1) return false;
+
+            return PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
+        }
+
+        public bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex)
+        {
+            if (!_boardCardIndexManager.TryGetFirstEmptyBoardHolderIndex(out int boardCardHolderIndex))
             {
-                PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
+                return false;
             }
+
+            return TryPlaceCardOnBoard(cardIndex, boardCardHolderIndex);
         }
 
         private void TryReturnCardToInitial(int cardIndex)
         {
-            if (_getCardItem(cardIndex) != null)
+            if (CanUseCard(cardIndex))
             {
                 ReturnCardToInitial(cardIndex);
             }
@@ -85,7 +94,7 @@ namespace Scripts
 
         private void OnMoveToBoardRequested(int cardIndex, int boardHolderIndex)
         {
-            PlaceCardOnBoard(cardIndex, boardHolderIndex);
+            TryPlaceCardOnBoard(cardIndex, boardHolderIndex);
         }
 
         private void OnMoveToInitialRequested(int cardIndex)
@@ -93,12 +102,14 @@ namespace Scripts
             ReturnCardToInitial(cardIndex);
         }
 
-        private void PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
+        private bool PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
         {
-            _boardCardIndexManager.ReserveBoardHolderForCard(boardHolderIndex, cardIndex);
+            if (!_boardCardIndexManager.TryReserveBoardHolderForCard(boardHolderIndex, cardIndex)) return false;
+
             _getCardItem(cardIndex).GetCardViewHandler().MoveToParent(
                 _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
-                () => _boardCardIndexManager.SetCardIndexOnBoardHolder(boardHolderIndex, cardIndex));
+                () => _boardCardIndexManager.TrySetCardIndexOnBoardHolder(boardHolderIndex, cardIndex));
+            return true;
         }
 
         private void ReturnCardToInitial(int cardIndex)
@@ -107,13 +118,12 @@ namespace Scripts
             _getCardItem(cardIndex).GetCardViewHandler().MoveToInitialParent();
         }
 
-        private void OnRevealWagon(object sender, LockedCardInfo args)
+        private void OnRevealCardRequested(object sender, LockedCardInfo args)
         {
-            if (_getCardItem == null || args.TargetCardIndex < 0 || args.TargetCardIndex >= _numOfCards) return;
-            if (_getCardItem(args.TargetCardIndex) == null) return;
+            if (!CanUseCard(args.TargetCardIndex)) return;
 
             // Reveal power-up places the card view elsewhere; coordinator keeps board occupancy in sync.
-            _boardCardIndexManager.SetCardIndexOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex);
+            _boardCardIndexManager.TrySetCardIndexOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex);
         }
 
         public void TryRemoveCardFromBoard(int cardIndex)
@@ -127,6 +137,14 @@ namespace Scripts
             _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
         }
 
+        private bool CanUseCard(int cardIndex)
+        {
+            return _getCardItem != null &&
+                   cardIndex >= 0 &&
+                   cardIndex < _numOfCards &&
+                   _getCardItem(cardIndex) != null;
+        }
+
         public void TryResetPositionOfCardOnExplodedBoardHolder()
         {
             if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(0, out int cardIndex))
@@ -138,7 +156,7 @@ namespace Scripts
         public void Unsubscribe()
         {
             _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
-            _powerUpMessageController.RevealWagonEvent -= OnRevealWagon;
+            _revealingPowerUpController.RevealCardRequestedEvent -= OnRevealCardRequested;
         }
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
@@ -155,7 +173,8 @@ namespace Scripts
     {
         void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem);
         void AddCardActions();
-        void TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
+        bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
+        bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex);
         void TryRemoveCardFromBoard(int cardIndex);
         void Unsubscribe();
         void TryResetPositionOfCardOnExplodedBoardHolder();

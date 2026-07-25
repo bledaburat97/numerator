@@ -10,7 +10,7 @@ namespace Scripts
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly ILevelFlowOrchestrator _levelFlowOrchestrator;
-        private readonly IBoardStateManager _boardStateManager;
+        private readonly IBoardHolderCountManager _boardHolderCountManager;
         private readonly IRoundStateManager _roundStateManager;
 
         [Inject]
@@ -18,13 +18,13 @@ namespace Scripts
             ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager,
             ILevelFlowOrchestrator levelFlowOrchestrator,
-            IBoardStateManager boardStateManager,
+            IBoardHolderCountManager boardHolderCountManager,
             IRoundStateManager roundStateManager)
         {
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _levelFlowOrchestrator = levelFlowOrchestrator;
-            _boardStateManager = boardStateManager;
+            _boardHolderCountManager = boardHolderCountManager;
             _roundStateManager = roundStateManager;
         }
 
@@ -42,7 +42,7 @@ namespace Scripts
                 TargetCards = _targetNumberCreator.GetTargetCardsList(),
                 RemainingGuessCount = _roundStateManager.GetRemainingGuessCount(),
                 CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList(),
-                RemovedBoardHolderCount = _boardStateManager.GetRemovedBoardHolderCount()
+                RemovedBoardHolderCount = _boardHolderCountManager.GetRemovedBoardHolderCount()
             };
 
             return true;

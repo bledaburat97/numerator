@@ -8,27 +8,25 @@ namespace Scripts
     public class CardInteractionManager : ICardInteractionManager
     {
         private IGameUIController _gameUIController;
-        private IBoardAreaController _boardAreaController;
+        private IBoardHolderClickRouter _boardHolderClickRouter;
         private IInitialCardAreaController _initialCardAreaController;
         private IHapticController _hapticController;
         private ICardPlacementCoordinator _cardPlacementCoordinator;
-        private IBoardCardIndexManager _boardCardIndexManager;
         
         private int _selectedCardIndex = -1;
         private bool _isCardItemInfoPopupToggleOn = false;
         public event EventHandler<(bool, int)> OpenCardItemInfoPopupEvent;
 
         [Inject]
-        public CardInteractionManager(IGameUIController gameUIController, IBoardAreaController boardAreaController,
+        public CardInteractionManager(IGameUIController gameUIController, IBoardHolderClickRouter boardHolderClickRouter,
             IInitialCardAreaController initialCardAreaController, IHapticController hapticController, 
-            ICardPlacementCoordinator cardPlacementCoordinator, IBoardCardIndexManager boardCardIndexManager)
+            ICardPlacementCoordinator cardPlacementCoordinator)
         {
             _gameUIController = gameUIController;
-            _boardAreaController = boardAreaController;
+            _boardHolderClickRouter = boardHolderClickRouter;
             _initialCardAreaController = initialCardAreaController;
             _hapticController = hapticController;
             _cardPlacementCoordinator = cardPlacementCoordinator;
-            _boardCardIndexManager = boardCardIndexManager;
             Subscribe();
         }
 
@@ -46,7 +44,7 @@ namespace Scripts
             _gameUIController.NotAbleToCheck += RemoveSelection;
             _gameUIController.ResetNumbers += RemoveSelection;
             _gameUIController.CardInfoToggleChanged += OnCardInfoToggleChanged;
-            _boardAreaController.BoardHolderClickedEvent += MoveSelectedCard;
+            _boardHolderClickRouter.BoardHolderPlacementRequestedEvent += MoveSelectedCard;
             _cardPlacementCoordinator.OnCardClickedEvent += OnCardClicked;
         }
         
@@ -82,12 +80,7 @@ namespace Scripts
             }
             else
             {
-                if (_boardCardIndexManager.GetEmptyBoardHolderIndexList().Count > 0)
-                {
-                    int boardCardHolderIndex = _boardCardIndexManager.GetEmptyBoardHolderIndexList()[0];
-                    _cardPlacementCoordinator.TryPlaceCardOnBoard(cardIndex, boardCardHolderIndex);
-                }
-                else
+                if (!_cardPlacementCoordinator.TryPlaceCardOnFirstEmptyBoardHolder(cardIndex))
                 {
                     Debug.Log("Can not find empty board holder.");
                 }
@@ -125,7 +118,7 @@ namespace Scripts
             _gameUIController.NotAbleToCheck -= RemoveSelection;
             _gameUIController.ResetNumbers -= RemoveSelection;
             _gameUIController.CardInfoToggleChanged -= OnCardInfoToggleChanged;
-            _boardAreaController.BoardHolderClickedEvent -= MoveSelectedCard;
+            _boardHolderClickRouter.BoardHolderPlacementRequestedEvent -= MoveSelectedCard;
             _cardPlacementCoordinator.OnCardClickedEvent -= OnCardClicked;
         }
     }

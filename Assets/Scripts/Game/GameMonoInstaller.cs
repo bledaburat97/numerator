@@ -33,9 +33,10 @@ namespace Scripts
                 .WithArguments(lifeBarView);
             Container.Bind<IGuessManager>().To<GuessManager>().AsSingle();
             Container.Bind<IBoardLayoutManager>().To<BoardLayoutManager>().AsSingle();
-            Container.Bind<IBoardStateManager>().To<BoardStateManager>().AsSingle();
+            Container.Bind<IBoardHolderCountManager>().To<BoardHolderCountManager>().AsSingle();
             Container.Bind<BoardAreaController>().AsSingle();
             Container.Bind<IBoardAreaController>().To<BoardAreaController>().FromResolve();
+            Container.Bind<IBoardHolderClickRouter>().To<BoardHolderClickRouter>().AsSingle().NonLazy();
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();
             Container.Bind<ICardItemInfoPopupController>().To<CardItemInfoPopupController>().AsSingle()
                 .WithArguments(cardItemInfoPopupView);
@@ -60,6 +61,8 @@ namespace Scripts
             Container.Bind<IRoundStateManager>().To<RoundStateManager>().AsSingle();
             Container.Bind<IGameSaveSnapshotProvider>().To<GameSaveSnapshotProvider>().AsSingle();
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle();
+            Container.Bind<IRevealingPowerUpController>().To<RevealingPowerUpController>().AsSingle().NonLazy();
+            Container.Bind<IBombPowerUpController>().To<BombPowerUpController>().AsSingle().NonLazy();
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle().NonLazy();
             Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
             Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();

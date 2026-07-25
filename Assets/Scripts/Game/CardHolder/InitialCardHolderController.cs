@@ -23,8 +23,8 @@ namespace Scripts
             _view.SetSize(size);
             _view.SetText(_index + 1);
             
-            CreatePossibleHolderIndicators(holderIndicatorLocalPositions, holderIndicatorSize);
-            SetHolderIndicatorList(cardItemInfo.possibleCardHolderIndicatorIndexes);
+            //CreatePossibleHolderIndicators(holderIndicatorLocalPositions, holderIndicatorSize);
+            //SetHolderIndicatorList(cardItemInfo.possibleCardHolderIndicatorIndexes);
         }
 
         public void RemoveFirstHolderIndicator(List<Vector2> holderIndicatorNewLocalPositions)

@@ -3,16 +3,16 @@ using Zenject;
 
 namespace Scripts
 {
-    public class BoardStateManager : IBoardStateManager
+    public class BoardHolderCountManager : IBoardHolderCountManager
     {
         private readonly ILevelSaveDataManager _levelSaveDataManager;
         private readonly ILevelDataCreator _levelDataCreator;
 
-        private int _numOfBoardHolders;
+        private int _boardHolderCount;
         private int _removedBoardHolderCount;
 
         [Inject]
-        public BoardStateManager(ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator)
+        public BoardHolderCountManager(ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator)
         {
             _levelSaveDataManager = levelSaveDataManager;
             _levelDataCreator = levelDataCreator;
@@ -21,18 +21,18 @@ namespace Scripts
         public void Initialize()
         {
             _removedBoardHolderCount = _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount;
-            _numOfBoardHolders = _levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount;
+            _boardHolderCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount;
         }
 
         public void RemoveFirstBoardHolder()
         {
             _removedBoardHolderCount++;
-            _numOfBoardHolders--;
+            _boardHolderCount--;
         }
 
-        public int GetNumOfBoardHolders()
+        public int GetBoardHolderCount()
         {
-            return _numOfBoardHolders;
+            return _boardHolderCount;
         }
 
         public int GetRemovedBoardHolderCount()
@@ -41,11 +41,11 @@ namespace Scripts
         }
     }
 
-    public interface IBoardStateManager
+    public interface IBoardHolderCountManager
     {
         void Initialize();
         void RemoveFirstBoardHolder();
-        int GetNumOfBoardHolders();
+        int GetBoardHolderCount();
         int GetRemovedBoardHolderCount();
     }
 }

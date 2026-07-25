@@ -11,16 +11,16 @@ namespace Scripts
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
         private ILevelSaveDataManager _levelSaveDataManager;
         private IInitialCardAreaController _initialCardAreaController;
-        private IBoardStateManager _boardStateManager;
+        private IBoardHolderCountManager _boardHolderCountManager;
 
         [Inject]
         public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController, 
-            IPowerUpMessageController powerUpMessageController, IBoardStateManager boardStateManager)
+            IRevealingPowerUpController revealingPowerUpController, IBoardHolderCountManager boardHolderCountManager)
         {
             _levelSaveDataManager = levelSaveDataManager;
             _initialCardAreaController = initialCardAreaController;
-            _boardStateManager = boardStateManager;
-            powerUpMessageController.RevealWagonEvent += OnRevealWagon;
+            _boardHolderCountManager = boardHolderCountManager;
+            revealingPowerUpController.RevealCardRequestedEvent += OnRevealCardRequested;
         }
         
         public void Initialize()
@@ -55,7 +55,7 @@ namespace Scripts
             cardItemInfo.isExisted = false;
         }
         
-        private void OnRevealWagon(object sender, LockedCardInfo lockedCardInfo)
+        private void OnRevealCardRequested(object sender, LockedCardInfo lockedCardInfo)
         {
             List<int> cardHolders = new List<int> { lockedCardInfo.BoardHolderIndex };
             MakeCardCertain(lockedCardInfo.TargetCardIndex, cardHolders);
@@ -140,7 +140,7 @@ namespace Scripts
         private List<int> GetAllPossibleCardHolderIndicatorIndexes()
         {
             List<int> possibleCardHolderIndexes = new List<int>();
-            for (int i = 0; i < _boardStateManager.GetNumOfBoardHolders(); i++)
+            for (int i = 0; i < _boardHolderCountManager.GetBoardHolderCount(); i++)
             {
                 possibleCardHolderIndexes.Add(i);
             }

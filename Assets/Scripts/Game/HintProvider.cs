@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Scripts;
 using UnityEngine;
 using Zenject;
@@ -86,7 +87,7 @@ namespace Game
         private bool TryGetNonExistedCardIndex(out int cardIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            List<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
+            IReadOnlyList<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<int> cardIndexesShouldBeRed = new List<int>();
             cardIndex = -1;
@@ -141,7 +142,7 @@ namespace Game
         private bool TryGetExistedCardIndex( out int cardIndex, out int boardHolderIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            List<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
+            IReadOnlyList<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<(int, int)> firstList = new List<(int, int)>();
             List<(int, int)> secondList = new List<(int, int)>();

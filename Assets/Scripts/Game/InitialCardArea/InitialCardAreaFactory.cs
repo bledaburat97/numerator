@@ -80,7 +80,7 @@ namespace Scripts
                 }
 
                 CardItemData cardItemData = new CardItemData(
-                    initialCardHolderControllers[i].GetView().GetBoxHolderRectTransform(),
+                    initialCardHolderControllers[i].GetView().GetInitialHolderRectTransform(),
                     _view.GetTempRectTransform(),
                     i,
                     i + 1,
