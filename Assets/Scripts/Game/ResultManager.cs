@@ -12,20 +12,23 @@ namespace Scripts
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly IRoundStateManager _roundStateManager;
-        
+        private readonly IGamePowerUpAreaController _gamePowerUpAreaController;
+
         public event EventHandler LevelSuccessEvent;
         public event EventHandler WrongGuessEvent;
 
         [Inject]
         public ResultManager(IGameUIController gameUIController, 
             IResultAreaController resultAreaController, ITargetNumberCreator targetNumberCreator,
-            IBoardPlacementQuery boardPlacementQuery, IRoundStateManager roundStateManager)
+            IBoardPlacementQuery boardPlacementQuery, IRoundStateManager roundStateManager,
+            IGamePowerUpAreaController gamePowerUpAreaController)
         {
             gameUIController.CheckFinalNumbers += CheckFinalCards;
             _resultAreaController = resultAreaController;
             _targetNumberCreator = targetNumberCreator;
             _boardPlacementQuery = boardPlacementQuery;
             _roundStateManager = roundStateManager;
+            _gamePowerUpAreaController = gamePowerUpAreaController;
         }
 
         public void TryAddTriedCards()
@@ -77,8 +80,9 @@ namespace Scripts
                 Debug.LogError("Final number size and target number size are not equal.");
                 return;
             }
-            
+
             _roundStateManager.AddTriedCards(finalCards);
+            _gamePowerUpAreaController.Refresh();
             CalculatePositionCounts(finalCards, out int numOfCorrectPos, out int numOfWrongPos);
             DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);
         }

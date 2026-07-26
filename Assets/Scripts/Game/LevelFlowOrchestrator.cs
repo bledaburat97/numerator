@@ -234,6 +234,7 @@ namespace Game
             _cardItemInfoPopupController.Initialize();
             _cardInteractionManager.Initialize();
             _resultManager.TryAddTriedCards();
+            _gamePowerUpAreaController.Refresh();
         }
 
         private void OnLevelSuccess(object sender, EventArgs args)

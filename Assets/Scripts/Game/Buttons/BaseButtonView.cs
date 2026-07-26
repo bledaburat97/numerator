@@ -24,6 +24,8 @@ namespace Scripts
         public void Init()
         {
             transform.localScale = Vector3.one;
+            if (innerBg == null) return;
+
             innerBgOffsetMin = innerBg.rectTransform.offsetMin;
             innerBgOffsetMax = innerBg.rectTransform.offsetMax;
         }
@@ -40,16 +42,36 @@ namespace Scripts
 
         public void SetButtonDown()
         {
-            outerBg.enabled = false;
-            shadow.enabled = false;
+            if (outerBg != null)
+            {
+                outerBg.enabled = false;
+            }
+
+            if (shadow != null)
+            {
+                shadow.enabled = false;
+            }
+
+            if (innerBg == null) return;
+
             innerBg.rectTransform.offsetMin = Vector2.zero;
             innerBg.rectTransform.offsetMax = Vector2.zero;
         }
 
         public void SetButtonUp()
         {
-            outerBg.enabled = true;
-            shadow.enabled = true;
+            if (outerBg != null)
+            {
+                outerBg.enabled = true;
+            }
+
+            if (shadow != null)
+            {
+                shadow.enabled = true;
+            }
+
+            if (innerBg == null) return;
+
             innerBg.rectTransform.offsetMin = innerBgOffsetMin;
             innerBg.rectTransform.offsetMax = innerBgOffsetMax;
         }
@@ -81,8 +103,15 @@ namespace Scripts
         
         public void SetColorOfImage(Color color)
         {
-            innerBg.color = color;
-            outerBg.color = color;
+            if (innerBg != null)
+            {
+                innerBg.color = color;
+            }
+
+            if (outerBg != null)
+            {
+                outerBg.color = color;
+            }
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -97,7 +126,12 @@ namespace Scripts
 
         public RectTransform GetRectTransform()
         {
-            return outerBg.rectTransform;
+            if (outerBg != null)
+            {
+                return outerBg.rectTransform;
+            }
+
+            return rectTransform;
         }
         public RectTransform GetButtonRectTransform()
         {

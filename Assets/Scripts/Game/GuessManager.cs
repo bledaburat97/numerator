@@ -47,6 +47,8 @@ namespace Game
             {
                 if (remainingGuessCount == lifeBarStarInfoList[i].BoundaryIndex)
                 {
+                    if (!lifeBarStarInfoList[i].IsActive) break;
+
                     bool isRewardStar = !lifeBarStarInfoList[i].IsOriginal;
 
                     _roundStateManager.SetLifeBarStarStatus(i, false);
@@ -97,17 +99,12 @@ namespace Game
                 if (lifeBarStarInfoList[i].BoundaryIndex >= remainingGuessCount &&
                     lifeBarStarInfoList[i].BoundaryIndex < remainingGuessCount + numOfLives)
                 {
-                    int index = i;
                     int boundaryIndex = lifeBarStarInfoList[i].BoundaryIndex;
                     sequence.Append(_lifeBarController.UpdateProgressBar(
                         (float)(boundaryIndex + 1) / maxGuessCount,
-                        boundaryIndex - remainingGuessCount + 1,
-                        () =>
-                        {
-                            _roundStateManager.SetLifeBarStarStatus(index, true);
-                            _lifeBarController.SetStarStatus(true, index);
-                            lastStarLifeBarIndex = lifeBarStarInfoList[index].BoundaryIndex;
-                        }));
+                        boundaryIndex - lastStarLifeBarIndex + 1,
+                        null));
+                    lastStarLifeBarIndex = boundaryIndex;
                 }
             }
 

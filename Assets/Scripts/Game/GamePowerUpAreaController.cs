@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game;
+using Zenject;
 
 namespace Scripts
 {
@@ -12,6 +13,9 @@ namespace Scripts
         private readonly BaseButtonControllerFactory _baseButtonControllerFactory;
         private readonly IPowerUpListHolderView _view;
         private readonly ILevelTracker _levelTracker;
+        private readonly IRoundStateManager _roundStateManager;
+        private readonly ICardItemInfoManager _cardItemInfoManager;
+        private readonly IBoardHolderCountManager _boardHolderCountManager;
         private readonly Dictionary<RewardType, IBaseButtonController> _buttonControllers;
 
         private bool _isInitialized;
@@ -19,12 +23,17 @@ namespace Scripts
 
         public event EventHandler<GameUIButtonType> PowerUpClickedEvent;
 
+        [Inject]
         public GamePowerUpAreaController(BaseButtonControllerFactory baseButtonControllerFactory,
-            IPowerUpListHolderView view, ILevelTracker levelTracker)
+            IPowerUpListHolderView view, ILevelTracker levelTracker, IRoundStateManager roundStateManager,
+            ICardItemInfoManager cardItemInfoManager, IBoardHolderCountManager boardHolderCountManager)
         {
             _baseButtonControllerFactory = baseButtonControllerFactory;
             _view = view;
             _levelTracker = levelTracker;
+            _roundStateManager = roundStateManager;
+            _cardItemInfoManager = cardItemInfoManager;
+            _boardHolderCountManager = boardHolderCountManager;
             _buttonControllers = new Dictionary<RewardType, IBaseButtonController>();
         }
 
@@ -53,9 +62,10 @@ namespace Scripts
             foreach (RewardType rewardType in PowerUpTypeUtility.OrderedRewardTypes)
             {
                 int count = _levelTracker.GetPowerUpCount(rewardType);
+                bool isAvailable = IsPowerUpAvailable(rewardType, count);
                 _view.SetPowerUpCount(rewardType, count);
-                _view.SetPowerUpAlpha(rewardType, count > 0 ? EnabledAlpha : DisabledAlpha);
-                _buttonControllers[rewardType].SetButtonClickable(_buttonsClickable && count > 0);
+                _view.SetPowerUpAlpha(rewardType, isAvailable ? EnabledAlpha : DisabledAlpha);
+                _buttonControllers[rewardType].SetButtonClickable(_buttonsClickable && isAvailable);
             }
         }
 
@@ -74,6 +84,35 @@ namespace Scripts
             IBaseButtonController buttonController =
                 _baseButtonControllerFactory.Create(buttonView, () => PowerUpClickedEvent?.Invoke(this, buttonType));
             _buttonControllers.Add(rewardType, buttonController);
+        }
+
+        private bool IsPowerUpAvailable(RewardType rewardType, int count)
+        {
+            if (count <= 0) return false;
+            if (rewardType != RewardType.Bomb) return true;
+
+            return CanUseBombPowerUp();
+        }
+
+        private bool CanUseBombPowerUp()
+        {
+            if (_roundStateManager.GetTriedCardsList().Count > 0) return false;
+            if (_boardHolderCountManager.GetRemovedBoardHolderCount() > 0) return false;
+
+            return !HasRevealedCard();
+        }
+
+        private bool HasRevealedCard()
+        {
+            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
+            if (cardItemInfoList == null) return false;
+
+            foreach (CardItemInfo cardItemInfo in cardItemInfoList)
+            {
+                if (cardItemInfo != null && cardItemInfo.isLocked) return true;
+            }
+
+            return false;
         }
     }
 

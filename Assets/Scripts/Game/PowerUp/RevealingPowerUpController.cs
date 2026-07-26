@@ -68,9 +68,9 @@ namespace Scripts
                 return false;
             }
 
-            _gamePowerUpAreaController.Refresh();
             _hapticController.Vibrate(HapticType.CardRelease);
             RevealCardRequestedEvent?.Invoke(this, new LockedCardInfo(boardHolderIndex, cardIndex));
+            _gamePowerUpAreaController.Refresh();
             _powerUpMessageController.CloseActivePowerUp();
             return true;
         }

@@ -11,6 +11,7 @@ namespace Scripts
         private IRoundStateManager _roundStateManager;
         private IGamePowerUpAreaController _gamePowerUpAreaController;
         private ICardItemInfoManager _cardItemInfoManager;
+        private IBoardHolderCountManager _boardHolderCountManager;
         private GameUIButtonType _activePowerUpType = GameUIButtonType.Default;
         
         public event EventHandler RemoveBoardHolderEvent;
@@ -20,7 +21,7 @@ namespace Scripts
         [Inject]
         public PowerUpMessageController(IGamePowerUpAreaController gamePowerUpAreaController,
             IFadePanelController fadePanelController, ILevelTracker levelTracker, IRoundStateManager roundStateManager,
-            ICardItemInfoManager cardItemInfoManager)
+            ICardItemInfoManager cardItemInfoManager, IBoardHolderCountManager boardHolderCountManager)
         {
             _fadePanelController = fadePanelController;
             gamePowerUpAreaController.PowerUpClickedEvent += OnPowerUpClicked;
@@ -28,6 +29,7 @@ namespace Scripts
             _levelTracker = levelTracker;
             _roundStateManager = roundStateManager;
             _cardItemInfoManager = cardItemInfoManager;
+            _boardHolderCountManager = boardHolderCountManager;
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
@@ -51,8 +53,8 @@ namespace Scripts
                     }
                     if (!CanUseBomb()) return;
                     if (!_levelTracker.TryConsumePowerUp(RewardType.Bomb)) return;
-                    _gamePowerUpAreaController.Refresh();
                     RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
+                    _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.RevealingPowerUp:
                     if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
@@ -90,7 +92,9 @@ namespace Scripts
 
         private bool CanUseBomb()
         {
-            return _roundStateManager.GetTriedCardsList().Count == 0 && !HasRevealedCard();
+            return _roundStateManager.GetTriedCardsList().Count == 0 &&
+                   _boardHolderCountManager.GetRemovedBoardHolderCount() == 0 &&
+                   !HasRevealedCard();
         }
 
         private bool HasRevealedCard()

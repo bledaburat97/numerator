@@ -36,7 +36,11 @@ namespace Game
                 .ToList();
 
             int rewardStarCount = levelData.NumOfBoardHolders - 2;
-            _lifeBarStarInfoList = CreateLifeBarStarInfoList(_maxGuessCount, _remainingGuessCount, rewardStarCount);
+            _lifeBarStarInfoList = CreateLifeBarStarInfoList(
+                _maxGuessCount,
+                _remainingGuessCount,
+                _triedCardsList.Count,
+                rewardStarCount);
         }
 
         public int GetMaxGuessCount()
@@ -98,6 +102,7 @@ namespace Game
         private static List<LifeBarStarInfo> CreateLifeBarStarInfoList(
             int maxGuessCount,
             int remainingGuessCount,
+            int triedCardsCount,
             int rewardStarCount)
         {
             List<LifeBarStarInfo> lifeBarStarInfoList = new List<LifeBarStarInfo>();
@@ -105,10 +110,12 @@ namespace Game
             for (int i = 0; i < lifeBarStarIndexes.Count; i++)
             {
                 int boundaryIndex = lifeBarStarIndexes[i];
+                bool hasLifePastBoundary = remainingGuessCount > boundaryIndex;
+                bool hasNeverCrossedBoundary = maxGuessCount - triedCardsCount > boundaryIndex;
                 lifeBarStarInfoList.Add(new LifeBarStarInfo(
                     boundaryIndex,
                     rewardStarCount < 3 - i,
-                    remainingGuessCount > boundaryIndex));
+                    hasLifePastBoundary && hasNeverCrossedBoundary));
             }
 
             return lifeBarStarInfoList;
