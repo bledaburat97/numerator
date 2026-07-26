@@ -10,6 +10,7 @@ namespace Scripts
         private ILevelTracker _levelTracker;
         private IRoundStateManager _roundStateManager;
         private IGamePowerUpAreaController _gamePowerUpAreaController;
+        private ICardItemInfoManager _cardItemInfoManager;
         private GameUIButtonType _activePowerUpType = GameUIButtonType.Default;
         
         public event EventHandler RemoveBoardHolderEvent;
@@ -18,13 +19,15 @@ namespace Scripts
         public event EventHandler AddLifeEvent;
         [Inject]
         public PowerUpMessageController(IGamePowerUpAreaController gamePowerUpAreaController,
-            IFadePanelController fadePanelController, ILevelTracker levelTracker, IRoundStateManager roundStateManager)
+            IFadePanelController fadePanelController, ILevelTracker levelTracker, IRoundStateManager roundStateManager,
+            ICardItemInfoManager cardItemInfoManager)
         {
             _fadePanelController = fadePanelController;
             gamePowerUpAreaController.PowerUpClickedEvent += OnPowerUpClicked;
             _gamePowerUpAreaController = gamePowerUpAreaController;
             _levelTracker = levelTracker;
             _roundStateManager = roundStateManager;
+            _cardItemInfoManager = cardItemInfoManager;
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
@@ -46,6 +49,7 @@ namespace Scripts
                     {
                         CloseActivePowerUp();
                     }
+                    if (!CanUseBomb()) return;
                     if (!_levelTracker.TryConsumePowerUp(RewardType.Bomb)) return;
                     _gamePowerUpAreaController.Refresh();
                     RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
@@ -82,6 +86,24 @@ namespace Scripts
         {
             const int extraLifeCount = 3;
             return _roundStateManager.GetRemainingGuessCount() + extraLifeCount <= _roundStateManager.GetMaxGuessCount();
+        }
+
+        private bool CanUseBomb()
+        {
+            return _roundStateManager.GetTriedCardsList().Count == 0 && !HasRevealedCard();
+        }
+
+        private bool HasRevealedCard()
+        {
+            var cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
+            if (cardItemInfoList == null) return false;
+
+            foreach (CardItemInfo cardItemInfo in cardItemInfoList)
+            {
+                if (cardItemInfo != null && cardItemInfo.isLocked) return true;
+            }
+
+            return false;
         }
     }
 

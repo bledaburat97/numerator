@@ -14,6 +14,7 @@ public class CardMoveHandler : ICardMoveHandler
     private Action<int> _onMoveToInitialRequested;
     private Action<int> _onClick;
     private bool _isDragStart;
+    private bool _isMovementLocked;
     private int _cardIndex;
 
     public CardMoveHandler(IHapticController hapticController, int cardIndex)
@@ -24,6 +25,8 @@ public class CardMoveHandler : ICardMoveHandler
 
     public void HandleDrag(Vector2 position)
     {
+        if (_isMovementLocked) return;
+
         if (!_isDragStart)
         {
             _hapticController.Vibrate(HapticType.CardGrab);
@@ -66,6 +69,8 @@ public class CardMoveHandler : ICardMoveHandler
     
     public void OnPointerUp(PointerEventData data)
     {
+        if (_isMovementLocked) return;
+
         if (!IsDragStarted())
         {
             _onClick?.Invoke(_cardIndex);
@@ -92,7 +97,23 @@ public class CardMoveHandler : ICardMoveHandler
 
     public void OnPointerDown(PointerEventData data)
     {
+        if (_isMovementLocked) return;
+
         _isDragStart = false;
+    }
+
+    public void SetMovementLocked(bool isLocked)
+    {
+        _isMovementLocked = isLocked;
+        if (isLocked)
+        {
+            _isDragStart = false;
+        }
+    }
+
+    public bool IsMovementLocked()
+    {
+        return _isMovementLocked;
     }
 }
 
@@ -108,5 +129,7 @@ public interface ICardMoveHandler
     void SetOnMoveToBoardRequested(Action<int, int> onMoveToBoardRequested);
     void SetOnMoveToInitialRequested(Action<int> onMoveToInitialRequested);
     void HandleDrag(Vector2 position);
+    void SetMovementLocked(bool isLocked);
+    bool IsMovementLocked();
 }
 }

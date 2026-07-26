@@ -46,6 +46,7 @@ namespace Scripts
         {
             _numOfCards = _initialCardAreaController.GetCardCount();
             AddCardActions();
+            RestoreLockedCards();
         }
 
         private void AddCardActions()
@@ -66,7 +67,7 @@ namespace Scripts
         
         public bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
-            if (!CanUseCard(cardIndex) || boardCardHolderIndex == -1) return false;
+            if (!CanMoveCard(cardIndex) || boardCardHolderIndex == -1) return false;
 
             return PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
         }
@@ -83,7 +84,7 @@ namespace Scripts
 
         private void TryReturnCardToInitial(int cardIndex)
         {
-            if (CanUseCard(cardIndex))
+            if (CanMoveCard(cardIndex))
             {
                 ReturnCardToInitial(cardIndex);
             }
@@ -91,11 +92,15 @@ namespace Scripts
 
         private void OnCardClicked(int cardIndex)
         {
+            if (!CanMoveCard(cardIndex)) return;
+
             OnCardClickedEvent?.Invoke(this, cardIndex);
         }
-        
+
         private void OnCardDragStarted(int cardIndex)
         {
+            if (!CanMoveCard(cardIndex)) return;
+
             OnCardDragStartedEvent?.Invoke(this, EventArgs.Empty);
             RemoveCardFromBoard(cardIndex);
         }
@@ -107,7 +112,7 @@ namespace Scripts
 
         private void OnMoveToInitialRequested(int cardIndex)
         {
-            ReturnCardToInitial(cardIndex);
+            TryReturnCardToInitial(cardIndex);
         }
 
         private bool PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
@@ -131,24 +136,50 @@ namespace Scripts
 
         private void OnRevealCardRequested(object sender, LockedCardInfo args)
         {
-            if (!CanUseCard(args.TargetCardIndex)) return;
-            if (!_boardPlacementCommands.TryPlaceCardOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex)) return;
-            if (!_initialCardAreaController.TryPlaceLockedCardOnBoard(
-                    args.TargetCardIndex,
-                    args.BoardHolderIndex,
-                    _boardAreaController.GetRectTransformOfGarden(args.BoardHolderIndex)))
+            TryRevealAndLockCard(args.BoardHolderIndex, args.TargetCardIndex);
+        }
+
+        public bool TryRevealAndLockCard(int boardHolderIndex, int cardIndex, bool playSuccessAnimation = true)
+        {
+            if (!CanUseCard(cardIndex)) return false;
+            if (IsCardLocked(cardIndex) && !IsCardLockedOnBoardHolder(cardIndex, boardHolderIndex)) return false;
+
+            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(boardHolderIndex, out int occupiedCardIndex) &&
+                occupiedCardIndex != cardIndex)
             {
-                _boardPlacementCommands.TryRemoveCardFromBoard(args.TargetCardIndex);
-                return;
+                if (IsCardLocked(occupiedCardIndex)) return false;
+
+                TryReturnCardToInitial(occupiedCardIndex);
             }
 
-            _cardItemInfoManager.MakeCardCertain(args.TargetCardIndex, new List<int> { args.BoardHolderIndex });
-            _boardAreaController.PlaySuccessFrameAnimation(args.BoardHolderIndex);
+            if (!_boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex)) return false;
+            if (!_initialCardAreaController.TryPlaceLockedCardOnBoard(
+                    cardIndex,
+                    boardHolderIndex,
+                    _boardAreaController.GetRectTransformOfGarden(boardHolderIndex)))
+            {
+                _boardPlacementCommands.TryRemoveCardFromBoard(cardIndex);
+                return false;
+            }
+
+            _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int> { boardHolderIndex });
+            if (playSuccessAnimation)
+            {
+                _boardAreaController.PlaySuccessFrameAnimation(boardHolderIndex);
+            }
+            else
+            {
+                _boardAreaController.SetSuccessFrameStatus(boardHolderIndex, true);
+            }
+
+            return true;
         }
 
         public void TryRemoveCardFromBoard(int cardIndex)
         {
             if (cardIndex < 0) return;
+            if (IsCardLocked(cardIndex)) return;
+
             RemoveCardFromBoard(cardIndex);
         }
 
@@ -193,6 +224,11 @@ namespace Scripts
                    cardItem != null;
         }
 
+        private bool CanMoveCard(int cardIndex)
+        {
+            return CanUseCard(cardIndex) && !IsCardLocked(cardIndex);
+        }
+
         private bool TryGetCardItem(int cardIndex, out INormalCardItemController cardItem)
         {
             cardItem = null;
@@ -217,11 +253,55 @@ namespace Scripts
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
-            _boardPlacementCommands.ResetAllBoardHolders();
             for (int i = 0; i < _numOfCards; i++)
             {
                 TryReturnCardToInitial(i);
             }
+        }
+
+        private void RestoreLockedCards()
+        {
+            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
+            if (cardItemInfoList == null) return;
+
+            for (int i = 0; i < cardItemInfoList.Count; i++)
+            {
+                if (!TryGetLockedBoardHolderIndex(cardItemInfoList[i], out int boardHolderIndex)) continue;
+
+                TryRevealAndLockCard(boardHolderIndex, i, false);
+            }
+        }
+
+        private bool IsCardLocked(int cardIndex)
+        {
+            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
+            if (cardItemInfoList == null || cardIndex < 0 || cardIndex >= cardItemInfoList.Count) return false;
+
+            CardItemInfo cardItemInfo = cardItemInfoList[cardIndex];
+            return cardItemInfo != null && cardItemInfo.isLocked;
+        }
+
+        private bool IsCardLockedOnBoardHolder(int cardIndex, int boardHolderIndex)
+        {
+            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
+            if (cardItemInfoList == null || cardIndex < 0 || cardIndex >= cardItemInfoList.Count) return false;
+
+            return TryGetLockedBoardHolderIndex(cardItemInfoList[cardIndex], out int lockedBoardHolderIndex) &&
+                   lockedBoardHolderIndex == boardHolderIndex;
+        }
+
+        private static bool TryGetLockedBoardHolderIndex(CardItemInfo cardItemInfo, out int boardHolderIndex)
+        {
+            boardHolderIndex = -1;
+            if (cardItemInfo == null || !cardItemInfo.isLocked || !cardItemInfo.isExisted) return false;
+            if (cardItemInfo.possibleCardHolderIndicatorIndexes == null ||
+                cardItemInfo.possibleCardHolderIndicatorIndexes.Count != 1)
+            {
+                return false;
+            }
+
+            boardHolderIndex = cardItemInfo.possibleCardHolderIndicatorIndexes[0];
+            return true;
         }
     }
     
@@ -230,6 +310,7 @@ namespace Scripts
         void Initialize();
         bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
         bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex);
+        bool TryRevealAndLockCard(int boardHolderIndex, int cardIndex, bool playSuccessAnimation = true);
         void TryRemoveCardFromBoard(int cardIndex);
         List<ICardViewHandler> GetCardsOnInitialHolder();
         List<ICardViewHandler> GetCardsOnBoard();

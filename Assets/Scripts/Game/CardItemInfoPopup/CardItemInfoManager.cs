@@ -62,13 +62,17 @@ namespace Scripts
 
         public void OnProbabilityButtonClicked(int activeCardIndex, ProbabilityType probabilityType)
         {
+            if (IsCardLocked(activeCardIndex)) return;
+
             ChangeTheCardInfoByProbability(activeCardIndex, probabilityType);
             _initialCardAreaController.AnimateProbabilityChangeOfCardItem(activeCardIndex, 0f, probabilityType, false);
             _initialCardAreaController.SetHolderIndicatorListOfCardHolder(activeCardIndex, _cardItemInfoList[activeCardIndex].possibleCardHolderIndicatorIndexes);
         }
-        
+
         public void OnHolderIndicatorClicked(int activeCardIndex, int holderIndicatorIndex)
         {
+            if (IsCardLocked(activeCardIndex)) return;
+
             ChangeTheCardInfoByHolderIndicator(activeCardIndex, holderIndicatorIndex);
             _initialCardAreaController.SetHolderIndicatorListOfCardHolder(activeCardIndex,
                 _cardItemInfoList[activeCardIndex].possibleCardHolderIndicatorIndexes);
@@ -137,6 +141,14 @@ namespace Scripts
             }
 
             return possibleCardHolderIndexes;
+        }
+
+        private bool IsCardLocked(int cardIndex)
+        {
+            if (cardIndex < 0 || cardIndex >= _cardItemInfoList.Count) return false;
+
+            CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
+            return cardItemInfo != null && cardItemInfo.isLocked;
         }
     }
 

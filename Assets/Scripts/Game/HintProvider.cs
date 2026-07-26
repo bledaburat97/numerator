@@ -12,21 +12,18 @@ namespace Game
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IInitialCardAreaController _initialCardAreaController;
-        private readonly IBoardAreaController _boardAreaController;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
         
         [Inject]
         public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
-            IBoardAreaController boardAreaController, IBoardPlacementQuery boardPlacementQuery,
-            ICardPlacementCoordinator cardPlacementCoordinator)
+            IBoardPlacementQuery boardPlacementQuery, ICardPlacementCoordinator cardPlacementCoordinator)
         {
             guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
-            _boardAreaController = boardAreaController;
             _boardPlacementQuery = boardPlacementQuery;
             _cardPlacementCoordinator = cardPlacementCoordinator;
         }
@@ -50,17 +47,11 @@ namespace Game
                 return false;
             }
 
-            _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int>() { boardHolderIndex });
             RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
-            Action makeCardCertainAction = () =>
-            {
-                _initialCardAreaController.SetProbabilityOfCardItem(cardIndex, ProbabilityType.Certain, true);
-                _initialCardAreaController.SetHolderIndicatorListOfCardHolder(cardIndex,
-                    new List<int>() { boardHolderIndex });
-                _boardAreaController.PlaySuccessFrameAnimation(boardHolderIndex);
-            };
+            Action revealAndLockCardAction = () =>
+                _cardPlacementCoordinator.TryRevealAndLockCard(boardHolderIndex, cardIndex);
 
-            new StarAnimationManager().RevealCard(starImageView, cardRectTransform, makeCardCertainAction);
+            new StarAnimationManager().RevealCard(starImageView, cardRectTransform, revealAndLockCardAction);
             return true;
         }
 
@@ -95,6 +86,8 @@ namespace Game
             {
                 if (cardIndexesOnBoard[i] == -1) continue;
                 int cardNumber = cardIndexesOnBoard[i] + 1;
+                if (cardItemInfoList[cardNumber - 1].isLocked) continue;
+
                 if (cardItemInfoList[cardNumber - 1].probabilityType != ProbabilityType.NotExisted &&
                     !targetCardNumbers.Contains(cardNumber))
                 {
@@ -110,6 +103,8 @@ namespace Game
             }
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
+                if (cardItemInfoList[i].isLocked) continue;
+
                 if (!cardIndexesOnBoard.Contains(i) && cardItemInfoList[i].probabilityType != ProbabilityType.NotExisted && !targetCardNumbers.Contains(i+1))
                 {
                     cardIndexesShouldBeRed.Add(i);
@@ -124,6 +119,8 @@ namespace Game
             
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
+                if (cardItemInfoList[i].isLocked) continue;
+
                 if (!targetCardNumbers.Contains(i))
                 {
                     cardIndexesShouldBeRed.Add(i);
@@ -151,9 +148,12 @@ namespace Game
             boardHolderIndex = -1;
             for (int i = 0; i < targetCardNumbers.Count; i++)
             {
-                if (!(cardItemInfoList[targetCardNumbers[i] - 1].probabilityType == ProbabilityType.Certain &&
-                    cardItemInfoList[targetCardNumbers[i] - 1].possibleCardHolderIndicatorIndexes.Count == 1 &&
-                    cardItemInfoList[targetCardNumbers[i] - 1].possibleCardHolderIndicatorIndexes[0] == i))
+                CardItemInfo targetCardItemInfo = cardItemInfoList[targetCardNumbers[i] - 1];
+                if (targetCardItemInfo.isLocked) continue;
+
+                if (!(targetCardItemInfo.probabilityType == ProbabilityType.Certain &&
+                    targetCardItemInfo.possibleCardHolderIndicatorIndexes.Count == 1 &&
+                    targetCardItemInfo.possibleCardHolderIndicatorIndexes[0] == i))
                 {
                     if (!cardIndexesOnBoard.Contains(targetCardNumbers[i] - 1))
                     {

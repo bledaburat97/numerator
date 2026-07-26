@@ -44,7 +44,12 @@ namespace Scripts
         {
             return _view.PlaySuccessFrameAnimation(delayDuration);
         }
-        
+
+        public void SetSuccessFrameStatus(bool status)
+        {
+            _view.SetSuccessFrameStatus(status);
+        }
+
         public IBoardHolderView GetView()
         {
             return _view;
@@ -73,5 +78,6 @@ namespace Scripts
         void SetOnClick(Action onClickAction);
         Sequence Move(Vector2 targetLocalPosition, float duration);
         Sequence PlaySuccessFrameAnimation(float delayDuration);
+        void SetSuccessFrameStatus(bool status);
     }
 }

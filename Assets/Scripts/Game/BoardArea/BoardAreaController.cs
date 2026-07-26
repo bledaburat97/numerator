@@ -130,6 +130,13 @@ namespace Scripts
             return _boardHolderControllerList[boardHolderIndex].PlaySuccessFrameAnimation(delayDuration);
         }
 
+        public void SetSuccessFrameStatus(int boardHolderIndex, bool status)
+        {
+            if (boardHolderIndex < 0 || boardHolderIndex >= _boardHolderControllerList.Count) return;
+
+            _boardHolderControllerList[boardHolderIndex].SetSuccessFrameStatus(status);
+        }
+
         public Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders)
         {
             Sequence sequence = DOTween.Sequence();
@@ -237,6 +244,7 @@ namespace Scripts
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
         Sequence PlaySuccessFrameAnimation(int boardHolderIndex, float delayDuration = 0f);
+        void SetSuccessFrameStatus(int boardHolderIndex, bool status);
         Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders);
         void SetupTutorialModeOnEmptyBoardHolders();
         void CleanupTutorialModeOnShinyBoardHolders();

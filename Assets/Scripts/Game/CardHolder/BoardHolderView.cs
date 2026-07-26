@@ -104,7 +104,17 @@ namespace Scripts
                 .Join(frameTransform.DOScale(targetScale * 1.08f, 0.12f).SetEase(Ease.OutBack))
                 .Append(frameTransform.DOScale(targetScale, 0.08f).SetEase(Ease.OutQuad));
         }
-        
+
+        public void SetSuccessFrameStatus(bool status)
+        {
+            if (successFrameImage == null) return;
+
+            successFrameImage.gameObject.SetActive(status);
+            Color frameColor = successFrameImage.color;
+            frameColor.a = status ? 1f : 0f;
+            successFrameImage.color = frameColor;
+        }
+
     }
 
     public interface IBoardHolderView : IBaseHolderView
@@ -117,5 +127,6 @@ namespace Scripts
         void CleanupTutorialMode();
         RectTransform GetGardenRectTransform();
         Sequence PlaySuccessFrameAnimation(float delayDuration);
+        void SetSuccessFrameStatus(bool status);
     }
 }

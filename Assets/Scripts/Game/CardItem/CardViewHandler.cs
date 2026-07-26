@@ -39,6 +39,8 @@ namespace Scripts
 
         private void OnDrag(PointerEventData data)
         {
+            if (_cardMoveHandler.IsMovementLocked()) return;
+
             if (!_cardMoveHandler.IsDragStarted())
             {
                 InitializeDrag(_cardItemData.TempParent);
@@ -51,7 +53,8 @@ namespace Scripts
 
         public void SetProbability(ProbabilityType probabilityType, bool isLocked)
         {
-            _view.SetLockImageStatus(false);
+            _view.SetLockImageStatus(isLocked);
+            _cardMoveHandler.SetMovementLocked(isLocked);
             switch (probabilityType)
             {
                 case ProbabilityType.Certain:
@@ -164,7 +167,8 @@ namespace Scripts
         {
             DOTween.Sequence().AppendCallback(() =>
             {
-                _view.SetLockImageStatus(false);
+                _view.SetLockImageStatus(isLocked);
+                _cardMoveHandler.SetMovementLocked(isLocked);
                 switch (probabilityType)
                 {
                     case ProbabilityType.Certain:
