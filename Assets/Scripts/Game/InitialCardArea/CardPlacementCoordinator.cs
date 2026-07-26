@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game;
 using Zenject;
 
@@ -9,9 +10,11 @@ namespace Scripts
         private readonly IBoardAreaController _boardAreaController;
         private readonly ICardItemLocator _cardItemLocator;
         private readonly IGameUIController _gameUIController;
-        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IBoardPlacementQuery _boardPlacementQuery;
+        private readonly IBoardPlacementCommands _boardPlacementCommands;
         private readonly IRevealingPowerUpController _revealingPowerUpController;
-        private Func<int, INormalCardItemController> _getCardItem;
+        private readonly IInitialCardAreaController _initialCardAreaController;
+        private readonly ICardItemInfoManager _cardItemInfoManager;
         private int _numOfCards;
         public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
@@ -21,30 +24,35 @@ namespace Scripts
             IBoardAreaController boardAreaController,
             ICardItemLocator cardItemLocator,
             IGameUIController gameUIController,
-            IBoardCardIndexManager boardCardIndexManager,
-            IRevealingPowerUpController revealingPowerUpController)
+            IBoardPlacementQuery boardPlacementQuery,
+            IBoardPlacementCommands boardPlacementCommands,
+            IRevealingPowerUpController revealingPowerUpController,
+            IInitialCardAreaController initialCardAreaController,
+            ICardItemInfoManager cardItemInfoManager)
         {
             _boardAreaController = boardAreaController;
             _cardItemLocator = cardItemLocator;
             _gameUIController = gameUIController;
-            _boardCardIndexManager = boardCardIndexManager;
+            _boardPlacementQuery = boardPlacementQuery;
+            _boardPlacementCommands = boardPlacementCommands;
             _revealingPowerUpController = revealingPowerUpController;
+            _initialCardAreaController = initialCardAreaController;
+            _cardItemInfoManager = cardItemInfoManager;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             _revealingPowerUpController.RevealCardRequestedEvent += OnRevealCardRequested;
         }
 
-        public void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem)
+        public void Initialize()
         {
-            _numOfCards = numOfCardItems;
-            _getCardItem = getCardItem;
+            _numOfCards = _initialCardAreaController.GetCardCount();
+            AddCardActions();
         }
 
-        public void AddCardActions()
+        private void AddCardActions()
         {
             for (int i = 0; i < _numOfCards; i++)
             {
-                INormalCardItemController cardItem = _getCardItem(i);
-                if (cardItem == null) continue;
+                if (!TryGetCardItem(i, out INormalCardItemController cardItem)) continue;
 
                 ICardMoveHandler cardMoveHandler = cardItem.GetCardMoveHandler();
                 cardMoveHandler.SetOnClick(OnCardClicked);
@@ -65,7 +73,7 @@ namespace Scripts
 
         public bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex)
         {
-            if (!_boardCardIndexManager.TryGetFirstEmptyBoardHolderIndex(out int boardCardHolderIndex))
+            if (!_boardPlacementQuery.TryGetFirstEmptyBoardHolderIndex(out int boardCardHolderIndex))
             {
                 return false;
             }
@@ -104,26 +112,38 @@ namespace Scripts
 
         private bool PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
         {
-            if (!_boardCardIndexManager.TryReserveBoardHolderForCard(boardHolderIndex, cardIndex)) return false;
+            if (!TryGetCardItem(cardIndex, out INormalCardItemController cardItem)) return false;
+            if (!_boardPlacementCommands.TryReserveBoardHolderForCard(boardHolderIndex, cardIndex)) return false;
 
-            _getCardItem(cardIndex).GetCardViewHandler().MoveToParent(
+            cardItem.GetCardViewHandler().MoveToParent(
                 _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
-                () => _boardCardIndexManager.TrySetCardIndexOnBoardHolder(boardHolderIndex, cardIndex));
+                () => _boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex));
             return true;
         }
 
         private void ReturnCardToInitial(int cardIndex)
         {
+            if (!TryGetCardItem(cardIndex, out INormalCardItemController cardItem)) return;
+
             RemoveCardFromBoard(cardIndex);
-            _getCardItem(cardIndex).GetCardViewHandler().MoveToInitialParent();
+            cardItem.GetCardViewHandler().MoveToInitialParent();
         }
 
         private void OnRevealCardRequested(object sender, LockedCardInfo args)
         {
             if (!CanUseCard(args.TargetCardIndex)) return;
+            if (!_boardPlacementCommands.TryPlaceCardOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex)) return;
+            if (!_initialCardAreaController.TryPlaceLockedCardOnBoard(
+                    args.TargetCardIndex,
+                    args.BoardHolderIndex,
+                    _boardAreaController.GetRectTransformOfGarden(args.BoardHolderIndex)))
+            {
+                _boardPlacementCommands.TryRemoveCardFromBoard(args.TargetCardIndex);
+                return;
+            }
 
-            // Reveal power-up places the card view elsewhere; coordinator keeps board occupancy in sync.
-            _boardCardIndexManager.TrySetCardIndexOnBoardHolder(args.BoardHolderIndex, args.TargetCardIndex);
+            _cardItemInfoManager.MakeCardCertain(args.TargetCardIndex, new List<int> { args.BoardHolderIndex });
+            _boardAreaController.PlaySuccessFrameAnimation(args.BoardHolderIndex);
         }
 
         public void TryRemoveCardFromBoard(int cardIndex)
@@ -132,22 +152,58 @@ namespace Scripts
             RemoveCardFromBoard(cardIndex);
         }
 
+        public List<ICardViewHandler> GetCardsOnInitialHolder()
+        {
+            List<ICardViewHandler> cardsOnInitialHolder = new List<ICardViewHandler>();
+            for (int i = 0; i < _numOfCards; i++)
+            {
+                if (!TryGetCardItem(i, out INormalCardItemController cardItem)) continue;
+                if (_boardPlacementQuery.TryGetOccupiedBoardHolderIndexOfCard(i, out int boardHolderIndex)) continue;
+
+                cardsOnInitialHolder.Add(cardItem.GetCardViewHandler());
+            }
+
+            return cardsOnInitialHolder;
+        }
+
+        public List<ICardViewHandler> GetCardsOnBoard()
+        {
+            List<ICardViewHandler> cardsOnBoard = new List<ICardViewHandler>();
+            for (int i = 0; i < _numOfCards; i++)
+            {
+                if (!TryGetCardItem(i, out INormalCardItemController cardItem)) continue;
+                if (!_boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(i, out int boardHolderIndex)) continue;
+
+                cardsOnBoard.Add(cardItem.GetCardViewHandler());
+            }
+
+            return cardsOnBoard;
+        }
+
         private void RemoveCardFromBoard(int cardIndex)
         {
-            _boardCardIndexManager.TryResetCardIndexOnBoard(cardIndex);
+            _boardPlacementCommands.TryRemoveCardFromBoard(cardIndex);
         }
 
         private bool CanUseCard(int cardIndex)
         {
-            return _getCardItem != null &&
-                   cardIndex >= 0 &&
+            return cardIndex >= 0 &&
                    cardIndex < _numOfCards &&
-                   _getCardItem(cardIndex) != null;
+                   _initialCardAreaController.TryGetCardItem(cardIndex, out INormalCardItemController cardItem) &&
+                   cardItem != null;
+        }
+
+        private bool TryGetCardItem(int cardIndex, out INormalCardItemController cardItem)
+        {
+            cardItem = null;
+            if (cardIndex < 0 || cardIndex >= _numOfCards) return false;
+
+            return _initialCardAreaController.TryGetCardItem(cardIndex, out cardItem);
         }
 
         public void TryResetPositionOfCardOnExplodedBoardHolder()
         {
-            if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(0, out int cardIndex))
+            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(0, out int cardIndex))
             {
                 TryReturnCardToInitial(cardIndex);
             }
@@ -161,7 +217,7 @@ namespace Scripts
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)
         {
-            _boardCardIndexManager.ResetAllBoardHolders();
+            _boardPlacementCommands.ResetAllBoardHolders();
             for (int i = 0; i < _numOfCards; i++)
             {
                 TryReturnCardToInitial(i);
@@ -171,11 +227,12 @@ namespace Scripts
     
     public interface ICardPlacementCoordinator
     {
-        void Initialize(int numOfCardItems, Func<int, INormalCardItemController> getCardItem);
-        void AddCardActions();
+        void Initialize();
         bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
         bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex);
         void TryRemoveCardFromBoard(int cardIndex);
+        List<ICardViewHandler> GetCardsOnInitialHolder();
+        List<ICardViewHandler> GetCardsOnBoard();
         void Unsubscribe();
         void TryResetPositionOfCardOnExplodedBoardHolder();
         event EventHandler<int> OnCardClickedEvent;

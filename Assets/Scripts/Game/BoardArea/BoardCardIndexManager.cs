@@ -2,7 +2,7 @@
 
 namespace Game
 {
-    public class BoardCardIndexManager : IBoardCardIndexManager
+    public class BoardCardIndexManager : IBoardPlacementQuery, IBoardPlacementCommands
     {
         public const int EmptyCardIndex = -1;
         private const int InvalidBoardHolderIndex = -1;
@@ -29,7 +29,7 @@ namespace Game
             _reservedCardIndexesOnBoardHolders.RemoveAt(0);
         }
 
-        public bool CheckCardIsOnBoard(int checkingCardIndex, out int boardHolderIndex)
+        public bool TryGetOccupiedBoardHolderIndexOfCard(int checkingCardIndex, out int boardHolderIndex)
         {
             if (checkingCardIndex == EmptyCardIndex)
             {
@@ -56,7 +56,28 @@ namespace Game
             return false;
         }
 
-        public bool CheckBoardHolderHasAnyCard(int boardHolderIndex, out int cardIndex)
+        public bool TryGetPlacedBoardHolderIndexOfCard(int checkingCardIndex, out int boardHolderIndex)
+        {
+            if (checkingCardIndex == EmptyCardIndex)
+            {
+                boardHolderIndex = InvalidBoardHolderIndex;
+                return false;
+            }
+
+            for(int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
+            {
+                if (_cardIndexesOnBoardHolders[i] == checkingCardIndex)
+                {
+                    boardHolderIndex = i;
+                    return true;
+                }
+            }
+
+            boardHolderIndex = InvalidBoardHolderIndex;
+            return false;
+        }
+
+        public bool TryGetOccupiedCardIndexOnBoardHolder(int boardHolderIndex, out int cardIndex)
         {
             cardIndex = EmptyCardIndex;
             if (!IsBoardHolderIndexValid(boardHolderIndex)) return false;
@@ -76,11 +97,11 @@ namespace Game
             _reservedCardIndexesOnBoardHolders[boardHolderIndex] = EmptyCardIndex;
         }
 
-        public bool TrySetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex)
+        public bool TryPlaceCardOnBoardHolder(int boardHolderIndex, int cardIndex)
         {
             if (!CanUseBoardHolderForCard(boardHolderIndex, cardIndex)) return false;
 
-            TryResetCardIndexOnBoard(cardIndex);
+            TryRemoveCardFromBoard(cardIndex);
             _cardIndexesOnBoardHolders[boardHolderIndex] = cardIndex;
             _reservedCardIndexesOnBoardHolders[boardHolderIndex] = EmptyCardIndex;
             return true;
@@ -90,12 +111,12 @@ namespace Game
         {
             if (!CanUseBoardHolderForCard(boardHolderIndex, cardIndex)) return false;
 
-            TryResetCardIndexOnBoard(cardIndex);
+            TryRemoveCardFromBoard(cardIndex);
             _reservedCardIndexesOnBoardHolders[boardHolderIndex] = cardIndex;
             return true;
         }
         
-        public IReadOnlyList<int> GetEmptyBoardHolderIndexList()
+        public IReadOnlyList<int> GetEmptyBoardHolderIndexes()
         {
             List<int> emptyBoardHolderIndexes = new List<int>();
             for (int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
@@ -111,7 +132,7 @@ namespace Game
 
         public bool TryGetFirstEmptyBoardHolderIndex(out int boardHolderIndex)
         {
-            IReadOnlyList<int> emptyBoardHolderIndexes = GetEmptyBoardHolderIndexList();
+            IReadOnlyList<int> emptyBoardHolderIndexes = GetEmptyBoardHolderIndexes();
             if (emptyBoardHolderIndexes.Count == 0)
             {
                 boardHolderIndex = InvalidBoardHolderIndex;
@@ -122,7 +143,12 @@ namespace Game
             return true;
         }
 
-        public IReadOnlyList<int> GetCardIndexesOnBoard()
+        public IReadOnlyList<int> GetPlacedCardIndexesOnBoard()
+        {
+            return new List<int>(_cardIndexesOnBoardHolders).AsReadOnly();
+        }
+
+        public IReadOnlyList<int> GetOccupiedCardIndexesOnBoard()
         {
             List<int> cardIndexesOnBoard = new List<int>();
             for (int i = 0; i < _cardIndexesOnBoardHolders.Count; i++)
@@ -133,9 +159,9 @@ namespace Game
             return cardIndexesOnBoard.AsReadOnly();
         }
         
-        public bool TryResetCardIndexOnBoard(int cardIndex)
+        public bool TryRemoveCardFromBoard(int cardIndex)
         {
-            if (!CheckCardIsOnBoard(cardIndex, out int boardHolderIndex)) return false;
+            if (!TryGetOccupiedBoardHolderIndexOfCard(cardIndex, out int boardHolderIndex)) return false;
 
             ResetBoardHolder(boardHolderIndex);
             return true;
@@ -154,7 +180,7 @@ namespace Game
             if (!IsBoardHolderIndexValid(boardHolderIndex)) return false;
             if (cardIndex == EmptyCardIndex) return false;
 
-            return !CheckBoardHolderHasAnyCard(boardHolderIndex, out int existingCardIndex) ||
+            return !TryGetOccupiedCardIndexOnBoardHolder(boardHolderIndex, out int existingCardIndex) ||
                    existingCardIndex == cardIndex;
         }
 
@@ -175,18 +201,24 @@ namespace Game
         }
     }
 
-    public interface IBoardCardIndexManager
+    public interface IBoardPlacementQuery
+    {
+        bool TryGetOccupiedBoardHolderIndexOfCard(int checkingCardIndex, out int boardHolderIndex);
+        bool TryGetPlacedBoardHolderIndexOfCard(int checkingCardIndex, out int boardHolderIndex);
+        bool TryGetOccupiedCardIndexOnBoardHolder(int boardHolderIndex, out int cardIndex);
+        IReadOnlyList<int> GetEmptyBoardHolderIndexes();
+        bool TryGetFirstEmptyBoardHolderIndex(out int boardHolderIndex);
+        IReadOnlyList<int> GetPlacedCardIndexesOnBoard();
+        IReadOnlyList<int> GetOccupiedCardIndexesOnBoard();
+    }
+
+    public interface IBoardPlacementCommands
     {
         void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders);
         void DeleteFirstBoardHolder();
-        bool CheckCardIsOnBoard(int checkingCardIndex, out int boardHolderIndex);
-        bool TrySetCardIndexOnBoardHolder(int boardHolderIndex, int cardIndex);
+        bool TryPlaceCardOnBoardHolder(int boardHolderIndex, int cardIndex);
         bool TryReserveBoardHolderForCard(int boardHolderIndex, int cardIndex);
-        IReadOnlyList<int> GetEmptyBoardHolderIndexList();
-        bool TryGetFirstEmptyBoardHolderIndex(out int boardHolderIndex);
-        IReadOnlyList<int> GetCardIndexesOnBoard();
-        bool TryResetCardIndexOnBoard(int cardIndex);
-        bool CheckBoardHolderHasAnyCard(int boardHolderIndex, out int cardIndex);
+        bool TryRemoveCardFromBoard(int cardIndex);
         void ResetAllBoardHolders();
     }
 }

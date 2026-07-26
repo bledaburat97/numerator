@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Game;
-using UnityEngine;
 using Zenject;
 
 namespace Scripts
@@ -15,12 +13,11 @@ namespace Scripts
 
         [Inject]
         public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController, 
-            IRevealingPowerUpController revealingPowerUpController, IBoardHolderCountManager boardHolderCountManager)
+            IBoardHolderCountManager boardHolderCountManager)
         {
             _levelSaveDataManager = levelSaveDataManager;
             _initialCardAreaController = initialCardAreaController;
             _boardHolderCountManager = boardHolderCountManager;
-            revealingPowerUpController.RevealCardRequestedEvent += OnRevealCardRequested;
         }
         
         public void Initialize()
@@ -55,12 +52,6 @@ namespace Scripts
             cardItemInfo.isExisted = false;
         }
         
-        private void OnRevealCardRequested(object sender, LockedCardInfo lockedCardInfo)
-        {
-            List<int> cardHolders = new List<int> { lockedCardInfo.BoardHolderIndex };
-            MakeCardCertain(lockedCardInfo.TargetCardIndex, cardHolders);
-        }
-
         public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];

@@ -71,7 +71,9 @@ namespace Scripts
             Container.Bind<ILevelStartAnimationManager>().To<LevelStartAnimationManager>().AsSingle();
             Container.Bind<ILevelFailAnimationManager>().To<LevelFailAnimationManager>().AsSingle();
             Container.Bind<ILevelFlowOrchestrator>().To<LevelFlowOrchestrator>().AsSingle();
-            Container.Bind<IBoardCardIndexManager>().To<BoardCardIndexManager>().AsSingle();
+            Container.Bind<BoardCardIndexManager>().AsSingle();
+            Container.Bind<IBoardPlacementQuery>().To<BoardCardIndexManager>().FromResolve();
+            Container.Bind<IBoardPlacementCommands>().To<BoardCardIndexManager>().FromResolve();
         }
 
         private PowerUpListHolderView ResolvePowerUpAreaView()

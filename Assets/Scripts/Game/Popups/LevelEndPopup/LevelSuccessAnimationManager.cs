@@ -14,13 +14,15 @@ namespace Game
         private ILifeBarController _lifeBarController;
         private IResultAreaController _resultAreaController;
         private IBoardAreaController _boardAreaController;
+        private ICardPlacementCoordinator _cardPlacementCoordinator;
         
         private List<ICardViewHandler> _cardsOnBoard;
 
         [Inject]
         public LevelSuccessAnimationManager(ILevelEndPopupController levelEndPopupController, IInitialCardAreaController initialCardAreaController,
         IFadePanelController fadePanelController, IGameUIController gameUIController, ILifeBarController lifeBarController, 
-        IResultAreaController resultAreaController, IBoardAreaController boardAreaController)
+        IResultAreaController resultAreaController, IBoardAreaController boardAreaController,
+        ICardPlacementCoordinator cardPlacementCoordinator)
         {
             _levelEndPopupController = levelEndPopupController;
             _initialCardAreaController = initialCardAreaController;
@@ -29,6 +31,7 @@ namespace Game
             _lifeBarController = lifeBarController;
             _resultAreaController = resultAreaController;
             _boardAreaController = boardAreaController;
+            _cardPlacementCoordinator = cardPlacementCoordinator;
             _cardsOnBoard = new List<ICardViewHandler>();
         }
         
@@ -44,7 +47,7 @@ namespace Game
             float movementDurationOfCircleProgressBar = 0.45f;
             float scalingUpDurationOfText = 0.22f;
             float buttonsFadeOutDuration = 0.2f;
-            _cardsOnBoard = _initialCardAreaController.GetCardsOnBoard();
+            _cardsOnBoard = _cardPlacementCoordinator.GetCardsOnBoard();
             return DOTween.Sequence()
                 .AppendCallback(() => TurnCardsIntoCertain(_cardsOnBoard, cardDelayDuration, cardColorChangingDuration))
                 .Join(_boardAreaController.PlayAllSuccessFrameAnimations(cardDelayDuration))
@@ -83,7 +86,7 @@ namespace Game
 
         private Sequence DismissCardsOnInitialHolders(float dismissDuration)
         {
-            List<ICardViewHandler> cardViewHandlerList = _initialCardAreaController.GetCardsOnInitialHolder();
+            List<ICardViewHandler> cardViewHandlerList = _cardPlacementCoordinator.GetCardsOnInitialHolder();
             Sequence sequence = DOTween.Sequence();
             
             foreach (ICardViewHandler card in cardViewHandlerList)

@@ -15,13 +15,15 @@ namespace Game
         private ILifeBarController _lifeBarController;
         private IResultAreaController _resultAreaController;
         private IBoardAreaController _boardAreaController;
+        private ICardPlacementCoordinator _cardPlacementCoordinator;
         private List<ICardViewHandler> _trueCards;
         [Inject]
         public LevelFailAnimationManager(ILevelEndPopupController levelEndPopupController,
             IInitialCardAreaController initialCardAreaController,
             IFadePanelController fadePanelController, IGameUIController gameUIController,
             ILifeBarController lifeBarController,
-            IResultAreaController resultAreaController, IBoardAreaController boardAreaController)
+            IResultAreaController resultAreaController, IBoardAreaController boardAreaController,
+            ICardPlacementCoordinator cardPlacementCoordinator)
         {
             _levelEndPopupController = levelEndPopupController;
             _initialCardAreaController = initialCardAreaController;
@@ -30,6 +32,7 @@ namespace Game
             _lifeBarController = lifeBarController;
             _resultAreaController = resultAreaController;
             _boardAreaController = boardAreaController;
+            _cardPlacementCoordinator = cardPlacementCoordinator;
             _trueCards = new List<ICardViewHandler>();
         }
 
@@ -57,14 +60,14 @@ namespace Game
         {
             Sequence sequence = DOTween.Sequence();
 
-            List<ICardViewHandler> cardsOnInitialHolder = _initialCardAreaController.GetCardsOnInitialHolder();
+            List<ICardViewHandler> cardsOnInitialHolder = _cardPlacementCoordinator.GetCardsOnInitialHolder();
             
             foreach (ICardViewHandler card in cardsOnInitialHolder)
             {
                 sequence.Join(card.AnimateExplosion(explosionDuration));
             }
             
-            List<ICardViewHandler> cardsOnBoard = _initialCardAreaController.GetCardsOnBoard();
+            List<ICardViewHandler> cardsOnBoard = _cardPlacementCoordinator.GetCardsOnBoard();
 
             foreach (ICardViewHandler card in cardsOnBoard)
             {

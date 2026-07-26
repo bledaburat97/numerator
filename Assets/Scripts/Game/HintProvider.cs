@@ -13,13 +13,13 @@ namespace Game
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly IBoardAreaController _boardAreaController;
-        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
         
         [Inject]
         public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
-            IBoardAreaController boardAreaController, IBoardCardIndexManager boardCardIndexManager,
+            IBoardAreaController boardAreaController, IBoardPlacementQuery boardPlacementQuery,
             ICardPlacementCoordinator cardPlacementCoordinator)
         {
             guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
@@ -27,7 +27,7 @@ namespace Game
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
             _boardAreaController = boardAreaController;
-            _boardCardIndexManager = boardCardIndexManager;
+            _boardPlacementQuery = boardPlacementQuery;
             _cardPlacementCoordinator = cardPlacementCoordinator;
         }
 
@@ -87,7 +87,7 @@ namespace Game
         private bool TryGetNonExistedCardIndex(out int cardIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            IReadOnlyList<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
+            IReadOnlyList<int> cardIndexesOnBoard = _boardPlacementQuery.GetOccupiedCardIndexesOnBoard();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<int> cardIndexesShouldBeRed = new List<int>();
             cardIndex = -1;
@@ -142,7 +142,7 @@ namespace Game
         private bool TryGetExistedCardIndex( out int cardIndex, out int boardHolderIndex)
         {
             List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            IReadOnlyList<int> cardIndexesOnBoard = _boardCardIndexManager.GetCardIndexesOnBoard();
+            IReadOnlyList<int> cardIndexesOnBoard = _boardPlacementQuery.GetOccupiedCardIndexesOnBoard();
             List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
             List<(int, int)> firstList = new List<(int, int)>();
             List<(int, int)> secondList = new List<(int, int)>();

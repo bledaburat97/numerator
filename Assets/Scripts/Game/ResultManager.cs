@@ -10,7 +10,7 @@ namespace Scripts
     {
         private readonly IResultAreaController _resultAreaController;
         private readonly ITargetNumberCreator _targetNumberCreator;
-        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly IRoundStateManager _roundStateManager;
         
         public event EventHandler LevelSuccessEvent;
@@ -19,12 +19,12 @@ namespace Scripts
         [Inject]
         public ResultManager(IGameUIController gameUIController, 
             IResultAreaController resultAreaController, ITargetNumberCreator targetNumberCreator,
-            IBoardCardIndexManager boardCardIndexManager, IRoundStateManager roundStateManager)
+            IBoardPlacementQuery boardPlacementQuery, IRoundStateManager roundStateManager)
         {
             gameUIController.CheckFinalNumbers += CheckFinalCards;
             _resultAreaController = resultAreaController;
             _targetNumberCreator = targetNumberCreator;
-            _boardCardIndexManager = boardCardIndexManager;
+            _boardPlacementQuery = boardPlacementQuery;
             _roundStateManager = roundStateManager;
         }
 
@@ -62,8 +62,7 @@ namespace Scripts
 
         private void CheckFinalCards(object sender, EventArgs args)
         {
-            if (_boardCardIndexManager.GetEmptyBoardHolderIndexList().Count != 0) return;
-            IReadOnlyList<int> finalCardIndexes = _boardCardIndexManager.GetCardIndexesOnBoard();
+            IReadOnlyList<int> finalCardIndexes = _boardPlacementQuery.GetPlacedCardIndexesOnBoard();
             List<int> finalCards = new List<int>();
             for (int i = 0; i < finalCardIndexes.Count; i++)
             {

@@ -27,6 +27,7 @@ namespace Game
         private readonly IGuessManager _guessManager;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly ICardItemInfoPopupController _cardItemInfoPopupController;
+        private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
         private readonly ICardInteractionManager _cardInteractionManager;
         private readonly IResultManager _resultManager;
         private readonly IRoundStateManager _roundStateManager;
@@ -59,6 +60,7 @@ namespace Game
             IGuessManager guessManager,
             ICardItemInfoManager cardItemInfoManager,
             ICardItemInfoPopupController cardItemInfoPopupController,
+            ICardPlacementCoordinator cardPlacementCoordinator,
             ICardInteractionManager cardInteractionManager,
             IResultManager resultManager,
             IRoundStateManager roundStateManager,
@@ -86,6 +88,7 @@ namespace Game
             _guessManager = guessManager;
             _cardItemInfoManager = cardItemInfoManager;
             _cardItemInfoPopupController = cardItemInfoPopupController;
+            _cardPlacementCoordinator = cardPlacementCoordinator;
             _cardInteractionManager = cardInteractionManager;
             _resultManager = resultManager;
             _roundStateManager = roundStateManager;
@@ -225,8 +228,9 @@ namespace Game
         private void InitializeGameplaySystems(bool deferRewardStarIntroAnimation)
         {
             _cardItemLocator.Initialize();
-            _guessManager.Initialize(deferRewardStarIntroAnimation);
             _cardItemInfoManager.Initialize();
+            _cardPlacementCoordinator.Initialize();
+            _guessManager.Initialize(deferRewardStarIntroAnimation);
             _cardItemInfoPopupController.Initialize();
             _cardInteractionManager.Initialize();
             _resultManager.TryAddTriedCards();

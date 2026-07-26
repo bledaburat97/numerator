@@ -12,7 +12,8 @@ namespace Scripts
         private readonly IBoardAreaView _view;
         private readonly IBoardLayoutManager _boardLayoutManager;
         private readonly IBoardHolderCountManager _boardHolderCountManager;
-        private readonly IBoardCardIndexManager _boardCardIndexManager;
+        private readonly IBoardPlacementQuery _boardPlacementQuery;
+        private readonly IBoardPlacementCommands _boardPlacementCommands;
         private readonly List<IBoardCardHolderController> _boardHolderControllerList;
         private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
 
@@ -23,13 +24,15 @@ namespace Scripts
             IBoardAreaView view,
             IBoardLayoutManager boardLayoutManager,
             IBoardHolderCountManager boardHolderCountManager,
-            IBoardCardIndexManager boardCardIndexManager)
+            IBoardPlacementQuery boardPlacementQuery,
+            IBoardPlacementCommands boardPlacementCommands)
         {
             _view = view;
             _boardHolderControllerList = new List<IBoardCardHolderController>();
             _boardLayoutManager = boardLayoutManager;
             _boardHolderCountManager = boardHolderCountManager;
-            _boardCardIndexManager = boardCardIndexManager;
+            _boardPlacementQuery = boardPlacementQuery;
+            _boardPlacementCommands = boardPlacementCommands;
             _shinyBoardCardHolderControllers = new List<IBoardCardHolderController>();
         }
 
@@ -40,7 +43,7 @@ namespace Scripts
             _boardLayoutManager.Initialize(boardHolderCount);
             ClearBoardHolders();
             CreateBoardHolders(boardHolderCount);
-            _boardCardIndexManager.InitializeCardIndexesOnBoardHolders(boardHolderCount);
+            _boardPlacementCommands.InitializeCardIndexesOnBoardHolders(boardHolderCount);
         }
         
         private void CreateBoardHolders(int boardHolderCount)
@@ -108,7 +111,7 @@ namespace Scripts
         
         private void BoardHolderClickCallBack(int boardHolderIndex)
         {
-            if (_boardCardIndexManager.CheckBoardHolderHasAnyCard(boardHolderIndex, out int boardHolderCardIndex)) return;
+            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(boardHolderIndex, out int boardHolderCardIndex)) return;
             BoardHolderClickedEvent?.Invoke(this, boardHolderIndex);
         }
 
@@ -156,7 +159,7 @@ namespace Scripts
         private List<IBoardCardHolderController> GetEmptyBoardHolders()
         {
             List<IBoardCardHolderController> boardCardHolderControllers = new List<IBoardCardHolderController>();
-            foreach(int i in _boardCardIndexManager.GetEmptyBoardHolderIndexList())
+            foreach(int i in _boardPlacementQuery.GetEmptyBoardHolderIndexes())
             {
                 boardCardHolderControllers.Add(_boardHolderControllerList[i]);
             }
@@ -168,7 +171,7 @@ namespace Scripts
         {
             for (int i = 0; i < _boardHolderCountManager.GetBoardHolderCount(); i++)
             {
-                if(_boardCardIndexManager.CheckBoardHolderHasAnyCard(i, out int boardHolderCardIndex)) continue;
+                if(_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(i, out int boardHolderCardIndex)) continue;
                 IBoardHolderView view = GetBoardHolderView(i);
                 Vector2 position = view.GetPosition();
                 Vector2 size = _boardLayoutManager.GetSizeOfBoardHolder() * _view.GetCanvas().scaleFactor;
@@ -193,6 +196,8 @@ namespace Scripts
 
         public void RemoveLastBoardHolder()
         {
+            if (_boardHolderControllerList.Count == 0) return;
+
             DeleteOneBoardHolder();
         }
 
@@ -211,7 +216,7 @@ namespace Scripts
             }
 
             MoveBoardHoldersToScene(1f);
-            _boardCardIndexManager.DeleteFirstBoardHolder();
+            _boardPlacementCommands.DeleteFirstBoardHolder();
         }
 
         private void MoveBoardHoldersToScene(float duration)
