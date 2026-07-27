@@ -13,7 +13,7 @@ namespace Game
         private int _maxGuessCount;
         private int _remainingGuessCount;
         private List<List<int>> _triedCardsList;
-        private List<LifeBarStarInfo> _lifeBarStarInfoList;
+        private List<LifeBarRewardInfo> _lifeBarRewardInfoList;
 
         [Inject]
         public RoundStateManager(ILevelDataCreator levelDataCreator, ILevelSaveDataManager levelSaveDataManager)
@@ -21,7 +21,7 @@ namespace Game
             _levelDataCreator = levelDataCreator;
             _levelSaveDataManager = levelSaveDataManager;
             _triedCardsList = new List<List<int>>();
-            _lifeBarStarInfoList = new List<LifeBarStarInfo>();
+            _lifeBarRewardInfoList = new List<LifeBarRewardInfo>();
         }
 
         public void Initialize()
@@ -35,12 +35,12 @@ namespace Game
                 .Select(triedCards => new List<int>(triedCards))
                 .ToList();
 
-            int rewardStarCount = levelData.NumOfBoardHolders - 2;
-            _lifeBarStarInfoList = CreateLifeBarStarInfoList(
+            int crystalTokenCount = levelData.NumOfBoardHolders - 2;
+            _lifeBarRewardInfoList = CreateLifeBarRewardInfoList(
                 _maxGuessCount,
                 _remainingGuessCount,
                 _triedCardsList.Count,
-                rewardStarCount);
+                crystalTokenCount);
         }
 
         public int GetMaxGuessCount()
@@ -73,52 +73,55 @@ namespace Game
             _triedCardsList.Add(new List<int>(triedCards));
         }
 
-        public IReadOnlyList<LifeBarStarInfo> GetLifeBarStarInfoList()
+        public IReadOnlyList<LifeBarRewardInfo> GetLifeBarRewardInfoList()
         {
-            return _lifeBarStarInfoList;
+            return _lifeBarRewardInfoList;
         }
 
-        public void SetLifeBarStarStatus(int lifeBarStarInfoIndex, bool isActive)
+        public void SetLifeBarRewardStatus(int lifeBarRewardInfoIndex, bool isActive)
         {
-            _lifeBarStarInfoList[lifeBarStarInfoIndex].SetIsActive(isActive);
+            _lifeBarRewardInfoList[lifeBarRewardInfoIndex].SetIsActive(isActive);
         }
 
-        public void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount)
+        public void GetActiveRewardCounts(out int activeCoinCount, out int activeCrystalCount)
         {
-            activeTotalStarCount = 0;
-            activeRewardStarCount = 0;
-            foreach (LifeBarStarInfo lifeBarStarInfo in _lifeBarStarInfoList)
+            activeCoinCount = 0;
+            activeCrystalCount = 0;
+            foreach (LifeBarRewardInfo lifeBarRewardInfo in _lifeBarRewardInfoList)
             {
-                if (!lifeBarStarInfo.IsActive) continue;
+                if (!lifeBarRewardInfo.IsActive) continue;
 
-                activeTotalStarCount++;
-                if (!lifeBarStarInfo.IsOriginal)
+                if (lifeBarRewardInfo.IsCrystal)
                 {
-                    activeRewardStarCount++;
+                    activeCrystalCount++;
+                    continue;
                 }
+
+                activeCoinCount++;
             }
         }
 
-        private static List<LifeBarStarInfo> CreateLifeBarStarInfoList(
+        private static List<LifeBarRewardInfo> CreateLifeBarRewardInfoList(
             int maxGuessCount,
             int remainingGuessCount,
             int triedCardsCount,
-            int rewardStarCount)
+            int crystalTokenCount)
         {
-            List<LifeBarStarInfo> lifeBarStarInfoList = new List<LifeBarStarInfo>();
-            List<int> lifeBarStarIndexes = new List<int> { 0, (maxGuessCount - 2) / 4, (maxGuessCount - 2) / 2 };
-            for (int i = 0; i < lifeBarStarIndexes.Count; i++)
+            List<LifeBarRewardInfo> lifeBarRewardInfoList = new List<LifeBarRewardInfo>();
+            List<int> lifeBarRewardIndexes = new List<int> { 0, (maxGuessCount - 2) / 4, (maxGuessCount - 2) / 2 };
+            for (int i = 0; i < lifeBarRewardIndexes.Count; i++)
             {
-                int boundaryIndex = lifeBarStarIndexes[i];
+                int boundaryIndex = lifeBarRewardIndexes[i];
                 bool hasLifePastBoundary = remainingGuessCount > boundaryIndex;
                 bool hasNeverCrossedBoundary = maxGuessCount - triedCardsCount > boundaryIndex;
-                lifeBarStarInfoList.Add(new LifeBarStarInfo(
+                bool isCoin = crystalTokenCount < 3 - i;
+                lifeBarRewardInfoList.Add(new LifeBarRewardInfo(
                     boundaryIndex,
-                    rewardStarCount < 3 - i,
+                    isCoin ? LifeBarRewardType.Coin : LifeBarRewardType.Crystal,
                     hasLifePastBoundary && hasNeverCrossedBoundary));
             }
 
-            return lifeBarStarInfoList;
+            return lifeBarRewardInfoList;
         }
     }
 
@@ -131,8 +134,8 @@ namespace Game
         void IncreaseRemainingGuessCount(int amount);
         IReadOnlyList<List<int>> GetTriedCardsList();
         void AddTriedCards(List<int> triedCards);
-        IReadOnlyList<LifeBarStarInfo> GetLifeBarStarInfoList();
-        void SetLifeBarStarStatus(int lifeBarStarInfoIndex, bool isActive);
-        void GetActiveStarCounts(out int activeTotalStarCount, out int activeRewardStarCount);
+        IReadOnlyList<LifeBarRewardInfo> GetLifeBarRewardInfoList();
+        void SetLifeBarRewardStatus(int lifeBarRewardInfoIndex, bool isActive);
+        void GetActiveRewardCounts(out int activeCoinCount, out int activeCrystalCount);
     }
 }

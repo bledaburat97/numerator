@@ -11,11 +11,15 @@ namespace Scripts
 
         public void SetText(string count)
         {
+            if (text == null) return;
+
             text.SetText(count);
         }
         
         public void SetPosition()
         {
+            if (text == null || holder == null) return;
+
             float horizontalTextSize = text.preferredWidth;
             holder.sizeDelta = new Vector2(difference + horizontalTextSize, holder.sizeDelta.y);
         }

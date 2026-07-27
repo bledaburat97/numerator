@@ -98,7 +98,7 @@ namespace Game
             return _lifeBarController.ChangeFade(duration, 0f).OnComplete(() =>
             {
                 _lifeBarController.ClearBoundaries();
-                _lifeBarController.ClearLifeBarStarInfoList();
+                _lifeBarController.ClearLifeBarRewardInfoList();
             });
         }
 

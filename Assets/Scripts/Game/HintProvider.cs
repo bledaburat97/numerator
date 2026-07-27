@@ -20,7 +20,7 @@ namespace Game
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
             IBoardPlacementQuery boardPlacementQuery, ICardPlacementCoordinator cardPlacementCoordinator)
         {
-            guessManager.HintRewardStarEvent += OnHintRewardStarEvent;
+            guessManager.HintRewardTokenEvent += OnHintRewardTokenEvent;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
@@ -28,19 +28,19 @@ namespace Game
             _cardPlacementCoordinator = cardPlacementCoordinator;
         }
 
-        private void OnHintRewardStarEvent(object sender, HintRewardStarEventArgs args)
+        private void OnHintRewardTokenEvent(object sender, HintRewardTokenEventArgs args)
         {
             bool hintApplied = args.CanRevealCard
-                ? TryApplyRevealHint(args.StarImageView) || TryApplyDestroyHint(args.StarImageView)
-                : TryApplyDestroyHint(args.StarImageView) || TryApplyRevealHint(args.StarImageView);
+                ? TryApplyRevealHint(args.RewardTokenView) || TryApplyDestroyHint(args.RewardTokenView)
+                : TryApplyDestroyHint(args.RewardTokenView) || TryApplyRevealHint(args.RewardTokenView);
 
             if (!hintApplied)
             {
-                ConsumeRewardItem(args.StarImageView);
+                ConsumeRewardItem(args.RewardTokenView);
             }
         }
 
-        private bool TryApplyRevealHint(IStarImageView starImageView)
+        private bool TryApplyRevealHint(IRewardTokenView rewardTokenView)
         {
             if (!TryGetExistedCardIndex(out int cardIndex, out int boardHolderIndex))
             {
@@ -51,11 +51,11 @@ namespace Game
             Action revealAndLockCardAction = () =>
                 _cardPlacementCoordinator.TryRevealAndLockCard(boardHolderIndex, cardIndex);
 
-            new StarAnimationManager().RevealCard(starImageView, cardRectTransform, revealAndLockCardAction);
+            new RewardTokenAnimationManager().RevealCard(rewardTokenView, cardRectTransform, revealAndLockCardAction);
             return true;
         }
 
-        private bool TryApplyDestroyHint(IStarImageView starImageView)
+        private bool TryApplyDestroyHint(IRewardTokenView rewardTokenView)
         {
             if (!TryGetNonExistedCardIndex(out int cardIndex))
             {
@@ -66,13 +66,13 @@ namespace Game
             _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
             RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
             Action destroyCardAction = () => { _initialCardAreaController.DestroyCard(cardIndex); };
-            new StarAnimationManager().DestroyCard(starImageView, cardRectTransform, destroyCardAction);
+            new RewardTokenAnimationManager().DestroyCard(rewardTokenView, cardRectTransform, destroyCardAction);
             return true;
         }
 
-        private static void ConsumeRewardItem(IStarImageView starImageView)
+        private static void ConsumeRewardItem(IRewardTokenView rewardTokenView)
         {
-            starImageView.AnimateFadeOut(0.25f);
+            rewardTokenView.AnimateFadeOut(0.25f);
         }
 
         private bool TryGetNonExistedCardIndex(out int cardIndex)

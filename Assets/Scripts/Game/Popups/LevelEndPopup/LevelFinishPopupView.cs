@@ -17,6 +17,7 @@ namespace Scripts
         [SerializeField] private RectTransform rewardItemHolder;
         [SerializeField] private ParticleSystem rewardParticle;
         [SerializeField] private CanvasGroup starCanvasGroup;
+        [SerializeField] private VerticalCrystalProgressView verticalCrystalProgressView;
 
         public void SetStatus(bool status)
         {
@@ -80,6 +81,11 @@ namespace Scripts
         {
             return text;
         }
+
+        public IVerticalCrystalProgressView GetVerticalCrystalProgressView()
+        {
+            return verticalCrystalProgressView;
+        }
     }
 
     public interface ILevelFinishPopupView
@@ -94,6 +100,7 @@ namespace Scripts
         RectTransform GetRewardItemHolder();
         CanvasGroup GetStarCanvasGroup();
         TMP_Text GetText();
+        IVerticalCrystalProgressView GetVerticalCrystalProgressView();
         void SetStatus(bool status);
     }
     

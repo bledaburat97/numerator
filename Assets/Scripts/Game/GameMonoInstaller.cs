@@ -16,7 +16,6 @@ namespace Scripts
         [SerializeField] private GameClockView gameClockView;
         [SerializeField] private GameUIView gameUI;
         [SerializeField] private PowerUpListHolderView powerUpAreaView;
-        [SerializeField] private CircleProgressBarView rewardProgressBarView;
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
         public override void InstallBindings()
         {
@@ -52,8 +51,8 @@ namespace Scripts
                 .WithArguments(gameUI);
             Container.Bind<IGamePowerUpAreaController>().To<GamePowerUpAreaController>().AsSingle()
                 .WithArguments(ResolvePowerUpAreaView());
-            Container.Bind<IRewardProgressDisplayController>().To<RewardProgressDisplayController>().AsSingle()
-                .WithArguments(ResolveRewardProgressBarView());
+            Container.Bind<IVerticalCrystalProgressController>().To<VerticalCrystalProgressController>().AsSingle()
+                .WithArguments(ResolveVerticalCrystalProgressView());
             Container.Bind<IUnmaskServiceAreaView>().To<UnmaskServiceAreaView>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IMultiplayerGameController>().To<MultiplayerGameController>().FromComponentInHierarchy()
                 .AsSingle();
@@ -67,6 +66,10 @@ namespace Scripts
             Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
             Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();
             Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);
+            Container.Bind<ILevelSuccessBoardAnimationController>().To<LevelSuccessBoardAnimationController>().AsSingle();
+            Container.Bind<ILevelSuccessCleanupAnimationController>().To<LevelSuccessCleanupAnimationController>().AsSingle();
+            Container.Bind<ILevelSuccessRewardCollectionAnimationController>()
+                .To<LevelSuccessRewardCollectionAnimationController>().AsSingle();
             Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();
             Container.Bind<ILevelStartAnimationManager>().To<LevelStartAnimationManager>().AsSingle();
             Container.Bind<ILevelFailAnimationManager>().To<LevelFailAnimationManager>().AsSingle();
@@ -83,20 +86,14 @@ namespace Scripts
             return FindObjectOfType<PowerUpListHolderView>(true);
         }
 
-        private CircleProgressBarView ResolveRewardProgressBarView()
+        private IVerticalCrystalProgressView ResolveVerticalCrystalProgressView()
         {
-            if (rewardProgressBarView != null) return rewardProgressBarView;
-
-            CircleProgressBarView[] circleProgressBarViews = FindObjectsOfType<CircleProgressBarView>(true);
-            foreach (CircleProgressBarView circleProgressBar in circleProgressBarViews)
+            if (levelFinishPopup != null && levelFinishPopup.GetVerticalCrystalProgressView() != null)
             {
-                if (circleProgressBar.GetComponentInParent<LevelFinishPopupView>() == null)
-                {
-                    return circleProgressBar;
-                }
+                return levelFinishPopup.GetVerticalCrystalProgressView();
             }
 
-            return null;
+            return FindObjectOfType<VerticalCrystalProgressView>(true);
         }
     }
 }

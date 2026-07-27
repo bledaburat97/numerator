@@ -14,7 +14,7 @@ namespace Game
         private readonly IRoundStateManager _roundStateManager;
         
         public event EventHandler LevelFailEvent;
-        public event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
+        public event EventHandler<HintRewardTokenEventArgs> HintRewardTokenEvent;
 
         [Inject]
         public GuessManager(IResultManager resultManager, ILifeBarController lifeBarController,
@@ -29,47 +29,47 @@ namespace Game
             powerUpMessageController.AddLifeEvent += AddExtraLives;
         }
         
-        public void Initialize(bool deferRewardStarIntroAnimation = false)
+        public void Initialize(bool deferRewardIntroAnimation = false)
         {
             _lifeBarController.SetLifeBar(
                 _roundStateManager.GetMaxGuessCount(),
-                _roundStateManager.GetLifeBarStarInfoList(),
+                _roundStateManager.GetLifeBarRewardInfoList(),
                 _roundStateManager.GetRemainingGuessCount(),
-                deferRewardStarIntroAnimation);
+                deferRewardIntroAnimation);
         }
         
         private void OnWrongGuess(object sender, EventArgs args)
         {
             _roundStateManager.DecreaseRemainingGuessCount();
             int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
-            IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList = _roundStateManager.GetLifeBarStarInfoList();
-            for (int i = 0; i < lifeBarStarInfoList.Count; i++)
+            IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList = _roundStateManager.GetLifeBarRewardInfoList();
+            for (int i = 0; i < lifeBarRewardInfoList.Count; i++)
             {
-                if (remainingGuessCount == lifeBarStarInfoList[i].BoundaryIndex)
+                if (remainingGuessCount == lifeBarRewardInfoList[i].BoundaryIndex)
                 {
-                    if (!lifeBarStarInfoList[i].IsActive) break;
+                    if (!lifeBarRewardInfoList[i].IsActive) break;
 
-                    bool isRewardStar = !lifeBarStarInfoList[i].IsOriginal;
+                    bool isCrystal = lifeBarRewardInfoList[i].IsCrystal;
 
-                    _roundStateManager.SetLifeBarStarStatus(i, false);
+                    _roundStateManager.SetLifeBarRewardStatus(i, false);
                     
-                    if (isRewardStar)
+                    if (isCrystal)
                     {
-                        IStarImageView starImageView = _lifeBarController.GetStarImage(lifeBarStarInfoList[i].BoundaryIndex);
-                        if (starImageView == null)
+                        IRewardTokenView rewardTokenView = _lifeBarController.GetRewardToken(lifeBarRewardInfoList[i].BoundaryIndex);
+                        if (rewardTokenView == null)
                         {
-                            Debug.LogError("StarImageView is null");
-                            _lifeBarController.SetStarStatus(false, i);
+                            Debug.LogError("Reward token view is null");
+                            _lifeBarController.SetRewardStatus(false, i);
                         }
                         else
                         {
                             bool canRevealCard = i % 2 == 1;
-                            HintRewardStarEvent?.Invoke(this, new HintRewardStarEventArgs(starImageView, canRevealCard));
+                            HintRewardTokenEvent?.Invoke(this, new HintRewardTokenEventArgs(rewardTokenView, canRevealCard));
                         }
                     }
                     else
                     {
-                        _lifeBarController.SetStarStatus(false, i);
+                        _lifeBarController.SetRewardStatus(false, i);
                     }
 
                     break;
@@ -91,26 +91,26 @@ namespace Game
             int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
             int maxGuessCount = _roundStateManager.GetMaxGuessCount();
             if (remainingGuessCount + numOfLives > maxGuessCount) return;
-            int lastStarLifeBarIndex = remainingGuessCount;
+            int lastRewardLifeBarIndex = remainingGuessCount;
             Sequence sequence = DOTween.Sequence();
-            IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList = _roundStateManager.GetLifeBarStarInfoList();
-            for (int i = 0; i < lifeBarStarInfoList.Count; i++)
+            IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList = _roundStateManager.GetLifeBarRewardInfoList();
+            for (int i = 0; i < lifeBarRewardInfoList.Count; i++)
             {
-                if (lifeBarStarInfoList[i].BoundaryIndex >= remainingGuessCount &&
-                    lifeBarStarInfoList[i].BoundaryIndex < remainingGuessCount + numOfLives)
+                if (lifeBarRewardInfoList[i].BoundaryIndex >= remainingGuessCount &&
+                    lifeBarRewardInfoList[i].BoundaryIndex < remainingGuessCount + numOfLives)
                 {
-                    int boundaryIndex = lifeBarStarInfoList[i].BoundaryIndex;
+                    int boundaryIndex = lifeBarRewardInfoList[i].BoundaryIndex;
                     sequence.Append(_lifeBarController.UpdateProgressBar(
                         (float)(boundaryIndex + 1) / maxGuessCount,
-                        boundaryIndex - lastStarLifeBarIndex + 1,
+                        boundaryIndex - lastRewardLifeBarIndex + 1,
                         null));
-                    lastStarLifeBarIndex = boundaryIndex;
+                    lastRewardLifeBarIndex = boundaryIndex;
                 }
             }
 
             sequence.Append(_lifeBarController.UpdateProgressBar(
                 (float)(remainingGuessCount + numOfLives) / maxGuessCount,
-                remainingGuessCount + numOfLives - lastStarLifeBarIndex,
+                remainingGuessCount + numOfLives - lastRewardLifeBarIndex,
                 () =>
                 {
                     _roundStateManager.IncreaseRemainingGuessCount(numOfLives);
@@ -121,19 +121,19 @@ namespace Game
 
     public interface IGuessManager
     {
-        void Initialize(bool deferRewardStarIntroAnimation = false);
+        void Initialize(bool deferRewardIntroAnimation = false);
         event EventHandler LevelFailEvent;
-        event EventHandler<HintRewardStarEventArgs> HintRewardStarEvent;
+        event EventHandler<HintRewardTokenEventArgs> HintRewardTokenEvent;
     }
 
-    public class HintRewardStarEventArgs : EventArgs
+    public class HintRewardTokenEventArgs : EventArgs
     {
-        public IStarImageView StarImageView { get; set; }
+        public IRewardTokenView RewardTokenView { get; set; }
         public bool CanRevealCard { get; set; }
 
-        public HintRewardStarEventArgs(IStarImageView starImageView, bool canRevealCard)
+        public HintRewardTokenEventArgs(IRewardTokenView rewardTokenView, bool canRevealCard)
         {
-            StarImageView = starImageView;
+            RewardTokenView = rewardTokenView;
             CanRevealCard = canRevealCard;
         }
     }

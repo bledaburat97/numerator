@@ -21,7 +21,7 @@ namespace Game
         private readonly IGamePopupCreator _gamePopupCreator;
         private readonly IGameUIController _gameUIController;
         private readonly IGamePowerUpAreaController _gamePowerUpAreaController;
-        private readonly IRewardProgressDisplayController _rewardProgressDisplayController;
+        private readonly IVerticalCrystalProgressController _verticalCrystalProgressController;
         private readonly ILevelStartAnimationManager _levelStartAnimationManager;
         private readonly ICardItemLocator _cardItemLocator;
         private readonly IGuessManager _guessManager;
@@ -54,7 +54,7 @@ namespace Game
             IGamePopupCreator gamePopupCreator,
             IGameUIController gameUIController,
             IGamePowerUpAreaController gamePowerUpAreaController,
-            IRewardProgressDisplayController rewardProgressDisplayController,
+            IVerticalCrystalProgressController verticalCrystalProgressController,
             ILevelStartAnimationManager levelStartAnimationManager,
             ICardItemLocator cardItemLocator,
             IGuessManager guessManager,
@@ -82,7 +82,7 @@ namespace Game
             _gamePopupCreator = gamePopupCreator;
             _gameUIController = gameUIController;
             _gamePowerUpAreaController = gamePowerUpAreaController;
-            _rewardProgressDisplayController = rewardProgressDisplayController;
+            _verticalCrystalProgressController = verticalCrystalProgressController;
             _levelStartAnimationManager = levelStartAnimationManager;
             _cardItemLocator = cardItemLocator;
             _guessManager = guessManager;
@@ -108,7 +108,7 @@ namespace Game
             _levelEndPopupController.SetPopupStatus(false);
             _levelEndPopupController.SetAllStatusFalse();
             _gamePowerUpAreaController.Refresh();
-            _rewardProgressDisplayController.Refresh();
+            _verticalCrystalProgressController.Initialize();
             _isGameOver = false;
             _state = LevelFlowState.Building;
 
@@ -204,7 +204,7 @@ namespace Game
 
         private void BeginMultiplayer()
         {
-            _lifeBarController.DisableStarProgressBar();
+            _lifeBarController.DisableProgressBar();
             _gameUIController.InitializeForMultiplayer();
             _state = LevelFlowState.Playing;
         }
@@ -225,12 +225,12 @@ namespace Game
             return false;
         }
 
-        private void InitializeGameplaySystems(bool deferRewardStarIntroAnimation)
+        private void InitializeGameplaySystems(bool deferRewardIntroAnimation)
         {
             _cardItemLocator.Initialize();
             _cardItemInfoManager.Initialize();
             _cardPlacementCoordinator.Initialize();
-            _guessManager.Initialize(deferRewardStarIntroAnimation);
+            _guessManager.Initialize(deferRewardIntroAnimation);
             _cardItemInfoPopupController.Initialize();
             _cardInteractionManager.Initialize();
             _resultManager.TryAddTriedCards();
@@ -261,10 +261,11 @@ namespace Game
 
         private void StartSuccessFlow()
         {
-            int rewardStarCount = _levelTracker.GetGiftStarCount();
-            RewardType rewardType = _levelTracker.GetCurrentRewardType();
-            _roundStateManager.GetActiveStarCounts(out int totalStarCount, out int newRewardStarCount);
-            _levelTracker.IncrementLevelId(totalStarCount, newRewardStarCount);
+            int previousCoinCount = _levelTracker.GetCoinCount();
+            int previousCrystalProgressCount = _levelTracker.GetCrystalProgressCount();
+            RewardType rewardTypeBeforeCollection = _levelTracker.GetCurrentRewardType();
+            _roundStateManager.GetActiveRewardCounts(out int earnedCoinCount, out int earnedCrystalCount);
+            _levelTracker.IncrementLevelIdWithRewards(earnedCoinCount, earnedCrystalCount);
 
             _levelEndPopupController.SetAllStatusFalse();
             _levelEndPopupController.SetPopupStatus(false);
@@ -274,13 +275,12 @@ namespace Game
                 GoToNextLevel);
             _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menu", OnMenuButtonClicked);
             _levelEndPopupController.InitText("Well Done");
-            _levelEndPopupController.CreateRewardCircle(rewardStarCount, rewardType);
-            _levelEndPopupController.InitStarsAndParticles(totalStarCount, newRewardStarCount);
-            _levelEndPopupController.InitRewardItem(rewardType);
             _levelSuccessAnimationManager.SuccessLevelAnimation(
-                totalStarCount,
-                newRewardStarCount,
-                rewardStarCount);
+                earnedCoinCount,
+                earnedCrystalCount,
+                previousCoinCount,
+                previousCrystalProgressCount,
+                rewardTypeBeforeCollection);
         }
 
         private void StartFailFlow()

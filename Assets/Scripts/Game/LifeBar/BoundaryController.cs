@@ -6,26 +6,30 @@ namespace Scripts
     {
         private IBoundaryView _view;
         private BoundaryModel _model;
-        private IStarImageView _starImageView;
+        private IRewardTokenView _rewardTokenView;
         
         public void Initialize(IBoundaryView view, BoundaryModel model)
         {
             _view = view;
             _model = model;
-            _view.Init(_model.localPosition, new StarImageViewFactory());
+            _view.Init(_model.localPosition, new CoinViewFactory(), new CrystalViewFactory());
         }
 
-        public void AddStarImage(Vector2 starLocalPosition)
+        public void AddRewardToken(Vector2 tokenLocalPosition, LifeBarRewardType rewardType)
         {
-            _starImageView = _view.CreateStarImage();
-            _starImageView.SetLocalPosition(starLocalPosition);
-            _starImageView.SetLocalScale(Vector3.one);
-            _starImageView.SetColor(true);
+            _rewardTokenView = _view.CreateRewardToken(rewardType);
+            if (_rewardTokenView == null) return;
+
+            _rewardTokenView.SetLocalPosition(tokenLocalPosition);
+            _rewardTokenView.SetLocalScale(Vector3.one);
+            _rewardTokenView.SetStatus(true);
         }
 
-        public void SetStarStatus(bool status)
+        public void SetRewardTokenStatus(bool status)
         {
-            _starImageView.SetStarStatus(status);
+            if (_rewardTokenView == null) return;
+
+            _rewardTokenView.SetStatus(status);
         }
 
         public void DestroyObject()
@@ -33,19 +37,19 @@ namespace Scripts
             _view.DestroyObject();
         }
 
-        public IStarImageView GetStarImage()
+        public IRewardTokenView GetRewardToken()
         {
-            return _starImageView;
+            return _rewardTokenView;
         }
     }
 
     public interface IBoundaryController
     {
         void Initialize(IBoundaryView view, BoundaryModel model);
-        void AddStarImage(Vector2 starLocalPosition);
-        void SetStarStatus(bool status);
+        void AddRewardToken(Vector2 tokenLocalPosition, LifeBarRewardType rewardType);
+        void SetRewardTokenStatus(bool status);
         void DestroyObject();
-        IStarImageView GetStarImage();
+        IRewardTokenView GetRewardToken();
     }
 
     public class BoundaryModel

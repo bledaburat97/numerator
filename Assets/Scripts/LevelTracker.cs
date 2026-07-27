@@ -92,16 +92,21 @@ namespace Scripts
         
         public void IncrementLevelId(int starCount, int giftStarCount)
         {
+            IncrementLevelIdWithRewards(starCount, giftStarCount);
+        }
+
+        public void IncrementLevelIdWithRewards(int coinCount, int crystalCount)
+        {
             _levelId++;
-            _starCount += starCount;
-            int totalGiftStarCount = _giftStarCount + giftStarCount;
-            while (totalGiftStarCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
+            _starCount += coinCount;
+            int totalCrystalCount = _giftStarCount + crystalCount;
+            while (totalCrystalCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
                 IncreasePowerUpCount(_currentRewardType);
-                totalGiftStarCount -= ConstantValues.NUM_OF_STARS_FOR_WILD;
+                totalCrystalCount -= ConstantValues.NUM_OF_STARS_FOR_WILD;
                 _currentRewardType = GetNextRewardType(_currentRewardType);
             }
-            _giftStarCount = totalGiftStarCount;
+            _giftStarCount = totalCrystalCount;
             SavePlayerPrefs();
         }
         
@@ -150,10 +155,20 @@ namespace Scripts
         {
             return _giftStarCount;
         }
+
+        public int GetCrystalProgressCount()
+        {
+            return GetGiftStarCount();
+        }
         
         public int GetStarCount()
         {
             return _starCount;
+        }
+
+        public int GetCoinCount()
+        {
+            return GetStarCount();
         }
         
         public int GetRevealingPowerUpCount()
@@ -254,6 +269,7 @@ namespace Scripts
         bool IsFirstLevelTutorial();
         bool IsCardInfoTutorial();
         void IncrementLevelId(int starCount, int giftStarCount);
+        void IncrementLevelIdWithRewards(int coinCount, int crystalCount);
         void IncreaseRevealingPowerUpCount();
         void IncreaseLifePowerUpCount();
         void IncreaseBombPowerUpCount();
@@ -262,7 +278,9 @@ namespace Scripts
         void DecreaseBombPowerUpCount();
         int GetLevelId();
         int GetGiftStarCount();
+        int GetCrystalProgressCount();
         int GetStarCount();
+        int GetCoinCount();
         int GetRevealingPowerUpCount();
         int GetLifePowerUpCount();
         int GetBombPowerUpCount();

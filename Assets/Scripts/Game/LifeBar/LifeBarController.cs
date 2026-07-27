@@ -10,10 +10,9 @@ namespace Scripts
     {
         private readonly ILifeBarView _view;
         private readonly List<IBoundaryController> _boundaryControllerList;
-        private readonly List<IStarImageView> _pendingRewardIntroStarImageViews;
-        private readonly Vector2 _localPositionOfStar = new Vector2(0f, 9.15f);
-        private const float RewardActivationSizeMultiplier = 1.86f;
-        private List<LifeBarStarInfo> _lifeBarStarInfoList;
+        private readonly List<IRewardTokenView> _pendingRewardIntroTokenViews;
+        private readonly Vector2 _localPositionOfRewardToken = new Vector2(0f, 9.15f);
+        private List<LifeBarRewardInfo> _lifeBarRewardInfoList;
         private bool _shouldDeferRewardIntroAnimation;
         
         [Inject]
@@ -21,8 +20,8 @@ namespace Scripts
         {
             _view = view;
             _boundaryControllerList = new List<IBoundaryController>();
-            _lifeBarStarInfoList = new List<LifeBarStarInfo>();
-            _pendingRewardIntroStarImageViews = new List<IStarImageView>();
+            _lifeBarRewardInfoList = new List<LifeBarRewardInfo>();
+            _pendingRewardIntroTokenViews = new List<IRewardTokenView>();
         }
         
         public void SetFade(bool isNewGame)
@@ -35,41 +34,45 @@ namespace Scripts
             return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
         }
 
-        public void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList, int remainingGuessCount,
+        public void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList, int remainingGuessCount,
             bool deferRewardIntroAnimation = false)
         {
             CreateBoundaries(maxGuessCount);
-            _lifeBarStarInfoList = CreateLifeBarStarInfoListSnapshot(lifeBarStarInfoList);
-            _pendingRewardIntroStarImageViews.Clear();
+            _lifeBarRewardInfoList = CreateLifeBarRewardInfoListSnapshot(lifeBarRewardInfoList);
+            _pendingRewardIntroTokenViews.Clear();
             _shouldDeferRewardIntroAnimation = deferRewardIntroAnimation;
-            CreateStars(_lifeBarStarInfoList);
+            CreateRewardTokens(_lifeBarRewardInfoList);
             InitProgressBar((float) remainingGuessCount / maxGuessCount);
         }
 
-        public Sequence PlayRewardStarIntroAnimation()
+        public Sequence PlayRewardIntroAnimation()
         {
             Sequence sequence = DOTween.Sequence();
 
-            if (!_shouldDeferRewardIntroAnimation || _pendingRewardIntroStarImageViews.Count == 0)
+            if (!_shouldDeferRewardIntroAnimation || _pendingRewardIntroTokenViews.Count == 0)
             {
                 return sequence;
             }
 
-            foreach (IStarImageView starImageView in _pendingRewardIntroStarImageViews)
+            foreach (IRewardTokenView rewardTokenView in _pendingRewardIntroTokenViews)
             {
-                if (starImageView == null) continue;
+                if (rewardTokenView == null) continue;
 
-                sequence.Join(starImageView.AnimateRewardActivation(GetRewardActivationSize(starImageView)));
+                sequence.Join(rewardTokenView.AnimatePunchScale(
+                    Vector3.one * 0.12f,
+                    0.18f,
+                    5,
+                    0.65f));
             }
 
-            _pendingRewardIntroStarImageViews.Clear();
+            _pendingRewardIntroTokenViews.Clear();
             _shouldDeferRewardIntroAnimation = false;
             return sequence;
         }
 
-        public void DisableStarProgressBar()
+        public void DisableProgressBar()
         {
-            _view.DisableStarProgressBar();
+            _view.DisableProgressBar();
         }
 
         public void ClearBoundaries()
@@ -79,14 +82,14 @@ namespace Scripts
                 boundary.DestroyObject();
             }
             _boundaryControllerList.Clear();
-            _pendingRewardIntroStarImageViews.Clear();
+            _pendingRewardIntroTokenViews.Clear();
         }
 
-        public void ClearLifeBarStarInfoList()
+        public void ClearLifeBarRewardInfoList()
         {
-            _lifeBarStarInfoList.Clear();
+            _lifeBarRewardInfoList.Clear();
         }
-        
+
         private void CreateBoundaries(int maxGuessCount)
         {
             List<Vector2> boundaryLocalPositionList = new List<Vector2>();
@@ -107,35 +110,27 @@ namespace Scripts
             }
         }
         
-        private void CreateStars(List<LifeBarStarInfo> lifeBarStarInfoList)
+        private void CreateRewardTokens(List<LifeBarRewardInfo> lifeBarRewardInfoList)
         {
-            for (int i = 0; i < lifeBarStarInfoList.Count; i++)
+            for (int i = 0; i < lifeBarRewardInfoList.Count; i++)
             {
-                int bIndex = lifeBarStarInfoList[i].BoundaryIndex;
-                bool isOriginal = lifeBarStarInfoList[i].IsOriginal;
+                LifeBarRewardInfo rewardInfo = lifeBarRewardInfoList[i];
+                int bIndex = rewardInfo.BoundaryIndex;
 
-                _boundaryControllerList[bIndex].AddStarImage(_localPositionOfStar);
-                IStarImageView starImageView = _boundaryControllerList[bIndex].GetStarImage();
-                if (!lifeBarStarInfoList[i].IsActive)
+                _boundaryControllerList[bIndex].AddRewardToken(_localPositionOfRewardToken, rewardInfo.RewardType);
+                IRewardTokenView rewardTokenView = _boundaryControllerList[bIndex].GetRewardToken();
+                if (rewardTokenView == null) continue;
+
+                if (!rewardInfo.IsActive)
                 {
-                    starImageView.SetStarStatus(false);
+                    rewardTokenView.SetStatus(false);
                     continue;
                 }
 
-                if (isOriginal)
+                if (_shouldDeferRewardIntroAnimation && rewardInfo.IsCrystal)
                 {
-                    starImageView.SetColor(true);
-                    continue;
+                    _pendingRewardIntroTokenViews.Add(rewardTokenView);
                 }
-
-                if (_shouldDeferRewardIntroAnimation)
-                {
-                    starImageView.SetColor(true);
-                    _pendingRewardIntroStarImageViews.Add(starImageView);
-                    continue;
-                }
-
-                starImageView.SetColor(false);
             }
         }
 
@@ -150,88 +145,107 @@ namespace Scripts
             return _view.SetProgress(targetPercentage, animationDuration, onComplete);
         }
 
-        public void SetStarStatus(bool status, int lifeBarStarInfoIndex, bool keepRewardItemVisibleWhenDisabled = false)
+        public void SetRewardStatus(bool status, int lifeBarRewardInfoIndex, bool keepRewardItemVisibleWhenDisabled = false)
         {
-            int boundaryIndex = _lifeBarStarInfoList[lifeBarStarInfoIndex].BoundaryIndex;
-            bool isRewardStar = !_lifeBarStarInfoList[lifeBarStarInfoIndex].IsOriginal;
+            int boundaryIndex = _lifeBarRewardInfoList[lifeBarRewardInfoIndex].BoundaryIndex;
+            bool isCrystal = _lifeBarRewardInfoList[lifeBarRewardInfoIndex].IsCrystal;
 
             if (status)
             {
-                IStarImageView starImageView = _boundaryControllerList[boundaryIndex].GetStarImage();
-                starImageView.SetStarStatus(true);
+                IRewardTokenView rewardTokenView = _boundaryControllerList[boundaryIndex].GetRewardToken();
+                if (rewardTokenView == null) return;
 
-                if (isRewardStar)
+                rewardTokenView.SetStatus(true);
+
+                if (isCrystal)
                 {
-                    starImageView.AnimateRewardActivation(GetRewardActivationSize(starImageView));
-                }
-                else
-                {
-                    starImageView.SetColor(true);
+                    rewardTokenView.AnimatePunchScale(Vector3.one * 0.12f, 0.18f, 5, 0.65f);
                 }
             }
             else
             {
-                if (isRewardStar && keepRewardItemVisibleWhenDisabled)
+                if (isCrystal && keepRewardItemVisibleWhenDisabled)
                 {
                     return;
                 }
 
-                _boundaryControllerList[boundaryIndex].SetStarStatus(false);
+                _boundaryControllerList[boundaryIndex].SetRewardTokenStatus(false);
             }
         }
 
-        
-        public IStarImageView GetStarImage(int boundaryIndex)
+        public IRewardTokenView GetRewardToken(int boundaryIndex)
         {
-            return _boundaryControllerList[boundaryIndex].GetStarImage();
+            return _boundaryControllerList[boundaryIndex].GetRewardToken();
         }
 
-        private static List<LifeBarStarInfo> CreateLifeBarStarInfoListSnapshot(IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList)
+        public IReadOnlyList<IRewardTokenView> GetActiveRewardTokens(LifeBarRewardType rewardType)
         {
-            List<LifeBarStarInfo> copiedLifeBarStarInfoList = new List<LifeBarStarInfo>();
-            foreach (LifeBarStarInfo lifeBarStarInfo in lifeBarStarInfoList)
+            List<IRewardTokenView> rewardTokenViews = new List<IRewardTokenView>();
+            foreach (LifeBarRewardInfo rewardInfo in _lifeBarRewardInfoList)
             {
-                copiedLifeBarStarInfoList.Add(new LifeBarStarInfo(
-                    lifeBarStarInfo.BoundaryIndex,
-                    lifeBarStarInfo.IsOriginal,
-                    lifeBarStarInfo.IsActive));
+                if (!rewardInfo.IsActive || rewardInfo.RewardType != rewardType) continue;
+
+                IRewardTokenView rewardTokenView = _boundaryControllerList[rewardInfo.BoundaryIndex].GetRewardToken();
+                if (rewardTokenView != null)
+                {
+                    rewardTokenViews.Add(rewardTokenView);
+                }
             }
 
-            return copiedLifeBarStarInfoList;
+            return rewardTokenViews;
         }
 
-        private static Vector2 GetRewardActivationSize(IStarImageView starImageView)
+        private static List<LifeBarRewardInfo> CreateLifeBarRewardInfoListSnapshot(IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList)
         {
-            float size = starImageView.GetRectTransform().rect.width * RewardActivationSizeMultiplier;
-            return new Vector2(size, size);
+            List<LifeBarRewardInfo> copiedLifeBarRewardInfoList = new List<LifeBarRewardInfo>();
+            foreach (LifeBarRewardInfo lifeBarRewardInfo in lifeBarRewardInfoList)
+            {
+                copiedLifeBarRewardInfoList.Add(new LifeBarRewardInfo(
+                    lifeBarRewardInfo.BoundaryIndex,
+                    lifeBarRewardInfo.RewardType,
+                    lifeBarRewardInfo.IsActive));
+            }
+
+            return copiedLifeBarRewardInfoList;
         }
     }
 
     public interface ILifeBarController
     {
-        void DisableStarProgressBar();
+        void DisableProgressBar();
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
-        void SetStarStatus(bool status, int lifeBarStarInfoIndex, bool keepRewardItemVisibleWhenDisabled = false);
-        IStarImageView GetStarImage(int boundaryIndex);
+        void SetRewardStatus(bool status, int lifeBarRewardInfoIndex, bool keepRewardItemVisibleWhenDisabled = false);
+        IRewardTokenView GetRewardToken(int boundaryIndex);
+        IReadOnlyList<IRewardTokenView> GetActiveRewardTokens(LifeBarRewardType rewardType);
         Sequence ChangeFade(float duration, float finalAlpha);
-        Sequence PlayRewardStarIntroAnimation();
+        Sequence PlayRewardIntroAnimation();
         void SetFade(bool isNewGame);
-        void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarStarInfo> lifeBarStarInfoList, int remainingGuessCount,
+        void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList, int remainingGuessCount,
             bool deferRewardIntroAnimation = false);
         void ClearBoundaries();
-        void ClearLifeBarStarInfoList();
+        void ClearLifeBarRewardInfoList();
     }
     
-    public class LifeBarStarInfo
+    public class LifeBarRewardInfo
     {
         public int BoundaryIndex { get; private set; }
-        public bool IsOriginal { get; private set; }
+        public LifeBarRewardType RewardType { get; private set; }
+        public bool IsOriginal => RewardType == LifeBarRewardType.Coin;
+        public bool IsCoin => RewardType == LifeBarRewardType.Coin;
+        public bool IsCrystal => RewardType == LifeBarRewardType.Crystal;
         public bool IsActive { get; private set; }
         
-        public LifeBarStarInfo(int boundaryIndex, bool isOriginal, bool isActive)
+        public LifeBarRewardInfo(int boundaryIndex, LifeBarRewardType rewardType, bool isActive)
         {
             BoundaryIndex = boundaryIndex;
-            IsOriginal = isOriginal;
+            RewardType = rewardType;
+            IsActive = isActive;
+        }
+
+        public LifeBarRewardInfo(int boundaryIndex, bool isOriginal, bool isActive)
+        {
+            BoundaryIndex = boundaryIndex;
+            RewardType = isOriginal ? LifeBarRewardType.Coin : LifeBarRewardType.Crystal;
             IsActive = isActive;
         }
 

@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scripts
 {
@@ -16,6 +18,8 @@ namespace Scripts
         [SerializeField] private GameObject opponentInfo;
         [SerializeField] private CanvasGroup topButtonsCanvasGroup;
         [SerializeField] private CanvasGroup middleButtonsCanvasGroup;
+        [SerializeField] private Image coinImage;
+        [SerializeField] private TextHolderAdjustment coinCountHolder;
 
         public CanvasGroup GetTopButtonsCanvasGroup() => topButtonsCanvasGroup;
         public CanvasGroup GetMiddleButtonsCanvasGroup() => middleButtonsCanvasGroup;
@@ -61,6 +65,48 @@ namespace Scripts
         {
             return userText;
         }
+
+        public void SetCoinCounterStatus(bool status)
+        {
+            if (coinImage != null)
+            {
+                coinImage.gameObject.SetActive(status);
+            }
+
+            if (coinCountHolder != null)
+            {
+                coinCountHolder.gameObject.SetActive(status);
+            }
+        }
+
+        public void SetCoinCount(int count)
+        {
+            if (coinCountHolder == null) return;
+
+            coinCountHolder.SetText(count.ToString());
+            coinCountHolder.SetPosition();
+        }
+
+        public RectTransform GetCoinImageRectTransform()
+        {
+            return coinImage != null ? coinImage.rectTransform : null;
+        }
+
+        public Sequence PunchCoinCounter(float duration)
+        {
+            Sequence sequence = DOTween.Sequence();
+            if (coinImage != null)
+            {
+                sequence.Join(coinImage.rectTransform.DOPunchScale(Vector3.one * 0.08f, duration, 5, 0.65f));
+            }
+
+            if (coinCountHolder != null)
+            {
+                sequence.Join(coinCountHolder.transform.DOPunchScale(Vector3.one * 0.06f, duration, 5, 0.65f));
+            }
+
+            return sequence;
+        }
     }
 
     public interface IGameUIView
@@ -75,5 +121,9 @@ namespace Scripts
         CanvasGroup GetTopButtonsCanvasGroup();
         CanvasGroup GetMiddleButtonsCanvasGroup();
         TMP_Text GetUserText();
+        void SetCoinCounterStatus(bool status);
+        void SetCoinCount(int count);
+        RectTransform GetCoinImageRectTransform();
+        Sequence PunchCoinCounter(float duration);
     }
 }

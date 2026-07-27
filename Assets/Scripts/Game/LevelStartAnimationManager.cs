@@ -60,7 +60,7 @@ namespace Game
         {
             return DOTween.Sequence()
                 .Append(_lifeBarController.ChangeFade(duration, 1f))
-                .Append(_lifeBarController.PlayRewardStarIntroAnimation());
+                .Append(_lifeBarController.PlayRewardIntroAnimation());
         }
 
         private Sequence FadeInMiddleGameButtons(float duration)

@@ -11,12 +11,11 @@ namespace Scripts
         [SerializeField] private SlicedFilledImage image;
         [SerializeField] private CanvasGroup canvasGroup;
         
-        private Tween _currentTween;
         private float _currentPercentage;
         
         public CanvasGroup GetCanvasGroup() => canvasGroup;
 
-        public void DisableStarProgressBar()
+        public void DisableProgressBar()
         {
             gameObject.SetActive(false);
         }
@@ -67,7 +66,7 @@ namespace Scripts
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
         Tween SetProgress(float targetPercentage, float duration, Action onComplete);
-        void DisableStarProgressBar();
+        void DisableProgressBar();
         void InitProgress(float targetPercentage);
         CanvasGroup GetCanvasGroup();
     }

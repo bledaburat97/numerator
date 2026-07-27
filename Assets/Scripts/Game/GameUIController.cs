@@ -58,6 +58,25 @@ namespace Scripts
             _view.GetUserText().alpha = 1f;
             _view.GetTopButtonsCanvasGroup().alpha = isNewGame ? 0 : 1;
             _view.GetMiddleButtonsCanvasGroup().alpha = isNewGame ? 0 : 1;
+            RefreshCoinCounter();
+        }
+
+        public void RefreshCoinCounter()
+        {
+            _view.SetCoinCounterStatus(true);
+            _view.SetCoinCount(_levelTracker.GetCoinCount());
+        }
+
+        public Sequence PlayCoinCounterHit(int coinCount, float duration)
+        {
+            return DOTween.Sequence()
+                .AppendCallback(() => _view.SetCoinCount(coinCount))
+                .Append(_view.PunchCoinCounter(duration));
+        }
+
+        public RectTransform GetCoinImageRectTransform()
+        {
+            return _view.GetCoinImageRectTransform();
         }
 
         public Sequence ChangeFadeTopAreaButtons(float duration, float finalAlpha)
@@ -244,6 +263,9 @@ namespace Scripts
         Sequence ChangeFadeMiddleAreaButtons(float duration, float finalAlpha);
         IBaseButtonController GetButton(GameUIButtonType buttonType);
         Sequence ChangeFadeUserText(float duration, float finalAlpha);
+        void RefreshCoinCounter();
+        Sequence PlayCoinCounterHit(int coinCount, float duration);
+        RectTransform GetCoinImageRectTransform();
         event EventHandler CheckFinalNumbers;
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;

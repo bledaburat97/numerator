@@ -18,7 +18,6 @@ namespace Scripts
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
         [Inject] private IGamePowerUpAreaController _gamePowerUpAreaController;
-        [Inject] private IRewardProgressDisplayController _rewardProgressDisplayController;
         [Inject] private ILevelFlowOrchestrator _levelFlowOrchestrator;
 
         void Start()
@@ -64,7 +63,6 @@ namespace Scripts
         private void InitializePowerUpUi()
         {
             _gamePowerUpAreaController.Initialize();
-            _rewardProgressDisplayController.Initialize();
         }
 
         private void OnDestroy()
