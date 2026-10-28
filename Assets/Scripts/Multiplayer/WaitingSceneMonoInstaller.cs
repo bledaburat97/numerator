@@ -20,7 +20,7 @@ namespace Scripts
                 .WithArguments(playerNameArea);
             Container.Bind<IWaitingScenePopupCreator>().To<WaitingScenePopupCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IHapticController>().To<HapticController>().AsSingle();
-            Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView, fadePanelView);
+            Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView);
         }
     }
 }
