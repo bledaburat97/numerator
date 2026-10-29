@@ -18,8 +18,8 @@ namespace Scripts
         
         private Camera _cam;
 
-        private void Awake() => ApplyLabStyle();
-
+#if UNITY_EDITOR
+        [ContextMenu("Fruit Lab/Apply Board Style")]
         public void ApplyLabStyle()
         {
             Transform surface = transform.Find("Image");
@@ -31,7 +31,11 @@ namespace Scripts
             }
             FruitLabStyle.Surface(highlightImage, new Color(0.53f, 0.9f, 0.78f, 0.3f), true);
             FruitLabStyle.Surface(successFrameImage, FruitLabStyle.Correct, true);
+            highlightImage.sprite = successFrameImage.sprite = FruitLabStyle.ResultFrame;
+            highlightImage.pixelsPerUnitMultiplier = successFrameImage.pixelsPerUnitMultiplier = 1.2f;
+            highlightImage.raycastTarget = successFrameImage.raycastTarget = false;
         }
+#endif
         
         public void SetLocalScale()
         {

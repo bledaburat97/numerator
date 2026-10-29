@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,7 +11,6 @@ namespace Scripts
         [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
         [Inject] private IHapticController _hapticController;
         [SerializeField] private LobbyMessagePopupView lobbyMessagePopup;
-        //[SerializeField] private ConnectingPopupView connectingPopup;
         [SerializeField] private LobbyCreationPopupView lobbyCreationPopup;
         private ILobbyCreationPopupController _lobbyCreationPopupController;
         public void Initialize(ILevelTracker levelTracker)
@@ -26,7 +25,6 @@ namespace Scripts
             PlayerLobby.Instance.OnJoinStarted += OnJoinStarted;
             PlayerLobby.Instance.OnQuickJoinFailed += OnQuickJoinFailed;
             PlayerLobby.Instance.OnJoinFailed += OnJoinFailed;
-            //connectingPopup.Init();
             LobbyCreationPopupControllerFactory lobbyCreationPopupControllerFactory =
                 new LobbyCreationPopupControllerFactory();
             _lobbyCreationPopupController = lobbyCreationPopupControllerFactory.Spawn();

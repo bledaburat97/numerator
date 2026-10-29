@@ -201,14 +201,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 3390900973314479688}
-  resultImagePrefab: {fileID: 2902942668649621067, guid: c5a76c1afca4448b49ad848ffe607cea, type: 3}
   nonDraggableCardItemPrefab: {fileID: 3368461494000725629, guid: 8988d5eb31f198f49837a03c49598dda, type: 3}
   cardsHolder: {fileID: 3390900972961722180}
   topResultHolder: {fileID: 748312870883004869}
-  middleResultHolder: {fileID: 4915902373039358745}
-  bottomResultHolder: {fileID: 8085929054521378112}
   cardsHolderBgImageRectTransform: {fileID: 6067192107724322042}
-  spacingBetweenCardsAndResult: 20
 --- !u!222 &2508987204749434195
 CanvasRenderer:
   m_ObjectHideFlags: 0

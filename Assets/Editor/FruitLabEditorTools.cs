@@ -36,7 +36,7 @@ public static class FruitLabEditorTools
         {
             File.Delete(refresh);
             EditorApplication.delayCall += () => {
-                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
                 DateTime runtimeSource = Directory.GetFiles("Assets/Scripts", "*.cs", SearchOption.AllDirectories)
                     .Select(File.GetLastWriteTimeUtc).Max();
                 DateTime editorSource = Directory.GetFiles("Assets/Editor", "*.cs", SearchOption.AllDirectories)
@@ -51,7 +51,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation == "fail-review" || requested.operation == "cards" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation == "fail-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -79,6 +79,17 @@ public static class FruitLabEditorTools
             switch (job.operation)
             {
                 case "inspect": reply.details = Inspect(); break;
+                case "crystal-review":
+                    FruitLabCrystalFlightEditorTools.PreparePrefab();
+                    FruitLabFailureValidation.ValidateLogic();
+                    FruitLabRewardEditorTools.ValidateRewards();
+                    reply.details = Render(5, 9, validation: (canvas, camera) => FruitLabCrystalFlightEditorTools.Review(canvas, camera, false, 5))
+                        + "\n" + Render(2, 5, validation: (canvas, camera) => FruitLabCrystalFlightEditorTools.Review(canvas, camera, false, 2))
+                        + "\n" + Render(5, 9, true, validation: (canvas, camera) => FruitLabCrystalFlightEditorTools.Review(canvas, camera, true, 5))
+                        + "\n" + Render(2, 5, true, validation: (canvas, camera) => FruitLabCrystalFlightEditorTools.Review(canvas, camera, true, 2))
+                        + "\nFlight frames: Library/FruitLabEditor/crystal-flight-{hint,collection}-00..12.png";
+                    break;
+                case "usage-audit": reply.details = FruitLabUsageAudit.Run(); break;
                 case "validate": FruitLabLayoutValidation.Validate(); reply.details = "120 scene/prefab configurations passed"; break;
                 case "preview": reply.details = Render(job.board, job.fruits); break;
                 case "bake": reply.details = Bake(); break;
@@ -102,8 +113,10 @@ public static class FruitLabEditorTools
                     break;
                 case "cards":
                     FruitLabCardEditorTools.PrepareAssets();
-                    reply.details = Bake() + "\n" + Render(5, 9) + "\n" + Render(2, 5)
-                        + "\n" + Render(5, 9, false, false, false, true) + "\n" + Render(2, 5, false, false, false, true);
+                    FruitLabFailureValidation.ValidateLogic();
+                    reply.details = Render(5, 9) + "\n" + Render(2, 5)
+                        + "\n" + Render(5, 9, false, false, false, true) + "\n" + Render(2, 5, false, false, false, true)
+                        + "\n" + Render(5, 9, true) + "\n" + Render(2, 5, true);
                     FruitLabLayoutValidation.Validate();
                     Debug.Log("FRUIT_LAB_CARDS_PASS: raised cards, monochrome holders and elimination persistence verified.");
                     break;
@@ -235,7 +248,6 @@ public static class FruitLabEditorTools
                 var slot = board.CreateBoardHolderView();
                 slot.SetLocalScale(); slot.SetSize(boardLayout.GetSizeOfBoardHolder());
                 slot.SetLocalPosition(boardLayout.GetBoardHolderSceneLocalPositionList()[index]);
-                ((BoardHolderView)slot).ApplyLabStyle();
                 boardSlots.Add(slot);
             }
             var initial = canvas.GetComponentInChildren<InitialCardAreaView>(true);
@@ -379,5 +391,112 @@ public static class FruitLabEditorTools
             EditorSceneManager.CloseScene(renderScene, true);
             EditorSceneManager.ClosePreviewScene(scene);
         }
+    }
+}
+
+// Inventory only: preview scenes are closed without saving; player data is untouched.
+public static class FruitLabUsageAudit
+{
+    [Serializable] public class Report
+    {
+        public string generatedUtc, unityVersion;
+        public string[] enabledScenes, roots, reachableAssets;
+        public Prefab[] prefabs;
+        public SceneInfo[] scenes;
+        public string[] warnings;
+    }
+    [Serializable] public class Prefab { public string path; public bool reachable; public long bytes; public string[] dependencies; }
+    [Serializable] public class SceneInfo { public string path; public Node[] objects; public Link[] references; }
+    [Serializable] public class Node
+    {
+        public int id, parent;
+        public string path, name, tag, prefabSource;
+        public bool activeSelf, activeInHierarchy, animated;
+        public int missingScripts;
+        public string[] components, scriptPaths;
+    }
+    [Serializable] public class Link { public int source, target; public string component, property; }
+
+    public static string Run()
+    {
+        var warnings = new System.Collections.Generic.List<string>();
+        string[] enabled = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+        string[] assets = AssetDatabase.GetAllAssetPaths().Where(path => path.StartsWith("Assets/") && !AssetDatabase.IsValidFolder(path)).ToArray();
+        var roots = new System.Collections.Generic.HashSet<string>(enabled);
+        foreach (string path in assets.Where(path => path.Contains("/Resources/") && !path.Contains("/Editor/"))) roots.Add(path);
+        foreach (Object asset in PlayerSettings.GetPreloadedAssets()) if (asset != null) roots.Add(AssetDatabase.GetAssetPath(asset));
+        foreach (string bundle in AssetDatabase.GetAllAssetBundleNames())
+            foreach (string path in AssetDatabase.GetAssetPathsFromAssetBundle(bundle)) roots.Add(path);
+        string[] reachable = AssetDatabase.GetDependencies(roots.ToArray(), true);
+        var used = new System.Collections.Generic.HashSet<string>(reachable);
+        string[] projectPrefabs = assets.Where(path => path.EndsWith(".prefab") &&
+            (path.StartsWith("Assets/Prefabs/") || path == "Assets/UnmaskService.prefab" || path == "Assets/Resources/ProjectContext.prefab")).OrderBy(path => path).ToArray();
+        var prefabs = projectPrefabs.Select(path => new Prefab { path = path, reachable = used.Contains(path),
+            bytes = new FileInfo(path).Length, dependencies = AssetDatabase.GetDependencies(path, false).Where(dep => dep != path).ToArray() }).ToArray();
+        var scenes = new System.Collections.Generic.List<SceneInfo>();
+        foreach (string path in assets.Where(path => path.StartsWith("Assets/Scenes/") && path.EndsWith(".unity")).OrderBy(path => path))
+        {
+            Scene scene = EditorSceneManager.OpenPreviewScene(path);
+            try
+            {
+                Transform[] transforms = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Transform>(true)).ToArray();
+                var nodes = transforms.ToDictionary(t => t.gameObject.GetInstanceID(), t => new Node {
+                    id = t.gameObject.GetInstanceID(), parent = t.parent == null ? 0 : t.parent.gameObject.GetInstanceID(),
+                    path = PathOf(t), name = t.name, tag = t.gameObject.tag,
+                    activeSelf = t.gameObject.activeSelf, activeInHierarchy = t.gameObject.activeInHierarchy,
+                    prefabSource = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject),
+                    missingScripts = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject),
+                    components = t.GetComponents<Component>().Where(c => c != null).Select(c => c.GetType().FullName).ToArray(),
+                    scriptPaths = t.GetComponents<MonoBehaviour>().Where(c => c != null)
+                        .Select(c => AssetDatabase.GetAssetPath(MonoScript.FromMonoBehaviour(c))).Distinct().ToArray()
+                });
+                var links = new System.Collections.Generic.List<Link>();
+                foreach (Transform t in transforms)
+                foreach (Component component in t.GetComponents<Component>().Where(c => c != null))
+                {
+                    try
+                    {
+                        var iterator = new SerializedObject(component).GetIterator();
+                        while (iterator.Next(true))
+                        {
+                            if (iterator.propertyType != SerializedPropertyType.ObjectReference ||
+                                iterator.propertyPath == "m_GameObject" || iterator.propertyPath == "m_Father" || iterator.propertyPath.StartsWith("m_Children") ||
+                                iterator.propertyPath == "m_CorrespondingSourceObject" || iterator.propertyPath == "m_PrefabInstance" || iterator.propertyPath == "m_PrefabAsset") continue;
+                            Object reference = iterator.objectReferenceValue;
+                            GameObject target = reference is GameObject go ? go : reference is Component c ? c.gameObject : null;
+                            if (target == null || !nodes.ContainsKey(target.GetInstanceID()) || target == t.gameObject) continue;
+                            links.Add(new Link { source = t.gameObject.GetInstanceID(), target = target.GetInstanceID(),
+                                component = component.GetType().FullName, property = iterator.propertyPath });
+                        }
+                    }
+                    catch (Exception error) { warnings.Add(path + ": " + PathOf(t) + "/" + component.GetType().Name + ": " + error.Message); }
+                    if (component is Animator animator && animator.runtimeAnimatorController != null)
+                    {
+                        foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+                        foreach (EditorCurveBinding binding in AnimationUtility.GetCurveBindings(clip).Concat(AnimationUtility.GetObjectReferenceCurveBindings(clip)))
+                        {
+                            Transform target = string.IsNullOrEmpty(binding.path) ? t : t.Find(binding.path);
+                            if (target != null && nodes.TryGetValue(target.gameObject.GetInstanceID(), out Node node)) node.animated = true;
+                        }
+                    }
+                }
+                scenes.Add(new SceneInfo { path = path, objects = nodes.Values.OrderBy(node => node.path).ToArray(), references = links.ToArray() });
+            }
+            finally { EditorSceneManager.ClosePreviewScene(scene); }
+        }
+        var report = new Report { generatedUtc = DateTime.UtcNow.ToString("o"), unityVersion = Application.unityVersion,
+            enabledScenes = enabled, roots = roots.OrderBy(path => path).ToArray(), reachableAssets = reachable.OrderBy(path => path).ToArray(),
+            prefabs = prefabs, scenes = scenes.ToArray(), warnings = warnings.ToArray() };
+        Directory.CreateDirectory("Library/FruitLabEditor");
+        File.WriteAllText("Library/FruitLabEditor/usage-audit.json", JsonUtility.ToJson(report, true));
+        return "Read-only audit: " + prefabs.Length + " project prefabs, " + scenes.Count + " scenes, "
+            + scenes.Sum(scene => scene.objects.Length) + " scene objects; warnings=" + warnings.Count + "; Library/FruitLabEditor/usage-audit.json";
+    }
+
+    private static string PathOf(Transform transform)
+    {
+        string path = transform.name;
+        while (transform.parent != null) { transform = transform.parent; path = transform.name + "/" + path; }
+        return path;
     }
 }

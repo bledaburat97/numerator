@@ -12,8 +12,9 @@ namespace Scripts
         [SerializeField] private Image fruitImage;
         [SerializeField] private FruitColorConfig[] fruits;
         private Image _cardFace, _cardHighlight;
-        private Image _resultOutline, _resultGlow;
-        private Color _resultColor;
+        [SerializeField] private Image resultGlow;
+        [SerializeField] private Image resultOutline;
+        private Color _resultColor = FruitLabStyle.Correct;
         private float _alpha = 1f;
 
         public virtual void Init(int cardNumber)
@@ -76,24 +77,16 @@ namespace Scripts
             if (visible)
             {
                 _resultColor = state == CardResultState.Correct ? FruitLabStyle.Correct : FruitLabStyle.Misplaced;
-                _resultGlow = FruitLabStyle.Detail(transform, "ResultGlow", _resultColor, true);
-                _resultGlow.pixelsPerUnitMultiplier = .45f;
-                FruitLabStyle.Stretch(_resultGlow.rectTransform);
-                _resultGlow.transform.SetAsLastSibling();
-                _resultOutline = FruitLabStyle.Detail(transform, "ResultOutline", _resultColor, true);
-                _resultOutline.pixelsPerUnitMultiplier = .9f;
-                FruitLabStyle.Stretch(_resultOutline.rectTransform, .7f);
-                _resultOutline.transform.SetAsLastSibling();
                 UpdateResultAlpha();
             }
-            if (_resultGlow != null) _resultGlow.gameObject.SetActive(visible);
-            if (_resultOutline != null) _resultOutline.gameObject.SetActive(visible);
+            if (resultGlow != null) resultGlow.gameObject.SetActive(visible);
+            if (resultOutline != null) resultOutline.gameObject.SetActive(visible);
         }
 
         private void UpdateResultAlpha()
         {
-            if (_resultOutline != null) _resultOutline.color = new Color(_resultColor.r, _resultColor.g, _resultColor.b, _alpha);
-            if (_resultGlow != null) _resultGlow.color = new Color(_resultColor.r, _resultColor.g, _resultColor.b, .32f * _alpha);
+            if (resultOutline != null) resultOutline.color = new Color(_resultColor.r, _resultColor.g, _resultColor.b, _alpha);
+            if (resultGlow != null) resultGlow.color = new Color(_resultColor.r, _resultColor.g, _resultColor.b, .32f * _alpha);
         }
 
         public Sprite GetFruitSprite(int number) => fruits[number - 1].fruitImage;

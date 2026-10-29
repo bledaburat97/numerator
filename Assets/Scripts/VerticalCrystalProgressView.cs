@@ -91,9 +91,6 @@ namespace Scripts
             ResolvePreview(ref revealingPowerUpButton, holder, "Reveal");
             ResolvePreview(ref lifePowerUpButton, holder, "Life");
             ResolvePreview(ref bombPowerUpButton, holder, "Bomb");
-            foreach (PowerUpButtonView legacy in holder.GetComponentsInChildren<PowerUpButtonView>(true))
-                if (legacy != revealingPowerUpButton && legacy != lifePowerUpButton && legacy != bombPowerUpButton)
-                    legacy.gameObject.SetActive(false);
             ShowRewardPreview(_rewardType);
             UpdateCountLabel();
             if (rectTransform.rect.height < 90f) ApplyCompactLayout(width, rectTransform.rect.height, title, holder);

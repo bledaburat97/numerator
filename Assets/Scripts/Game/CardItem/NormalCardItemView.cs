@@ -26,6 +26,7 @@ namespace Scripts
                 badge.anchorMin = badge.anchorMax = new Vector2(0.86f, 0.14f);
                 badge.anchoredPosition = Vector2.zero;
                 badge.sizeDelta = new Vector2(13f, 13f);
+                if (_lockedGlyph == null) _lockedGlyph = badge.Find("Check")?.GetComponent<FruitLabGlyph>();
                 if (_lockedGlyph == null)
                     _lockedGlyph = FruitLabGlyph.Create(badge, FruitLabGlyph.Symbol.Check, FruitLabStyle.Background);
                 FruitLabStyle.Stretch(_lockedGlyph.rectTransform, 2f);

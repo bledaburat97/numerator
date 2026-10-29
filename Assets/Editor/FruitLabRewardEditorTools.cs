@@ -59,8 +59,6 @@ public static class FruitLabRewardEditorTools
             var canvas = Find<MenuUIView>(menu).GetComponentInParent<Canvas>();
             Transform safe = canvas.transform.Find("SafeArea");
             RectTransform middle = (RectTransform)safe.Find("MiddleArea");
-            Transform legacy = middle.Find("CircleProgressBar");
-            if (legacy != null) legacy.gameObject.SetActive(false);
             var crystals = FindOrNull<VerticalCrystalProgressView>(menu);
             if (crystals == null)
             {
@@ -88,7 +86,7 @@ public static class FruitLabRewardEditorTools
         return "Saved Game.unity, Menu.unity and shared CrystalProgressBar.prefab; reward UI checks passed";
     }
 
-    private static void ValidateRewards()
+    public static void ValidateRewards()
     {
         var scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
         GameObject clone = null;
@@ -104,6 +102,17 @@ public static class FruitLabRewardEditorTools
             clone = Object.Instantiate(source.gameObject, source.transform.parent, false);
             var popup = clone.GetComponent<LevelFinishPopupView>();
             popup.ApplyLabLayout();
+            var bindings = new Zenject.DiContainer();
+            bindings.Bind<LevelFinishPopupView>().FromInstance(popup);
+            var endController = bindings.Instantiate<LevelEndPopupController>();
+            endController.SetAllStatusFalse();
+            endController.SetOutcome(true);
+            endController.InitText("Kazandın!");
+            int clicks = 0;
+            endController.InitButton(LevelFinishButtonType.Game, "Devam", () => clicks++);
+            ((Component)popup.GetButton(LevelFinishButtonType.Game)).GetComponent<BaseButtonView>().OnPointerDown(null);
+            Require(clicks == 1, "Modern level-end controller must resolve through DI and retain its button callback after legacy cleanup");
+            endController.SetAllStatusFalse();
             var view = (VerticalCrystalProgressView)popup.GetVerticalCrystalProgressView();
             foreach (string field in new[] { "revealingPowerUpButton", "lifePowerUpButton", "bombPowerUpButton" })
             {

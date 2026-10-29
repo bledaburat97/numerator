@@ -46,8 +46,6 @@ namespace Scripts
             int first = Mathf.Min(middleArea.GetSiblingIndex(), header.transform.GetSiblingIndex());
             middleArea.SetSiblingIndex(first);
             header.transform.SetSiblingIndex(first + 1);
-            Transform oldHeader = safeArea.Find("TopArea");
-            if (oldHeader != null) oldHeader.gameObject.SetActive(false);
             FruitLabStyle.Place((RectTransform)header.transform, safeArea, 12f, height - 68f, width, 60f);
             header.ApplyLabLayout(width);
             FruitLabStyle.Place(crystals.GetRectTransform(), middleArea, 12f, height - 184f, width, 106f);

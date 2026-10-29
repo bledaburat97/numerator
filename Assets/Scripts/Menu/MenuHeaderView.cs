@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,8 +10,6 @@ namespace Scripts
 
         public void ApplyLabLayout(float width)
         {
-            Transform legacyStar = transform.Find("StarImage");
-            if (legacyStar != null) legacyStar.gameObject.SetActive(false);
             RectTransform counter = (RectTransform)starHolder.transform;
             FruitLabStyle.Place(counter, transform, width - 132f, 12f, 132f, 40f);
             starHolder.SetFixedWidth(132f);

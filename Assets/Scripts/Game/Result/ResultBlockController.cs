@@ -53,8 +53,6 @@ namespace Scripts
         void RevealAnswer(IReadOnlyList<int> answer);
     }
 
-    public enum CardPositionCorrectness { Correct, Wrong }
-
     public class ResultBlockModel : EventArgs
     {
         public List<int> finalNumbers;

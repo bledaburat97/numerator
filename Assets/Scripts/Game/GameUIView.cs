@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -30,8 +30,6 @@ namespace Scripts
             userText.fontStyle = FontStyles.Bold;
             userText.color = FruitLabStyle.Text;
             userText.alignment = TextAlignmentOptions.MidlineLeft;
-            Transform oldUserPanel = header.Find("UserInfo");
-            if (oldUserPanel != null) oldUserPanel.gameObject.SetActive(false);
             FruitLabStyle.Place(settingsButton.GetButtonRectTransform(), header, width - 32f, headerHeight - 35f, 32f, 32f);
             settingsButton.ApplyLabStyle();
             settingsButton.SetLabIconScale(1.5f);

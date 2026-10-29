@@ -122,19 +122,16 @@ namespace Scripts
 
             RectTransform tokenRectTransform = tokenView.GetRectTransform();
             if (tokenRectTransform == null) return sequence;
+            float fadeDuration = tokenView is CrystalView crystal && crystal.FlightTrail != null
+                ? Mathf.Max(.18f, crystal.FlightTrail.Lifetime) : .18f;
 
-            RectTransform targetParent = targetRectTransform.parent as RectTransform;
-            RectTransform animationParent = targetParent != null ? targetParent : targetRectTransform;
-            Vector2 targetLocalPosition = targetParent != null ? targetRectTransform.localPosition : Vector2.zero;
-            CurvedAnimationPreset preset = tokenView.GetCurvedAnimationPreset();
-            const float duration = 0.62f;
-
-            return sequence
-                .AppendCallback(() => tokenRectTransform.SetParent(animationParent, true))
-                .Append(ApplyHorizontalEase(tokenRectTransform.DOLocalMoveX(targetLocalPosition.x, duration), preset))
-                .Join(ApplyVerticalEase(tokenRectTransform.DOLocalMoveY(targetLocalPosition.y, duration), preset))
-                .Append(tokenView.AnimateFadeOut(0.1f))
-                .AppendCallback(tokenView.Destroy);
+            sequence
+                .Append(CrystalFlightAnimation.Create(tokenView, targetRectTransform, true))
+                .Append(tokenView.AnimateFadeOut(fadeDuration))
+                .AppendCallback(tokenView.Destroy)
+                .SetLink(tokenRectTransform.gameObject, LinkBehaviour.KillOnDestroy);
+            if (tokenView is RewardTokenView token) token.TrackAnimation(sequence);
+            return sequence;
         }
 
         public Sequence PresentCompletedReward(RewardType rewardType, float duration)
@@ -177,16 +174,6 @@ namespace Scripts
         private static RewardType GetNextRewardType(RewardType rewardType)
         {
             return (RewardType)(((int)rewardType + 1) % 3);
-        }
-
-        private static Tween ApplyHorizontalEase(Tween tween, CurvedAnimationPreset preset)
-        {
-            return preset == null ? tween.SetEase(Ease.OutQuad) : tween.SetEase(preset.horizontalPositionCurve);
-        }
-
-        private static Tween ApplyVerticalEase(Tween tween, CurvedAnimationPreset preset)
-        {
-            return preset == null ? tween.SetEase(Ease.OutQuad) : tween.SetEase(preset.verticalPositionCurve);
         }
 
         public Tween UpdateVerticalCrystalProgressBar(float targetPercentage, float animationDuration, Action onComplete)

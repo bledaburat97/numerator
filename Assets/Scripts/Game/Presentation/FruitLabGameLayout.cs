@@ -107,15 +107,7 @@ namespace Scripts
             int first = Mathf.Min(middleArea.GetSiblingIndex(), header.GetSiblingIndex());
             middleArea.SetSiblingIndex(first);
             header.SetSiblingIndex(first + 1);
-            HideDecoration(historyArea, "Background");
-            HideDecoration(initialArea, "Background");
-            HideDecoration(header, "Border");
         }
 
-        private static void HideDecoration(Transform parent, string name)
-        {
-            Transform decoration = parent.Find(name);
-            if (decoration != null) decoration.gameObject.SetActive(false);
-        }
     }
 }

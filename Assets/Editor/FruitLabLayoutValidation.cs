@@ -49,6 +49,12 @@ public static class FruitLabLayoutValidation
                 presentation.ApplyLayout();
                 Canvas.ForceUpdateCanvases();
                 var gameView = Find<GameUIView>();
+                var popups = new SerializedObject(Find<GamePopupCreator>());
+                foreach (string field in new[] { "settingsPopupPrefab", "messagePopupPrefab", "handTutorialPrefab", "tutorialMessagePopupPrefab",
+                    "multiplayerLevelEndPopupPrefab", "disconnectionPopupPrefab", "waitingOpponentPopupPrefab" })
+                    Require(popups.FindProperty(field).objectReferenceValue != null, "Retained popup/tutorial prefab: " + field);
+                Require(new SerializedObject(Find<UnmaskServiceAreaView>()).FindProperty("unmaskServicePrefab").objectReferenceValue != null,
+                    "Tutorial must retain its working UnmaskService prefab");
                 foreach (IBaseButtonView button in new[] { gameView.GetCheckButton(), gameView.GetResetButton(), gameView.GetSettingsButton() })
                 {
                     Require(button.GetButtonRectTransform() != null, "Scene button root must be resolved from its actual prefab");
@@ -59,8 +65,10 @@ public static class FruitLabLayoutValidation
                 Require(header.GetSiblingIndex() > middle.GetSiblingIndex(), "Full-screen middle background must not cover the header");
                 Require(canvasRect.Find("SafeArea/FadePanel").GetSiblingIndex() > header.GetSiblingIndex(),
                     "Transition overlay must stay above both the header and game area");
-                Require(!middle.Find("ScrollArea/Background").gameObject.activeSelf, "Old history decoration must be hidden");
-                Require(!Find<InitialCardAreaView>().transform.Find("Background").gameObject.activeSelf, "Old fruit decoration must be hidden");
+                Require(middle.Find("ScrollArea/Background") == null, "Old history decoration must be removed");
+                Require(Find<InitialCardAreaView>().transform.Find("Background") == null, "Old fruit decoration must be removed");
+                Require(Find<BoardAreaView>().GetRectTransform() == (RectTransform)Find<BoardAreaView>().transform,
+                    "Board sizing must use the live root, independent of removed decoration");
 
                 var board = Find<BoardAreaView>();
                 var sizes = new SizeManager();

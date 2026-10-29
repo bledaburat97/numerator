@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -7,7 +7,6 @@ namespace Scripts
         [SerializeField] private BoardHolderView boardHolderPrefab;
         [SerializeField] private Camera cam;
         [SerializeField] private Canvas canvas;
-        [SerializeField] private RectTransform rectTransform;
         
         public IBoardHolderView CreateBoardHolderView()
         {
@@ -26,7 +25,7 @@ namespace Scripts
 
         public RectTransform GetRectTransform()
         {
-            return rectTransform;
+            return (RectTransform)transform;
         }
 
         public Vector2 GetSizeOfBoardHolder()

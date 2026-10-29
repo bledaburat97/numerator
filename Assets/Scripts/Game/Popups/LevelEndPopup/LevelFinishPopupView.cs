@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -10,13 +10,6 @@ namespace Scripts
     {
         [SerializeField] private TMP_Text text;
         [SerializeField] private List<LevelFinishButtonModel> buttonModels;
-        [SerializeField] private StarImageView[] starList;
-        [SerializeField] private ParticleSystem[] starParticleList;
-        [SerializeField] private CircleProgressBarView circleProgressBarView;
-        [SerializeField] private RectTransform[] rewardItemList;
-        [SerializeField] private RectTransform rewardItemHolder;
-        [SerializeField] private ParticleSystem rewardParticle;
-        [SerializeField] private CanvasGroup starCanvasGroup;
         [SerializeField] private VerticalCrystalProgressView verticalCrystalProgressView;
         [SerializeField] private RectTransform failureArea;
         private bool _success = true;
@@ -100,8 +93,6 @@ namespace Scripts
                 verticalCrystalProgressView.SetPresentationTarget(stage);
                 verticalCrystalProgressView.ApplyLabStyle();
             }
-            if (circleProgressBarView != null) circleProgressBarView.gameObject.SetActive(false);
-            if (starCanvasGroup != null) starCanvasGroup.gameObject.SetActive(false);
             foreach (LevelFinishButtonModel button in buttonModels)
             {
                 if (button.buttonView == null) continue;
@@ -161,46 +152,11 @@ namespace Scripts
             return null;
         }
 
-        public StarImageView[] GetStarList()
-        {
-            return starList;
-        }
-
-        public ParticleSystem[] GetStarParticleList()
-        {
-            return starParticleList;
-        }
-        
-        public ICircleProgressBarView GetCircleProgressBar()
-        {
-            return circleProgressBarView;
-        }
-
-        public ParticleSystem GetRewardParticle()
-        {
-            return rewardParticle;
-        }
-        
         public void SetText(string text)
         {
             this.text.SetText(text);
         }
 
-        public RectTransform[] GetRewardItemList()
-        {
-            return rewardItemList;
-        }
-        
-        public RectTransform GetRewardItemHolder()
-        {
-            return rewardItemHolder;
-        }
-
-        public CanvasGroup GetStarCanvasGroup()
-        {
-            return starCanvasGroup;
-        }
-        
         public TMP_Text GetText()
         {
             return text;
@@ -215,14 +171,7 @@ namespace Scripts
     public interface ILevelFinishPopupView
     {
         IFadeButtonView GetButton(LevelFinishButtonType buttonType);
-        StarImageView[] GetStarList();
-        ParticleSystem[] GetStarParticleList();
-        ICircleProgressBarView GetCircleProgressBar();
-        ParticleSystem GetRewardParticle();
         void SetText(string text);
-        RectTransform[] GetRewardItemList();
-        RectTransform GetRewardItemHolder();
-        CanvasGroup GetStarCanvasGroup();
         TMP_Text GetText();
         IVerticalCrystalProgressView GetVerticalCrystalProgressView();
         void SetStatus(bool status);

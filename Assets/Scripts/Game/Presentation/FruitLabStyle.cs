@@ -21,13 +21,14 @@ namespace Scripts
         public static readonly Color Misplaced = Hex("FFD35D");
         public static TMP_FontAsset Font;
 
-        private static Sprite _rounded, _frame, _inset;
+        private static Sprite _rounded, _frame, _inset, _resultFrame;
         private static Dictionary<string, Sprite> _icons;
         public static Sprite Rounded => _rounded != null ? _rounded : (_rounded = LoadSurface("FruitLabSatinSurface", false));
         public static Sprite Frame => _frame != null ? _frame : (_frame = LoadSurface("FruitLabFrame", true));
+        public static Sprite ResultFrame => _resultFrame != null ? _resultFrame : (_resultFrame = LoadSurface("FruitLabResultFrame", true));
         public static Sprite Inset => _inset != null ? _inset : (_inset = LoadSurface("FruitLabInsetSurface", false));
 
-        public static void ResetCachedAssets() { _icons = null; _rounded = _frame = _inset = null; }
+        public static void ResetCachedAssets() { _icons = null; _rounded = _frame = _inset = _resultFrame = null; }
 
         private static Sprite LoadSurface(string name, bool frame)
         {
