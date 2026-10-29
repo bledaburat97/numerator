@@ -37,6 +37,8 @@ namespace Scripts
         public void SetLifeBar(int maxGuessCount, IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList, int remainingGuessCount,
             bool deferRewardIntroAnimation = false)
         {
+            ClearBoundaries();
+            _view.SetGuessCounts(remainingGuessCount, maxGuessCount);
             CreateBoundaries(maxGuessCount);
             _lifeBarRewardInfoList = CreateLifeBarRewardInfoListSnapshot(lifeBarRewardInfoList);
             _pendingRewardIntroTokenViews.Clear();

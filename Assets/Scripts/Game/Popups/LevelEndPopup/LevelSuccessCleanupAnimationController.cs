@@ -45,8 +45,6 @@ namespace Scripts
             return DOTween.Sequence()
                 .Append(_gameUIController.ChangeFadeTopAreaButtons(duration, 0f))
                 .Join(_gameUIController.ChangeFadeUserText(duration, 0f))
-                .Join(_resultAreaController.ChangeFade(duration, 0f)
-                    .OnComplete(() => _resultAreaController.RemoveResultBlocks()))
                 .Join(_initialCardAreaController.ChangeFadeInitialArea(duration, 0f)
                     .OnComplete(() => _initialCardAreaController.ClearInitialCardHolders()))
                 .Join(_gameUIController.ChangeFadeMiddleAreaButtons(duration, 0f));

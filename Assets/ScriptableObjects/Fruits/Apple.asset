@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5ad5e455f7024f58a394e5e9293ab19, type: 3}
   m_Name: Apple
   m_EditorClassIdentifier: 
-  fruitImage: {fileID: 850996174, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
-  fruitColor: {r: 1, g: 0.34627807, b: 0.28773582, a: 1}
+  fruitImage: {fileID: -519733243297392110, guid: 14c77f7b7e4cf42f9a6ed7a6c9192ea6, type: 3}
+  fruitColor: {r: 0.86274510, g: 0.46666667, b: 0.45882353, a: 1}

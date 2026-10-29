@@ -35,6 +35,8 @@ namespace Scripts
         {
             for (int i = 0; i < cardViewHandlerList.Count; i++)
             {
+                cardViewHandlerList[i].SetProbability(ProbabilityType.Certain, true);
+                cardViewHandlerList[i].GetView().SetResultOutline(CardResultState.Correct);
                 float delay = delayDuration * i;
                 cardViewHandlerList[i].AnimateTurnIntoCertain(delay, colorChangingDuration, ribbonImageDuration);
             }

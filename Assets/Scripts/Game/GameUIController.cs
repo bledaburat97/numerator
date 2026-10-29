@@ -41,7 +41,8 @@ namespace Scripts
 
         public void Initialize(bool isNewGame)
         {
-            SetUserText("Level " + (_levelTracker.GetLevelId() + 1));
+            ResetButtonInteraction();
+            SetUserText("Bölüm " + (_levelTracker.GetLevelId() + 1));
             SetOpponentInfoStatus(false);
             if (_levelTracker.GetLevelId() > 8)
             {
@@ -96,6 +97,7 @@ namespace Scripts
 
         public void InitializeForMultiplayer()
         {
+            ResetButtonInteraction();
             SetUserText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).playerName.ToString());
             SetOpponentText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).playerName.ToString());
             SetOpponentInfoStatus(true);
@@ -160,6 +162,20 @@ namespace Scripts
             }
 
             _gamePowerUpAreaController.SetButtonsClickable(false);
+        }
+
+        private void ResetButtonInteraction()
+        {
+            // These controllers survive retry/next-level transitions. A new round
+            // must release the previous round's fail/tutorial button lock.
+            foreach (IBaseButtonController button in _buttonDictionary.Values)
+            {
+                button.SetButtonClickable(true);
+                button.GetView().SetButtonUp();
+            }
+            _cardInfoButtonController?.SetButtonClickable(true);
+            // Availability and inventory still decide which powerups can be used.
+            _gamePowerUpAreaController.SetButtonsClickable(true);
         }
 
         public void SetButtonClickable(bool isClickable, GameUIButtonType type)

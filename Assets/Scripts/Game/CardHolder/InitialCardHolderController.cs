@@ -21,7 +21,6 @@ namespace Scripts
             _view.SetLocalScale();
             _view.SetLocalPosition(localPosition);
             _view.SetSize(size);
-            _view.SetText(_index + 1);
             
             //CreatePossibleHolderIndicators(holderIndicatorLocalPositions, holderIndicatorSize);
             //SetHolderIndicatorList(cardItemInfo.possibleCardHolderIndicatorIndexes);

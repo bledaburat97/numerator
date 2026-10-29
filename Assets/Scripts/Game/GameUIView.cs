@@ -21,6 +21,49 @@ namespace Scripts
         [SerializeField] private Image coinImage;
         [SerializeField] private TextHolderAdjustment coinCountHolder;
 
+        public void ApplyLabLayout(RectTransform header, RectTransform actionArea, float width, float headerHeight, float actionWidth, float actionHeight)
+        {
+            opponentInfo.SetActive(false);
+            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, width - 180f, 30f);
+            userText.fontSize = 19f;
+            userText.enableAutoSizing = false;
+            userText.fontStyle = FontStyles.Bold;
+            userText.color = FruitLabStyle.Text;
+            userText.alignment = TextAlignmentOptions.MidlineLeft;
+            Transform oldUserPanel = header.Find("UserInfo");
+            if (oldUserPanel != null) oldUserPanel.gameObject.SetActive(false);
+            FruitLabStyle.Place(settingsButton.GetButtonRectTransform(), header, width - 32f, headerHeight - 35f, 32f, 32f);
+            settingsButton.ApplyLabStyle();
+            settingsButton.SetLabIconScale(1.5f);
+            if (coinCountHolder != null)
+            {
+                RectTransform counter = (RectTransform)coinCountHolder.transform;
+                FruitLabStyle.Place(counter, header, width - 169f, headerHeight - 37f, 124f, 36f);
+                FruitLabStyle.AddSurface(counter.gameObject, FruitLabStyle.Panel);
+                coinCountHolder.SetFixedWidth(124f);
+                foreach (Image background in counter.GetComponentsInChildren<Image>(true))
+                    if (background != coinImage) FruitLabStyle.Surface(background, FruitLabStyle.Panel);
+                foreach (TMP_Text label in counter.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    label.fontSize = 24f;
+                    label.enableAutoSizing = false;
+                    label.color = FruitLabStyle.Text;
+                    label.alignment = TextAlignmentOptions.MidlineLeft;
+                    FruitLabStyle.Place(label.rectTransform, counter, 42f, 0f, 78f, 36f);
+                }
+                RectTransform coinWidget = coinImage.rectTransform;
+                while (coinWidget.parent != null && coinWidget.parent != header && coinWidget.parent != counter)
+                    coinWidget = (RectTransform)coinWidget.parent;
+                FruitLabStyle.Place(coinWidget, counter, 6f, 3f, 30f, 30f);
+                if (coinWidget != coinImage.rectTransform) FruitLabStyle.Stretch(coinImage.rectTransform);
+            }
+            FruitLabStyle.SetIcon(coinImage, "Coin");
+            FruitLabStyle.Place(checkButton.GetButtonRectTransform(), actionArea, width - actionWidth, 0f, actionWidth, actionHeight);
+            checkButton.ApplyLabStyle(true);
+            FruitLabStyle.Place(resetButton.GetButtonRectTransform(), actionArea, 0f, 0f, actionWidth, actionHeight);
+            resetButton.ApplyLabStyle();
+        }
+
         public CanvasGroup GetTopButtonsCanvasGroup() => topButtonsCanvasGroup;
         public CanvasGroup GetMiddleButtonsCanvasGroup() => middleButtonsCanvasGroup;
         

@@ -9,6 +9,7 @@ namespace Scripts
     {
         private const float SpacingToInitialHolderWidthRatio = 2f / 54f;
         private const float SpacingToHolderIndicatorWidthRatio = 1f / 11f;
+        private const int MaxCardsPerRow = 5;
 
         private readonly IInitialCardAreaView _view;
         private readonly ISizeManager _sizeManager;
@@ -38,17 +39,27 @@ namespace Scripts
 
         public Vector2 GetInitialHolderSize()
         {
-            return _sizeManager.GetSizeRatio() * _view.GetSizeOfInitialHolderPrefab();
+            return GetTraySizeRatio() * _view.GetSizeOfInitialHolderPrefab();
         }
 
         public Vector2 GetHolderIndicatorSize()
         {
-            return _sizeManager.GetSizeRatio() * _view.GetSizeOfHolderIndicatorPrefab();
+            return GetTraySizeRatio() * _view.GetSizeOfHolderIndicatorPrefab();
         }
 
         public Vector2 GetBoxSize()
         {
-            return _sizeManager.GetSizeRatio() * _view.GetSizeOfBoxPrefab();
+            return GetTraySizeRatio() * _view.GetSizeOfBoxPrefab();
+        }
+
+        private float GetTraySizeRatio()
+        {
+            Vector2 available = _view.GetRectTransform().rect.size;
+            Vector2 holder = _view.GetSizeOfInitialHolderPrefab();
+            float rowWidth = holder.x * (MaxCardsPerRow + SpacingToInitialHolderWidthRatio * (MaxCardsPerRow - 1));
+            // Keep both fruit rows between the side buttons, including on short screens.
+            return Mathf.Max(0.01f, Mathf.Min(_sizeManager.GetSizeRatio(),
+                Mathf.Min(available.x / rowWidth, available.y / (holder.y * 2f))));
         }
     }
 

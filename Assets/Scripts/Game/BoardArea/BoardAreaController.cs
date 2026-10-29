@@ -45,6 +45,16 @@ namespace Scripts
             CreateBoardHolders(boardHolderCount);
             _boardPlacementCommands.InitializeCardIndexesOnBoardHolders(boardHolderCount);
         }
+
+        public void RefreshLayout()
+        {
+            _boardLayoutManager.Initialize(_boardHolderControllerList.Count);
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+            {
+                _boardHolderControllerList[i].SetSize(GetSizeOfBoardHolder());
+                _boardHolderControllerList[i].SetLocalPosition(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[i]);
+            }
+        }
         
         private void CreateBoardHolders(int boardHolderCount)
         {
@@ -238,6 +248,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
+        void RefreshLayout();
         event EventHandler<int> BoardHolderClickedEvent;
         RectTransform GetRectTransformOfGarden(int boardHolderIndex);
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);

@@ -40,6 +40,7 @@ namespace Game
         
         private void OnWrongGuess(object sender, EventArgs args)
         {
+            if (_roundStateManager.GetRemainingGuessCount() <= 0) return;
             _roundStateManager.DecreaseRemainingGuessCount();
             int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
             IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList = _roundStateManager.GetLifeBarRewardInfoList();
@@ -53,7 +54,7 @@ namespace Game
 
                     _roundStateManager.SetLifeBarRewardStatus(i, false);
                     
-                    if (isCrystal)
+                    if (isCrystal && remainingGuessCount > 0)
                     {
                         IRewardTokenView rewardTokenView = _lifeBarController.GetRewardToken(lifeBarRewardInfoList[i].BoundaryIndex);
                         if (rewardTokenView == null)
@@ -70,6 +71,8 @@ namespace Game
                     else
                     {
                         _lifeBarController.SetRewardStatus(false, i);
+                        // The final crystal has no hint: remove it at its boundary.
+                        if (isCrystal) _lifeBarController.GetRewardToken(lifeBarRewardInfoList[i].BoundaryIndex)?.Destroy();
                     }
 
                     break;
@@ -89,6 +92,7 @@ namespace Game
         {
             int numOfLives = 3;
             int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
+            if (remainingGuessCount <= 0) return;
             int maxGuessCount = _roundStateManager.GetMaxGuessCount();
             if (remainingGuessCount + numOfLives > maxGuessCount) return;
             int lastRewardLifeBarIndex = remainingGuessCount;

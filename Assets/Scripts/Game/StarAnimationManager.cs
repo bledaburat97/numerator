@@ -9,31 +9,29 @@ namespace Game
     {
         private const float RewardItemSizeMultiplier = 1.20f;
 
-        public void RevealCard(IRewardTokenView rewardTokenView, RectTransform targetRectTransform, Action makeCardCertainAction)
+        public Sequence RevealCard(IRewardTokenView rewardTokenView, RectTransform targetRectTransform, Action makeCardCertainAction)
         {
-            AnimateRewardItemHit(rewardTokenView, targetRectTransform, makeCardCertainAction);
+            return AnimateRewardItemHit(rewardTokenView, targetRectTransform, makeCardCertainAction);
         }
 
-        public void DestroyCard(IRewardTokenView rewardTokenView, RectTransform targetRectTransform, Action destroyCardAction)
+        public Sequence DestroyCard(IRewardTokenView rewardTokenView, RectTransform targetRectTransform, Action destroyCardAction)
         {
-            AnimateRewardItemHit(rewardTokenView, targetRectTransform, destroyCardAction);
+            return AnimateRewardItemHit(rewardTokenView, targetRectTransform, destroyCardAction);
         }
 
-        private void AnimateRewardItemHit(IRewardTokenView rewardTokenView, RectTransform targetRectTransform, Action onHitAction)
+        private Sequence AnimateRewardItemHit(IRewardTokenView rewardTokenView, RectTransform targetRectTransform, Action onHitAction)
         {
             if (rewardTokenView == null || targetRectTransform == null)
             {
-                onHitAction?.Invoke();
-                targetRectTransform?.DOPunchScale(Vector3.one * 0.15f, 0.2f, 5, 0.7f);
-                return;
+                if (targetRectTransform != null) onHitAction?.Invoke();
+                return DOTween.Sequence();
             }
 
             RectTransform rewardItemTransform = rewardTokenView.GetRectTransform();
             if (rewardItemTransform == null)
             {
                 onHitAction?.Invoke();
-                targetRectTransform.DOPunchScale(Vector3.one * 0.15f, 0.2f, 5, 0.7f);
-                return;
+                return DOTween.Sequence();
             }
 
             CurvedAnimationPreset preset = rewardTokenView.GetCurvedAnimationPreset();
@@ -43,15 +41,22 @@ namespace Game
 
             rewardTokenView.SetStatus(true);
 
-            DOTween.Sequence()
+            Sequence animation = DOTween.Sequence()
                 .AppendCallback(() => rewardItemTransform.SetParent(targetRectTransform, true))
                 .Append(ApplyHorizontalEase(rewardItemTransform.DOLocalMoveX(0f, duration), preset))
                 .Join(ApplyVerticalEase(rewardItemTransform.DOLocalMoveY(0f, duration), preset))
                 .Join(rewardItemTransform.DOScale(Vector3.one * scale * 0.7f, duration).SetEase(Ease.InQuad))
                 .Append(targetRectTransform.DOPunchScale(Vector3.one * 0.15f, 0.2f, 5, 0.7f))
                 .Append(rewardTokenView.AnimateFadeOut(0.12f))
-                .AppendCallback(rewardTokenView.Destroy)
-                .AppendInterval(0.1f).AppendCallback(() => onHitAction?.Invoke());
+                .AppendInterval(0.1f)
+                .AppendCallback(() =>
+                {
+                    if (targetRectTransform != null) onHitAction?.Invoke();
+                    rewardTokenView.Destroy();
+                })
+                .SetLink(rewardItemTransform.gameObject, LinkBehaviour.KillOnDestroy);
+            if (rewardTokenView is RewardTokenView token) token.TrackAnimation(animation);
+            return animation;
         }
 
         private static Tween ApplyHorizontalEase(Tween tween, CurvedAnimationPreset preset)

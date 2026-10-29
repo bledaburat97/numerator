@@ -1,5 +1,6 @@
 ﻿using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scripts
 {
@@ -9,6 +10,16 @@ namespace Scripts
         [SerializeField] private RectTransform possibleHolderIndicatorHolderTransform;
         [SerializeField] private PossibleHolderIndicatorView possibleHolderIndicatorPrefab;
         [SerializeField] private TMP_Text text;
+        private Image _fruitGhost;
+
+        private void Awake() => ApplyLabStyle();
+
+        public void ApplyLabStyle()
+        {
+            Transform surface = transform.Find("Image");
+            if (surface != null) FruitLabStyle.RecessSurface(surface.GetComponent<Image>());
+            if (text != null) text.gameObject.SetActive(false);
+        }
         
         public void SetLocalScale()
         {
@@ -40,9 +51,19 @@ namespace Scripts
             Destroy(gameObject);
         }
         
-        public void SetText(int number)
+        public void SetFruit(Sprite fruit)
         {
-            text.SetText(number.ToString());
+            if (text != null) text.gameObject.SetActive(false);
+            _fruitGhost = FruitLabStyle.Detail(transform, "FruitGhost", new Color(1f, 1f, 1f, .44f));
+            _fruitGhost.sprite = fruit;
+            _fruitGhost.type = Image.Type.Simple;
+            _fruitGhost.preserveAspect = true;
+            _fruitGhost.material = Resources.Load<Material>("Art/FruitLabGhost");
+            _fruitGhost.rectTransform.anchorMin = new Vector2(.13f, .13f);
+            _fruitGhost.rectTransform.anchorMax = new Vector2(.87f, .87f);
+            _fruitGhost.rectTransform.offsetMin = _fruitGhost.rectTransform.offsetMax = Vector2.zero;
+            // Keep the stamp behind the movable card, including after reapplying a style.
+            _fruitGhost.transform.SetSiblingIndex(1);
         }
         
         public IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView()
@@ -64,7 +85,7 @@ namespace Scripts
 
     public interface IInitialHolderView : IBaseHolderView
     {
-        void SetText(int number);
+        void SetFruit(Sprite fruit);
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();
         RectTransform GetInitialHolderRectTransform();
         Vector2 GetSizeOfHolderIndicatorPrefab();

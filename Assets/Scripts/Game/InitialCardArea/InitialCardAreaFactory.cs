@@ -29,7 +29,7 @@ namespace Scripts
         {
             IInitialCardHolderController[] initialCardHolders =
                 new IInitialCardHolderController[numOfInitialHolders];
-            int upperHolderCount = initialCardHolders.Length / 2;
+            int upperHolderCount = FruitLabLayoutMetrics.GetFirstChoiceRowCount(initialCardHolders.Length);
             int lowerHolderCount = initialCardHolders.Length - upperHolderCount;
             List<Vector2> upperLocalPositions =
                 _initialCardAreaLayoutManager.GetInitialHolderLocalPositions(upperHolderCount);
@@ -130,6 +130,7 @@ namespace Scripts
                 ? _view.CreateCardHolderViewOnUpperHolder()
                 : _view.CreateCardHolderViewOnLowerHolder();
             IInitialCardHolderController initialHolderController = new InitialCardHolderController(initialHolderView);
+            initialHolderView.SetFruit(_view.GetFruitSprite(index + 1));
             initialHolderController.Initialize(
                 index,
                 cardItemInfo,

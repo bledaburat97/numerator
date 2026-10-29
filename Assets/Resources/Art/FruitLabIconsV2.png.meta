@@ -1,0 +1,630 @@
+fileFormatVersion: 2
+guid: 14c77f7b7e4cf42f9a6ed7a6c9192ea6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2136942025923078107
+    second: FruitLabIconsV2_0
+  - first:
+      213: 4801336952938727525
+    second: FruitLabIconsV2_1
+  - first:
+      213: -3559797057923968918
+    second: FruitLabIconsV2_2
+  - first:
+      213: -7099747839251467427
+    second: FruitLabIconsV2_3
+  - first:
+      213: 2174584512951191702
+    second: FruitLabIconsV2_4
+  - first:
+      213: -5989112598477996591
+    second: FruitLabIconsV2_5
+  - first:
+      213: -6959927669201502444
+    second: FruitLabIconsV2_6
+  - first:
+      213: -8596018173459534440
+    second: FruitLabIconsV2_7
+  - first:
+      213: -6301352035910781131
+    second: FruitLabIconsV2_8
+  - first:
+      213: -39795088609674978
+    second: FruitLabIconsV2_9
+  - first:
+      213: 7190758273563471747
+    second: FruitLabIconsV2_10
+  - first:
+      213: -612197764355328912
+    second: FruitLabIconsV2_11
+  - first:
+      213: -5431648577965566508
+    second: FruitLabIconsV2_12
+  - first:
+      213: 982284499299607345
+    second: FruitLabIconsV2_13
+  - first:
+      213: 4694666835949522231
+    second: FruitLabIconsV2_14
+  - first:
+      213: 2277673951313632379
+    second: FruitLabIconsV2_15
+  - first:
+      213: 8405189625509570285
+    second: FruitLabIconsV2_16
+  - first:
+      213: -8648462010334061778
+    second: FruitLabIconsV2_17
+  - first:
+      213: -6021602568901674918
+    second: FruitLabIconsV2_18
+  - first:
+      213: -5181961224167536184
+    second: FruitLabIconsV2_19
+  - first:
+      213: -603680562865973216
+    second: FruitLabIconsV2_20
+  - first:
+      213: -519733243297392110
+    second: Apple
+  - first:
+      213: -2723872406725829969
+    second: Banana
+  - first:
+      213: -8137609707746988934
+    second: Strawberry
+  - first:
+      213: -4274051472841485391
+    second: Orange
+  - first:
+      213: 7234405449074107554
+    second: Pear
+  - first:
+      213: -5206188660426332017
+    second: Grape
+  - first:
+      213: 6940211693858774789
+    second: Blueberry
+  - first:
+      213: 5345372997970739960
+    second: Watermelon
+  - first:
+      213: 8608059420012602043
+    second: Kiwi
+  - first:
+      213: -2645361854805593308
+    second: Bomb
+  - first:
+      213: 8616125106102183086
+    second: Reveal
+  - first:
+      213: -2956614178179269486
+    second: Life
+  - first:
+      213: 8765955682749052824
+    second: Coin
+  - first:
+      213: -7166371706973388817
+    second: Crystal
+  - first:
+      213: 2308424125875831988
+    second: Settings
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Apple
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 1301
+        width: 266
+        height: 293
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21a1c4f6e5989c8f0800000000000000
+      internalID: -519733243297392110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Banana
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 1312
+        width: 290
+        height: 272
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: faa5e9f4a7cd23ad0800000000000000
+      internalID: -2723872406725829969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Strawberry
+      rect:
+        serializedVersion: 2
+        x: 683
+        y: 1293
+        width: 258
+        height: 291
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7c68f0f517611f80800000000000000
+      internalID: -8137609707746988934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Orange
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 979
+        width: 278
+        height: 291
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b35c8194d48fa4c0800000000000000
+      internalID: -4274051472841485391
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Pear
+      rect:
+        serializedVersion: 2
+        x: 366
+        y: 968
+        width: 242
+        height: 328
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a466392d65c56460800000000000000
+      internalID: 7234405449074107554
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Grape
+      rect:
+        serializedVersion: 2
+        x: 680
+        y: 967
+        width: 267
+        height: 316
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f882f953ff6efb7b0800000000000000
+      internalID: -5206188660426332017
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Blueberry
+      rect:
+        serializedVersion: 2
+        x: 35
+        y: 684
+        width: 280
+        height: 270
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50fd676c3c5905060800000000000000
+      internalID: 6940211693858774789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Watermelon
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 677
+        width: 290
+        height: 280
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f2c200bb649e2a40800000000000000
+      internalID: 5345372997970739960
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Kiwi
+      rect:
+        serializedVersion: 2
+        x: 664
+        y: 676
+        width: 279
+        height: 284
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb26e4f5f68f57770800000000000000
+      internalID: 8608059420012602043
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bomb
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 372
+        width: 261
+        height: 309
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 423b1f5a869c94bd0800000000000000
+      internalID: -2645361854805593308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Reveal
+      rect:
+        serializedVersion: 2
+        x: 343
+        y: 359
+        width: 269
+        height: 312
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea4ab814220a29770800000000000000
+      internalID: 8616125106102183086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Life
+      rect:
+        serializedVersion: 2
+        x: 677
+        y: 366
+        width: 258
+        height: 299
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29cbdbbd11ff7f6d0800000000000000
+      internalID: -2956614178179269486
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Coin
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 55
+        width: 282
+        height: 292
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 897f21bdf3ee6a970800000000000000
+      internalID: 8765955682749052824
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Crystal
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 53
+        width: 216
+        height: 310
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: feff07dc6eeeb8c90800000000000000
+      internalID: -7166371706973388817
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Settings
+      rect:
+        serializedVersion: 2
+        x: 656
+        y: 56
+        width: 290
+        height: 292
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b445cd038b290020800000000000000
+      internalID: 2308424125875831988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Apple: -519733243297392110
+      Banana: -2723872406725829969
+      Blueberry: 6940211693858774789
+      Bomb: -2645361854805593308
+      Coin: 8765955682749052824
+      Crystal: -7166371706973388817
+      FruitLabIconsV2_0: -2136942025923078107
+      FruitLabIconsV2_1: 4801336952938727525
+      FruitLabIconsV2_10: 7190758273563471747
+      FruitLabIconsV2_11: -612197764355328912
+      FruitLabIconsV2_12: -5431648577965566508
+      FruitLabIconsV2_13: 982284499299607345
+      FruitLabIconsV2_14: 4694666835949522231
+      FruitLabIconsV2_15: 2277673951313632379
+      FruitLabIconsV2_16: 8405189625509570285
+      FruitLabIconsV2_17: -8648462010334061778
+      FruitLabIconsV2_18: -6021602568901674918
+      FruitLabIconsV2_19: -5181961224167536184
+      FruitLabIconsV2_2: -3559797057923968918
+      FruitLabIconsV2_20: -603680562865973216
+      FruitLabIconsV2_3: -7099747839251467427
+      FruitLabIconsV2_4: 2174584512951191702
+      FruitLabIconsV2_5: -5989112598477996591
+      FruitLabIconsV2_6: -6959927669201502444
+      FruitLabIconsV2_7: -8596018173459534440
+      FruitLabIconsV2_8: -6301352035910781131
+      FruitLabIconsV2_9: -39795088609674978
+      Grape: -5206188660426332017
+      Kiwi: 8608059420012602043
+      Life: -2956614178179269486
+      Orange: -4274051472841485391
+      Pear: 7234405449074107554
+      Reveal: 8616125106102183086
+      Settings: 2308424125875831988
+      Strawberry: -8137609707746988934
+      Watermelon: 5345372997970739960
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

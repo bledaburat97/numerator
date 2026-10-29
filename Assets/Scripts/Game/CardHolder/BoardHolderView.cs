@@ -17,6 +17,21 @@ namespace Scripts
         [SerializeField] private Image successFrameImage;
         
         private Camera _cam;
+
+        private void Awake() => ApplyLabStyle();
+
+        public void ApplyLabStyle()
+        {
+            Transform surface = transform.Find("Image");
+            if (surface != null)
+            {
+                FruitLabStyle.Stretch((RectTransform)surface, 3f);
+                FruitLabStyle.RecessSurface(surface.GetComponent<Image>());
+                FruitLabStyle.Rim((RectTransform)surface);
+            }
+            FruitLabStyle.Surface(highlightImage, new Color(0.53f, 0.9f, 0.78f, 0.3f), true);
+            FruitLabStyle.Surface(successFrameImage, FruitLabStyle.Correct, true);
+        }
         
         public void SetLocalScale()
         {

@@ -27,6 +27,8 @@ namespace Scripts
 
         public void Initialize(int numOfBoardHolders)
         {
+            _sizeManager.SetSizeRatio(_view.GetRectTransform().rect.size,
+                _view.GetSizeOfBoardHolder(), GardenSpacingToHolderWidthRatio);
             _boardHolderSceneLocalPositionList.Clear();
             Vector2 cardHolderSize = GetSizeOfBoardHolder();
             float spacing = cardHolderSize.x * GardenSpacingToHolderWidthRatio;

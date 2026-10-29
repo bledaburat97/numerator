@@ -14,6 +14,7 @@ namespace Scripts
         [SerializeField] private CanvasGroup canvasGroup;
         
         public CanvasGroup GetCanvasGroup() => canvasGroup;
+        public RectTransform GetRectTransform() => (RectTransform)transform;
         
         public Camera GetCamera()
         {
@@ -24,6 +25,8 @@ namespace Scripts
         {
             return invisibleClickHandler;
         }
+
+        public Sprite GetFruitSprite(int number) => normalCardItemPrefab.GetFruitSprite(number);
         
         public IInitialHolderView CreateCardHolderView()
         {
@@ -68,12 +71,14 @@ namespace Scripts
     
     public interface IInitialCardAreaView
     {
+        RectTransform GetRectTransform();
         IInitialHolderView CreateCardHolderViewOnUpperHolder();
         IInitialHolderView CreateCardHolderViewOnLowerHolder();
 
         INormalCardItemView CreateCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();
+        Sprite GetFruitSprite(int number);
         Camera GetCamera();
         Vector2 GetSizeOfInitialHolderPrefab();
         Vector2 GetSizeOfBoxPrefab();

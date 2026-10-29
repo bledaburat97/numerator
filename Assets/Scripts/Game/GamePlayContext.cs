@@ -19,14 +19,32 @@ namespace Scripts
         [Inject] private IHapticController _hapticController;
         [Inject] private IGamePowerUpAreaController _gamePowerUpAreaController;
         [Inject] private ILevelFlowOrchestrator _levelFlowOrchestrator;
+        [Inject] private IBoardAreaController _boardAreaController;
+        [Inject] private IInitialCardAreaController _initialCardAreaController;
+        [Inject] private IGuessManager _guessManager;
+        private FruitLabGameLayout _presentation;
+        private bool _layoutRefreshPending;
 
         void Start()
         {
+            _presentation = GetComponentInChildren<FruitLabGameLayout>(true);
+            if (_presentation != null) _presentation.LayoutChanged += OnLayoutChanged;
             InitializeHapticController();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
             InitializePowerUpUi();
             InitializeGame();
+        }
+
+        private void OnLayoutChanged() => _layoutRefreshPending = true;
+
+        private void LateUpdate()
+        {
+            if (!_layoutRefreshPending || _levelFlowOrchestrator.IsTransitioning() || _levelFlowOrchestrator.IsGameOver()) return;
+            _layoutRefreshPending = false;
+            _boardAreaController.RefreshLayout();
+            _initialCardAreaController.RefreshLayout();
+            _guessManager.Initialize();
         }
 
         private void InitializeHapticController() //TODO: set in global installer
@@ -67,6 +85,7 @@ namespace Scripts
 
         private void OnDestroy()
         {
+            if (_presentation != null) _presentation.LayoutChanged -= OnLayoutChanged;
             _cardPlacementCoordinator.Unsubscribe();
             _cardInteractionManager.Unsubscribe();
             _cardItemInfoPopupController.Unsubscribe();

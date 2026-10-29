@@ -12,11 +12,24 @@ namespace Scripts
         [SerializeField] protected Image innerImage;
         [SerializeField] private Image frame;
         private const string IsSelected = "IsSelected";
+        private FruitLabGlyph _lockedGlyph;
 
         public override void Init(int cardNumber)
         {
             base.Init(cardNumber);
             innerImage.rectTransform.sizeDelta = Vector2.zero;
+            if (ribbonImage != null)
+            {
+                FruitLabStyle.Surface(ribbonImage, FruitLabStyle.Mint);
+                ribbonImage.raycastTarget = false;
+                RectTransform badge = ribbonImage.rectTransform;
+                badge.anchorMin = badge.anchorMax = new Vector2(0.86f, 0.14f);
+                badge.anchoredPosition = Vector2.zero;
+                badge.sizeDelta = new Vector2(13f, 13f);
+                if (_lockedGlyph == null)
+                    _lockedGlyph = FruitLabGlyph.Create(badge, FruitLabGlyph.Symbol.Check, FruitLabStyle.Background);
+                FruitLabStyle.Stretch(_lockedGlyph.rectTransform, 2f);
+            }
             if (frame != null)
             {
                 frame.gameObject.SetActive(false);

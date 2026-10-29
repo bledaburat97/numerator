@@ -39,12 +39,14 @@ namespace Game
         public Sequence FailLevelAnimation()
         {
             float explosionDuration = 0.3f;
-            float fadeDuration = 0.4f;
-            float fadeAmount = 0.4f;
             float fallBoxesDuration = 1f;
             float buttonsFadeOutDuration = 0.3f;
             float levelEndButtonsFadeInDuration = 0.3f;
+            _fadePanelController.SetFadeImageStatus(false);
+            _fadePanelController.SetTutorialFadeImageStatus(false);
+            _resultAreaController.EnableReview();
             _trueCards = _initialCardAreaController.CreateTempCards();
+            foreach (ICardViewHandler card in _trueCards) card.GetView().SetResultOutline(CardResultState.Correct);
             return DOTween.Sequence()
                 .Append(ExplodeAllCards(explosionDuration))
                 .Append(FadeOutTopAreaButtons(buttonsFadeOutDuration))
@@ -53,7 +55,7 @@ namespace Game
                 .Join(FadeOutGameButtons(buttonsFadeOutDuration))
                 .Append(FallBoxesToBoard(fallBoxesDuration))
                 .Append(FadeInLevelEndButtons(levelEndButtonsFadeInDuration))
-                .Join(_fadePanelController.AnimateFade(fadeAmount, fadeDuration));
+                .Join(_levelEndPopupController.ScaleUpText(0.22f));
         }
         
         private Sequence ExplodeAllCards(float explosionDuration)

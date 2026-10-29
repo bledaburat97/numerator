@@ -48,10 +48,10 @@ namespace Menu
         {
             if (_gameSaveService.HasSavedGame())
             {
-                return "Continue";
+                return "Devam et";
             }
 
-            return "Level " + (_levelTracker.GetLevelId() + 1);
+            return "Bölüm " + (_levelTracker.GetLevelId() + 1);
         }
     }
 

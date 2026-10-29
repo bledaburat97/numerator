@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Scripts;
 using UnityEngine;
+using DG.Tweening;
 using Zenject;
 
 namespace Game
@@ -14,6 +15,7 @@ namespace Game
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
+        private readonly List<(IRewardTokenView token, Sequence animation)> _activeHints = new List<(IRewardTokenView, Sequence)>();
         
         [Inject]
         public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
@@ -21,6 +23,7 @@ namespace Game
             IBoardPlacementQuery boardPlacementQuery, ICardPlacementCoordinator cardPlacementCoordinator)
         {
             guessManager.HintRewardTokenEvent += OnHintRewardTokenEvent;
+            guessManager.LevelFailEvent += CancelPendingHints;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
@@ -51,7 +54,7 @@ namespace Game
             Action revealAndLockCardAction = () =>
                 _cardPlacementCoordinator.TryRevealAndLockCard(boardHolderIndex, cardIndex);
 
-            new RewardTokenAnimationManager().RevealCard(rewardTokenView, cardRectTransform, revealAndLockCardAction);
+            Track(rewardTokenView, new RewardTokenAnimationManager().RevealCard(rewardTokenView, cardRectTransform, revealAndLockCardAction));
             return true;
         }
 
@@ -66,13 +69,30 @@ namespace Game
             _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
             RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
             Action destroyCardAction = () => { _initialCardAreaController.DestroyCard(cardIndex); };
-            new RewardTokenAnimationManager().DestroyCard(rewardTokenView, cardRectTransform, destroyCardAction);
+            Track(rewardTokenView, new RewardTokenAnimationManager().DestroyCard(rewardTokenView, cardRectTransform, destroyCardAction));
             return true;
         }
 
         private static void ConsumeRewardItem(IRewardTokenView rewardTokenView)
         {
             rewardTokenView.AnimateFadeOut(0.25f);
+        }
+
+        private void Track(IRewardTokenView token, Sequence animation)
+        {
+            _activeHints.RemoveAll(hint => hint.animation == null || !hint.animation.IsActive());
+            _activeHints.Add((token, animation));
+        }
+
+        private void CancelPendingHints(object sender, EventArgs args)
+        {
+            foreach (var hint in _activeHints)
+            {
+                if (hint.animation == null || !hint.animation.IsActive()) continue;
+                hint.animation.Kill();
+                hint.token.Destroy();
+            }
+            _activeHints.Clear();
         }
 
         private bool TryGetNonExistedCardIndex(out int cardIndex)
@@ -86,7 +106,7 @@ namespace Game
             {
                 if (cardIndexesOnBoard[i] == -1) continue;
                 int cardNumber = cardIndexesOnBoard[i] + 1;
-                if (cardItemInfoList[cardNumber - 1].isLocked) continue;
+                if (!cardItemInfoList[cardNumber - 1].isExisted || cardItemInfoList[cardNumber - 1].isLocked) continue;
 
                 if (cardItemInfoList[cardNumber - 1].probabilityType != ProbabilityType.NotExisted &&
                     !targetCardNumbers.Contains(cardNumber))
@@ -103,7 +123,7 @@ namespace Game
             }
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
-                if (cardItemInfoList[i].isLocked) continue;
+                if (!cardItemInfoList[i].isExisted || cardItemInfoList[i].isLocked) continue;
 
                 if (!cardIndexesOnBoard.Contains(i) && cardItemInfoList[i].probabilityType != ProbabilityType.NotExisted && !targetCardNumbers.Contains(i+1))
                 {
@@ -119,9 +139,9 @@ namespace Game
             
             for (int i = 0; i < cardItemInfoList.Count; i++)
             {
-                if (cardItemInfoList[i].isLocked) continue;
+                if (!cardItemInfoList[i].isExisted || cardItemInfoList[i].isLocked) continue;
 
-                if (!targetCardNumbers.Contains(i))
+                if (!targetCardNumbers.Contains(i + 1))
                 {
                     cardIndexesShouldBeRed.Add(i);
                 }

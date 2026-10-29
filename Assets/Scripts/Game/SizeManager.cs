@@ -6,24 +6,14 @@ namespace Game
     {
         private float _sizeRatio;
         private const int MaxBoardHolderCount = 5;
-        private const float ExtraSpacingToBoardHolderWidthRatio = 10 / 70f;
 
         public void SetSizeRatio(Vector2 sizeOfTheBoardArea, Vector2 sizeOfTheBoardHolder, float wagonSpacingToBoardHolderWidthRatio)
         {
-            float idealBoardHolderAreaWidthToHeightRatio =
-                (MaxBoardHolderCount + 0 * (MaxBoardHolderCount - 1)
-                                     + ExtraSpacingToBoardHolderWidthRatio) * sizeOfTheBoardHolder.x / sizeOfTheBoardHolder.y;
-            float boardAreaRatio = sizeOfTheBoardArea.x / sizeOfTheBoardArea.y;
-    
-            if (idealBoardHolderAreaWidthToHeightRatio > boardAreaRatio)
-            {
-                float height = sizeOfTheBoardArea.x / idealBoardHolderAreaWidthToHeightRatio;
-                _sizeRatio = height / sizeOfTheBoardHolder.y;
-            }
-            else
-            {
-                _sizeRatio = sizeOfTheBoardArea.y / sizeOfTheBoardHolder.y;
-            }
+            float requiredWidth = sizeOfTheBoardHolder.x *
+                (MaxBoardHolderCount + wagonSpacingToBoardHolderWidthRatio * (MaxBoardHolderCount - 1));
+            _sizeRatio = Mathf.Max(0.01f, Mathf.Min(
+                sizeOfTheBoardArea.x / requiredWidth,
+                sizeOfTheBoardArea.y / sizeOfTheBoardHolder.y));
         }
 
         public float GetSizeRatio()

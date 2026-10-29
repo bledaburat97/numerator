@@ -17,6 +17,23 @@ namespace Scripts
 
         private CanvasGroup _canvasGroup;
 
+        public void ApplyLabLayout(float width, float height)
+        {
+            foreach (LayoutGroup group in GetComponents<LayoutGroup>()) group.enabled = false;
+            float gap = 6f;
+            float buttonWidth = (width - gap * 2f) / 3f;
+            SetLabButton(bombPowerUpButton, bombPowerUpCount, "Bomb", "Bomba", 0);
+            SetLabButton(revealingPowerUpButton, revealingPowerUpCount, "Reveal", "Göster", 1);
+            SetLabButton(lifePowerUpButton, lifePowerUpCount, "Life", "Can", 2);
+
+            void SetLabButton(PowerUpButtonView button, TMP_Text count, string icon, string label, int index)
+            {
+                FruitLabStyle.Place(button.GetButtonRectTransform(), transform,
+                    index * (buttonWidth + gap), 0f, buttonWidth, height);
+                button.ApplyLabLayout(icon, label, count, buttonWidth, height);
+            }
+        }
+
         
         public IBaseButtonView GetRevealingPowerUpButton()
         {
@@ -70,7 +87,7 @@ namespace Scripts
 
         public void SetPowerUpCount(RewardType rewardType, int count)
         {
-            string text = $"x{count}";
+            string text = count.ToString();
             switch (rewardType)
             {
                 case RewardType.Revealing:

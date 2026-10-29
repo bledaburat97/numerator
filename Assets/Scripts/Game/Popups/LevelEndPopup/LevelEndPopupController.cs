@@ -106,6 +106,8 @@ namespace Game
             _view.SetText(text);
             titleText.rectTransform.localScale = Vector3.zero;
         }
+
+        public void SetOutcome(bool success) => _view.SetOutcome(success);
         
         public void CreateRewardCircle(int rewardStarCount, RewardType rewardType)
         {
@@ -300,7 +302,8 @@ namespace Game
                 {
                     SetButtonStatus(LevelFinishButtonType.Game, false);
                     SetButtonStatus(LevelFinishButtonType.Menu, false);
-                    InitButton(LevelFinishButtonType.Claim, "Claim", onClickClaim);
+                    _view.SetRewardPresentation();
+                    InitButton(LevelFinishButtonType.Claim, "Ödülü al", onClickClaim);
                 })
                 .Append(rewardPresentationSequence ?? DOTween.Sequence())
                 .Append(claimCanvasGroup == null
@@ -376,6 +379,7 @@ namespace Game
     {
         void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);
+        void SetOutcome(bool success);
         void CreateRewardCircle(int rewardStarCount, RewardType rewardType);
         void InitStarsAndParticles(int numOfStars, int numOfRewardStars);
         void InitRewardItem(RewardType rewardType);

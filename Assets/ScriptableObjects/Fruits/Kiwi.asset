@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5ad5e455f7024f58a394e5e9293ab19, type: 3}
   m_Name: Kiwi
   m_EditorClassIdentifier: 
-  fruitImage: {fileID: 21387777, guid: 6a4c1a2defad5415694519393c5c9f95, type: 3}
-  fruitColor: {r: 0.6603774, g: 0.33177614, b: 0.16509435, a: 1}
+  fruitImage: {fileID: 8608059420012602043, guid: 14c77f7b7e4cf42f9a6ed7a6c9192ea6, type: 3}
+  fruitColor: {r: 0.68235294, g: 0.52156863, b: 0.37254902, a: 1}

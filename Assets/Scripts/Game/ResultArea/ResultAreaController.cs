@@ -27,6 +27,8 @@ namespace Scripts
 
         public void Initialize(bool isNewGame)
         {
+            if (isNewGame) RemoveResultBlocks();
+            _view.SetEmptyState(_resultBlockControllers.Count == 0);
             if (isNewGame)
             {
                 _view.GetCanvasGroup().alpha = 0f;
@@ -40,6 +42,14 @@ namespace Scripts
         public Sequence ChangeFade(float duration, float finalAlpha)
         {
             return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
+        }
+
+        public void EnableReview() => _view.EnableReview();
+
+        public void RevealAnswer(IReadOnlyList<int> answer)
+        {
+            foreach (IResultBlockController row in _resultBlockControllers) row.RevealAnswer(answer);
+            EnableReview();
         }
 
         public void AddResultBlock(ResultBlockModel resultBlockModel)
@@ -77,7 +87,7 @@ namespace Scripts
                 finalNumbers = finalNumbers,
                 correctPosCount = correctPosCount,
                 wrongPosCount = wrongPosCount
-            }, _view.GetWidth());
+            }, _view.GetWidth(), _view.GetRowHeight());
             _resultBlockControllers.Add(resultBlockController);
             
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
@@ -109,5 +119,7 @@ namespace Scripts
         void AddResultBlock(ResultBlockModel resultBlockModel);
         Sequence ChangeFade(float duration, float finalAlpha);
         void RemoveResultBlocks();
+        void EnableReview();
+        void RevealAnswer(IReadOnlyList<int> answer);
     }
 }

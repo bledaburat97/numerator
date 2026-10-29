@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 
+using UnityEngine.UI;
+
 namespace Scripts
 {
     public class BoundaryView : MonoBehaviour, IBoundaryView
@@ -14,6 +16,9 @@ namespace Scripts
         {
             transform.localPosition = localPosition;
             transform.localScale = Vector3.one;
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 8f);
+            Image line = GetComponent<Image>();
+            if (line != null) line.color = new Color(0.18f, 0.32f, 0.4f, 0.55f);
             _coinViewFactory = coinViewFactory;
             _crystalViewFactory = crystalViewFactory;
         }

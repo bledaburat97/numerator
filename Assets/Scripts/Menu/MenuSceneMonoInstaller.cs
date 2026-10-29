@@ -10,7 +10,7 @@ namespace Scripts
         [SerializeField] private MenuHeaderView menuHeader;
         [SerializeField] private MenuUIView menuUI;
         [SerializeField] private PowerUpListHolderView powerUpListHolderView;
-        [SerializeField] private CircleProgressBarView circleProgressBarView;
+        [SerializeField] private VerticalCrystalProgressView crystalProgressView;
         public override void InstallBindings()
         {
             Container.Bind<IMenuHeaderController>().To<MenuHeaderController>().AsSingle()
@@ -20,7 +20,7 @@ namespace Scripts
             Container.Bind<IMenuPowerUpCountHolderController>().To<MenuPowerUpCountHolderController>().AsSingle()
                 .WithArguments(ResolvePowerUpListHolderView());
             Container.Bind<IRewardProgressDisplayController>().To<RewardProgressDisplayController>().AsSingle()
-                .WithArguments(ResolveCircleProgressBarView());
+                .WithArguments(ResolveCrystalProgressView());
         }
 
         private PowerUpListHolderView ResolvePowerUpListHolderView()
@@ -30,11 +30,11 @@ namespace Scripts
             return FindObjectOfType<PowerUpListHolderView>(true);
         }
 
-        private CircleProgressBarView ResolveCircleProgressBarView()
+        private VerticalCrystalProgressView ResolveCrystalProgressView()
         {
-            if (circleProgressBarView != null) return circleProgressBarView;
+            if (crystalProgressView != null) return crystalProgressView;
 
-            return FindObjectOfType<CircleProgressBarView>(true);
+            return FindObjectOfType<VerticalCrystalProgressView>(true);
         }
     }
 }

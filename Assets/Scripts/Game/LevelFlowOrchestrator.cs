@@ -243,6 +243,8 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingSuccess;
+            _gameUIController.SetAllButtonsUnclickable();
+            _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
             _gameSaveService.DeleteSave();
             _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             StartSuccessFlow();
@@ -254,6 +256,8 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingFail;
+            _gameUIController.SetAllButtonsUnclickable();
+            _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
             _gameSaveService.DeleteSave();
             _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             StartFailFlow();
@@ -268,13 +272,15 @@ namespace Game
             _levelTracker.IncrementLevelIdWithRewards(earnedCoinCount, earnedCrystalCount);
 
             _levelEndPopupController.SetAllStatusFalse();
+            _verticalCrystalProgressController.PrepareForCollection(previousCrystalProgressCount, rewardTypeBeforeCollection);
+            _levelEndPopupController.SetOutcome(true);
             _levelEndPopupController.SetPopupStatus(false);
             _levelEndPopupController.InitButton(
                 LevelFinishButtonType.Game,
-                "Level " + (_levelTracker.GetLevelId() + 1),
+                "Bölüm " + (_levelTracker.GetLevelId() + 1),
                 GoToNextLevel);
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menu", OnMenuButtonClicked);
-            _levelEndPopupController.InitText("Well Done");
+            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menü", OnMenuButtonClicked);
+            _levelEndPopupController.InitText("Kazandın!");
             _levelSuccessAnimationManager.SuccessLevelAnimation(
                 earnedCoinCount,
                 earnedCrystalCount,
@@ -286,9 +292,11 @@ namespace Game
         private void StartFailFlow()
         {
             _levelEndPopupController.SetAllStatusFalse();
+            _levelEndPopupController.SetOutcome(false);
             _levelEndPopupController.SetPopupStatus(true);
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Game, "Retry", Retry);
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menu", OnMenuButtonClicked);
+            _levelEndPopupController.InitText("Tekrar dene");
+            _levelEndPopupController.InitButton(LevelFinishButtonType.Game, "Tekrar oyna", Retry);
+            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menü", OnMenuButtonClicked);
             _levelFailAnimationManager.FailLevelAnimation();
         }
 

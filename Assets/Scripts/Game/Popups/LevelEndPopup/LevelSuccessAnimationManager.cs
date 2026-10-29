@@ -34,22 +34,20 @@ namespace Game
             int previousCrystalProgressCount,
             RewardType rewardTypeBeforeCollection)
         {
-            _fadePanelController.SetFadeImageStatus(true);
-            _fadePanelController.SetFadeImageAlpha(0f);
+            _fadePanelController.SetFadeImageStatus(false);
+            _fadePanelController.SetTutorialFadeImageStatus(false);
+            _fadePanelController.SetBoardFadeImageStatus(false);
             float cardDelayDuration = 0.1f;
             float cardColorChangingDuration = 0.24f;
             float ribbonImageDuration = 0.2f;
             float cardDismissDuration = 0.22f;
-            float fadeDuration = 0.28f;
-            float fadeAmount = 0.3f;
             float scalingUpDurationOfText = 0.22f;
             float buttonsFadeOutDuration = 0.2f;
             return DOTween.Sequence()
                 .Append(_boardAnimationController.Play(cardDelayDuration, cardColorChangingDuration, ribbonImageDuration))
                 .Insert(0.1f, DOTween.Sequence()
                     .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
-                    .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText))
-                    .Join(_fadePanelController.AnimateFade(fadeAmount, fadeDuration)))
+                    .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText)))
                 .AppendInterval(0.05f)
                 .Append(_cleanupAnimationController.DismissCardsOnInitialHolders(cardDismissDuration))
                 .Append(_cleanupAnimationController.FadeOutObsoleteGameUi(buttonsFadeOutDuration))

@@ -542,6 +542,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 5726570800399803672}
+  rectTransform: {fileID: 7294983620852709677}
   button: {fileID: 2874510704095004759}
   outerBg: {fileID: 5156629419060707254}
   shadow: {fileID: 4360048254921785006}

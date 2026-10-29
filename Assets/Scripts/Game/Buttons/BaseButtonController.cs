@@ -43,17 +43,15 @@ namespace Scripts
             if (_isButtonClickable)
             {
                 _hapticController.Vibrate(HapticType.ButtonClick);
-                _onClick?.Invoke();
                 _view.SetButtonDown();
+                _onClick?.Invoke();
             }
         }
         
         private void OnPointerUp()
         {
-            if (_isButtonClickable)
-            {
-                _view.SetButtonUp();
-            }
+            // A guess may disable the button on pointer-down. Always release its visual state.
+            _view.SetButtonUp();
         }
 
         public void SetText(string text)

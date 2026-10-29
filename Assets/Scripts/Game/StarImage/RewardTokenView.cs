@@ -9,20 +9,48 @@ namespace Scripts
         [SerializeField] private Image image;
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private CurvedAnimationPreset curvedAnimationPreset;
+        private Tween _ownedAnimation;
+        private bool _destroyRequested;
+
+        protected virtual void Awake() => ApplyLabStyle();
+
+        public void ApplyLabStyle()
+        {
+            FruitLabStyle.SetIcon(image, this is CoinView ? "Coin" : "Crystal");
+        }
 
         public void SetLocalPosition(Vector2 localPosition)
         {
+            if (this == null || _destroyRequested) return;
             transform.localPosition = localPosition;
         }
 
         public void SetLocalScale(Vector3 localScale)
         {
+            if (this == null || _destroyRequested) return;
             transform.localScale = localScale;
         }
 
         public void Destroy()
         {
+            // Callbacks can hold the interface after Unity destroys the component.
+            if (this == null || _destroyRequested) return;
+            _destroyRequested = true;
             Destroy(gameObject);
+        }
+
+        public void TrackAnimation(Tween animation)
+        {
+            if (_ownedAnimation != null && _ownedAnimation.IsActive()) _ownedAnimation.Kill();
+            _ownedAnimation = animation;
+        }
+
+        protected virtual void OnDestroy()
+        {
+            if (_ownedAnimation != null && _ownedAnimation.IsActive()) _ownedAnimation.Kill();
+            _ownedAnimation = null;
+            if (image != null) image.DOKill();
+            if (rectTransform != null) rectTransform.DOKill();
         }
 
         public void SetSize(Vector2 size)
@@ -34,7 +62,7 @@ namespace Scripts
 
         public void SetStatus(bool status)
         {
-            if (image == null) return;
+            if (this == null || _destroyRequested || image == null) return;
 
             image.gameObject.SetActive(status);
 
@@ -46,6 +74,7 @@ namespace Scripts
 
         public RectTransform GetRectTransform()
         {
+            if (this == null || _destroyRequested) return null;
             return rectTransform != null ? rectTransform : transform as RectTransform;
         }
 
@@ -64,12 +93,13 @@ namespace Scripts
 
         public Sequence AnimateFadeOut(float duration)
         {
-            if (image == null) return DOTween.Sequence();
+            if (this == null || _destroyRequested || image == null) return DOTween.Sequence();
 
             SetStatus(true);
             return DOTween.Sequence()
                 .Append(image.DOFade(0f, duration))
-                .OnComplete(() => SetStatus(false));
+                .OnComplete(() => SetStatus(false))
+                .SetLink(gameObject, LinkBehaviour.KillOnDestroy);
         }
 
         public Tween AnimatePunchScale(Vector3 punch, float duration, int vibrato, float elasticity)

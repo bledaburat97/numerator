@@ -71,6 +71,22 @@ namespace Scripts
             return sequence;
         }
 
+        public void RefreshLayout()
+        {
+            if (_normalCardHolderControllerList == null) return;
+            int firstRowCount = FruitLabLayoutMetrics.GetFirstChoiceRowCount(_numOfInitialHolders);
+            List<Vector2> first = _initialCardAreaLayoutManager.GetInitialHolderLocalPositions(firstRowCount);
+            List<Vector2> second = _initialCardAreaLayoutManager.GetInitialHolderLocalPositions(_numOfInitialHolders - firstRowCount);
+            for (int i = 0; i < _normalCardHolderControllerList.Length; i++)
+            {
+                IInitialCardHolderController holder = _normalCardHolderControllerList[i];
+                if (holder == null) continue;
+                holder.SetLocalPosition(i < firstRowCount ? first[i] : second[i - firstRowCount]);
+                holder.GetView().SetSize(_initialCardAreaLayoutManager.GetInitialHolderSize());
+                _normalCardItemControllerList[i]?.GetView().SetSize(_initialCardAreaLayoutManager.GetBoxSize());
+            }
+        }
+
         public Sequence ChangeFadeInitialArea(float duration, float finalAlpha)
         {
             return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
@@ -210,17 +226,10 @@ namespace Scripts
 
         public void DestroyCard(int cardIndex)
         {
-            if (_normalCardItemControllerList[cardIndex] != null)
-            {
-                _normalCardItemControllerList[cardIndex].DestroyObject();
-                _normalCardItemControllerList[cardIndex] = null;
-                _normalCardHolderControllerList[cardIndex].DestroyObject();
-                _normalCardHolderControllerList[cardIndex] = null;
-            }
-            else
-            {
-                Debug.LogError("Card controller is null");
-            }
+            if (!TryGetCardItem(cardIndex, out INormalCardItemController card)) return;
+            card.DestroyObject();
+            _normalCardItemControllerList[cardIndex] = null;
+            // Keep its stamped holder and stable grid position after an elimination hint.
         }
         
         public Vector2 GetSizeOfInitialHolder()
@@ -232,6 +241,7 @@ namespace Scripts
     
     public interface IInitialCardAreaController
     {
+        void RefreshLayout();
         void Initialize(bool isNewGame);
         int GetCardCount();
         bool TryGetCardItem(int cardIndex, out INormalCardItemController cardItem);

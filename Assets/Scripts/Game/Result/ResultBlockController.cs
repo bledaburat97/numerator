@@ -1,109 +1,59 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Scripts
 {
     public class ResultBlockController : IResultBlockController
     {
         private IResultBlockView _view;
-        private ResultBlockModel _model;
-        public void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth)
+        private List<int> _numbers;
+
+        public void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth, float rowHeight)
         {
             _view = view;
-            _model = model;
-            _view.Init(new NonDraggableCardItemViewFactory(), new ResultImageViewFactory(), resultAreaWidth);
-            CreateCardItems();
-            CreateResults();
+            _numbers = new List<int>(model.finalNumbers);
+            view.Init(new NonDraggableCardItemViewFactory(), resultAreaWidth, rowHeight);
+            foreach (int number in model.finalNumbers)
+            {
+                INonDraggableCardItemView card = view.CreateCardItem();
+                card.Init(number);
+                card.InitLocalScale();
+            }
+            view.DisplayFeedback(model.correctPosCount, model.wrongPosCount);
         }
 
-        private void CreateResults()
-        {
-            //_view.SetResultHolderLocalPosition();
-            
-            if (_model.correctPosCount + _model.wrongPosCount == 0)
-            {
-                return;
-            }
-            if (_model.correctPosCount + _model.wrongPosCount < 3)
-            {
-                for (int i = 0; i < _model.correctPosCount; i++)
-                {
-                    IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Middle);
-                    resultImage.Init(CardPositionCorrectness.Correct);
-                }
-                
-                for (int i = 0; i < _model.wrongPosCount; i++)
-                {
-                    IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Middle);
-                    resultImage.Init(CardPositionCorrectness.Wrong);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < _model.correctPosCount + _model.wrongPosCount; i++)
-                {
-                    if (i < (_model.correctPosCount + _model.wrongPosCount) / 2)
-                    {
-                        if (i < _model.correctPosCount)
-                        {
-                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Top);
-                            resultImage.Init(CardPositionCorrectness.Correct);
-                        }
-                        else
-                        {
-                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Top);
-                            resultImage.Init(CardPositionCorrectness.Wrong);
-                        }
-                    }
-                    else
-                    {
-                        if (i < _model.correctPosCount)
-                        {
-                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Bottom);
-                            resultImage.Init(CardPositionCorrectness.Correct);
-                        }
-                        else
-                        {
-                            IResultImageView resultImage = _view.CreateResultImage(ResultHolderType.Bottom);
-                            resultImage.Init(CardPositionCorrectness.Wrong);
-                        }
-                    }
-                }
-            }
-        }
+        public void DestroyResultBlock() => _view.Destroy();
 
-        private void CreateCardItems()
+        public void RevealAnswer(IReadOnlyList<int> answer)
         {
-            //_view.SetCardsHolderLocalPosition();
-            for (int i = 0; i < _model.finalNumbers.Count; i++)
+            var remaining = new Dictionary<int, int>();
+            var states = new CardResultState[_numbers.Count];
+            for (int i = 0; i < answer.Count; i++)
             {
-                INonDraggableCardItemView cardItemView = _view.CreateCardItem();
-                cardItemView.Init(_model.finalNumbers[i]);
-                cardItemView.SetSize(new Vector2(ConstantValues.RESULT_CARD_WIDTH, ConstantValues.RESULT_CARD_HEIGHT));
-                cardItemView.InitLocalScale();
-                cardItemView.SetLocalPosition(Vector3.zero);
-                cardItemView.MultiplyPixelsPerUnit();
+                if (i < _numbers.Count && _numbers[i] == answer[i]) states[i] = CardResultState.Correct;
+                else remaining[answer[i]] = remaining.TryGetValue(answer[i], out int count) ? count + 1 : 1;
             }
-        }
-
-        public void DestroyResultBlock()
-        {
-            _view.Destroy();
+            for (int i = 0; i < _numbers.Count; i++)
+            {
+                if (states[i] != CardResultState.Correct)
+                {
+                    bool found = remaining.TryGetValue(_numbers[i], out int count) && count > 0;
+                    states[i] = found ? CardResultState.Misplaced : CardResultState.Absent;
+                    if (found) remaining[_numbers[i]]--;
+                }
+                _view.SetCardResult(i, states[i]);
+            }
         }
     }
 
     public interface IResultBlockController
     {
-        void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth);
+        void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth, float rowHeight);
         void DestroyResultBlock();
+        void RevealAnswer(IReadOnlyList<int> answer);
     }
-    
-    public enum CardPositionCorrectness
-    {
-        Correct,
-        Wrong,
-    }
+
+    public enum CardPositionCorrectness { Correct, Wrong }
 
     public class ResultBlockModel : EventArgs
     {
