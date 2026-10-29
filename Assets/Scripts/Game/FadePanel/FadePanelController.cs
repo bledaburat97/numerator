@@ -20,7 +20,8 @@ namespace Scripts
         
         public void SetTutorialFadeImageStatus(bool status)
         {
-            _view.GetTutorialFadeImage().gameObject.SetActive(status);
+            var image = _view.GetTutorialFadeImage();
+            if (image != null) image.gameObject.SetActive(status);
         }
         
         public void SetBoardFadeImageStatus(bool status)

@@ -24,7 +24,7 @@ namespace Scripts
             _boardHolderCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount;
         }
 
-        public void RemoveFirstBoardHolder()
+        public void RemoveLastBoardHolder()
         {
             _removedBoardHolderCount++;
             _boardHolderCount--;
@@ -44,7 +44,7 @@ namespace Scripts
     public interface IBoardHolderCountManager
     {
         void Initialize();
-        void RemoveFirstBoardHolder();
+        void RemoveLastBoardHolder();
         int GetBoardHolderCount();
         int GetRemovedBoardHolderCount();
     }

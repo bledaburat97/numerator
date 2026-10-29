@@ -20,15 +20,15 @@ namespace Scripts
         {
             if (_levelTracker.IsFirstLevelTutorial())
             {
-                SetSavedTargetCardList(new List<int>(){4,1});
+                SetSavedTargetCardList(new List<int>() { 4, 1 });
+            }
+            else if (_gameSaveService.GetSavedLevel() != null)
+            {
+                SetSavedTargetCardList(_gameSaveService.GetSavedLevel().TargetCards.Take(numOfBoardHolders).ToList());
             }
             else if (_levelTracker.IsCardInfoTutorial())
             {
                 SetSavedTargetCardList(new List<int>(){4,6});
-            }
-            else if (_gameSaveService.GetSavedLevel() != null)
-            {
-                SetSavedTargetCardList(_gameSaveService.GetSavedLevel().TargetCards);
             }
             else
             {
@@ -49,6 +49,13 @@ namespace Scripts
         public List<int> GetTargetCardsList()
         {
             return _targetCardsList;
+        }
+
+        public bool TryRemoveLastTargetCard()
+        {
+            if (_targetCardsList == null || _targetCardsList.Count <= 1) return false;
+            _targetCardsList.RemoveAt(_targetCardsList.Count - 1);
+            return true;
         }
 
         private void SetTargetNumber(int oldValue, int newValue)
@@ -119,6 +126,7 @@ namespace Scripts
     {
         void CreateMultiplayerTargetNumber();
         List<int> GetTargetCardsList();
+        bool TryRemoveLastTargetCard();
         void SetTargetNumber(int numOfBoardHolders);
     }
 }

@@ -28,11 +28,6 @@ namespace Scripts
                 label.alignment = TextAlignmentOptions.MidlineLeft;
                 FruitLabStyle.Place(label.rectTransform, label.transform.parent, 44f, 0f, 84f, 40f);
             }
-            TMP_Text title = transform.Find("MenuTitle")?.GetComponent<TMP_Text>();
-            if (title == null) title = FruitLabStyle.CreateText("MenuTitle", transform, 23f, FruitLabStyle.Text);
-            title.text = "Fruit Lab";
-            title.alignment = TextAlignmentOptions.MidlineLeft;
-            FruitLabStyle.Place(title.rectTransform, transform, 0f, 12f, width - 144f, 40f);
         }
 
         public void Init(int starCount)

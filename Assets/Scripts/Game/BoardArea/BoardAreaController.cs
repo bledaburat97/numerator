@@ -213,16 +213,17 @@ namespace Scripts
 
         public void RemoveLastBoardHolder()
         {
-            if (_boardHolderControllerList.Count == 0) return;
+            if (_boardHolderControllerList.Count <= 1) return;
 
             DeleteOneBoardHolder();
         }
 
         private void DeleteOneBoardHolder()
         {
-            _boardHolderCountManager.RemoveFirstBoardHolder();
-            IBoardCardHolderController boardHolderController = _boardHolderControllerList[0];
-            _boardHolderControllerList.Remove(boardHolderController);
+            _boardHolderCountManager.RemoveLastBoardHolder();
+            int lastIndex = _boardHolderControllerList.Count - 1;
+            IBoardCardHolderController boardHolderController = _boardHolderControllerList[lastIndex];
+            _boardHolderControllerList.RemoveAt(lastIndex);
             boardHolderController.DestroyObject();
             _boardLayoutManager.Initialize(_boardHolderCountManager.GetBoardHolderCount());
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
@@ -233,7 +234,7 @@ namespace Scripts
             }
 
             MoveBoardHoldersToScene(1f);
-            _boardPlacementCommands.DeleteFirstBoardHolder();
+            _boardPlacementCommands.DeleteLastBoardHolder();
         }
 
         private void MoveBoardHoldersToScene(float duration)

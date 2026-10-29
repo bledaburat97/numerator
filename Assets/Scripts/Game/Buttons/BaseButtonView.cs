@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class BaseButtonView : MonoBehaviour, IBaseButtonView, IPointerDownHandler, IPointerUpHandler
+    public class BaseButtonView : MonoBehaviour, IBaseButtonView, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private TMP_Text text;
@@ -22,6 +22,7 @@ namespace Scripts
         private Vector2 innerBgOffsetMax;
         private Action _onPointerDown;
         private Action _onPointerUp;
+        private Action _onPointerClick;
         private FruitLabGlyph _labGlyph;
 
         private void ResolveReferences()
@@ -152,6 +153,11 @@ namespace Scripts
             _onPointerUp = onPointerUp;
         }
 
+        public void SetOnPointerClickCallBack(Action onPointerClick)
+        {
+            _onPointerClick = onPointerClick;
+        }
+
         public void SetButtonDown()
         {
             ResolveReferences();
@@ -240,6 +246,12 @@ namespace Scripts
             _onPointerUp?.Invoke();
         }
 
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button == PointerEventData.InputButton.Left)
+                _onPointerClick?.Invoke();
+        }
+
         public RectTransform GetRectTransform()
         {
             if (outerBg != null)
@@ -295,6 +307,7 @@ namespace Scripts
         RectTransform GetButtonRectTransform();
         void SetOnPointerDownCallBack(Action onPointerDown);
         void SetOnPointerUpCallBack(Action onPointerUp);
+        void SetOnPointerClickCallBack(Action onPointerClick);
         void SetButtonDown();
         void SetButtonUp();
         void DestroyObject();

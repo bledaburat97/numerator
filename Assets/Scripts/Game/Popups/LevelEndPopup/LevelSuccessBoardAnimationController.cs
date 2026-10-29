@@ -22,24 +22,31 @@ namespace Scripts
         {
             List<ICardViewHandler> cardsOnBoard = _cardPlacementCoordinator.GetCardsOnBoard();
             return DOTween.Sequence()
-                .AppendCallback(() =>
-                    TurnCardsIntoCertain(cardsOnBoard, cardDelayDuration, cardColorChangingDuration, ribbonImageDuration))
+                .Append(TurnCardsIntoCertain(cardsOnBoard, cardDelayDuration, cardColorChangingDuration, ribbonImageDuration))
                 .Join(_boardAreaController.PlayAllSuccessFrameAnimations(cardDelayDuration));
         }
 
-        private static void TurnCardsIntoCertain(
+        private static Sequence TurnCardsIntoCertain(
             List<ICardViewHandler> cardViewHandlerList,
             float delayDuration,
             float colorChangingDuration,
             float ribbonImageDuration)
         {
+            Sequence sequence = DOTween.Sequence().AppendCallback(() =>
+            {
+                foreach (ICardViewHandler card in cardViewHandlerList)
+                    card.SetProbability(ProbabilityType.Certain, true);
+            });
             for (int i = 0; i < cardViewHandlerList.Count; i++)
             {
-                cardViewHandlerList[i].SetProbability(ProbabilityType.Certain, true);
-                cardViewHandlerList[i].GetView().SetResultOutline(CardResultState.Correct);
-                float delay = delayDuration * i;
-                cardViewHandlerList[i].AnimateTurnIntoCertain(delay, colorChangingDuration, ribbonImageDuration);
+                ICardViewHandler card = cardViewHandlerList[i];
+                sequence.InsertCallback(delayDuration * i, () =>
+                {
+                    card.GetView().SetResultOutline(CardResultState.Correct);
+                    card.AnimateTurnIntoCertain(0f, colorChangingDuration, ribbonImageDuration);
+                });
             }
+            return sequence.AppendInterval(colorChangingDuration);
         }
     }
 

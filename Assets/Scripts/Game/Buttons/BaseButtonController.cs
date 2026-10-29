@@ -10,6 +10,8 @@ namespace Scripts
         private IBaseButtonView _view;
         private bool _isButtonClickable;
         private Action _onClick;
+        private bool _clickOnRelease;
+        private bool _pressed;
         public BaseButtonController(IBaseButtonView view, Action onClick)
         {
             _view = view;
@@ -21,6 +23,7 @@ namespace Scripts
             _isButtonClickable = true;
             _view.SetOnPointerDownCallBack(OnPointerDown);
             _view.SetOnPointerUpCallBack(OnPointerUp);
+            _view.SetOnPointerClickCallBack(OnPointerClick);
         }
 
         public void AddAction(Action action)
@@ -36,15 +39,19 @@ namespace Scripts
         public void SetButtonClickable(bool isClickable)
         {
             _isButtonClickable = isClickable;
+            if (!isClickable) _pressed = false;
         }
+
+        public void SetClickOnRelease(bool enabled) => _clickOnRelease = enabled;
 
         private void OnPointerDown()
         {
             if (_isButtonClickable)
             {
+                _pressed = true;
                 _hapticController.Vibrate(HapticType.ButtonClick);
                 _view.SetButtonDown();
-                _onClick?.Invoke();
+                if (!_clickOnRelease) _onClick?.Invoke();
             }
         }
         
@@ -52,6 +59,13 @@ namespace Scripts
         {
             // A guess may disable the button on pointer-down. Always release its visual state.
             _view.SetButtonUp();
+        }
+
+        private void OnPointerClick()
+        {
+            bool invoke = _clickOnRelease && _pressed && _isButtonClickable;
+            _pressed = false;
+            if (invoke) _onClick?.Invoke();
         }
 
         public void SetText(string text)
@@ -116,6 +130,7 @@ namespace Scripts
         void SetColor(Color color);
         IBaseButtonView GetView();
         void SetButtonClickable(bool isClickable);
+        void SetClickOnRelease(bool enabled);
         void DestroyObject();
         void AddAction(Action action);
         void SetupTutorialMode();

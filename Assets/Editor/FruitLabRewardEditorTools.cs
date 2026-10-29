@@ -13,6 +13,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -242,4 +243,267 @@ public static class FruitLabRewardEditorTools
     }
     private static void Field(object target, string name, object value) => target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, value);
     private static void Require(bool condition, string message) { if (!condition) throw new Exception("Reward UI: " + message); }
+}
+
+public static class FruitLabSettingsEditorTools
+{
+    private const string Path = "Assets/Prefabs/SettingsPopup.prefab";
+    private const string Folder = "Library/FruitLabEditor";
+
+    public static string Bake()
+    {
+        string backup = Folder + "/SettingsBackups/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+        Directory.CreateDirectory(backup);
+        File.Copy(Path, backup + "/SettingsPopup.prefab");
+        File.Copy("Assets/Scenes/Menu.unity", backup + "/Menu.unity");
+        Scene game = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
+        try { FruitLabStyle.Font = Find<GameUIView>(game).GetUserText().font; }
+        finally { EditorSceneManager.ClosePreviewScene(game); }
+        GameObject root = PrefabUtility.LoadPrefabContents(Path);
+        try
+        {
+            var view = root.GetComponent<SettingsPopupView>();
+            var content = (RectTransform)root.transform.Find("Image");
+            var title = content.GetComponentsInChildren<TMPro.TMP_Text>(true).First(label => label.GetComponentInParent<BaseButtonView>() == null);
+            title.name = "Title";
+            var description = content.Find("Description")?.GetComponent<TMPro.TMP_Text>()
+                ?? FruitLabStyle.CreateText("Description", content, 13f, FruitLabStyle.Muted);
+            var data = new SerializedObject(view);
+            var oldClose = (BaseButtonView)data.FindProperty("closeButton").objectReferenceValue;
+            if (oldClose.name != "ContinueButton")
+            {
+                var resume = ((GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Buttons/BaseButton.prefab"), content)).GetComponent<BaseButtonView>();
+                resume.name = "ContinueButton";
+                data.FindProperty("closeButton").objectReferenceValue = resume;
+                Object.DestroyImmediate(oldClose.gameObject);
+            }
+            data.FindProperty("content").objectReferenceValue = content;
+            data.FindProperty("title").objectReferenceValue = title;
+            data.FindProperty("description").objectReferenceValue = description;
+            Transform replay = content.Find("ReplayButton");
+            if (replay != null) Object.DestroyImmediate(replay.gameObject);
+            data.ApplyModifiedPropertiesWithoutUndo();
+            view.ApplyLabStyle();
+            foreach (Component component in root.GetComponentsInChildren<Component>(true))
+            {
+                EditorUtility.SetDirty(component);
+                if (PrefabUtility.IsPartOfPrefabInstance(component)) PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            }
+            PrefabUtility.SaveAsPrefabAsset(root, Path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+
+        Scene menu = SceneManager.GetSceneByPath("Assets/Scenes/Menu.unity");
+        bool opened = !menu.isLoaded;
+        if (opened) menu = EditorSceneManager.OpenScene("Assets/Scenes/Menu.unity", OpenSceneMode.Additive);
+        try
+        {
+            var header = Find<MenuHeaderView>(menu);
+            Transform title = header.transform.Find("MenuTitle");
+            if (title != null) { Undo.DestroyObjectImmediate(title.gameObject); EditorSceneManager.MarkSceneDirty(menu); }
+            Require(EditorSceneManager.SaveScene(menu), "Menu title removal must save");
+            Require(header.transform.Find("MenuTitle") == null, "Menu title must be removed from the scene");
+        }
+        finally { if (opened) EditorSceneManager.CloseScene(menu, true); }
+        return "Saved SettingsPopup.prefab and removed MenuTitle from Menu.unity; backup=" + backup;
+    }
+
+    public static void Review(Canvas canvas, Camera camera)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Path);
+        var host = new GameObject("SettingsLayoutReview", typeof(RectTransform)).GetComponent<RectTransform>();
+        host.SetParent(canvas.transform, false);
+        try
+        {
+            foreach (float width in new[] { 320f, 375f, 430f })
+            foreach (float height in new[] { 568f, 667f, 812f })
+            foreach (bool single in new[] { true, false })
+            {
+                host.sizeDelta = new Vector2(width, height);
+                GameObject root = Object.Instantiate(prefab, host, false);
+                try
+                {
+                    var view = root.GetComponent<SettingsPopupView>(); view.Init(); view.SetSinglePlayer(single);
+                    var rect = (RectTransform)root.transform;
+                    Require(rect.rect.width <= width - 31f && rect.rect.height < height, "Popup must fit the available mobile area");
+                    Require(((Component)view.GetRetryButton()).gameObject.activeSelf == single, "Retry is available only in single player");
+                    IBaseButtonView[] buttons = single ? new[] { view.GetCloseButton(), view.GetRetryButton(), view.GetMenuButton() }
+                        : new[] { view.GetCloseButton(), view.GetMenuButton() };
+                    for (int i = 0; i < buttons.Length; i++)
+                    {
+                        Rect bounds = Bounds(buttons[i].GetButtonRectTransform(), rect);
+                        Require(rect.rect.Contains(bounds.min) && rect.rect.Contains(bounds.max) && bounds.height >= 44f,
+                            "Every settings button must stay inside the panel with a usable touch height");
+                        for (int j = 0; j < i; j++) Require(!bounds.Overlaps(Bounds(buttons[j].GetButtonRectTransform(), rect)), "Settings buttons cannot overlap");
+                    }
+                }
+                finally { Object.DestroyImmediate(root); }
+            }
+        }
+        finally { Object.DestroyImmediate(host.gameObject); }
+
+        var fade = canvas.GetComponentInChildren<FadePanelView>(true).GetFadeImage();
+        var events = new GameObject("SettingsReviewEvents", typeof(EventSystem));
+        SceneManager.MoveGameObjectToScene(events, canvas.gameObject.scene);
+        var trackerObject = new GameObject("SettingsReviewTracker"); trackerObject.SetActive(false);
+        SceneManager.MoveGameObjectToScene(trackerObject, canvas.gameObject.scene);
+        GameObject popup = null;
+        try
+        {
+            var tracker = trackerObject.AddComponent<LevelTracker>();
+            var bindings = new Zenject.DiContainer();
+            bindings.Bind<IHapticController>().FromInstance(new HapticController());
+            bindings.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
+            var factory = bindings.Resolve<BaseButtonControllerFactory>();
+            foreach (bool single in new[] { true, false })
+            {
+                typeof(LevelTracker).GetField("_gameOption", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(tracker, single ? GameOption.SinglePlayer : GameOption.MultiPlayer);
+                fade.transform.parent.gameObject.SetActive(true); fade.gameObject.SetActive(true);
+                fade.color = new Color(FruitLabStyle.Background.r, FruitLabStyle.Background.g, FruitLabStyle.Background.b, .78f);
+                if (popup == null) popup = Object.Instantiate(prefab, canvas.GetComponentInChildren<GamePopupCreator>(true).transform, false);
+                foreach (Transform child in popup.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
+                var view = popup.GetComponent<SettingsPopupView>();
+                int closed = 0, saved = 0, deleted = 0;
+                new SettingsPopupController().Initialize(new ImmediateCloseView(view), () => { closed++; fade.gameObject.SetActive(false); },
+                    () => saved++, () => deleted++, tracker, factory);
+                var pointer = new PointerEventData(events.GetComponent<EventSystem>());
+                if (single) Capture(camera, Folder + "/preview-settings.png");
+                foreach (IBaseButtonView button in new[] { view.GetCloseButton(), view.GetMenuButton(), view.GetRetryButton() })
+                {
+                    if (!((Component)button).gameObject.activeInHierarchy) continue;
+                    var hit = Hit(canvas, camera, button.GetButtonRectTransform(), pointer);
+                    Require(hit != null && ExecuteEvents.GetEventHandler<IPointerDownHandler>(hit) == ((Component)button).gameObject,
+                        "Settings raycast must reach " + ((Component)button).name + "; top hit=" + (hit == null ? "none" : hit.name)
+                        + "; handler=" + (hit == null ? "none" : ExecuteEvents.GetEventHandler<IPointerDownHandler>(hit)?.name)
+                        + "; pointer=" + pointer.position + "; graphics=" + string.Join(" | ", popup.GetComponentsInChildren<Graphic>(true)
+                            .Where(graphic => graphic.raycastTarget).Select(graphic => graphic.name + ":canvas=" + graphic.canvas?.name + ":depth=" + graphic.depth
+                                + ":valid=" + graphic.Raycast(pointer.position, camera) + ":inside=" + RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointer.position, camera))));
+                    Require(((Component)button).GetComponentInChildren<TMPro.TMP_Text>(true).text != "", "Every settings action needs a label");
+                }
+                ValidateNavigation(view, tracker, factory, pointer, single);
+                if (single) continue;
+                // Rebind the real close action after the navigation probes.
+                new SettingsPopupController().Initialize(new ImmediateCloseView(view), () => { closed++; fade.gameObject.SetActive(false); },
+                    () => saved++, () => deleted++, tracker, factory);
+                ((BaseButtonView)view.GetCloseButton()).OnPointerDown(pointer);
+                Require(closed == 0, "Resume must wait until release");
+                ((BaseButtonView)view.GetCloseButton()).OnPointerUp(pointer);
+                ((BaseButtonView)view.GetCloseButton()).OnPointerClick(pointer);
+                popup = null;
+                Require(closed == 1 && saved == 0 && deleted == 0, "Resume closes once without saving, restarting or changing player data");
+                var settings = canvas.GetComponentInChildren<GameUIView>(true).GetSettingsButton();
+                var underlying = Hit(canvas, camera, settings.GetButtonRectTransform(), pointer);
+                Require(underlying != null && ExecuteEvents.GetEventHandler<IPointerDownHandler>(underlying) == ((Component)settings).gameObject,
+                    "Closing settings must restore gameplay raycasts");
+            }
+        }
+        finally
+        {
+            if (popup != null) Object.DestroyImmediate(popup);
+            Object.DestroyImmediate(events); Object.DestroyImmediate(trackerObject);
+            fade.gameObject.SetActive(false); Draw(camera);
+        }
+        Debug.Log("FRUIT_LAB_SETTINGS_PASS: 18 mobile layouts; single/multiplayer raycasts; release-only Menu/Game routing, save/delete separation, repeated navigation guard, resume and input restoration.");
+    }
+
+    private static void ValidateNavigation(SettingsPopupView view, LevelTracker tracker, BaseButtonControllerFactory factory, PointerEventData pointer, bool single)
+    {
+        foreach (bool menu in single ? new[] { true, false } : new[] { true })
+        {
+            var scenes = new List<string>();
+            int saved = 0, deleted = 0, stopped = 0;
+            new SettingsPopupController(scene => scenes.Add(scene), () => stopped++).Initialize(view, () => { },
+                () => saved++, () => deleted++, tracker, factory);
+            var button = (BaseButtonView)(menu ? view.GetMenuButton() : view.GetRetryButton());
+            button.OnPointerDown(pointer);
+            Require(scenes.Count == 0 && saved == 0 && deleted == 0, "Scene navigation cannot run during pointer-down");
+            button.OnPointerUp(pointer);
+            Require(scenes.Count == 0, "Releasing outside a button without a click cannot navigate");
+            button.OnPointerClick(pointer);
+            Require(scenes.SequenceEqual(new[] { menu ? "Menu" : "Game" })
+                && saved == (menu && single ? 1 : 0) && deleted == (menu ? 0 : 1) && stopped == (menu ? 1 : 0),
+                "Ana menü must request Menu/save, while Yeniden başlat requests Game/delete; single=" + single + "; menu=" + menu);
+            var other = (BaseButtonView)(menu && single ? view.GetRetryButton() : view.GetMenuButton());
+            other.OnPointerDown(pointer); other.OnPointerUp(pointer); other.OnPointerClick(pointer);
+            Require(scenes.Count == 1 && saved + deleted == (single ? 1 : 0), "The same popup cannot request a second scene transition");
+        }
+    }
+
+    public static string AuditTutorials()
+    {
+        Scene game = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
+        Scene menu = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Menu.unity");
+        var trackerObject = new GameObject("ReadOnlyTutorialAudit"); trackerObject.SetActive(false);
+        try
+        {
+            var tracker = trackerObject.AddComponent<LevelTracker>();
+            var creator = new SerializedObject(Find<GamePopupCreator>(game));
+            var unmask = new SerializedObject(Find<UnmaskServiceAreaView>(game));
+            Object hand = creator.FindProperty("handTutorialPrefab").objectReferenceValue;
+            Object message = creator.FindProperty("tutorialMessagePopupPrefab").objectReferenceValue;
+            var mask = unmask.FindProperty("unmaskServicePrefab").objectReferenceValue as UnmaskServiceView;
+            var maskData = mask != null ? new SerializedObject(mask) : null;
+            bool maskReady = maskData != null && new[] { "spotlight", "unmaskCardItemPrefab" }.All(name => maskData.FindProperty(name).objectReferenceValue != null);
+            var report = new Dictionary<string, object> {
+                ["first_level_trigger_enabled"] = tracker.IsFirstLevelTutorial(),
+                ["card_info_trigger_enabled"] = tracker.IsCardInfoTutorial(),
+                ["tutorial_prefabs_assigned"] = hand != null && message != null && mask != null,
+                ["hand_prefab"] = AssetDatabase.GetAssetPath(hand),
+                ["message_prefab"] = AssetDatabase.GetAssetPath(message),
+                ["mask_prefab"] = AssetDatabase.GetAssetPath(mask),
+                ["spotlight_and_frame_bindings_ready"] = maskReady,
+                ["menu_reset_component_active"] = Find<MenuSceneContext>(menu).isActiveAndEnabled,
+                ["tutorials_started"] = false,
+                ["player_preferences_written"] = false,
+                ["scope"] = "Read-only native asset binding inspection; see tutorial-review.json for executed integration checks"
+            };
+            string output = Folder + "/tutorial-audit.json";
+            File.WriteAllText(output, Newtonsoft.Json.JsonConvert.SerializeObject(report, Newtonsoft.Json.Formatting.Indented));
+            return output;
+        }
+        finally { Object.DestroyImmediate(trackerObject); EditorSceneManager.ClosePreviewScene(menu); EditorSceneManager.ClosePreviewScene(game); }
+    }
+
+    private sealed class ImmediateCloseView : ISettingsPopupView
+    {
+        private readonly SettingsPopupView _view;
+        public ImmediateCloseView(SettingsPopupView view) => _view = view;
+        public void Init() => _view.Init();
+        public void SetSinglePlayer(bool single) => _view.SetSinglePlayer(single);
+        public void Close() => Object.DestroyImmediate(_view.gameObject);
+        public IBaseButtonView GetRetryButton() => _view.GetRetryButton();
+        public IBaseButtonView GetMenuButton() => _view.GetMenuButton();
+        public IBaseButtonView GetCloseButton() => _view.GetCloseButton();
+    }
+    private static T Find<T>(Scene scene) where T : Component => scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<T>(true)).First();
+    private static Rect Bounds(RectTransform rect, RectTransform parent)
+    {
+        var corners = new Vector3[4]; rect.GetWorldCorners(corners);
+        Vector2 min = parent.InverseTransformPoint(corners[0]), max = min;
+        foreach (Vector3 corner in corners) { Vector2 p = parent.InverseTransformPoint(corner); min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+        return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+    }
+    private static GameObject Hit(Canvas canvas, Camera camera, RectTransform rect, PointerEventData pointer)
+    {
+        Canvas.ForceUpdateCanvases();
+        pointer.position = RectTransformUtility.WorldToScreenPoint(camera, rect.TransformPoint(rect.rect.center));
+        var hits = new List<RaycastResult>(); canvas.GetComponent<GraphicRaycaster>().Raycast(pointer, hits);
+        return hits.Count == 0 ? null : hits[0].gameObject;
+    }
+    private static void Draw(Camera camera)
+    {
+        Canvas.ForceUpdateCanvases();
+        if (GraphicsSettings.currentRenderPipeline != null)
+            RenderPipeline.SubmitRenderRequest(camera, new UniversalRenderPipeline.SingleCameraRequest { destination = camera.targetTexture });
+        else camera.Render();
+    }
+    private static void Capture(Camera camera, string path)
+    {
+        Draw(camera);
+        RenderTexture previous = RenderTexture.active; RenderTexture.active = camera.targetTexture;
+        var capture = new Texture2D(camera.targetTexture.width, camera.targetTexture.height, TextureFormat.RGB24, false);
+        try { capture.ReadPixels(new Rect(0, 0, capture.width, capture.height), 0, 0); capture.Apply(); File.WriteAllBytes(path, capture.EncodeToPNG()); }
+        finally { Object.DestroyImmediate(capture); RenderTexture.active = previous; }
+    }
+    private static void Require(bool condition, string message) { if (!condition) throw new Exception("Settings review: " + message); }
 }

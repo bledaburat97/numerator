@@ -96,6 +96,7 @@ namespace Scripts
 
         private bool CanUseBombPowerUp()
         {
+            if (_boardHolderCountManager.GetBoardHolderCount() <= 1) return false;
             if (_roundStateManager.GetTriedCardsList().Count > 0) return false;
             if (_boardHolderCountManager.GetRemovedBoardHolderCount() > 0) return false;
 

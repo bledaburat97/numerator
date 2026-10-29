@@ -27,17 +27,10 @@ namespace Scripts
 
         public void RemoveLastCardHolderIndicator()
         {
+            int boardCount = _boardHolderCountManager.GetBoardHolderCount();
             foreach (CardItemInfo cardItemInfo in _cardItemInfoList)
             {
-                if(cardItemInfo.possibleCardHolderIndicatorIndexes.Contains(0))
-                {
-                    cardItemInfo.possibleCardHolderIndicatorIndexes.Remove(0);
-                }
-
-                for (int i = 0; i < cardItemInfo.possibleCardHolderIndicatorIndexes.Count; i++)
-                {
-                    cardItemInfo.possibleCardHolderIndicatorIndexes[i]--;
-                }
+                cardItemInfo.possibleCardHolderIndicatorIndexes.RemoveAll(index => index >= boardCount);
             }
         }
 

@@ -19,6 +19,7 @@ namespace Scripts
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
         public override void InstallBindings()
         {
+            Container.Bind<TutorialInputGate>().AsSingle();
             Container.Bind<IBoardAreaView>().FromInstance(boardAreaView).AsSingle();
             Container.Bind<IInitialCardAreaView>().FromInstance(initialCardAreaView).AsSingle();
             Container.Bind<ISizeManager>().To<SizeManager>().AsSingle();

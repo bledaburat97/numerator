@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using DG.Tweening;
 using Game;
@@ -182,6 +183,7 @@ public static class FruitLabFailureValidation
         public event EventHandler<GameUIButtonType> OpenPowerUpEvent;
         public event EventHandler<GameUIButtonType> ClosePowerUpEvent;
         public event EventHandler AddLifeEvent;
+        public void Bomb() => RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
         public void CloseActivePowerUp() { }
     }
     private class TokenProbe : IRewardTokenView
@@ -224,6 +226,7 @@ public static class FruitLabFailureValidation
         public event EventHandler ResetNumbers;
         public event EventHandler OpenSettings;
         public event EventHandler<bool> CardInfoToggleChanged;
+        public void Submit() => CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
         public void Initialize(bool isNewGame) { }
         public void InitializeForMultiplayer() { }
         public RectTransform GetCheckButtonRectTransform() => null;
@@ -239,6 +242,299 @@ public static class FruitLabFailureValidation
         public void RefreshCoinCounter() { }
         public Sequence PlayCoinCounterHit(int count, float duration) => DOTween.Sequence();
         public RectTransform GetCoinImageRectTransform() => null;
+    }
+
+    public static void ValidateSuccessOrder()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new Exception("Stop Play mode before success order checks.");
+        Scene previous = SceneManager.GetActiveScene();
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        SceneManager.SetActiveScene(scene);
+        UpdateType update = DOTween.defaultUpdateType;
+        DOTween.defaultUpdateType = UpdateType.Manual;
+        try
+        {
+            foreach (int[] answer in new[] { new[] { 5, 2 }, new[] { 4, 1, 3 }, new[] { 6, 2, 5, 1 }, new[] { 5, 2, 4, 1, 3 }, new[] { 7 } })
+            {
+                var root = new GameObject("SuccessOrderRegression", typeof(RectTransform));
+                var parent = (RectTransform)root.transform;
+                try
+                {
+                    var level = new BombLevel { Data = new LevelData { NumOfBoardHolders = answer.Length, NumOfCards = 9, MaxNumOfTries = 8 } };
+                    var saves = new LevelSaveDataManager(level); saves.CreateDefaultLevelSaveData();
+                    var counts = new BoardHolderCountManager(saves, level);
+                    var indexes = new BoardCardIndexManager();
+                    var view = new BombBoard(parent);
+                    var board = new BoardAreaController(view, new BoardLayoutManager(view, new SizeManager()), counts, indexes, indexes);
+                    board.CreateBoard();
+                    var info = new CardItemInfoManager(saves, null, counts); info.Initialize();
+                    var initial = new InitialCardAreaController(null, board, counts, level, saves, null, null, null);
+                    var cards = new INormalCardItemController[9];
+                    var outlines = new Image[9];
+                    for (int i = 0; i < cards.Length; i++)
+                    {
+                        var card = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/CardItem.prefab"), parent, false).GetComponent<NormalCardItemView>();
+                        cards[i] = new NormalCardItemController(card, null, new HapticController(),
+                            new CardItemData(parent, parent, i, i + 1, ProbabilityType.Probable, false, Vector2.one * 40f));
+                        outlines[i] = (Image)new SerializedObject(card).FindProperty("resultOutline").objectReferenceValue;
+                    }
+                    Field(initial, "_normalCardItemControllerList", cards); Field(initial, "_numOfInitialHolders", cards.Length);
+                    var reveal = new RevealingPowerUpController(board, new PowerSource(), null, null, null, null);
+                    var placement = new CardPlacementCoordinator(board, null, new UiProbe(), indexes, indexes, reveal, initial, info);
+                    Field(placement, "_numOfCards", cards.Length);
+                    for (int i = 0; i < answer.Length; i++)
+                    {
+                        indexes.TryPlaceCardOnBoardHolder(i, answer[i] - 1);
+                        cards[answer[i] - 1].GetView().SetParent(board.GetRectTransformOfGarden(i));
+                        cards[answer[i] - 1].GetView().SetLocalPosition(Vector3.zero);
+                    }
+                    Require(placement.GetCardsOnBoard().SequenceEqual(answer.Select(number => cards[number - 1].GetCardViewHandler())),
+                        "Winning cards must follow board positions rather than fruit numbers");
+                    var animation = new LevelSuccessBoardAnimationController(board, placement).Play(.1f, .24f, .2f);
+                    animation.SetUpdate(UpdateType.Manual).Play();
+                    for (int position = 0; position < answer.Length; position++)
+                    {
+                        float delta = position == 0 ? .001f : .1f;
+                        DOTween.ManualUpdate(delta, delta);
+                        for (int fruit = 0; fruit < cards.Length; fruit++)
+                        {
+                            int slot = Array.IndexOf(answer, fruit + 1);
+                            Require(outlines[fruit].gameObject.activeSelf == (slot >= 0 && slot <= position),
+                                "Only the reached board positions have green frames; answer=" + string.Join(",", answer) + "; step=" + position + "; fruit=" + (fruit + 1));
+                        }
+                        Require(answer.All(number => cards[number - 1].GetCardMoveHandler().IsMovementLocked()),
+                            "Every winning card is locked before the staggered frames finish");
+                    }
+                    DOTween.ManualUpdate(.5f, .5f);
+                    Require(!animation.IsActive(), "Success sequence finishes after the last card highlight");
+                }
+                finally { DOTween.ManualUpdate(1f, 1f); Object.DestroyImmediate(root); }
+            }
+        }
+        finally
+        {
+            DOTween.defaultUpdateType = update;
+            EditorSceneManager.CloseScene(scene, true);
+            if (previous.isLoaded) SceneManager.SetActiveScene(previous);
+        }
+        Debug.Log("FRUIT_LAB_SUCCESS_ORDER_PASS: non-numeric board orders, timed left-to-right frames, retained greens, locked cards and completion for 2-5 slots plus the one-slot bomb case.");
+    }
+
+    public static void ValidateBomb()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new Exception("Stop Play mode before bomb checks.");
+        Scene previous = SceneManager.GetActiveScene();
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        SceneManager.SetActiveScene(scene);
+        UpdateType update = DOTween.defaultUpdateType;
+        DOTween.defaultUpdateType = UpdateType.Manual;
+        var errors = new List<string>();
+        Application.LogCallback collect = (message, stack, type) => {
+            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert
+                || message.Contains("error inside a tween callback") || message.Contains("missing target or field")) errors.Add(message);
+        };
+        Application.logMessageReceived += collect;
+        try
+        {
+            for (int board = 2; board <= 5; board++)
+            {
+                for (int fruits = 5; fruits <= 9; fruits++) CheckBomb(board, fruits, false);
+                CheckBomb(board, 9, true);
+            }
+            CheckBomb(1, 5, false);
+            Require(errors.Count == 0, "Bomb flow errors: " + string.Join("; ", errors));
+        }
+        finally
+        {
+            DOTween.defaultUpdateType = update;
+            Application.logMessageReceived -= collect;
+            EditorSceneManager.CloseScene(scene, true);
+            if (previous.isLoaded) SceneManager.SetActiveScene(previous);
+        }
+        Debug.Log("FRUIT_LAB_BOMB_PASS: 20 board/fruit combinations, occupied last slot returned, correct suffix removal, empty/wrong/winning guesses, save/resume, repeated/late use and one-slot guards.");
+    }
+
+    private static void CheckBomb(int boardSize, int fruitCount, bool afterGuess)
+    {
+        var root = new GameObject("BombRegression", typeof(RectTransform));
+        var parent = (RectTransform)root.transform;
+        try
+        {
+            var level = new BombLevel { Data = new LevelData { NumOfBoardHolders = boardSize, NumOfCards = fruitCount, MaxNumOfTries = 8 } };
+            var saves = new LevelSaveDataManager(level);
+            saves.CreateDefaultLevelSaveData();
+            var counts = new BoardHolderCountManager(saves, level);
+            var indexes = new BoardCardIndexManager();
+            var view = new BombBoard(parent);
+            var board = new BoardAreaController(view, new BoardLayoutManager(view, new SizeManager()), counts, indexes, indexes);
+            board.CreateBoard();
+            var round = new RoundStateManager(level, saves); round.Initialize();
+            var info = new CardItemInfoManager(saves, null, counts); info.Initialize();
+            var powers = new PowerSource();
+            var ui = new UiProbe();
+            var targetObject = new GameObject("BombTarget"); targetObject.transform.SetParent(parent); targetObject.SetActive(false);
+            var target = targetObject.AddComponent<TargetNumberCreator>();
+            var original = new List<int> { 2, 1, 3, 4, 5 }.Take(boardSize).ToList();
+            Field(target, "_targetCardsList", new List<int>(original));
+            var initial = new InitialCardAreaController(null, board, counts, level, saves, target, null, null);
+            var cards = new INormalCardItemController[fruitCount];
+            for (int i = 0; i < fruitCount; i++)
+            {
+                var home = new GameObject("BombCardHome", typeof(RectTransform)).GetComponent<RectTransform>();
+                home.SetParent(parent, false); home.anchoredPosition = new Vector2(i * 40f, -100f);
+                var card = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/CardItem.prefab"), home, false).GetComponent<NormalCardItemView>();
+                cards[i] = new NormalCardItemController(card, null, null,
+                    new CardItemData(home, parent, i, i + 1, ProbabilityType.Probable, false, Vector2.one * 40f));
+            }
+            Field(initial, "_normalCardItemControllerList", cards);
+            Field(initial, "_numOfInitialHolders", fruitCount);
+            var reveal = new RevealingPowerUpController(board, powers, null, null, null, target);
+            var placement = new CardPlacementCoordinator(board, null, ui, indexes, indexes, reveal, initial, info);
+            Field(placement, "_numOfCards", fruitCount);
+            for (int i = 0; i < boardSize; i++)
+            {
+                int cardIndex = original[i] - 1;
+                Require(indexes.TryPlaceCardOnBoardHolder(i, cardIndex), "Initial cards must be placed");
+                cards[cardIndex].GetView().SetParent(board.GetRectTransformOfGarden(i));
+                cards[cardIndex].GetView().SetLocalPosition(Vector3.zero);
+            }
+            var surviving = view.Holders.Take(Math.Max(0, boardSize - 1)).Select(holder => holder.Rect).ToArray();
+            var removed = view.Holders.Last().Rect;
+            info.GetCardItemInfoList()[0].possibleCardHolderIndicatorIndexes = new List<int> { 0, boardSize - 1 }.Distinct().ToList();
+            var bindings = new DiContainer();
+            bindings.Bind<IPowerUpMessageController>().FromInstance(powers);
+            bindings.Bind<IBoardAreaController>().FromInstance(board);
+            bindings.Bind<ICardPlacementCoordinator>().FromInstance(placement);
+            bindings.Bind<ITargetNumberCreator>().FromInstance(target);
+            bindings.Bind<ICardItemInfoManager>().FromInstance(info);
+            bindings.Bind<IBoardHolderCountManager>().FromInstance(counts);
+            bindings.Bind<IRoundStateManager>().FromInstance(round);
+            bindings.Instantiate<BombPowerUpController>();
+            if (afterGuess) round.AddTriedCards(original);
+            powers.Bomb();
+            if (afterGuess || boardSize == 1)
+            {
+                Require(counts.GetBoardHolderCount() == boardSize && target.GetTargetCardsList().SequenceEqual(original)
+                    && removed != null, "Bomb cannot change a guessed round or remove the last remaining slot");
+                return;
+            }
+            var expected = original.Take(boardSize - 1).ToList();
+            Require(target.GetTargetCardsList().SequenceEqual(expected), "Bomb must remove the LAST answer fruit; 2134 becomes 213");
+            Require(counts.GetBoardHolderCount() == expected.Count && counts.GetRemovedBoardHolderCount() == 1
+                && removed == null && surviving.All(holder => holder != null), "Only the rightmost holder is destroyed");
+            Require(indexes.GetPlacedCardIndexesOnBoard().SequenceEqual(expected.Select(value => value - 1)), "Surviving placements keep their indexes and order");
+            DOTween.ManualUpdate(1.1f, 1.1f);
+            Require(cards[original.Last() - 1].GetRectTransform() != null
+                && cards[original.Last() - 1].GetView().GetParent() != parent, "Card on removed holder survives and returns home");
+            Require(info.GetCardItemInfoList().Count == fruitCount
+                && info.GetCardItemInfoList().All(card => card.possibleCardHolderIndicatorIndexes.All(index => index < expected.Count))
+                && info.GetCardItemInfoList()[0].possibleCardHolderIndicatorIndexes.SequenceEqual(new[] { 0 }), "Card notes remove only the vanished position without shifting other indexes");
+            powers.Bomb();
+            Require(target.GetTargetCardsList().SequenceEqual(expected) && counts.GetRemovedBoardHolderCount() == 1, "Repeated use cannot remove another fruit");
+
+            var results = new BombResults();
+            var powerArea = new GamePowerUpAreaController(null, null, null, round, info, counts);
+            var result = new ResultManager(ui, results, target, indexes, round, powerArea);
+            int wins = 0, wrong = 0;
+            result.LevelSuccessEvent += (sender, args) => wins++;
+            result.WrongGuessEvent += (sender, args) => { wrong++; round.DecreaseRemainingGuessCount(); };
+            indexes.TryRemoveCardFromBoard(expected[0] - 1); ui.Submit();
+            Require(round.GetTriedCardsList().Count == 0, "Incomplete guesses still cannot submit");
+            indexes.TryPlaceCardOnBoardHolder(0, fruitCount - 1); ui.Submit();
+            Require(wrong == 1 && wins == 0 && results.Last.finalNumbers.Count == expected.Count
+                && results.Last.correctPosCount == expected.Count - 1, "Shortened wrong guesses produce normal feedback");
+            var snapshots = new GameSaveSnapshotProvider(target, info, new BombFlow(), counts, round);
+            Require(snapshots.TryCreateSnapshot(out LevelSaveData snapshot), "A bomb round with a wrong guess can be saved");
+            var memory = new BombSave { Data = Newtonsoft.Json.JsonConvert.DeserializeObject<LevelSaveData>(Newtonsoft.Json.JsonConvert.SerializeObject(snapshot)) };
+            var trackerObject = new GameObject("BombTracker"); trackerObject.transform.SetParent(parent); trackerObject.SetActive(false);
+            var restoredTracker = trackerObject.AddComponent<LevelTracker>(); Field(restoredTracker, "_levelId", 1);
+            Field(target, "_levelTracker", restoredTracker);
+            Field(target, "_gameSaveService", memory);
+            var restoredSaves = new LevelSaveDataManager(level); restoredSaves.SetLevelSaveDataAsSaved(memory.Data);
+            var restoredCounts = new BoardHolderCountManager(restoredSaves, level); restoredCounts.Initialize();
+            target.SetTargetNumber(restoredCounts.GetBoardHolderCount());
+            Require(target.GetTargetCardsList().SequenceEqual(expected) && restoredCounts.GetRemovedBoardHolderCount() == 1,
+                "Resume preserves the shortened answer without shortening it twice");
+            memory.Data.TargetCards = original; // Old saves may still contain the unreduced answer.
+            target.SetTargetNumber(restoredCounts.GetBoardHolderCount());
+            Require(target.GetTargetCardsList().SequenceEqual(expected) && memory.Data.TargetCards.Count == boardSize,
+                "Legacy long answers normalize to the restored board without mutating the save object");
+            indexes.TryRemoveCardFromBoard(fruitCount - 1);
+            Require(indexes.TryPlaceCardOnBoardHolder(0, expected[0] - 1), "Corrected fruit must be placed after clearing the wrong fruit");
+            ui.Submit();
+            Require(wins == 1 && wrong == 1 && results.Last.correctPosCount == expected.Count,
+                "Shortened answer wins after bomb and resume; no length mismatch");
+        }
+        finally { DOTween.ManualUpdate(2f, 2f); Object.DestroyImmediate(root); }
+    }
+
+    private sealed class BombLevel : ILevelDataCreator
+    {
+        public LevelData Data;
+        public LevelData GetLevelData() => Data;
+        public void SetSinglePlayerLevelData() { }
+        public void SetMultiplayerLevelData() { }
+    }
+    private sealed class BombSave : IGameSaveService
+    {
+        public LevelSaveData Data;
+        public LevelSaveData GetSavedLevel() => Data;
+        public void Save(LevelSaveData data) => Data = data;
+        public void DeleteSave() => Data = null;
+        public bool HasSavedGame() => Data != null;
+    }
+    private sealed class BombFlow : ILevelFlowOrchestrator
+    {
+        public void Begin(LevelEntryMode mode) { }
+        public void Retry() { }
+        public void GoToNextLevel() { }
+        public bool IsGameOver() => false;
+        public bool IsTransitioning() => false;
+        public LevelFlowState GetState() => LevelFlowState.Playing;
+    }
+    private sealed class BombResults : IResultAreaController
+    {
+        public ResultBlockModel Last;
+        public void AddResultBlock(ResultBlockModel model) => Last = model;
+        public void AddNewResultBlock(int number, int correct, int wrong) { }
+        public void Initialize(bool isNew) { }
+        public void RemoveResultBlocks() { }
+        public void EnableReview() { }
+        public void RevealAnswer(IReadOnlyList<int> answer) { }
+        public Sequence ChangeFade(float duration, float alpha) => DOTween.Sequence();
+        public ResultAreaInfo GetResultAreaInfo() => default;
+    }
+    // Real board/placement controllers use lightweight views so edit-mode destruction is immediate.
+    private sealed class BombBoard : IBoardAreaView
+    {
+        private readonly RectTransform _rect;
+        public readonly List<BombHolder> Holders = new List<BombHolder>();
+        public BombBoard(Transform parent) { _rect = new GameObject("BombBoard", typeof(RectTransform)).GetComponent<RectTransform>(); _rect.SetParent(parent, false); _rect.sizeDelta = new Vector2(350f, 70f); }
+        public IBoardHolderView CreateBoardHolderView() { var holder = new BombHolder(_rect); Holders.Add(holder); return holder; }
+        public Camera GetCamera() => null;
+        public Canvas GetCanvas() => null;
+        public RectTransform GetRectTransform() => _rect;
+        public Vector2 GetSizeOfBoardHolder() => Vector2.one * 70f;
+    }
+    private sealed class BombHolder : IBoardHolderView
+    {
+        public readonly RectTransform Rect;
+        public BombHolder(Transform parent) { Rect = new GameObject("BombHolder", typeof(RectTransform)).GetComponent<RectTransform>(); Rect.SetParent(parent, false); }
+        public RectTransform GetRectTransform() => Rect;
+        public RectTransform GetGardenRectTransform() => Rect;
+        public Vector3 GetGlobalPosition() => Rect.position;
+        public Vector3 GetPosition() => Rect.position;
+        public void SetLocalPosition(Vector2 value) => Rect.localPosition = value;
+        public void SetSize(Vector2 value) => Rect.sizeDelta = value;
+        public void SetLocalScale() => Rect.localScale = Vector3.one;
+        public void DestroyObject() => Object.DestroyImmediate(Rect.gameObject);
+        public void SetCamera(Camera camera) { }
+        public void SetOnClick(Action action) { }
+        public void SetHighlightStatus(bool active) { }
+        public void SetSuccessFrameStatus(bool active) { }
+        public void SetupTutorialMode() { }
+        public void CleanupTutorialMode() { }
+        public Sequence PlaySuccessFrameAnimation(float delay) => DOTween.Sequence().AppendInterval(delay + .2f);
     }
 }
 #pragma warning restore CS0067
@@ -390,8 +686,10 @@ public static class FruitLabRetryValidation
             container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             var factory = container.Resolve<BaseButtonControllerFactory>();
             var powerView = canvas.GetComponentInChildren<PowerUpListHolderView>(true);
+            var boardCounts = new BoardHolderCountManager(null, null);
+            Field(boardCounts, "_boardHolderCount", canvas.GetComponentsInChildren<BoardHolderView>(true).Length);
             var powers = new GamePowerUpAreaController(factory, powerView, tracker, round,
-                new CardItemInfoManager(null, null, null), new BoardHolderCountManager(null, null));
+                new CardItemInfoManager(null, null, null), boardCounts);
             powers.Initialize();
             var view = canvas.GetComponentInChildren<GameUIView>(true);
             var ui = new GameUIController(factory, tracker, null, haptics, view, powers);

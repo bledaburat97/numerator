@@ -21,12 +21,13 @@ namespace Game
             }
         }
 
-        public void DeleteFirstBoardHolder()
+        public void DeleteLastBoardHolder()
         {
             if (_cardIndexesOnBoardHolders.Count == 0) return;
 
-            _cardIndexesOnBoardHolders.RemoveAt(0);
-            _reservedCardIndexesOnBoardHolders.RemoveAt(0);
+            int lastIndex = _cardIndexesOnBoardHolders.Count - 1;
+            _cardIndexesOnBoardHolders.RemoveAt(lastIndex);
+            _reservedCardIndexesOnBoardHolders.RemoveAt(lastIndex);
         }
 
         public bool TryGetOccupiedBoardHolderIndexOfCard(int checkingCardIndex, out int boardHolderIndex)
@@ -215,7 +216,7 @@ namespace Game
     public interface IBoardPlacementCommands
     {
         void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders);
-        void DeleteFirstBoardHolder();
+        void DeleteLastBoardHolder();
         bool TryPlaceCardOnBoardHolder(int boardHolderIndex, int cardIndex);
         bool TryReserveBoardHolderForCard(int boardHolderIndex, int cardIndex);
         bool TryRemoveCardFromBoard(int cardIndex);

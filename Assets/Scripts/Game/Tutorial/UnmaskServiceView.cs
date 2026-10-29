@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -8,78 +7,56 @@ namespace Scripts
 {
     public class UnmaskServiceView : MonoBehaviour, IUnmaskServiceView
     {
-        [NonSerialized] private Image maskImage;
-        [SerializeField] private Camera cam;
-        [SerializeField] private Canvas canvas;
-        [SerializeField] private Shader shader;
+        [SerializeField] private TutorialSpotlightView spotlight;
         [SerializeField] private UnmaskCardItemView unmaskCardItemPrefab;
-
-        private static readonly int MainTex = Shader.PropertyToID("_MainTex");
-        private static readonly int BaseAlpha = Shader.PropertyToID("_BaseAlpha");
-        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-
-        private Material _material;
-        private RenderTexture _texture;
-        private List<IUnmaskCardItemView> _unmaskCardItemViews = new List<IUnmaskCardItemView>();
-        
+        private readonly List<UnmaskCardItemView> _items = new List<UnmaskCardItemView>();
         public void Init(Image maskImage, Color color, float alpha)
         {
-            this.maskImage = maskImage;
-            _material = new Material(shader);
-            _texture = new RenderTexture(Screen.width, Screen.height, 0);
-            cam.targetTexture = _texture;
-            canvas.gameObject.SetActive(true);
-            cam.gameObject.SetActive(true);
-
-            _material.SetTexture(MainTex, _texture);
-            maskImage.material = _material;
-            SetColor(color);
-            SetBaseAlpha(alpha);
+            // Real UI holes replace the old mask camera and RenderTexture.
+            maskImage.enabled = false;
+            var rect = (RectTransform)transform;
+            rect.SetParent(maskImage.transform.parent, false); FruitLabStyle.Stretch(rect);
+            foreach (Transform child in GetComponentsInChildren<Transform>(true)) child.gameObject.layer = maskImage.gameObject.layer;
+            spotlight.color = new Color(color.r, color.g, color.b, alpha);
+            spotlight.raycastTarget = true;
         }
-
-        public void SetBaseAlpha(float alpha)
+        public void SetBaseAlpha(float alpha) { Color c = spotlight.color; c.a = alpha; spotlight.color = c; }
+        public void SetColor(Color color) { color.a = spotlight.color.a; spotlight.color = color; }
+        public Tween SetAlpha(float alpha, float duration) => spotlight.DOFade(alpha, duration).SetLink(gameObject);
+        public void Highlight(RectTransform target, float padding = 5f)
         {
-            _material.SetFloat(BaseAlpha, alpha);
+            if (target == null) return;
+            var item = Create(); item.Follow(target, padding); RefreshHoles();
         }
-
-        public Tween SetAlpha(float alpha, float duration)
+        private UnmaskCardItemView Create()
         {
-            maskImage.DOFade(alpha, 0f);
-            _material.SetFloat(BaseAlpha, 0f);
-            return _material.DOFloat(alpha, BaseAlpha, duration).SetEase(Ease.OutSine);
+            var item = Instantiate(unmaskCardItemPrefab, transform, false);
+            item.gameObject.layer = gameObject.layer;
+            item.SetPixelPerUnit(1.2f);
+            _items.Add(item); return item;
         }
-
-        public void SetColor(Color color)
-        {
-            _material.SetColor(BaseColor, color);
-        }
-
         public void CreateUnmaskCardItem(Vector2 position, Vector2 size, float anchorMaxYOfSafeArea, float heightOfCanvas, float pixelPerUnit, float changeInLocalPosY)
         {
-            UnmaskCardItemViewFactory unmaskCardItemViewFactory = new UnmaskCardItemViewFactory();
-            IUnmaskCardItemView unmaskCardItemView = unmaskCardItemViewFactory.Spawn(canvas.transform, unmaskCardItemPrefab);
-            unmaskCardItemView.SetPosition(position, anchorMaxYOfSafeArea, heightOfCanvas, changeInLocalPosY);
-            unmaskCardItemView.SetSize(size);
-            unmaskCardItemView.SetPixelPerUnit(pixelPerUnit);
-            _unmaskCardItemViews.Add(unmaskCardItemView);
+            var item = Create(); item.SetPosition(position, 1f, 0f, changeInLocalPosY); item.SetSize(size); RefreshHoles();
         }
-
+        private void RefreshHoles() => spotlight.SetHoles(_items.ConvertAll(item => (RectTransform)item.transform));
+        private void LateUpdate()
+        {
+            foreach (var item in _items)
+                if (item != null && item.transform.hasChanged) { item.transform.hasChanged = false; spotlight.SetVerticesDirty(); }
+        }
         public void ClearAllUnmaskCardItems()
         {
-            foreach (var unmaskCardItemView in _unmaskCardItemViews)
-            {
-                unmaskCardItemView.Destroy();
-            }
-            _unmaskCardItemViews.Clear();
+            foreach (var item in _items) if (item != null) item.Destroy();
+            _items.Clear(); RefreshHoles();
         }
-        
         public void ClearUnmaskCardItem(int index)
         {
-            _unmaskCardItemViews[index].Destroy();
-            _unmaskCardItemViews.RemoveAt(index);
+            if (index < 0 || index >= _items.Count) return;
+            _items[index].Destroy(); _items.RemoveAt(index); RefreshHoles();
         }
+        private void OnDestroy() { if (spotlight != null) spotlight.DOKill(); }
     }
-
     public interface IUnmaskServiceView
     {
         void Init(Image maskImage, Color color, float alpha);

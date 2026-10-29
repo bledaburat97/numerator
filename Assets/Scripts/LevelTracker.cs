@@ -18,6 +18,7 @@ namespace Scripts
         private void Awake()
         {
             _levelId = PlayerPrefs.GetInt("level_id", 0);
+            TutorialProgress.RepairIncompleteFirstLevel(_levelId);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
             _giftStarCount = PlayerPrefs.GetInt("gift_star_count", 0);
             _revealingPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("revealing_power_up_count", 0));
@@ -228,7 +229,7 @@ namespace Scripts
 
         public bool IsFirstLevelTutorial()
         {
-            return false; //_levelId == 0 && PlayerPrefs.GetInt("first_level_tutorial_completed", 0) == 0;
+            return _gameOption == GameOption.SinglePlayer && _levelId == 0;
         }
 
         public bool IsCardInfoTutorial()

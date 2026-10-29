@@ -16,6 +16,8 @@ namespace Scripts
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private int _numOfCards;
+        private readonly TutorialInputGate _tutorialGate;
+        public event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
         public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
         
@@ -28,7 +30,7 @@ namespace Scripts
             IBoardPlacementCommands boardPlacementCommands,
             IRevealingPowerUpController revealingPowerUpController,
             IInitialCardAreaController initialCardAreaController,
-            ICardItemInfoManager cardItemInfoManager)
+            ICardItemInfoManager cardItemInfoManager, [InjectOptional] TutorialInputGate tutorialGate = null)
         {
             _boardAreaController = boardAreaController;
             _cardItemLocator = cardItemLocator;
@@ -38,6 +40,7 @@ namespace Scripts
             _revealingPowerUpController = revealingPowerUpController;
             _initialCardAreaController = initialCardAreaController;
             _cardItemInfoManager = cardItemInfoManager;
+            _tutorialGate = tutorialGate;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
             _revealingPowerUpController.RevealCardRequestedEvent += OnRevealCardRequested;
         }
@@ -67,7 +70,8 @@ namespace Scripts
         
         public bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
-            if (!CanMoveCard(cardIndex) || boardCardHolderIndex == -1) return false;
+            if (!CanMoveCard(cardIndex) || boardCardHolderIndex == -1
+                || (_tutorialGate != null && !_tutorialGate.AllowsPlacement(cardIndex, boardCardHolderIndex))) return false;
 
             return PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
         }
@@ -92,14 +96,14 @@ namespace Scripts
 
         private void OnCardClicked(int cardIndex)
         {
-            if (!CanMoveCard(cardIndex)) return;
+            if (!CanMoveCard(cardIndex) || (_tutorialGate != null && !_tutorialGate.AllowsCard(cardIndex))) return;
 
             OnCardClickedEvent?.Invoke(this, cardIndex);
         }
 
         private void OnCardDragStarted(int cardIndex)
         {
-            if (!CanMoveCard(cardIndex)) return;
+            if (!CanMoveCard(cardIndex) || (_tutorialGate != null && !_tutorialGate.AllowsCard(cardIndex))) return;
 
             OnCardDragStartedEvent?.Invoke(this, EventArgs.Empty);
             RemoveCardFromBoard(cardIndex);
@@ -107,7 +111,7 @@ namespace Scripts
 
         private void OnMoveToBoardRequested(int cardIndex, int boardHolderIndex)
         {
-            TryPlaceCardOnBoard(cardIndex, boardHolderIndex);
+            if (!TryPlaceCardOnBoard(cardIndex, boardHolderIndex)) TryReturnCardToInitial(cardIndex);
         }
 
         private void OnMoveToInitialRequested(int cardIndex)
@@ -122,7 +126,11 @@ namespace Scripts
 
             cardItem.GetCardViewHandler().MoveToParent(
                 _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
-                () => _boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex));
+                () =>
+                {
+                    if (_boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex))
+                        CardPlacedEvent?.Invoke(this, (cardIndex, boardHolderIndex));
+                });
             return true;
         }
 
@@ -200,10 +208,10 @@ namespace Scripts
         public List<ICardViewHandler> GetCardsOnBoard()
         {
             List<ICardViewHandler> cardsOnBoard = new List<ICardViewHandler>();
-            for (int i = 0; i < _numOfCards; i++)
+            IReadOnlyList<int> placedCards = _boardPlacementQuery.GetPlacedCardIndexesOnBoard();
+            for (int i = 0; i < placedCards.Count; i++)
             {
-                if (!TryGetCardItem(i, out INormalCardItemController cardItem)) continue;
-                if (!_boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(i, out int boardHolderIndex)) continue;
+                if (!TryGetCardItem(placedCards[i], out INormalCardItemController cardItem)) continue;
 
                 cardsOnBoard.Add(cardItem.GetCardViewHandler());
             }
@@ -239,7 +247,8 @@ namespace Scripts
 
         public void TryResetPositionOfCardOnExplodedBoardHolder()
         {
-            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(0, out int cardIndex))
+            int lastIndex = _boardPlacementQuery.GetOccupiedCardIndexesOnBoard().Count - 1;
+            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(lastIndex, out int cardIndex))
             {
                 TryReturnCardToInitial(cardIndex);
             }
@@ -307,6 +316,7 @@ namespace Scripts
     
     public interface ICardPlacementCoordinator
     {
+        event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
         void Initialize();
         bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
         bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex);

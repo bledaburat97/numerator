@@ -3,7 +3,7 @@
     {
       "LevelId": 0,
       "NumOfBoardHolders": 2,
-      "NumOfCards": 4,
+      "NumOfCards": 5,
       "MaxNumOfTries": 6
     },
     {

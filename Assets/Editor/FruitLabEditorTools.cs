@@ -51,7 +51,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation == "fail-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -79,6 +79,29 @@ public static class FruitLabEditorTools
             switch (job.operation)
             {
                 case "inspect": reply.details = Inspect(); break;
+                case "tutorial-review":
+                    reply.details = FruitLabTutorialEditorTools.Bake()
+                        + "\n" + Render(2, 5, validation: FruitLabTutorialEditorTools.Review, validateBeforeRender: true);
+                    break;
+                case "tutorial-reset": reply.details = FruitLabTutorialEditorTools.ResetLocalProgress(); break;
+                case "settings-navigation-review":
+                    reply.details = Render(5, 9, validation: FruitLabSettingsEditorTools.Review, validateBeforeRender: true)
+                        + "\nMenu/Game navigation requests and release timing passed; no live scene switch or player data mutation";
+                    break;
+                case "settings-review":
+                    reply.details = FruitLabSettingsEditorTools.Bake()
+                        + "\n" + Render(5, 9, validation: FruitLabSettingsEditorTools.Review, validateBeforeRender: true)
+                        + "\n" + FruitLabRewardEditorTools.RenderMenu()
+                        + "\n" + FruitLabSettingsEditorTools.AuditTutorials();
+                    break;
+                case "success-order-review":
+                    FruitLabFailureValidation.ValidateSuccessOrder();
+                    reply.details = "Timed left-to-right winning frames passed for 2-5 slots and the one-slot bomb case";
+                    break;
+                case "bomb-review":
+                    FruitLabFailureValidation.ValidateBomb();
+                    reply.details = "20 board/fruit combinations, late/repeated-use guards, wrong/correct guesses and in-memory save/resume passed";
+                    break;
                 case "crystal-review":
                     FruitLabCrystalFlightEditorTools.PreparePrefab();
                     FruitLabFailureValidation.ValidateLogic();
@@ -205,7 +228,7 @@ public static class FruitLabEditorTools
 
     private static T Find<T>(Scene scene) where T : Component => scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<T>(true)).First();
 
-    private static string Render(int boardCount, int fruitCount, bool popupPreview = false, bool claimPreview = false, bool failPreview = false, bool cardPreview = false, Action<Canvas, Camera> validation = null)
+    private static string Render(int boardCount, int fruitCount, bool popupPreview = false, bool claimPreview = false, bool failPreview = false, bool cardPreview = false, Action<Canvas, Camera> validation = null, bool validateBeforeRender = false)
     {
         Scene scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
         Scene renderScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
@@ -363,6 +386,7 @@ public static class FruitLabEditorTools
             target.Create(); camera.targetTexture = target;
             camera.aspect = 750f / 1624f;
             Canvas.ForceUpdateCanvases();
+            if (validateBeforeRender) { validation?.Invoke(canvas, camera); validation = null; }
             if (GraphicsSettings.currentRenderPipeline != null)
                 RenderPipeline.SubmitRenderRequest(camera, new UniversalRenderPipeline.SingleCameraRequest { destination = target });
             else camera.Render();

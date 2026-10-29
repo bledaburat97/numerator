@@ -105,6 +105,7 @@ namespace Game
         public void Begin(LevelEntryMode mode)
         {
             _gamePopupCreator.Initialize();
+            _gamePopupCreator.PrepareTutorials();
             _levelEndPopupController.SetPopupStatus(false);
             _levelEndPopupController.SetAllStatusFalse();
             _gamePowerUpAreaController.Refresh();
@@ -181,6 +182,7 @@ namespace Game
             if (isResumeFlow)
             {
                 _state = LevelFlowState.Playing;
+                _gamePopupCreator.StartTutorials();
                 return;
             }
 
@@ -193,12 +195,14 @@ namespace Game
                     if (!_isGameOver)
                     {
                         _state = LevelFlowState.Playing;
+                        _gamePopupCreator.StartTutorials();
                     }
                 });
             }
             else
             {
                 _state = LevelFlowState.Playing;
+                _gamePopupCreator.StartTutorials();
             }
         }
 
@@ -207,6 +211,7 @@ namespace Game
             _lifeBarController.DisableProgressBar();
             _gameUIController.InitializeForMultiplayer();
             _state = LevelFlowState.Playing;
+            _gamePopupCreator.StartTutorials();
         }
 
         private bool TryPrepareSinglePlayerSaveData(LevelEntryMode mode)
@@ -214,11 +219,13 @@ namespace Game
             if (mode == LevelEntryMode.Resume)
             {
                 LevelSaveData savedLevel = _gameSaveService.GetSavedLevel();
-                if (savedLevel != null)
+                if (savedLevel != null && (!_levelTracker.IsFirstLevelTutorial()
+                    || FirstLevelTutorialController.CanResume(savedLevel, _levelDataCreator.GetLevelData().MaxNumOfTries)))
                 {
                     _levelSaveDataManager.SetLevelSaveDataAsSaved(savedLevel);
                     return true;
                 }
+                if (savedLevel != null) _gameSaveService.DeleteSave();
             }
 
             _levelSaveDataManager.CreateDefaultLevelSaveData();
@@ -243,6 +250,7 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingSuccess;
+            _gamePopupCreator.EndTutorials(true);
             _gameUIController.SetAllButtonsUnclickable();
             _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
             _gameSaveService.DeleteSave();
@@ -256,6 +264,7 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingFail;
+            _gamePopupCreator.EndTutorials(false);
             _gameUIController.SetAllButtonsUnclickable();
             _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
             _gameSaveService.DeleteSave();
@@ -286,7 +295,11 @@ namespace Game
                 earnedCrystalCount,
                 previousCoinCount,
                 previousCrystalProgressCount,
-                rewardTypeBeforeCollection);
+                rewardTypeBeforeCollection)
+                .OnComplete(() =>
+                {
+                    if (_state == LevelFlowState.EndingSuccess) _gamePopupCreator.ShowRewardTutorials(earnedCoinCount, earnedCrystalCount);
+                });
         }
 
         private void StartFailFlow()

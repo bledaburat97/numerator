@@ -8,7 +8,7 @@ namespace Scripts
         [SerializeField] private UnmaskServiceView unmaskServicePrefab;
         private float _fade = 0.5f;
         private float _fadeDuration = 0.4f;
-        private IUnmaskServiceView _unmaskServiceView;
+        private UnmaskServiceView _unmaskServiceView;
         private float _anchorMaxYOfSafeArea;
         private float _heightOfCanvas;
         
@@ -25,6 +25,7 @@ namespace Scripts
         
         public void InstantiateTutorialFade()
         {
+            CloseTutorialFade();
             _fadePanelController.SetTutorialFadeImageStatus(true);
             _fadePanelController.SetTutorialFadeImageAlpha(0f);
             CreateMaskSystem(_fadeDuration);
@@ -32,9 +33,12 @@ namespace Scripts
 
         public void CloseTutorialFade()
         {
-            _fadePanelController.AnimateTutorialFade(0f, _fadeDuration);
-            _fadePanelController.SetTutorialFadeImageStatus(false);
+            if (_unmaskServiceView != null) TutorialObjectUtility.Destroy(_unmaskServiceView.gameObject);
+            _unmaskServiceView = null;
+            _fadePanelController?.SetTutorialFadeImageStatus(false);
         }
+
+        public void Highlight(RectTransform target, float padding = 5f) => _unmaskServiceView?.Highlight(target, padding);
         
         private void CreateMaskSystem(float duration)
         {
@@ -50,12 +54,12 @@ namespace Scripts
         
         public void ClearAllUnmaskCardItems()
         {
-            _unmaskServiceView.ClearAllUnmaskCardItems();
+            _unmaskServiceView?.ClearAllUnmaskCardItems();
         }
 
         public void ClearUnmaskCardItem(int index)
         {
-            _unmaskServiceView.ClearUnmaskCardItem(index);
+            _unmaskServiceView?.ClearUnmaskCardItem(index);
         }
     }
 
@@ -64,6 +68,7 @@ namespace Scripts
         void Initialize(IFadePanelController fadePanelController);
         void Init(float anchorMaxYOfSafeArea, float heightOfCanvas);
         void InstantiateTutorialFade();
+        void Highlight(RectTransform target, float padding = 5f);
         void CloseTutorialFade();
         void CreateUnmaskCardItem(Vector2 position, Vector2 size, float changeInLocalPosY = 0f, float pixelPerUnit = 230f);
         void ClearAllUnmaskCardItems();

@@ -72,7 +72,7 @@ namespace Scripts
             }
 
             _deleteSaveAction = _gameSaveService.DeleteSave;
-            _tutorialBootstrapper.Bootstrap(
+            _tutorialBootstrapper.Configure(
                 transform,
                 safeAreaRectTransform,
                 canvasRectTransform,
@@ -84,6 +84,12 @@ namespace Scripts
         {
             return safeAreaRectTransform;
         }
+
+        public void PrepareTutorials() => _tutorialBootstrapper.PrepareRound();
+        public void StartTutorials() => _tutorialBootstrapper.StartRound();
+        public void EndTutorials(bool success) => _tutorialBootstrapper.RoundEnded(success);
+        public void ShowRewardTutorials(int coins, int crystals) => _tutorialBootstrapper.ShowRewards(coins, crystals);
+        private void OnDestroy() => _tutorialBootstrapper?.Dispose();
 
         public RectTransform GetCanvasRectTransform()
         {
@@ -196,6 +202,10 @@ namespace Scripts
     public interface IGamePopupCreator
     {
         void Initialize();
+        void PrepareTutorials();
+        void StartTutorials();
+        void EndTutorials(bool success);
+        void ShowRewardTutorials(int coins, int crystals);
         void CreateAbleToMovePopup();
         void CreateWaitingOpponentPopup(Action onPlayerUnReady);
         void CreateMultiplayerLevelEnd(bool isSuccess, IUserReady userReady, Action onPlayerReady);

@@ -8,6 +8,7 @@ namespace Scripts
 {
     public class GameUIController : IGameUIController
     {
+        [InjectOptional] private TutorialInputGate _tutorialGate;
         private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
@@ -223,6 +224,7 @@ namespace Scripts
         
         private void OnButtonClick(GameUIButtonType buttonType)
         {
+            if (_tutorialGate != null && !_tutorialGate.AllowsButton(buttonType)) return;
             switch (buttonType)
             {
                 case GameUIButtonType.Check:

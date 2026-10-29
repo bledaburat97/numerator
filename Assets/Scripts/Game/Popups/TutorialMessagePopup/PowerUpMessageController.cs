@@ -6,6 +6,7 @@ namespace Scripts
 {
     public class PowerUpMessageController : IPowerUpMessageController
     {
+        [InjectOptional] private TutorialInputGate _tutorialGate;
         private IFadePanelController _fadePanelController;
         private ILevelTracker _levelTracker;
         private IRoundStateManager _roundStateManager;
@@ -34,6 +35,8 @@ namespace Scripts
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
         {
+            if (_tutorialGate != null && !_tutorialGate.AllowsButton(powerUpType)) return;
+            if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType, () => OnPowerUpClicked(sender, powerUpType))) return;
             switch (powerUpType)
             {
                 case GameUIButtonType.LifePowerUp:
@@ -92,7 +95,8 @@ namespace Scripts
 
         private bool CanUseBomb()
         {
-            return _roundStateManager.GetTriedCardsList().Count == 0 &&
+            return _boardHolderCountManager.GetBoardHolderCount() > 1 &&
+                   _roundStateManager.GetTriedCardsList().Count == 0 &&
                    _boardHolderCountManager.GetRemovedBoardHolderCount() == 0 &&
                    !HasRevealedCard();
         }
