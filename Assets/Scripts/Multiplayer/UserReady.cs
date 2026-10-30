@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
@@ -7,87 +7,47 @@ namespace Scripts
 {
     public class UserReady : NetworkBehaviour, IUserReady
     {
+        private readonly NetworkVariable<byte> _ready = new NetworkVariable<byte>();
+        private bool _starting, _registered;
         public event EventHandler OnReadyChanged;
-
-        private Dictionary<ulong, bool> _playerReadyDictionary;
-        public void Initialize()
+        public void Initialize() => Register();
+        public override void OnNetworkSpawn()
         {
-            _playerReadyDictionary = new Dictionary<ulong, bool>();
-        }
-
-        public void SetPlayerReady()
-        {
-            SetPlayerReadyServerRpc();
-        }
-
-        public void SetPlayerUnready()
-        {
-            SetPlayerUnreadyServerRpc();
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void SetPlayerReadyServerRpc(ServerRpcParams serverRpcParams = default)
-        {
-            if (NetworkManager.Singleton.ConnectedClientsIds.Count < MultiplayerManager.MAX_NUM_OF_USERS)
-            {
-                return;
-            }
-            
-            SetPlayerReadyClientRpc(serverRpcParams.Receive.SenderClientId);
-            _playerReadyDictionary[serverRpcParams.Receive.SenderClientId] = true;
-            bool allClientsReady = true;
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                if (!_playerReadyDictionary.ContainsKey(clientId) || !_playerReadyDictionary[clientId])
-                {
-                    allClientsReady = false;
-                    break;
-                }
-            }
-
-            if (allClientsReady)
-            {
-                PlayerLobby.Instance.DeleteLobby();
-                NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
-            }
-        }
-        
-        [ClientRpc]
-        private void SetPlayerReadyClientRpc(ulong clientId)
-        {
-            _playerReadyDictionary[clientId] = true;
+            _ready.OnValueChanged += OnChanged; Register();
+            // Initial NetworkVariable synchronization precedes OnNetworkSpawn.
             OnReadyChanged?.Invoke(this, EventArgs.Empty);
         }
-        
+        private void Register()
+        {
+            if (_registered || !IsSpawned || NetworkManager == null) return;
+            _registered = true; NetworkManager.OnClientDisconnectCallback += Disconnected;
+        }
+        private void OnChanged(byte oldValue, byte newValue) => OnReadyChanged?.Invoke(this, EventArgs.Empty);
+        public void SetPlayerReady() { if (IsSpawned) ReadyServerRpc(true); }
+        public void SetPlayerUnready() { if (IsSpawned) ReadyServerRpc(false); }
+        private byte Bit(ulong id) => id == Unity.Netcode.NetworkManager.ServerClientId ? (byte)1 : (byte)2;
+        public bool IsPlayerReady(ulong id) => (_ready.Value & Bit(id)) != 0;
         [ServerRpc(RequireOwnership = false)]
-        private void SetPlayerUnreadyServerRpc(ServerRpcParams serverRpcParams = default)
+        private void ReadyServerRpc(bool value, ServerRpcParams rpc = default)
         {
-            if (IsPlayerReady(serverRpcParams.Receive.SenderClientId))
-            {
-                SetPlayerUnreadyClientRpc(serverRpcParams.Receive.SenderClientId);
-                _playerReadyDictionary[serverRpcParams.Receive.SenderClientId] = false;
-            }
+            if (_starting || !NetworkManager.ConnectedClientsIds.Contains(rpc.Receive.SenderClientId)) return;
+            byte bit = Bit(rpc.Receive.SenderClientId);
+            _ready.Value = value ? (byte)(_ready.Value | bit) : (byte)(_ready.Value & ~bit);
+            if (_ready.Value != 3 || NetworkManager.ConnectedClientsIds.Count != 2) return;
+            _starting = true; PlayerLobby.Instance?.LockLobby();
+            NetworkManager.SceneManager.LoadScene("Game", LoadSceneMode.Single);
         }
-        
-        [ClientRpc]
-        private void SetPlayerUnreadyClientRpc(ulong clientId)
+        private void Disconnected(ulong id) { if (IsServer) { _ready.Value = 0; _starting = false; } }
+        public override void OnNetworkDespawn()
         {
-            _playerReadyDictionary[clientId] = false;
-            OnReadyChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public bool IsPlayerReady(ulong clientId)
-        {
-            return _playerReadyDictionary.ContainsKey(clientId) && _playerReadyDictionary[clientId];
+            _ready.OnValueChanged -= OnChanged;
+            if (_registered && NetworkManager != null) NetworkManager.OnClientDisconnectCallback -= Disconnected;
+            _registered = false;
         }
     }
-
     public interface IUserReady
     {
-        void Initialize();
-        void SetPlayerReady();
-        void SetPlayerUnready();
-        bool IsPlayerReady(ulong clientId);
+        void Initialize(); void SetPlayerReady(); void SetPlayerUnready(); bool IsPlayerReady(ulong clientId);
         event EventHandler OnReadyChanged;
     }
 }

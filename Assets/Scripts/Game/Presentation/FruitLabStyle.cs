@@ -19,6 +19,8 @@ namespace Scripts
         public static readonly Color Pink = Hex("EF6CA3");
         public static readonly Color Correct = Hex("5BFFA0");
         public static readonly Color Misplaced = Hex("FFD35D");
+        public static readonly Color LocalPlayer = Hex("8DD5FF");
+        public static readonly Color OpponentPlayer = Hex("EF7178");
         public static TMP_FontAsset Font;
 
         private static Sprite _rounded, _frame, _inset, _resultFrame;

@@ -53,18 +53,17 @@ namespace Scripts
                         IBaseButtonController kickButtonController =
                             _baseButtonControllerFactory.Create(playerNameView.GetKickButton(), () => OnKickButtonClicked(currentPlayerIndex));
                         
-                        kickButtonController.SetButtonStatus(false);
-                        if (currentPlayerIndex != 0) //TODO: may check with host id instead of 0.
-                        {
-                            kickButtonController.SetButtonStatus(NetworkManager.Singleton.IsServer);
-                        }
-                        
+                        kickButtonController.SetClickOnRelease(true);
                         _playerNameViewList[playerIndex] = playerNameView;
                     }
 
                     PlayerData playerData = MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(playerIndex);
+                    _playerNameViewList[playerIndex].SetRole(playerData.clientId == NetworkManager.ServerClientId,
+                        playerData.clientId == NetworkManager.Singleton.LocalClientId,
+                        NetworkManager.Singleton.IsServer && playerData.clientId != NetworkManager.ServerClientId);
                     _playerNameViewList[playerIndex].SetReadyStatus(_userReady.IsPlayerReady(playerData.clientId));
-                    _playerNameViewList[playerIndex].SetPlayerName(playerData.playerName.ToString());
+                    string name = playerData.playerName.ToString();
+                    _playerNameViewList[playerIndex].SetPlayerName(string.IsNullOrWhiteSpace(name) ? "Bağlanıyor…" : name);
                 }
 
                 else
@@ -74,10 +73,7 @@ namespace Scripts
                         IPlayerNameView playerNameView = _playerNameViewList[playerIndex];
                         _playerNameViewList[playerIndex] = null;
                         playerNameView.Destroy();
-                        PlayerData playerData = MultiplayerManager.Instance
-                            .GetPlayerDataFromPlayerIndex(playerIndex);
-                        PlayerLobby.Instance.KickPlayerFromLobby(playerData.playerId.ToString());
-                        _userReady.SetPlayerUnready();
+
                     }
                 }
             }
@@ -85,15 +81,15 @@ namespace Scripts
 
         private void OnKickButtonClicked(int playerIndex)
         {
-            PlayerData playerData = MultiplayerManager.Instance
-                .GetPlayerDataFromPlayerIndex(playerIndex);
-            PlayerLobby.Instance.KickPlayerFromLobby(playerData.playerId.ToString());
-            MultiplayerManager.Instance.KickPlayer(playerData.clientId);
+            var manager = MultiplayerManager.Instance;
+            if (manager == null || !manager.IsServer || !manager.IsPlayerIndexConnected(playerIndex)) return;
+            PlayerData playerData = manager.GetPlayerDataFromPlayerIndex(playerIndex);
+            if (manager.KickPlayer(playerData.clientId)) PlayerLobby.Instance?.KickPlayerFromLobby(playerData.playerId.ToString());
         }
 
         private void UnsubscribeEvents()
         {
-            MultiplayerManager.Instance.OnPlayerDataNetworkListChanged -= OnPlayerDataNetworkListChanged;
+            if (MultiplayerManager.Instance != null) MultiplayerManager.Instance.OnPlayerDataNetworkListChanged -= OnPlayerDataNetworkListChanged;
             _userReady.OnReadyChanged -= OnReadyChanged;
         }
     }

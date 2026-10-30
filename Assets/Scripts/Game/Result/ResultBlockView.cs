@@ -12,10 +12,13 @@ namespace Scripts
         [SerializeField] private RectTransform cardsHolder;
         [SerializeField] private RectTransform topResultHolder;
         [SerializeField] private RectTransform cardsHolderBgImageRectTransform;
+        [SerializeField] private Image playerStripe;
+        public bool? IsLocalGuess { get; private set; }
 
         private readonly List<INonDraggableCardItemView> _cards = new List<INonDraggableCardItemView>();
         private NonDraggableCardItemViewFactory _cardFactory;
         private TMP_Text _correctCount, _misplacedCount;
+        private TMP_Text _playerLabel;
         private RectTransform _feedback;
         private FruitLabGlyph _correctIcon, _misplacedIcon;
         private float _width, _height;
@@ -56,19 +59,36 @@ namespace Scripts
         }
 
         public void SetCardResult(int index, CardResultState state) => _cards[index].SetResultOutline(state);
+        public void SetPlayerIdentity(bool isLocal)
+        {
+            IsLocalGuess = isLocal;
+            Color color = isLocal ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer;
+            if (playerStripe == null) playerStripe = FruitLabStyle.Detail(transform, "PlayerStripe", color);
+            playerStripe.gameObject.SetActive(true);
+            playerStripe.color = color;
+            FruitLabStyle.Surface(cardsHolderBgImageRectTransform.GetComponent<Image>(), Color.Lerp(FruitLabStyle.Tile, color, .12f));
+            _playerLabel = transform.Find("PlayerLabel")?.GetComponent<TMP_Text>()
+                ?? FruitLabStyle.CreateText("PlayerLabel", transform, 10f, FruitLabStyle.Muted);
+            _playerLabel.text = isLocal ? "Sen" : "Rakip";
+            _playerLabel.color = color;
+            Resize(_width, _height);
+        }
 
         public void Resize(float width, float height)
         {
             _width = width;
             _height = height;
             rectTransform.sizeDelta = new Vector2(width, height);
+            if (playerStripe != null) FruitLabStyle.Place(playerStripe.rectTransform, transform, 0f, 6f, 4f, Mathf.Max(4f, height - 12f));
             FruitLabStyle.Place(cardsHolder, transform, 6f, 0f, width - FruitLabLayoutMetrics.HistoryFeedbackReservation, height);
-            FruitLabStyle.Place(_feedback, transform, width - 96f, 0f, 92f, height);
+            float feedbackHeight = height - (_playerLabel != null ? 14f : 0f);
+            if (_playerLabel != null) FruitLabStyle.Place(_playerLabel.rectTransform, transform, width - 96f, height - 14f, 92f, 12f);
+            FruitLabStyle.Place(_feedback, transform, width - 96f, 0f, 92f, feedbackHeight);
             float iconSize = Mathf.Min(24f, height - 4f);
-            FruitLabStyle.Place(_correctIcon.rectTransform, _feedback, 0f, (height - iconSize) * 0.5f, iconSize, iconSize);
-            FruitLabStyle.Place(_misplacedIcon.rectTransform, _feedback, 48f, (height - iconSize) * 0.5f, iconSize, iconSize);
-            FruitLabStyle.Place(_correctCount.rectTransform, _feedback, 25f, 0f, 18f, height);
-            FruitLabStyle.Place(_misplacedCount.rectTransform, _feedback, 73f, 0f, 18f, height);
+            FruitLabStyle.Place(_correctIcon.rectTransform, _feedback, 0f, (feedbackHeight - iconSize) * 0.5f, iconSize, iconSize);
+            FruitLabStyle.Place(_misplacedIcon.rectTransform, _feedback, 48f, (feedbackHeight - iconSize) * 0.5f, iconSize, iconSize);
+            FruitLabStyle.Place(_correctCount.rectTransform, _feedback, 25f, 0f, 18f, feedbackHeight);
+            FruitLabStyle.Place(_misplacedCount.rectTransform, _feedback, 73f, 0f, 18f, feedbackHeight);
             _correctCount.fontSize = _misplacedCount.fontSize = Mathf.Min(18f, height * 0.55f);
             ArrangeCards();
         }

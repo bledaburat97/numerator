@@ -23,6 +23,7 @@ namespace Scripts
         }
 
         public void DestroyResultBlock() => _view.Destroy();
+        public void SetPlayerIdentity(bool isLocal) => (_view as ResultBlockView)?.SetPlayerIdentity(isLocal);
 
         public void RevealAnswer(IReadOnlyList<int> answer)
         {

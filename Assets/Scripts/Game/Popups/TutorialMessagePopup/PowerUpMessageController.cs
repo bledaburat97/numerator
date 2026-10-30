@@ -35,6 +35,7 @@ namespace Scripts
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
         {
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) return;
             if (_tutorialGate != null && !_tutorialGate.AllowsButton(powerUpType)) return;
             if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType, () => OnPowerUpClicked(sender, powerUpType))) return;
             switch (powerUpType)

@@ -99,12 +99,23 @@ namespace Scripts
         public void InitializeForMultiplayer()
         {
             ResetButtonInteraction();
-            SetUserText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).playerName.ToString());
-            SetOpponentText(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).playerName.ToString());
-            SetOpponentInfoStatus(true);
-            SetCardInfoButtonStatus(true);
-            InitializeCardInfoButton(OnCardInfoButtonClick);
+            string local = "Sen", opponent = "Rakip";
+            var manager = MultiplayerManager.Instance;
+            if (manager != null && Unity.Netcode.NetworkManager.Singleton != null)
+                for (int i = 0; i < MultiplayerManager.MAX_NUM_OF_USERS; i++)
+                    if (manager.IsPlayerIndexConnected(i))
+                    {
+                        var player = manager.GetPlayerDataFromPlayerIndex(i);
+                        if (player.clientId == Unity.Netcode.NetworkManager.Singleton.LocalClientId) local = player.playerName.ToString();
+                        else opponent = player.playerName.ToString();
+                    }
+            SetUserText(local); SetOpponentText(opponent); SetOpponentInfoStatus(true); SetCardInfoButtonStatus(false);
+            _view.SetCoinCounterStatus(false);
+            _view.GetTopButtonsCanvasGroup().alpha = _view.GetMiddleButtonsCanvasGroup().alpha = 1f;
         }
+        public void SetMultiplayerStatus(string text, double deadline) => (_view as GameUIView)?.SetMultiplayerStatus(text, deadline);
+        public void SetMultiplayerTurn(string text, double deadline, bool localTurn) =>
+            (_view as GameUIView)?.SetMultiplayerTurn(text, deadline, localTurn);
 
         private void SetUserText(string text)
         {

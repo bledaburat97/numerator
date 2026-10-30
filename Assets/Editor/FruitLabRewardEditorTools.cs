@@ -124,13 +124,18 @@ public static class FruitLabRewardEditorTools
             trackerObject.SetActive(false);
             var tracker = trackerObject.AddComponent<LevelTracker>();
             foreach (int previous in new[] { 0, 4, 5 })
-            foreach (int earned in new[] { 1, 2, 3 })
+            foreach (int earned in new[] { 0, 1, 2, 3 })
             foreach (RewardType type in Enum.GetValues(typeof(RewardType)))
             {
                 Field(tracker, "_giftStarCount", previous); Field(tracker, "_currentRewardType", type);
                 var controller = new VerticalCrystalProgressController(view, tracker, null);
-                controller.Initialize(); controller.PrepareForCollection(previous, type);
+                controller.Initialize();
+                if (earned > 0) controller.PrepareForCollection(previous, type);
+                endController.SetOutcome(true, earned);
                 controller.AddCrystals(null, earned).Complete(true);
+                popup.SetStatus(false); popup.SetStatus(true); popup.ApplyLabLayout();
+                Require(view.gameObject.activeSelf == (earned > 0),
+                    "Crystal energy is visible only when this level earned crystals, including after reopening the popup");
                 int total = previous + earned;
                 int capacity = ConstantValues.NUM_OF_STARS_FOR_WILD;
                 Require(view.transform.Find("CrystalCount").GetComponent<TMPro.TMP_Text>().text == (total % capacity) + " / " + capacity,
@@ -168,7 +173,7 @@ public static class FruitLabRewardEditorTools
             if (trackerObject != null) Object.DestroyImmediate(trackerObject);
             EditorSceneManager.ClosePreviewScene(scene);
         }
-        Debug.Log("FRUIT_LAB_REWARDS_PASS: 27 collection/overflow/rotation cases; preview restoration and shared prefab references valid.");
+        Debug.Log("FRUIT_LAB_REWARDS_PASS: 36 zero/collection/overflow/rotation cases; earned-only visibility, popup reopening, preview restoration and shared prefab references valid.");
     }
 
     public static string RenderMenu()

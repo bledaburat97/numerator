@@ -1,6 +1,5 @@
-﻿using Unity.Netcode;
+using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace Scripts
@@ -11,49 +10,34 @@ namespace Scripts
         [Inject] private IHapticController _hapticController;
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
         private IFadePanelController _fadePanelController;
-        private DisconnectionPopupControllerFactory _disconnectionPopupControllerFactory;
-        private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
-
+        private bool _shown;
         public void Initialize(IFadePanelController fadePanelController)
         {
             _fadePanelController = fadePanelController;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectedCallback;
-            _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
-            _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
         }
-        
         private void OnClientDisconnectedCallback(ulong clientId)
         {
-            if (clientId == NetworkManager.ServerClientId)
+            if (MultiplayerConnection.IsLeaving || NetworkManager.Singleton == null) return;
+            if (NetworkManager.Singleton.IsServer)
             {
-                CreateDisconnectionPopup();
+                if (clientId != NetworkManager.Singleton.LocalClientId)
+                    GetComponentInParent<Canvas>().GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Rakip ayrıldı veya bağlantısı kesildi.");
+                return;
             }
-        }
-        
-        private void CreateDisconnectionPopup()
-        {
+            if (_shown) return; _shown = true;
+            string reason = NetworkManager.Singleton.DisconnectReason;
             _fadePanelController.SetFadeImageStatus(true);
-            IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
-            IDisconnectionPopupView disconnectionPopupView =
-                _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
+            var view = Instantiate(disconnectionPopupPrefab, transform);
+            var controller = new DisconnectionPopupController(); controller.Initialize(view, _baseButtonControllerFactory);
+            controller.SetText(!string.IsNullOrEmpty(reason) && reason.Contains("çıkarıldın") ? "Düellodan çıkarıldın." : "Rakiple bağlantı kesildi.");
             _hapticController.Vibrate(HapticType.Warning);
-            disconnectionPopupController.Initialize(disconnectionPopupView, _baseButtonControllerFactory);
-            disconnectionPopupController.SetText("You are disconnected!");
+            PlayerLobby.Instance?.LeaveLobby();
         }
-        
         private void OnDestroy()
         {
-            Debug.Log("Destroy WaitingScenePopupCreator");
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedCallback;
-            }
+            if (NetworkManager.Singleton != null) NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedCallback;
         }
-        
     }
-
-    public interface IWaitingScenePopupCreator
-    {
-        void Initialize(IFadePanelController fadePanelController);
-    }
+    public interface IWaitingScenePopupCreator { void Initialize(IFadePanelController fadePanelController); }
 }

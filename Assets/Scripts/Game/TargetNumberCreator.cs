@@ -10,7 +10,6 @@ namespace Scripts
 {
     public class TargetNumberCreator : NetworkBehaviour, ITargetNumberCreator
     {
-        private NetworkVariable<int> _targetNumber = new NetworkVariable<int>();
         private List<int> _targetCardsList;
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private IGameSaveService _gameSaveService;
@@ -18,6 +17,11 @@ namespace Scripts
 
         public void SetTargetNumber(int numOfBoardHolders)
         {
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                _targetCardsList = new List<int>();
+                return;
+            }
             if (_levelTracker.IsFirstLevelTutorial())
             {
                 SetSavedTargetCardList(new List<int>() { 4, 1 });
@@ -36,15 +40,6 @@ namespace Scripts
             }
         }
         
-        public override void OnNetworkSpawn()
-        {
-            _targetNumber.OnValueChanged += SetTargetNumber;
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            _targetNumber.OnValueChanged -= SetTargetNumber;
-        }
 
         public List<int> GetTargetCardsList()
         {
@@ -58,10 +53,6 @@ namespace Scripts
             return true;
         }
 
-        private void SetTargetNumber(int oldValue, int newValue)
-        {
-            SetTargetCardsList(_targetNumber.Value);
-        }
 
         private void SetTargetCardsList(int targetNumber)
         {
@@ -84,13 +75,9 @@ namespace Scripts
         
         public void CreateMultiplayerTargetNumber()
         {
-            LevelData levelData = _levelDataCreator.GetLevelData();
-
-            if (IsServer)
-            {
-                CreateTargetNumberServerRpc(levelData.NumOfCards, levelData.NumOfBoardHolders);
-            }
+            _targetCardsList = new List<int>();
         }
+        public void RevealMultiplayerAnswer(int[] answer) => _targetCardsList = new List<int>(answer);
         
         private void CreateTargetNumber(int numOfBoardHolders)
         {
@@ -98,11 +85,6 @@ namespace Scripts
             SetTargetCardsList(GetTargetNumber(levelData.NumOfCards, numOfBoardHolders));
         }
         
-        [ServerRpc (RequireOwnership = false)]
-        private void CreateTargetNumberServerRpc(int numOfCards, int numOfBoardHolders)
-        {
-            _targetNumber.Value = GetTargetNumber(numOfCards, numOfBoardHolders);
-        }
 
         private int GetTargetNumber(int numOfCards, int numOfBoardHolders)
         {

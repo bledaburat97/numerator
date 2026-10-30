@@ -1,5 +1,4 @@
 using System;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
@@ -8,87 +7,44 @@ namespace Scripts
 {
     public class LobbyPopupCreator : MonoBehaviour, ILobbyPopupCreator
     {
-        [Inject] private BaseButtonControllerFactory _baseButtonControllerFactory;
-        [Inject] private IHapticController _hapticController;
+        [Inject] private BaseButtonControllerFactory _buttons;
         [SerializeField] private LobbyMessagePopupView lobbyMessagePopup;
         [SerializeField] private LobbyCreationPopupView lobbyCreationPopup;
-        private ILobbyCreationPopupController _lobbyCreationPopupController;
-        public void Initialize(ILevelTracker levelTracker)
+        public void Initialize(ILevelTracker tracker)
         {
             lobbyMessagePopup.Init();
-            IBaseButtonController closeButtonController =
-                _baseButtonControllerFactory.Create(lobbyMessagePopup.GetCloseButton(), () => SceneManager.LoadScene("Menu"));
-            
-            MultiplayerManager.Instance.OnFailedToJoinGame += OnFailedToJoinGame;
-            PlayerLobby.Instance.OnCreateLobbyStarted += OnCreateLobbyStarted;
-            PlayerLobby.Instance.OnCreateLobbyFailed += OnCreateLobbyFailed;
-            PlayerLobby.Instance.OnJoinStarted += OnJoinStarted;
-            PlayerLobby.Instance.OnQuickJoinFailed += OnQuickJoinFailed;
-            PlayerLobby.Instance.OnJoinFailed += OnJoinFailed;
-            LobbyCreationPopupControllerFactory lobbyCreationPopupControllerFactory =
-                new LobbyCreationPopupControllerFactory();
-            _lobbyCreationPopupController = lobbyCreationPopupControllerFactory.Spawn();
-            _lobbyCreationPopupController.Initialize(lobbyCreationPopup, levelTracker, _baseButtonControllerFactory);
+            if (lobbyCreationPopup != null) lobbyCreationPopup.gameObject.SetActive(false);
+            var close = _buttons.Create(lobbyMessagePopup.GetCloseButton(), () => {
+                if (PlayerLobby.Instance != null && (PlayerLobby.Instance.IsAvailable || PlayerLobby.Instance.LastError != null)) lobbyMessagePopup.Hide();
+                else { MultiplayerConnection.Shutdown(); SceneManager.LoadScene("Menu"); }
+            });
+            close.SetText("Kapat"); close.SetClickOnRelease(true);
+            MultiplayerManager.Instance.OnFailedToJoinGame += Failed;
+            PlayerLobby.Instance.OnCreateLobbyStarted += Creating;
+            PlayerLobby.Instance.OnJoinStarted += Joining;
+            PlayerLobby.Instance.OnCreateLobbyFailed += OperationFailed;
+            PlayerLobby.Instance.OnJoinFailed += OperationFailed;
+            PlayerLobby.Instance.OnServiceError += ServiceError;
+            if (PlayerLobby.Instance.LastError != null) lobbyMessagePopup.Show(PlayerLobby.Instance.LastError);
         }
-
-        public void OpenLobbyCreationPopup()
+        public void OpenLobbyCreationPopup() => PlayerLobby.Instance.CreateLobby("Düello", true);
+        private void Creating(object sender, EventArgs args) => lobbyMessagePopup.Show("Düello oluşturuluyor…");
+        private void Joining(object sender, EventArgs args) => lobbyMessagePopup.Show("Düelloya bağlanılıyor…");
+        private void OperationFailed(object sender, EventArgs args) => lobbyMessagePopup.Show(PlayerLobby.Instance.LastError);
+        private void ServiceError(object sender, string message) => lobbyMessagePopup.Show(message);
+        private void Failed(object sender, EventArgs args)
         {
-            _lobbyCreationPopupController.ShowPopup();
+            PlayerLobby.Instance?.ConnectionFailed();
+            lobbyMessagePopup.Show("Odaya bağlanılamadı. Oda kapanmış veya dolmuş olabilir.");
         }
-        
-        private void OnFailedToJoinGame(object sender, EventArgs args)
-        {
-            _hapticController.Vibrate(HapticType.Failure);
-            string text = NetworkManager.Singleton.DisconnectReason;
-            if (text == "")
-            {
-                text = "Failed to connect.";
-            }
-            lobbyMessagePopup.Show(text);
-        }
-        
-        private void OnCreateLobbyStarted(object sender, EventArgs args)
-        {
-            lobbyMessagePopup.Show("Creating lobby...");
-        }
-        
-        private void OnCreateLobbyFailed(object sender, EventArgs args)
-        {
-            _hapticController.Vibrate(HapticType.Failure);
-            lobbyMessagePopup.Show("Failed to create lobby!");
-        }
-        
-        private void OnJoinStarted(object sender, EventArgs args)
-        {
-            lobbyMessagePopup.Show("Joining lobby...");
-        }
-        
-        private void OnQuickJoinFailed(object sender, EventArgs args)
-        {
-            _hapticController.Vibrate(HapticType.Failure);
-            lobbyMessagePopup.Show("Couldn't find a lobby to join");
-        }
-        
-        private void OnJoinFailed(object sender, EventArgs args)
-        {
-            _hapticController.Vibrate(HapticType.Failure);
-            lobbyMessagePopup.Show("Failed to join the lobby");
-        }
-
         private void OnDestroy()
         {
-            MultiplayerManager.Instance.OnFailedToJoinGame -= OnFailedToJoinGame;
-            PlayerLobby.Instance.OnCreateLobbyStarted -= OnCreateLobbyStarted;
-            PlayerLobby.Instance.OnCreateLobbyFailed -= OnCreateLobbyFailed;
-            PlayerLobby.Instance.OnJoinStarted -= OnJoinStarted;
-            PlayerLobby.Instance.OnQuickJoinFailed -= OnQuickJoinFailed;
-            PlayerLobby.Instance.OnJoinFailed -= OnJoinFailed;
+            if (MultiplayerManager.Instance != null) MultiplayerManager.Instance.OnFailedToJoinGame -= Failed;
+            if (PlayerLobby.Instance == null) return;
+            PlayerLobby.Instance.OnCreateLobbyStarted -= Creating; PlayerLobby.Instance.OnJoinStarted -= Joining;
+            PlayerLobby.Instance.OnCreateLobbyFailed -= OperationFailed; PlayerLobby.Instance.OnJoinFailed -= OperationFailed;
+            PlayerLobby.Instance.OnServiceError -= ServiceError;
         }
     }
-
-    public interface ILobbyPopupCreator
-    {
-        void Initialize(ILevelTracker levelTracker);
-        void OpenLobbyCreationPopup();
-    }
+    public interface ILobbyPopupCreator { void Initialize(ILevelTracker levelTracker); void OpenLobbyCreationPopup(); }
 }

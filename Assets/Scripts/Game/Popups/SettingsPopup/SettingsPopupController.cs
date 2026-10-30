@@ -15,7 +15,7 @@ namespace Scripts
 
         public SettingsPopupController() : this(scene => SceneManager.LoadScene(scene), () =>
         {
-            if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
+            MultiplayerConnection.Shutdown();
         }) { }
 
         public SettingsPopupController(Action<string> loadScene, Action shutdownNetwork)

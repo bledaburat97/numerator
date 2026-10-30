@@ -61,7 +61,13 @@ namespace Game
             titleText.rectTransform.localScale = Vector3.zero;
         }
 
-        public void SetOutcome(bool success) => _view.SetOutcome(success);
+        public void SetMultiplayerOpponentLeft()
+        {
+            SetButtonStatus(LevelFinishButtonType.Game, false); SetButtonStatus(LevelFinishButtonType.Claim, false);
+            _view.SetMultiplayerOpponentLeft();
+        }
+        public void SetOutcome(bool success, int earnedCrystalCount = 0) => _view.SetOutcome(success, earnedCrystalCount);
+        public void SetMultiplayerResult(bool won, bool disconnected, RewardType? reward) => _view.SetMultiplayerResult(won, disconnected, reward);
         
         public Sequence PresentRewardForClaim(
             Sequence rewardPresentationSequence,
@@ -166,7 +172,7 @@ namespace Game
     {
         void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);
-        void SetOutcome(bool success);
+        void SetOutcome(bool success, int earnedCrystalCount = 0);
         void SetPopupStatus(bool status);
         Sequence ScaleUpText(float duration);
         Sequence PresentRewardForClaim(Sequence rewardPresentationSequence, Func<Sequence> hideRewardSequenceFactory,

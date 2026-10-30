@@ -12,7 +12,8 @@ namespace Scripts
             _view = view;
             _view.Init();
             IBaseButtonController menuButtonController = baseButtonControllerFactory.Create(_view.GetMenuButtonView(), OnMenuButtonClick);
-            menuButtonController.SetText("MENU");
+            menuButtonController.SetText("Menü");
+            menuButtonController.SetClickOnRelease(true);
         }
 
         public void SetText(string text)
@@ -22,10 +23,7 @@ namespace Scripts
         
         private void OnMenuButtonClick()
         {
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.Shutdown();
-            }
+            MultiplayerConnection.Shutdown();
             SceneManager.LoadScene("Menu");
         }
     }

@@ -11,16 +11,14 @@ namespace Scripts
     {
         private ILevelTracker _levelTracker;
         private ITurnOrderDeterminer _turnOrderDeterminer;
-        private IMultiplayerGameController _multiplayerGameController;
         private IResultAreaView _view;
         private List<IResultBlockController> _resultBlockControllers;
         
         [Inject]
-        public ResultAreaController(ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IMultiplayerGameController multiplayerGameController, IResultAreaView view)
+        public ResultAreaController(ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IResultAreaView view)
         {
             _levelTracker = levelTracker;
             _turnOrderDeterminer = turnOrderDeterminer;
-            _multiplayerGameController = multiplayerGameController;
             _view = view;
             _resultBlockControllers = new List<IResultBlockController>();
         }
@@ -45,6 +43,11 @@ namespace Scripts
         }
 
         public void EnableReview() => _view.EnableReview();
+        public void LabelLatestMultiplayerGuess(bool isLocal)
+        {
+            if (_resultBlockControllers.Count > 0) (_resultBlockControllers[_resultBlockControllers.Count - 1] as ResultBlockController)?.SetPlayerIdentity(isLocal);
+            _view.SetScrollPositionToBottom();
+        }
 
         public void RevealAnswer(IReadOnlyList<int> answer)
         {
@@ -60,14 +63,7 @@ namespace Scripts
                 finalNumber += resultBlockModel.finalNumbers[i] * ((int) Math.Pow(10, i));
             }
             
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
-            {
-                AddNewResultBlock(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
-            }
-            else
-            {
-                _multiplayerGameController.AddResultBlock(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
-            }
+            AddNewResultBlock(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
         }
         
         public void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)

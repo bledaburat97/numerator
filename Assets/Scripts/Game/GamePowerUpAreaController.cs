@@ -40,6 +40,7 @@ namespace Scripts
         public void Initialize()
         {
             if (_view == null) return;
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) { _view.GetRectTransform().gameObject.SetActive(false); return; }
 
             if (_isInitialized)
             {
@@ -88,6 +89,7 @@ namespace Scripts
 
         private bool IsPowerUpAvailable(RewardType rewardType, int count)
         {
+            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) return false;
             if (count <= 0) return false;
             if (rewardType != RewardType.Bomb) return true;
 

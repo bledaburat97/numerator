@@ -232,7 +232,7 @@ public static class FruitLabFailureValidation
         public RectTransform GetCheckButtonRectTransform() => null;
         public RectTransform GetResetButtonRectTransform() => null;
         public RectTransform GetCardInfoButtonRectTransform() => null;
-        public void TriggerResetNumbers() { }
+        public void TriggerResetNumbers() => ResetNumbers?.Invoke(this, EventArgs.Empty);
         public void SetAllButtonsUnclickable() { }
         public void SetButtonClickable(bool clickable, GameUIButtonType type) { }
         public Sequence ChangeFadeTopAreaButtons(float duration, float alpha) => DOTween.Sequence();
@@ -440,7 +440,8 @@ public static class FruitLabFailureValidation
             result.WrongGuessEvent += (sender, args) => { wrong++; round.DecreaseRemainingGuessCount(); };
             indexes.TryRemoveCardFromBoard(expected[0] - 1); ui.Submit();
             Require(round.GetTriedCardsList().Count == 0, "Incomplete guesses still cannot submit");
-            indexes.TryPlaceCardOnBoardHolder(0, fruitCount - 1); ui.Submit();
+            Require(placement.TryPlaceCardOnBoard(fruitCount - 1, 0), "A wrong last fruit starts its flight");
+            ui.Submit();
             Require(wrong == 1 && wins == 0 && results.Last.finalNumbers.Count == expected.Count
                 && results.Last.correctPosCount == expected.Count - 1, "Shortened wrong guesses produce normal feedback");
             var snapshots = new GameSaveSnapshotProvider(target, info, new BombFlow(), counts, round);
@@ -460,10 +461,19 @@ public static class FruitLabFailureValidation
             Require(target.GetTargetCardsList().SequenceEqual(expected) && memory.Data.TargetCards.Count == boardSize,
                 "Legacy long answers normalize to the restored board without mutating the save object");
             indexes.TryRemoveCardFromBoard(fruitCount - 1);
-            Require(indexes.TryPlaceCardOnBoardHolder(0, expected[0] - 1), "Corrected fruit must be placed after clearing the wrong fruit");
+            Require(placement.TryPlaceCardOnBoard(expected[0] - 1, 0), "Corrected fruit must be accepted after clearing the wrong fruit");
+            Require(cards[expected[0] - 1].GetView().GetParent() == parent,
+                "The last card is still visually travelling when the player submits");
             ui.Submit();
             Require(wins == 1 && wrong == 1 && results.Last.correctPosCount == expected.Count,
-                "Shortened answer wins after bomb and resume; no length mismatch");
+                "One submit must win even before the last card's placement animation completes");
+            DOTween.ManualUpdate(.5f, .5f);
+            Require(wins == 1 && wrong == 1 && round.GetTriedCardsList().Count == 2,
+                "Finishing the fruit flight must not submit the same guess twice");
+            ui.TriggerResetNumbers();
+            DOTween.ManualUpdate(.5f, .5f);
+            Require(indexes.GetPlacedCardIndexesOnBoard().All(index => index == -1),
+                "Resetting after an immediate guess must not leave a late placement behind");
         }
         finally { DOTween.ManualUpdate(2f, 2f); Object.DestroyImmediate(root); }
     }
@@ -562,7 +572,7 @@ public static class FruitLabCompletionValidation
         {
             var tracker = state.AddComponent<LevelTracker>();
             var view = new AreaProbe(state.AddComponent<CanvasGroup>());
-            var area = new ResultAreaController(tracker, null, null, view);
+            var area = new ResultAreaController(tracker, null, view);
             area.AddNewResultBlock(531, 1, 1);
             area.RevealAnswer(new[] { 1, 2, 3 });
             Require(view.Rows[0].Cards[0].State == C && view.Rows[0].Cards[1].State == M && view.Rows[0].Cards[2].State == A,

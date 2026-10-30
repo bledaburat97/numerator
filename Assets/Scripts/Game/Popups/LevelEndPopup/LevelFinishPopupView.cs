@@ -13,6 +13,25 @@ namespace Scripts
         [SerializeField] private VerticalCrystalProgressView verticalCrystalProgressView;
         [SerializeField] private RectTransform failureArea;
         private bool _success = true;
+        private bool _hasCrystalReward;
+        private bool _multiplayer;
+        private string _multiplayerSubtitle;
+        private Game.RewardType? _multiplayerReward;
+
+        public void SetMultiplayerResult(bool won, bool disconnected, Game.RewardType? reward)
+        {
+            _multiplayer = true; _success = won; _multiplayerReward = won && !disconnected ? reward : null;
+            _multiplayerSubtitle = disconnected ? "Bağlantı kesildi. Yeni bir oda açabilirsin."
+                : won && reward.HasValue ? "+1 " + PowerUpTypeUtility.Name(reward.Value) + " powerup envanterine eklendi."
+                : "Doğru cevabı ve tahminleri inceleyebilirsin.";
+            ApplyLabLayout();
+        }
+
+        public void SetMultiplayerOpponentLeft()
+        {
+            _multiplayerSubtitle = "Rakip ayrıldı veya bağlantısı kesildi.";
+            ApplyLabLayout();
+        }
 
         private void OnEnable() => ApplyLabLayout();
 
@@ -63,11 +82,12 @@ namespace Scripts
             text.alignment = _success ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Midline;
             TMP_Text subtitle = transform.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
             if (subtitle == null) subtitle = FruitLabStyle.CreateText("ResultSubtitle", transform, 12f, FruitLabStyle.Muted);
-            subtitle.text = _success ? "Bölüm tamamlandı." : "Sonucu incele, tekrar dene.";
-            subtitle.gameObject.SetActive(_success ? height >= 144f : height >= 100f);
+            subtitle.text = _multiplayer ? _multiplayerSubtitle : _success ? "Bölüm tamamlandı." : "Sonucu incele, tekrar dene.";
+            subtitle.gameObject.SetActive(_multiplayer ? height >= 90f : _success ? height >= 144f : height >= 100f);
             subtitle.fontSize = _success ? 11f : 10f;
             subtitle.alignment = _success ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Midline;
             FruitLabStyle.Place(subtitle.rectTransform, transform, 12f, height - (_success ? 52f : 48f), width - (_success ? 72f : 24f), 14f);
+            if (_multiplayer) { subtitle.enableAutoSizing = true; subtitle.fontSizeMin = 9f; subtitle.fontSizeMax = 11f; }
             RectTransform stage = transform.Find("RewardStage") as RectTransform;
             if (stage == null)
             {
@@ -86,12 +106,22 @@ namespace Scripts
             mark.color = _success ? FruitLabStyle.Correct : FruitLabStyle.Gold;
             mark.SetAllDirty();
             FruitLabStyle.Stretch(mark.rectTransform, 6f);
+            mark.gameObject.SetActive(!_multiplayerReward.HasValue);
+            var rewardIcon = stage.Find("MultiplayerReward")?.GetComponent<Image>();
+            if (_multiplayerReward.HasValue)
+            {
+                if (rewardIcon == null) rewardIcon = FruitLabStyle.Detail(stage, "MultiplayerReward", Color.white);
+                FruitLabStyle.SetIcon(rewardIcon, PowerUpTypeUtility.IconName(_multiplayerReward.Value));
+                FruitLabStyle.Stretch(rewardIcon.rectTransform, 2f);
+            }
+            if (rewardIcon != null) rewardIcon.gameObject.SetActive(_multiplayerReward.HasValue);
             if (verticalCrystalProgressView != null)
             {
                 float crystalHeight = height - 104f;
                 FruitLabStyle.Place(verticalCrystalProgressView.GetRectTransform(), transform, 12f, 44f, width - 24f, Mathf.Max(28f, crystalHeight));
                 verticalCrystalProgressView.SetPresentationTarget(stage);
                 verticalCrystalProgressView.ApplyLabStyle();
+                verticalCrystalProgressView.SetStatus(_success && !_multiplayer && _hasCrystalReward);
             }
             foreach (LevelFinishButtonModel button in buttonModels)
             {
@@ -112,15 +142,16 @@ namespace Scripts
             }
         }
 
-        public void SetOutcome(bool success)
+        public void SetOutcome(bool success, int earnedCrystalCount = 0)
         {
+            _multiplayer = false; _multiplayerReward = null;
             _success = success;
+            _hasCrystalReward = success && earnedCrystalCount > 0;
             ApplyLabLayout();
             Transform mark = transform.Find("RewardStage/Outcome");
             if (mark != null) mark.gameObject.SetActive(true);
             if (verticalCrystalProgressView != null)
             {
-                verticalCrystalProgressView.SetStatus(success);
                 verticalCrystalProgressView.SetAlpha(1f);
             }
         }

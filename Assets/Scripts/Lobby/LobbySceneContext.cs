@@ -33,6 +33,8 @@ namespace Scripts
             _lobbyUIController.Initialize(_lobbyPopupCreator);
         }
         
+        private void OnDestroy() => (_lobbyUIController as System.IDisposable)?.Dispose();
+
         private void OnApplicationQuit()
         {
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR

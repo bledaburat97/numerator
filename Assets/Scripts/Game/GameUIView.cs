@@ -21,11 +21,64 @@ namespace Scripts
         [SerializeField] private Image coinImage;
         [SerializeField] private TextHolderAdjustment coinCountHolder;
 
+        private bool _multiplayerMode;
+        public bool IsMultiplayer => _multiplayerMode;
+        private RectTransform _matchHud;
+        private TMP_Text _turnLabel, _timeLabel, _opponentNameLabel;
+        private RectTransform _timerChip;
+        public string MultiplayerStatusText => _turnLabel != null ? _turnLabel.text : "";
+        public string MultiplayerTimerText => _timeLabel != null ? _timeLabel.text : "";
+        private double _deadline;
+        public void SetMultiplayerStatus(string value, double deadline)
+        {
+            EnsureMultiplayerHud(); _turnLabel.text = value; _deadline = deadline; Update();
+        }
+        public void SetMultiplayerTurn(string value, double deadline, bool localTurn)
+        {
+            SetMultiplayerStatus(value, deadline);
+            _turnLabel.color = deadline <= 0 ? FruitLabStyle.Muted : localTurn ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer;
+        }
+        private void EnsureMultiplayerHud()
+        {
+            if (_matchHud != null) return;
+            _matchHud = new GameObject("MultiplayerStatus", typeof(RectTransform)).GetComponent<RectTransform>();
+            _matchHud.SetParent(transform, false); FruitLabStyle.AddSurface(_matchHud.gameObject, FruitLabStyle.Panel);
+            _turnLabel = FruitLabStyle.CreateText("Turn", _matchHud, 13f, FruitLabStyle.Mint);
+            _turnLabel.enableAutoSizing = true; _turnLabel.fontSizeMin = 10; _turnLabel.fontSizeMax = 13;
+            _timerChip = new GameObject("Timer", typeof(RectTransform)).GetComponent<RectTransform>();
+            _timerChip.SetParent(_matchHud, false); FruitLabStyle.AddSurface(_timerChip.gameObject, FruitLabStyle.Recess);
+            _timeLabel = FruitLabStyle.CreateText("Time", _timerChip, 16f, FruitLabStyle.Text);
+            _opponentNameLabel = FruitLabStyle.CreateText("MultiplayerOpponent", transform, 15f, FruitLabStyle.Muted);
+        }
+        private void Update()
+        {
+            if (!_multiplayerMode || _timeLabel == null) return;
+            double now = Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening
+                ? Unity.Netcode.NetworkManager.Singleton.ServerTime.Time : 0;
+            _timeLabel.text = _deadline > 0 ? Mathf.CeilToInt((float)System.Math.Max(0, _deadline - now)) + " sn" : "";
+            _timeLabel.color = _deadline > 0 && _deadline - now <= 10 ? FruitLabStyle.OpponentPlayer : FruitLabStyle.Text;
+            _timerChip.gameObject.SetActive(_deadline > 0);
+
+        }
+
         public void ApplyLabLayout(RectTransform header, RectTransform actionArea, float width, float headerHeight, float actionWidth, float actionHeight)
         {
             opponentInfo.SetActive(false);
-            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, width - 180f, 30f);
-            userText.fontSize = 19f;
+            if (_multiplayerMode)
+            {
+                EnsureMultiplayerHud();
+                FruitLabStyle.Place(_matchHud, header, 0f, 0f, width, 32f);
+                FruitLabStyle.Place(_turnLabel.rectTransform, _matchHud, 10f, 0f, width - 92f, 32f);
+                FruitLabStyle.Place(_timerChip, _matchHud, width - 78f, 3f, 74f, 26f);
+                FruitLabStyle.Stretch(_timeLabel.rectTransform, 1f);
+                FruitLabStyle.Place(_opponentNameLabel.rectTransform, header, width * .5f - 4f, headerHeight - 34f, width * .5f - 40f, 30f);
+                _opponentNameLabel.text = opponentText.text;
+                _opponentNameLabel.enableAutoSizing = true; _opponentNameLabel.fontSizeMin = 10; _opponentNameLabel.fontSizeMax = 15;
+            }
+            if (_matchHud != null) _matchHud.gameObject.SetActive(_multiplayerMode);
+            if (_opponentNameLabel != null) _opponentNameLabel.gameObject.SetActive(_multiplayerMode);
+            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width * .5f - 20f : width - 180f, 30f);
+            userText.fontSize = _multiplayerMode ? 15f : 19f;
             userText.enableAutoSizing = false;
             userText.fontStyle = FontStyles.Bold;
             userText.color = FruitLabStyle.Text;
@@ -56,6 +109,7 @@ namespace Scripts
                 if (coinWidget != coinImage.rectTransform) FruitLabStyle.Stretch(coinImage.rectTransform);
             }
             FruitLabStyle.SetIcon(coinImage, "Coin");
+            if (_multiplayerMode) SetCoinCounterStatus(false);
             FruitLabStyle.Place(checkButton.GetButtonRectTransform(), actionArea, width - actionWidth, 0f, actionWidth, actionHeight);
             checkButton.ApplyLabStyle(true);
             FruitLabStyle.Place(resetButton.GetButtonRectTransform(), actionArea, 0f, 0f, actionWidth, actionHeight);
@@ -79,7 +133,9 @@ namespace Scripts
 
         public void SetOpponentInfoStatus(bool status)
         {
-            opponentInfo.SetActive(status);
+            _multiplayerMode = status;
+            opponentInfo.SetActive(false);
+            GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
         }
 
         public IBaseButtonView GetCheckButton()

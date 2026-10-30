@@ -53,6 +53,8 @@ namespace Scripts
             _waitingScenePopupCreator.Initialize(_fadePanelController);
         }
         
+        private void OnDestroy() => (_waitingSceneUIController as System.IDisposable)?.Dispose();
+
         private void OnApplicationQuit()
         {
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR

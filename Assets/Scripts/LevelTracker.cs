@@ -17,6 +17,9 @@ namespace Scripts
 
         private void Awake()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (MultiplayerNetworkProbe.IsRunning) { _levelId = 1; _gameOption = GameOption.MultiPlayer; return; }
+#endif
             _levelId = PlayerPrefs.GetInt("level_id", 0);
             TutorialProgress.RepairIncompleteFirstLevel(_levelId);
             _starCount = PlayerPrefs.GetInt("star_count", 0);
@@ -50,6 +53,9 @@ namespace Scripts
         
         public void SavePlayerPrefs()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (MultiplayerNetworkProbe.IsRunning) return;
+#endif
             PlayerPrefs.SetInt("level_id", _levelId);
             PlayerPrefs.SetInt("star_count", _starCount);
             PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
@@ -78,17 +84,7 @@ namespace Scripts
         
         public int GetNumberOfBoardCardsInMultiplayer()
         {
-            switch (_multiplayerLevelDifficulty)
-            {
-                case Difficulty.Easy:
-                    return 3;
-                case Difficulty.Medium:
-                    return 4;
-                case Difficulty.Hard:
-                    return 5;
-                default:
-                    return 5;
-            } 
+            return MultiplayerRules.For(_multiplayerLevelDifficulty).BoardCount;
         }
         
         public void IncrementLevelId(int starCount, int giftStarCount)

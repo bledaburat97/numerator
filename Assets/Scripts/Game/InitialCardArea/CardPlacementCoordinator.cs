@@ -122,13 +122,16 @@ namespace Scripts
         private bool PlaceCardOnBoard(int cardIndex, int boardHolderIndex)
         {
             if (!TryGetCardItem(cardIndex, out INormalCardItemController cardItem)) return false;
-            if (!_boardPlacementCommands.TryReserveBoardHolderForCard(boardHolderIndex, cardIndex)) return false;
+            // The selected slot is gameplay state; the flight is only presentation.
+            // A guess immediately after selecting the last fruit must include it.
+            if (!_boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex)) return false;
 
             cardItem.GetCardViewHandler().MoveToParent(
                 _boardAreaController.GetRectTransformOfGarden(boardHolderIndex),
                 () =>
                 {
-                    if (_boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex))
+                    if (_boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(cardIndex, out int currentHolder)
+                        && currentHolder == boardHolderIndex)
                         CardPlacedEvent?.Invoke(this, (cardIndex, boardHolderIndex));
                 });
             return true;

@@ -4,6 +4,8 @@ namespace Scripts
 {
     public static class PowerUpTypeUtility
     {
+        public static string Name(RewardType type) => type == RewardType.Bomb ? "Bomba" : type == RewardType.Life ? "Can" : "Göster";
+        public static string IconName(RewardType type) => type == RewardType.Bomb ? "Bomb" : type == RewardType.Life ? "Life" : "Reveal";
         public static RewardType[] OrderedRewardTypes { get; } = new[]
         {
             RewardType.Revealing,

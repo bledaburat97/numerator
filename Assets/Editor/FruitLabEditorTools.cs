@@ -51,7 +51,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation.StartsWith("multiplayer-") || requested.operation == "single-input-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -79,6 +79,16 @@ public static class FruitLabEditorTools
             switch (job.operation)
             {
                 case "inspect": reply.details = Inspect(); break;
+                case "multiplayer-review":
+                    FruitLabMultiplayerEditorTools.ValidateRules();
+                    reply.details = FruitLabMultiplayerEditorTools.Bake() + "\n" + Render(3, 7, validation: FruitLabMultiplayerEditorTools.Review, validateBeforeRender: true)
+                        + "\n" + Render(4, 8, validation: FruitLabMultiplayerEditorTools.Review, validateBeforeRender: true)
+                        + "\n" + Render(5, 9, validation: FruitLabMultiplayerEditorTools.Review, validateBeforeRender: true)
+                        + "\n" + FruitLabMultiplayerEditorTools.RenderOnlineScenes(); break;
+                case "multiplayer-editor-probe": reply.details = FruitLabMultiplayerEditorTools.StartEditorProbe(); break;
+                case "multiplayer-ios-build": reply.details = FruitLabMultiplayerEditorTools.BuildIos(); break;
+                case "multiplayer-build": reply.details = FruitLabMultiplayerEditorTools.Build(); break;
+                case "multiplayer-configure": reply.details = FruitLabMultiplayerEditorTools.ConfigureBuild(); break;
                 case "tutorial-review":
                     reply.details = FruitLabTutorialEditorTools.Bake()
                         + "\n" + Render(2, 5, validation: FruitLabTutorialEditorTools.Review, validateBeforeRender: true);
@@ -101,6 +111,21 @@ public static class FruitLabEditorTools
                 case "bomb-review":
                     FruitLabFailureValidation.ValidateBomb();
                     reply.details = "20 board/fruit combinations, late/repeated-use guards, wrong/correct guesses and in-memory save/resume passed";
+                    break;
+                case "single-input-review":
+                    FruitLabFailureValidation.ValidateBomb();
+                    FruitLabFailureValidation.ValidateLogic();
+                    FruitLabRewardEditorTools.ValidateRewards();
+                    reply.details = Render(5, 9, validation: FruitLabRetryValidation.Validate)
+                        + "\n" + Render(2, 5, validation: FruitLabRetryValidation.Validate)
+                        + "\n" + Render(2, 5, validation: FruitLabTutorialEditorTools.Review, validateBeforeRender: true)
+                        + "\n" + Render(5, 9, true, validation: (canvas, camera) => {
+                            var popup = canvas.GetComponentInChildren<LevelFinishPopupView>(true);
+                            popup.SetOutcome(true, 0);
+                            if (((Component)popup.GetVerticalCrystalProgressView()).gameObject.activeSelf)
+                                throw new Exception("A zero-crystal win must not display crystal energy.");
+                        }, validateBeforeRender: true)
+                        + "\nImmediate wrong/winning guesses, no duplicate after flight, earned-only crystal energy, retry input and first tutorial passed";
                     break;
                 case "crystal-review":
                     FruitLabCrystalFlightEditorTools.PreparePrefab();
@@ -331,7 +356,7 @@ public static class FruitLabEditorTools
             if (popupPreview)
             {
                 var popup = canvas.GetComponentInChildren<LevelFinishPopupView>(true);
-                popup.SetStatus(true); popup.SetOutcome(!failPreview);
+                popup.SetStatus(true); popup.SetOutcome(!failPreview, failPreview ? 0 : 1);
                 popup.GetText().gameObject.SetActive(true);
                 popup.GetText().text = failPreview ? "Tekrar dene" : "Kazandın!";
                 popup.GetText().rectTransform.localScale = Vector3.one;

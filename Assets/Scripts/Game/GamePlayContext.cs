@@ -44,7 +44,7 @@ namespace Scripts
             _layoutRefreshPending = false;
             _boardAreaController.RefreshLayout();
             _initialCardAreaController.RefreshLayout();
-            _guessManager.Initialize();
+            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer) _guessManager.Initialize();
         }
 
         private void InitializeHapticController() //TODO: set in global installer
@@ -89,6 +89,7 @@ namespace Scripts
             _cardPlacementCoordinator.Unsubscribe();
             _cardInteractionManager.Unsubscribe();
             _cardItemInfoPopupController.Unsubscribe();
+            (_levelFlowOrchestrator as System.IDisposable)?.Dispose();
         }
         
         private void TrySave()

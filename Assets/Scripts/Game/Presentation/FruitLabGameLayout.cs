@@ -78,9 +78,15 @@ namespace Scripts
             FruitLabStyle.Place(gameArea, middleArea, layout.Padding, layout.BottomPadding, width, layout.GameAreaHeight);
             FruitLabStyle.AddSurface(gameArea.gameObject, FruitLabStyle.Panel);
             FruitLabStyle.Rim(gameArea);
+            bool multiplayer = gameView.IsMultiplayer;
+            lifeBar.gameObject.SetActive(!multiplayer);
+            float powerHeight = multiplayer ? 0f : layout.PowerUpHeight;
+            float reclaimed = layout.PowerUpHeight - powerHeight;
+            FruitLabStyle.Place(gameArea, middleArea, layout.Padding, layout.BottomPadding, width, layout.GameAreaHeight - reclaimed);
+            powerUpArea.gameObject.SetActive(!multiplayer);
             float y = 0f;
-            FruitLabStyle.Place(powerUpArea, gameArea, 0f, y, width, layout.PowerUpHeight);
-            y += layout.PowerUpHeight + layout.Gap;
+            FruitLabStyle.Place(powerUpArea, gameArea, 0f, y, width, powerHeight);
+            y += powerHeight + layout.Gap;
             FruitLabStyle.Place(initialArea, gameArea, layout.ActionWidth + layout.Gap, y, layout.ChoicesWidth, layout.ChoicesHeight);
             FruitLabStyle.Place(actionArea, gameArea, 0f, y, width, layout.ChoicesHeight);
             y += layout.ChoicesHeight + layout.Gap;
@@ -89,12 +95,12 @@ namespace Scripts
             FruitLabStyle.Rim(boardArea);
 
             FruitLabStyle.Place(historyArea, middleArea, layout.Padding,
-                layout.BottomPadding + layout.GameAreaHeight + layout.Gap, width, layout.HistoryHeight);
+                layout.BottomPadding + layout.GameAreaHeight - reclaimed + layout.Gap, width, layout.HistoryHeight + reclaimed);
             FruitLabStyle.AddSurface(historyArea.gameObject, FruitLabStyle.Panel);
             FruitLabStyle.Rim(historyArea, .25f);
 
             gameView.ApplyLabLayout(header, actionArea, width, layout.HeaderHeight, layout.ActionWidth, layout.ChoicesHeight);
-            powerUpView.ApplyLabLayout(width, layout.PowerUpHeight);
+            powerUpView.ApplyLabLayout(width, powerHeight);
             lifeBar.ApplyLabLayout(header, width, layout.HeaderHeight);
             results.ApplyLabLayout(layout.HistorySpacing);
         }

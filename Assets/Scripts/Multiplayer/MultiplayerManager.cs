@@ -24,7 +24,11 @@ namespace Scripts
         private void Awake()
         {
             Instance = this;
-            _playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY, "Player" + UnityEngine.Random.Range(100, 1000));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (MultiplayerNetworkProbe.IsRunning) _playerName = MultiplayerNetworkProbe.LocalPlayerName;
+            else
+#endif
+            _playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY, "");
             DontDestroyOnLoad(gameObject);
             
             _playerDataNetworkList = new NetworkList<PlayerData>();
@@ -43,15 +47,21 @@ namespace Scripts
 
         public void SetPlayerName(string playerName)
         {
-            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
+            playerName = string.IsNullOrWhiteSpace(playerName) ? "" : playerName.Trim();
+            if (playerName.Length > 16) playerName = playerName.Substring(0, 16);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!MultiplayerNetworkProbe.IsRunning)
+#endif
+                PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
             _playerName = playerName;
         }
 
-        public void StartHost()
+        public bool StartHost()
         {
+            MultiplayerConnection.BeginSession();
             NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApprovalCallback;
             NetworkManager.Singleton.ConnectionApprovalCallback += OnConnectionApprovalCallback;
-            NetworkManager.Singleton.StartHost();
+            return NetworkManager.Singleton.StartHost();
         }
 
         public override void OnNetworkSpawn()
@@ -66,6 +76,8 @@ namespace Scripts
             }
 
             SubmitLocalPlayerData();
+            // NetworkList's initial snapshot can arrive before the waiting-room UI subscribes.
+            OnPlayerDataNetworkListChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public override void OnNetworkDespawn()
@@ -99,11 +111,12 @@ namespace Scripts
             }
         }
         
-        public void StartClient()
+        public bool StartClient()
         {
+            MultiplayerConnection.BeginSession();
             OnTryingToJoinGame?.Invoke(this, EventArgs.Empty);
             RegisterClientCallbacks();
-            NetworkManager.Singleton.StartClient();
+            return NetworkManager.Singleton.StartClient();
         }
 
         private void RegisterClientCallbacks()
@@ -139,7 +152,8 @@ namespace Scripts
         {
             if (!IsSpawned || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
 
-            string playerId = AuthenticationService.Instance.IsSignedIn
+            string playerId = Unity.Services.Core.UnityServices.State == Unity.Services.Core.ServicesInitializationState.Initialized
+                && AuthenticationService.Instance.IsSignedIn
                 ? AuthenticationService.Instance.PlayerId
                 : string.Empty;
 
@@ -227,7 +241,7 @@ namespace Scripts
         }
 
         public bool IsPlayerIndexConnected(int playerIndex) {
-            return playerIndex < _playerDataNetworkList.Count;
+            return playerIndex >= 0 && playerIndex < _playerDataNetworkList.Count;
         }
         
         public PlayerData GetPlayerDataFromPlayerIndex(int playerIndex) {
@@ -243,10 +257,14 @@ namespace Scripts
             return -1;
         }
 
-        public void KickPlayer(ulong clientId)
+        public bool KickPlayer(ulong clientId)
         {
-            NetworkManager.Singleton.DisconnectClient(clientId);
+            if (!IsServer || !IsSpawned || clientId == Unity.Netcode.NetworkManager.ServerClientId
+                || SceneManager.GetActiveScene().name != "WaitingScene"
+                || !NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId)) return false;
+            NetworkManager.Singleton.DisconnectClient(clientId, "Düellodan çıkarıldın.");
             Server_OnClientDisconnectCallBack(clientId);
+            return true;
         }
 
         private void UnregisterCallbacks()
@@ -270,13 +288,15 @@ namespace Scripts
             NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApprovalCallback;
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             UnregisterCallbacks();
             if (_playerDataNetworkList != null)
             {
                 _playerDataNetworkList.OnListChanged -= OnListChanged;
             }
+            if (Instance == this) Instance = null;
+            base.OnDestroy();
         }
     }
     

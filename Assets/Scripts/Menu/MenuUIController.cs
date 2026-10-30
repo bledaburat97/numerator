@@ -11,6 +11,7 @@ namespace Menu
         private IGameSaveService _gameSaveService;
         private IMenuUIView _view;
         private IBaseButtonController _singlePlayerButtonController;
+        private bool _navigating;
         
         [Inject]
         public MenuUIController(ILevelTracker levelTracker, IGameSaveService gameSaveService, BaseButtonControllerFactory baseButtonControllerFactory, IMenuUIView view)
@@ -26,20 +27,27 @@ namespace Menu
         {
             _singlePlayerButtonController = _baseButtonControllerFactory.Create(_view.GetSinglePlayerButton(), OnSinglePlayerButtonClick);
             _singlePlayerButtonController.SetText(GetLevelText());
+            _singlePlayerButtonController.SetClickOnRelease(true);
 
             IBaseButtonController multiplayerButtonController =
                 _baseButtonControllerFactory.Create(_view.GetMultiplayerButton(), OnMultiplayerButtonClick);
-            multiplayerButtonController.SetText("MULTIPLAYER");
+            multiplayerButtonController.SetText("Arkadaşınla oyna");
+            multiplayerButtonController.SetButtonStatus(true);
+            multiplayerButtonController.SetClickOnRelease(true);
         }
 
         private void OnSinglePlayerButtonClick()
         {
+            if (_navigating) return;
+            _navigating = true;
             _levelTracker.SetGameOption(GameOption.SinglePlayer);
             SceneManager.LoadScene("Game");
         }
         
         private void OnMultiplayerButtonClick()
         {
+            if (_navigating) return;
+            _navigating = true;
             _levelTracker.SetGameOption(GameOption.MultiPlayer);
             SceneManager.LoadScene("Lobby");
         }

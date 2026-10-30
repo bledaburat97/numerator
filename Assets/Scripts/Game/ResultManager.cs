@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game;
 using UnityEngine;
 using Zenject;
@@ -8,6 +9,8 @@ namespace Scripts
 {
     public class ResultManager : IResultManager
     {
+        [InjectOptional] private ILevelTracker _levelTracker;
+        [InjectOptional] private IMultiplayerGameController _multiplayer;
         private readonly IResultAreaController _resultAreaController;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
@@ -74,6 +77,11 @@ namespace Scripts
                     return;
                 }
                 finalCards.Add(finalCardIndexes[i] + 1);
+            }
+            if (_levelTracker != null && _levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            {
+                _multiplayer?.SubmitGuess(finalCards.ToArray());
+                return;
             }
             if (finalCards.Count != _targetNumberCreator.GetTargetCardsList().Count)
             {

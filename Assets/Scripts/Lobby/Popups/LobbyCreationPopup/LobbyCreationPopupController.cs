@@ -54,6 +54,7 @@ namespace Scripts
         private void OnClickButton(bool isPrivate)
         {
             _levelTracker.SetMultiplayerLevelDifficulty((Difficulty)_difficultyIndex);
+            PlayerLobby.Instance.SelectDifficulty((Difficulty)_difficultyIndex);
             PlayerLobby.Instance.CreateLobby(_view.GetLobbyName(), isPrivate);
         }
         

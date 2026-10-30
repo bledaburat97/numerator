@@ -218,7 +218,7 @@ public static class FruitLabTutorialEditorTools
             var reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target);
             var locator = new CardItemLocator(Board, UI); locator.Initialize();
             Placement = new CardPlacementCoordinator(Board, locator, UI, indexes, indexes, reveal, Initial, _info, Gate);
-            _area = new ResultAreaController(Tracker, null, null, canvas.GetComponentInChildren<ResultAreaView>(true));
+            _area = new ResultAreaController(Tracker, null, canvas.GetComponentInChildren<ResultAreaView>(true));
             var results = new ResultManager(UI, _area, Target, indexes, Round, _powers);
             _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), Target, _info, powerMessages, UI, Round);
             _interaction = new CardInteractionManager(UI, new BoardHolderClickRouter(Board, reveal), Initial, haptic, Placement);
