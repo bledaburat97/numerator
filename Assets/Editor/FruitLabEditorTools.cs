@@ -51,7 +51,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation.StartsWith("multiplayer-") || requested.operation == "single-input-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -79,6 +79,17 @@ public static class FruitLabEditorTools
             switch (job.operation)
             {
                 case "inspect": reply.details = Inspect(); break;
+                case "menu-progression-review": reply.details = FruitLabRewardEditorTools.ReviewMenuProgression(); break;
+                case "telemetry-install":
+                    UnityEditor.PackageManager.Client.Add("com.unity.services.analytics@6.3.0");
+                    UnityEditor.EngineDiagnostics.EngineDiagnosticsSettings.enabled = true;
+                    reply.details = "Requested Analytics 6.3.0 installation; native Engine Diagnostics enabled";
+                    break;
+                case "telemetry-review": reply.details = FruitLabTelemetryEditorTools.Review(); break;
+                case "telemetry-cloud-inspect": FruitLabTelemetryCloudTools.Inspect(); reply.details = "Analytics administration connection check started"; break;
+                case "telemetry-provision": FruitLabTelemetryCloudTools.Provision(); reply.details = "Analytics schema setup started; existing definitions are preserved"; break;
+                case "telemetry-smoke": reply.details = FruitLabTelemetrySmokeTools.Start(); break;
+                case "telemetry-ios-build": reply.details = FruitLabMultiplayerEditorTools.BuildIos(false); break;
                 case "multiplayer-review":
                     FruitLabMultiplayerEditorTools.ValidateRules();
                     reply.details = FruitLabMultiplayerEditorTools.Bake() + "\n" + Render(3, 7, validation: FruitLabMultiplayerEditorTools.Review, validateBeforeRender: true)

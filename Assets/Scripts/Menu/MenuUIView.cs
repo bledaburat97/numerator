@@ -22,6 +22,15 @@ namespace Menu
         {
             singlePlayerButton.SetText(text);
         }
+
+        public void SetMultiplayerAvailability(bool unlocked)
+        {
+            CanvasGroup group = multiplayerButton.GetComponent<CanvasGroup>();
+            if (group == null) group = multiplayerButton.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = unlocked ? 1f : .45f;
+            group.interactable = unlocked;
+            group.blocksRaycasts = unlocked;
+        }
     }
 
     public interface IMenuUIView
@@ -29,5 +38,6 @@ namespace Menu
         IBaseButtonView GetSinglePlayerButton();
         IBaseButtonView GetMultiplayerButton();
         void SetSinglePlayerButtonText(string text);
+        void SetMultiplayerAvailability(bool unlocked);
     }
 }

@@ -183,6 +183,9 @@ namespace Game
             _gameUIController.Initialize(!isResumeFlow);
 
             InitializeGameplaySystems(!isResumeFlow);
+            GameTelemetry.BeginSingle(_levelTracker.GetLevelId() + 1, _boardHolderCountManager.GetBoardHolderCount(),
+                _levelDataCreator.GetLevelData().NumOfCards, isResumeFlow ? LevelEntryMode.Resume : mode,
+                _roundStateManager.GetTriedCardsList().Count);
 
             if (isResumeFlow)
             {
@@ -253,10 +256,12 @@ namespace Game
             _state = LevelFlowState.Playing;
             OnMultiplayerState(this, _multiplayer.State);
             _multiplayer.BoardReady(round);
+            GameTelemetry.BeginDuel(round, MultiplayerRules.For(PlayerLobby.Instance.RoomDifficulty));
         }
         private void OnMultiplayerFeedback(object sender, MultiplayerFeedback feedback)
         {
             _roundStateManager.AddTriedCards(new System.Collections.Generic.List<int>(feedback.Cards));
+            GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
             _resultAreaController.AddResultBlock(new ResultBlockModel { finalNumbers = new System.Collections.Generic.List<int>(feedback.Cards),
                 correctPosCount = feedback.Correct, wrongPosCount = feedback.Misplaced });
             (_resultAreaController as ResultAreaController)?.LabelLatestMultiplayerGuess(feedback.Player == NetworkManager.Singleton.LocalClientId);
@@ -288,6 +293,8 @@ namespace Game
             (_gameUIController as GameUIController)?.SetMultiplayerStatus(error, _multiplayer.State.Deadline);
         private void OnMultiplayerEnd(object sender, MultiplayerOutcome outcome)
         {
+            GameTelemetry.Finish(outcome.Disconnected ? "disconnected" : outcome.Winner == NetworkManager.Singleton.LocalClientId ? "win" : "lose",
+                _roundStateManager.GetTriedCardsList().Count);
             if (outcome.Disconnected && _isGameOver)
             {
                 (_levelEndPopupController as LevelEndPopupController)?.SetMultiplayerOpponentLeft();
@@ -323,6 +330,7 @@ namespace Game
         }
         public void Dispose()
         {
+            GameTelemetry.Abandon("scene_exit");
             _multiplayerReveal?.Kill();
             _resultManager.LevelSuccessEvent -= OnLevelSuccess; _guessManager.LevelFailEvent -= OnLevelFail;
             if (!_multiplayerSubscribed) return;
@@ -381,6 +389,7 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingFail;
+            GameTelemetry.Finish("fail", _roundStateManager.GetTriedCardsList().Count);
             _gamePopupCreator.EndTutorials(false);
             _gameUIController.SetAllButtonsUnclickable();
             _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
@@ -395,6 +404,7 @@ namespace Game
             int previousCrystalProgressCount = _levelTracker.GetCrystalProgressCount();
             RewardType rewardTypeBeforeCollection = _levelTracker.GetCurrentRewardType();
             _roundStateManager.GetActiveRewardCounts(out int earnedCoinCount, out int earnedCrystalCount);
+            GameTelemetry.Finish("win", _roundStateManager.GetTriedCardsList().Count, earnedCoinCount, earnedCrystalCount);
             _levelTracker.IncrementLevelIdWithRewards(earnedCoinCount, earnedCrystalCount);
 
             _levelEndPopupController.SetAllStatusFalse();

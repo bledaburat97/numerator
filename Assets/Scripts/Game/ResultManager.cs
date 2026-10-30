@@ -90,6 +90,7 @@ namespace Scripts
             }
 
             _roundStateManager.AddTriedCards(finalCards);
+            GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
             _gamePowerUpAreaController.Refresh();
             CalculatePositionCounts(finalCards, out int numOfCorrectPos, out int numOfWrongPos);
             DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);

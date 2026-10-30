@@ -31,9 +31,13 @@ namespace Menu
 
             IBaseButtonController multiplayerButtonController =
                 _baseButtonControllerFactory.Create(_view.GetMultiplayerButton(), OnMultiplayerButtonClick);
-            multiplayerButtonController.SetText("Arkadaşınla oyna");
+            bool multiplayerUnlocked = MenuProgression.IsMultiplayerUnlocked(_levelTracker.GetLevelId());
+            multiplayerButtonController.SetText(multiplayerUnlocked ? "Arkadaşınla oyna" :
+                "Arkadaşınla oyna\n<size=10>" + MenuProgression.MultiplayerUnlockLevel + ". bölümde açılır</size>");
             multiplayerButtonController.SetButtonStatus(true);
+            multiplayerButtonController.SetButtonClickable(multiplayerUnlocked);
             multiplayerButtonController.SetClickOnRelease(true);
+            _view.SetMultiplayerAvailability(multiplayerUnlocked);
         }
 
         private void OnSinglePlayerButtonClick()
@@ -46,7 +50,7 @@ namespace Menu
         
         private void OnMultiplayerButtonClick()
         {
-            if (_navigating) return;
+            if (_navigating || !MenuProgression.IsMultiplayerUnlocked(_levelTracker.GetLevelId())) return;
             _navigating = true;
             _levelTracker.SetGameOption(GameOption.MultiPlayer);
             SceneManager.LoadScene("Lobby");

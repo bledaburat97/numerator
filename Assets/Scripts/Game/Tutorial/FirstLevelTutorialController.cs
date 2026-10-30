@@ -24,6 +24,7 @@ namespace Scripts
         private Sequence _pending;
         private int _step;
         private bool _disposed;
+        private bool _completed;
         public int Step => _step;
         public bool IsActive => !_disposed;
 
@@ -51,6 +52,7 @@ namespace Scripts
         }
         public void Start()
         {
+            GameTelemetry.Tutorial("tutorial_started", "first_level");
             _step = _round.GetTriedCardsList().Count >= 2 ? 7 : _round.GetTriedCardsList().Count == 1 ? 3 : 0;
             _placement.CardPlacedEvent += OnPlaced;
             _results.WrongGuessEvent += OnWrong;
@@ -73,6 +75,7 @@ namespace Scripts
         private void ShowStep()
         {
             if (_disposed) return;
+            GameTelemetry.Tutorial("tutorial_step", "first_level", _step);
             _mask.ClearAllUnmaskCardItems(); _hand.StopActiveAnimation(); _gate.Block(); SetCardLocks(-1);
             if (PlacementStep(out int card, out int slot))
             {
@@ -122,6 +125,7 @@ namespace Scripts
         public void Complete()
         {
             if (_disposed) return;
+            _completed = true; GameTelemetry.Tutorial("tutorial_completed", "first_level", _step);
             TutorialProgress.CompleteFirst(); Dispose(); _ended();
         }
         private void SetCardLocks(int allowed)
@@ -134,6 +138,7 @@ namespace Scripts
         public void Dispose()
         {
             if (_disposed) return;
+            if (!_completed) GameTelemetry.Tutorial("tutorial_abandoned", "first_level", _step);
             _disposed = true;
             _placement.CardPlacedEvent -= OnPlaced; _results.WrongGuessEvent -= OnWrong;
             if (_pending != null && _pending.IsActive()) _pending.Kill();

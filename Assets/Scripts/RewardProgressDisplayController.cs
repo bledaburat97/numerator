@@ -19,9 +19,12 @@ namespace Scripts
         public void Refresh()
         {
             if (_view == null) return;
+            bool unlocked = MenuProgression.AreCrystalRewardsUnlocked(_levelTracker.GetLevelId());
+            _view.SetStatus(unlocked);
+            if (!unlocked) return;
+
             int capacity = Mathf.Max(1, ConstantValues.NUM_OF_STARS_FOR_WILD);
             int count = Mathf.Clamp(_levelTracker.GetCrystalProgressCount() % capacity, 0, capacity);
-            _view.SetStatus(true);
             _view.SetAlpha(1f);
             _view.ShowRewardPreview(_levelTracker.GetCurrentRewardType());
             _view.InitProgress(count / (float)capacity);

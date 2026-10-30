@@ -13,11 +13,15 @@ namespace Scripts
         [SerializeField] private TMP_Text title;
         [SerializeField] private TMP_Text description;
         private bool _singlePlayer = true;
+        private RectTransform _privacy;
 
         public void Init()
         {
             transform.localScale = Vector3.one;
             transform.SetAsLastSibling();
+            if (_privacy == null)
+                _privacy = (RectTransform)TelemetryPrivacyPanel.AddButton(content, "PrivacyButton", "Gizlilik ve veri",
+                    () => TelemetryRuntime.Instance?.ShowPrivacy()).transform;
             ApplyLayout();
         }
 
@@ -43,7 +47,7 @@ namespace Scripts
             float availableWidth = parent != null && parent.rect.width > 1f ? parent.rect.width
                 : canvas != null ? ((RectTransform)canvas.rootCanvas.transform).rect.width : 375f;
             float width = Mathf.Min(335f, Mathf.Max(240f, availableWidth - 32f));
-            float height = _singlePlayer ? 320f : 260f;
+            float height = _singlePlayer ? 360f : 300f;
             rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(width, height);
@@ -55,6 +59,7 @@ namespace Scripts
             FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 17f, _singlePlayer ? 142f : 82f, innerWidth - 34f, 54f);
             FruitLabStyle.Place(retryButton.GetButtonRectTransform(), content, 17f, 82f, innerWidth - 34f, 48f);
             FruitLabStyle.Place(menuButton.GetButtonRectTransform(), content, 17f, 22f, innerWidth - 34f, 48f);
+            if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17f, height - 142f, innerWidth - 34f, 28f);
         }
 
 #if UNITY_EDITOR

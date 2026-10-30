@@ -18,7 +18,7 @@ namespace Scripts
         private void Awake()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (MultiplayerNetworkProbe.IsRunning) { _levelId = 1; _gameOption = GameOption.MultiPlayer; return; }
+            if (MultiplayerNetworkProbe.IsRunning) { _levelId = MenuProgression.MultiplayerUnlockLevel - 1; _gameOption = GameOption.MultiPlayer; return; }
 #endif
             _levelId = PlayerPrefs.GetInt("level_id", 0);
             TutorialProgress.RepairIncompleteFirstLevel(_levelId);
@@ -110,12 +110,14 @@ namespace Scripts
         public void IncreaseRevealingPowerUpCount()
         {
             _revealingPowerUpCount++;
+            GameTelemetry.Powerup(RewardType.Revealing, true, "duel");
             SavePlayerPrefs();
         }
         
         public void IncreaseLifePowerUpCount()
         {
             _lifePowerUpCount++;
+            GameTelemetry.Powerup(RewardType.Life, true, "duel");
             SavePlayerPrefs();
         }
         
@@ -134,6 +136,7 @@ namespace Scripts
         public void IncreaseBombPowerUpCount()
         {
             _bombPowerUpCount++;
+            GameTelemetry.Powerup(RewardType.Bomb, true, "duel");
             SavePlayerPrefs();
         }
 
@@ -220,6 +223,7 @@ namespace Scripts
                     break;
             }
 
+            GameTelemetry.Powerup(rewardType, false, "single");
             return true;
         }
 
@@ -235,6 +239,7 @@ namespace Scripts
 
         private void IncreasePowerUpCount(RewardType rewardType)
         {
+            GameTelemetry.Powerup(rewardType, true, "crystal");
             switch (rewardType)
             {
                 case RewardType.Revealing:

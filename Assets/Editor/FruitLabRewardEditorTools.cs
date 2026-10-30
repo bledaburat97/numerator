@@ -176,7 +176,13 @@ public static class FruitLabRewardEditorTools
         Debug.Log("FRUIT_LAB_REWARDS_PASS: 36 zero/collection/overflow/rotation cases; earned-only visibility, popup reopening, preview restoration and shared prefab references valid.");
     }
 
-    public static string RenderMenu()
+    public static string ReviewMenuProgression()
+    {
+        foreach (int levelId in new[] { 0, 4, 5, 9, 10, 18, 24 }) RenderMenu(levelId, true);
+        return "Menu progression passed at levels 1, 5, 6, 10, 11, 19 and 25; locked clicks ignored, saved balances do not bypass unlocks, later easy levels stay unlocked. PlayerPrefs unchanged.";
+    }
+
+    public static string RenderMenu(int levelId = 12, bool validateProgression = false)
     {
         Scene source = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Menu.unity");
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
@@ -193,13 +199,45 @@ public static class FruitLabRewardEditorTools
             clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();
             clone.GetComponentInChildren<MenuHeaderView>(true).Init(240);
             var menu = clone.GetComponentInChildren<MenuUIView>(true);
-            menu.GetSinglePlayerButton().SetText("Bölüm 13");
-            menu.GetMultiplayerButton().SetText("Multiplayer");
             var crystals = clone.GetComponentInChildren<VerticalCrystalProgressView>(true);
-            crystals.SetStatus(true); crystals.SetAlpha(1f);
-            crystals.InitProgress(4f / 6f); crystals.ShowRewardPreview(RewardType.Revealing);
             var powers = clone.GetComponentInChildren<PowerUpListHolderView>(true);
-            powers.SetPowerUpCount(RewardType.Bomb, 2); powers.SetPowerUpCount(RewardType.Revealing, 1); powers.SetPowerUpCount(RewardType.Life, 3);
+            var trackerObject = new GameObject("MenuPreviewTracker");
+            trackerObject.SetActive(false);
+            trackerObject.transform.SetParent(clone.transform, false);
+            var tracker = trackerObject.AddComponent<LevelTracker>();
+            Field(tracker, "_levelId", levelId);
+            Field(tracker, "_giftStarCount", levelId == 10 ? 0 : 4);
+            Field(tracker, "_bombPowerUpCount", levelId == 10 ? 0 : 2);
+            Field(tracker, "_revealingPowerUpCount", levelId == 10 ? 0 : 1);
+            Field(tracker, "_lifePowerUpCount", levelId == 10 ? 0 : 3);
+            var bindings = new Zenject.DiContainer();
+            bindings.Bind<IHapticController>().FromInstance(new HapticController());
+            bindings.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
+            var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu);
+            new MenuPowerUpCountHolderController(powers, tracker).Initialize();
+            new RewardProgressDisplayController(crystals, tracker).Initialize();
+            menu.SetSinglePlayerButtonText("Bölüm " + (levelId + 1));
+            if (validateProgression)
+            {
+                bool rewardsUnlocked = levelId >= 10;
+                Require(crystals.gameObject.activeSelf == rewardsUnlocked && powers.gameObject.activeSelf == rewardsUnlocked,
+                    "Crystal energy and powerups unlock together at the first crystal level, independent of balances");
+                var multi = (BaseButtonView)menu.GetMultiplayerButton();
+                var group = multi.GetComponent<CanvasGroup>();
+                bool multiplayerUnlocked = levelId >= 5;
+                Require(group.interactable == multiplayerUnlocked && group.blocksRaycasts == multiplayerUnlocked
+                    && group.alpha == (multiplayerUnlocked ? 1f : .45f), "Duel unlocks when level 6 is reached");
+                if (!multiplayerUnlocked)
+                {
+                    multi.OnPointerDown(null); multi.OnPointerUp(null); multi.OnPointerClick(null);
+                    typeof(MenuUIController).GetMethod("OnMultiplayerButtonClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, null);
+                    Require(!(bool)typeof(MenuUIController).GetField("_navigating", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(controller)
+                        && tracker.GetGameOption() == GameOption.SinglePlayer, "Locked duel cannot navigate even through a direct callback");
+                }
+                clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();
+                Require(crystals.gameObject.activeSelf == rewardsUnlocked && powers.gameObject.activeSelf == rewardsUnlocked,
+                    "Layout refresh must preserve feature visibility");
+            }
             var cameraObject = new GameObject("MenuCapture", typeof(Camera));
             SceneManager.MoveGameObjectToScene(cameraObject, scene);
             var camera = cameraObject.GetComponent<Camera>();
@@ -216,7 +254,7 @@ public static class FruitLabRewardEditorTools
             RenderTexture previous = RenderTexture.active; RenderTexture.active = target;
             var image = new Texture2D(750, 1624, TextureFormat.RGB24, false);
             image.ReadPixels(new Rect(0, 0, 750, 1624), 0, 0); image.Apply(); RenderTexture.active = previous;
-            string output = Folder + "/preview-menu-crystals.png";
+            string output = Folder + (validateProgression ? "/preview-menu-level-" + (levelId + 1) + ".png" : "/preview-menu-crystals.png");
             File.WriteAllBytes(output, image.EncodeToPNG()); Object.DestroyImmediate(image);
             return output;
         }

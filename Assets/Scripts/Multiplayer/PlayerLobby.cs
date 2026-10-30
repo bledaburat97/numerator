@@ -53,15 +53,7 @@ namespace Scripts
         {
             try
             {
-                if (UnityServices.State != ServicesInitializationState.Initialized)
-                {
-                    var options = new InitializationOptions();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    if (MultiplayerNetworkProbe.IsRunning && !string.IsNullOrEmpty(MultiplayerNetworkProbe.AuthenticationProfile))
-                        options.SetProfile(MultiplayerNetworkProbe.AuthenticationProfile);
-#endif
-                    await UnityServices.InitializeAsync(options);
-                }
+                await UnityServicesBootstrap.InitializeAsync();
                 if (!AuthenticationService.Instance.IsSignedIn) await AuthenticationService.Instance.SignInAnonymouslyAsync();
                 if (this == null) return;
                 IsReady = true; LastError = null; OnAvailabilityChanged?.Invoke(this, EventArgs.Empty);
@@ -85,6 +77,7 @@ namespace Scripts
             if (!host && string.IsNullOrWhiteSpace(code))
             { LastError = "Oda kodunu gir."; OnServiceError?.Invoke(this, LastError); return; }
             _busy = true; LastError = null; int generation = ++_generation;
+            GameTelemetry.Connection(host ? "create" : "join", "attempt", RoomDifficulty);
             OnAvailabilityChanged?.Invoke(this, EventArgs.Empty);
             if (host) OnCreateLobbyStarted?.Invoke(this, EventArgs.Empty); else OnJoinStarted?.Invoke(this, EventArgs.Empty);
             try
@@ -122,10 +115,12 @@ namespace Scripts
                     _connecting = true;
                     if (!MultiplayerManager.Instance.StartClient()) throw new InvalidOperationException("Client could not start");
                 }
+                GameTelemetry.Connection(host ? "create" : "join", host ? "ready" : "connecting", RoomDifficulty);
             }
-            catch (OperationCanceledException) { await LeaveLobbyAsync(); }
+            catch (OperationCanceledException) { GameTelemetry.Connection(host ? "create" : "join", "cancelled", RoomDifficulty); await LeaveLobbyAsync(); }
             catch (Exception error)
             {
+                GameTelemetry.Connection(host ? "create" : "join", "failed", RoomDifficulty);
                 await LeaveLobbyAsync();
                 if (this != null)
                 {
@@ -155,6 +150,7 @@ namespace Scripts
         public string GetLobbyCode() => _roomCode ?? _joinedLobby?.LobbyCode ?? "";
         public void ConnectionFailed()
         {
+            GameTelemetry.Connection("transport", "failed", RoomDifficulty);
             _connecting = false; LastError = "Odaya bağlanılamadı."; LeaveLobby();
             OnAvailabilityChanged?.Invoke(this, EventArgs.Empty);
         }

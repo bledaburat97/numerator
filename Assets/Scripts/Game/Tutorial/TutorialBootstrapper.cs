@@ -115,11 +115,13 @@ namespace Scripts
         private void ShowTip(string title, string text, string key, bool bottom, Action use, params RectTransform[] targets)
         {
             if (_message != null) return;
+            GameTelemetry.Tutorial("tutorial_started", key);
             CreatePresentation(); _gate.Block(); LockCards(-1);
             foreach (var target in targets) _mask.Highlight(target);
             _message.Show(title, text, true, bottom, use == null ? "Anladım" : "Devam et");
             void End(bool proceed)
             {
+                GameTelemetry.Tutorial(proceed ? "tutorial_completed" : "tutorial_dismissed", key);
                 TutorialProgress.Mark(key); ClosePresentation(!_roundEnded);
                 if (proceed) use?.Invoke();
             }
