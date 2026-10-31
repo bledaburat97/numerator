@@ -25,6 +25,7 @@ namespace Scripts
         public static bool IsRunning => Option("-fruitLabMultiplayerProbe") != null;
         public static bool UseRelay => Option("-fruitLabProbeRelay") == "true";
         private static string Scenario => Option("-fruitLabProbeScenario") ?? "game";
+        public static double TestTurnSeconds => Scenario == "annotations" ? 60 : 10;
         private static string Role => Option("-fruitLabMultiplayerProbe");
         public static string AuthenticationProfile => Option("-fruitLabProfile");
         public static int ExpectedPlayers => int.Parse(Option("-fruitLabProbePlayers") ?? "2");
@@ -180,6 +181,16 @@ namespace Scripts
             yield return new WaitForSecondsRealtime(.3f);
             Check(match.State.Turn == 1 && FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>().Length == 0,
                 "Wrong-length and out-of-turn network commands are rejected");
+            if (Scenario == "annotations")
+            {
+                yield return CheckAnnotationGestures(initial, match);
+                File.WriteAllText(Path.Combine(Path.GetDirectoryName(_output), Role + ".annotations-ready"), "ready");
+                yield return WaitFor(() => File.Exists(Path.Combine(Path.GetDirectoryName(_output), "host.annotations-ready"))
+                    && File.Exists(Path.Combine(Path.GetDirectoryName(_output), "client.annotations-ready")), 25, "Both peers finish their independent annotations");
+                initial.TryGetCardItem(0, out var localCard);
+                Check(((NormalCardItemView)localCard.GetView()).Annotation == (host ? CardAnnotation.Excluded : CardAnnotation.Candidate),
+                    "A peer's pencil marks never overwrite the local player's marks");
+            }
             if (Scenario == "planning")
             {
                 string planningReady = Path.Combine(Path.GetDirectoryName(_output), "planning-ready");
@@ -201,10 +212,14 @@ namespace Scripts
             }
             yield return EndOfRound(match, 1, !host);
             Check(FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>().Length == 2, "Both peers receive exactly two result rows");
-            if (Scenario == "planning")
+            if (Scenario == "planning" || Scenario == "annotations")
             {
                 for (int i = 0; i < initial.GetCardCount(); i++)
+                {
                     Check(initial.TryGetCardItem(i, out var card) && card.GetCardMoveHandler().IsMovementLocked(), "Finished matches lock card movement again");
+                    if (Scenario == "annotations") Check(((NormalCardItemView)card.GetView()).Annotation == CardAnnotation.None || !Answer(1).Contains(i + 1),
+                        "The final answer clears conflicting annotations on its cards");
+                }
                 if (host) yield return new WaitForSecondsRealtime(1);
                 Finish(true, null); yield break;
             }
@@ -536,6 +551,57 @@ namespace Scripts
             var button = (BaseButtonView)FindFirstObjectByType<GameUIView>().GetCheckButton();
             button.OnPointerDown(null); button.OnPointerUp(null); button.OnPointerClick(null);
         }
+        private IEnumerator CheckAnnotationGestures(IInitialCardAreaController initial, MultiplayerGameController match)
+        {
+            var context = FindFirstObjectByType<GamePlayContext>(); var notes = context.Annotations;
+            Check(notes != null && initial.TryGetCardItem(0, out _), "The real game provides its annotation controller");
+            initial.TryGetCardItem(0, out var card); var move = card.GetCardMoveHandler(); var view = (NormalCardItemView)card.GetView();
+            var layout = FindFirstObjectByType<FruitLabGameLayout>(); var ui = FindFirstObjectByType<GameUIView>();
+            float closedHeight = layout.PowerUpArea.rect.height;
+            move.OnPointerDown(null); yield return new WaitForSecondsRealtime(.35f);
+            Check(!notes.IsSelecting, "A short hold does not open color buttons");
+            yield return WaitFor(() => notes.IsSelecting, 2, "A half-second hold opens color buttons during either player's turn");
+            move.OnPointerUp(null);
+            Check(ProbeBoard().GetPlacedCardIndexesOnBoard().All(index => index == -1), "Releasing a long hold never becomes a normal card tap");
+            yield return new WaitForSecondsRealtime(.15f);
+            Check(view.GetCardAnimator().GetBool("IsSelected") && view.transform.Find("AnimationProvider") != null, "The selected card uses its dedicated bobbing animation layer");
+            Check(layout.PowerUpArea.gameObject.activeInHierarchy && layout.PowerUpArea.rect.height > 0 && notes.Toolbar.gameObject.activeInHierarchy,
+                "Multiplayer temporarily shows a full-height color toolbar");
+            var pointer = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+            var hits = new List<UnityEngine.EventSystems.RaycastResult>(); var canvas = ui.GetComponentInParent<Canvas>();
+            var target = (RectTransform)notes.GetButton(0).transform;
+            pointer.position = RectTransformUtility.WorldToScreenPoint(canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera, target.TransformPoint(target.rect.center));
+            UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointer, hits);
+            Check(hits.Count > 0 && UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IPointerClickHandler>(hits[0].gameObject) == notes.GetButton(0).gameObject,
+                "The red annotation button receives actual UI raycasts above the dismissal layer");
+            notes.GetButton(0).onClick.Invoke();
+            Check(view.Annotation == CardAnnotation.Excluded && !notes.IsSelecting && !view.GetCardAnimator().GetBool("IsSelected"), "Red marks the card and stops its animation");
+            Check(!layout.PowerUpArea.gameObject.activeSelf && Mathf.Approximately(layout.PowerUpArea.rect.height, closedHeight), "Closing notes restores the hidden multiplayer powerup row");
+            move.OnPointerDown(null); move.OnPointerUp(null); yield return new WaitForSecondsRealtime(.4f);
+            Check(ProbeBoard().TryGetPlacedBoardHolderIndexOfCard(0, out int slot) && slot == 0 && view.Annotation == CardAnnotation.Excluded,
+                "A marked card can still be placed normally");
+            move.OnPointerDown(null); yield return WaitFor(() => notes.IsSelecting, 2, "Board cards support long holds too"); move.OnPointerUp(null);
+            notes.GetButton(2).onClick.Invoke();
+            Check(view.Annotation == CardAnnotation.Candidate && !move.IsMovementLocked(), "Green changes the outline without fixing the card");
+            move.OnPointerDown(null); yield return WaitFor(() => notes.IsSelecting, 2, "A marked board card can be annotated again"); move.OnPointerUp(null);
+            notes.GetButton(1).onClick.Invoke(); Check(view.Annotation == CardAnnotation.None, "Yellow returns the card to its normal appearance");
+            view.SetAnnotation(CardAnnotation.Excluded); notes.TrySelect(0);
+            UnityEngine.EventSystems.ExecuteEvents.Execute(notes.Toolbar.parent.gameObject, pointer, UnityEngine.EventSystems.ExecuteEvents.pointerDownHandler);
+            Check(!notes.IsSelecting && view.Annotation == CardAnnotation.Excluded, "Outside presses dismiss while preserving previous marks");
+            Click((BaseButtonView)ui.GetResetButton()); yield return new WaitForSecondsRealtime(.4f);
+            var board = (IBoardAreaController)typeof(GamePlayContext).GetField("_boardAreaController", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(context);
+            move.OnPointerDown(null); yield return new WaitForSecondsRealtime(.2f);
+            move.HandleDrag(RectTransformUtility.WorldToScreenPoint(canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera, board.GetBoardHolderPositionAtIndex(0)));
+            move.OnPointerUp(null); yield return new WaitForSecondsRealtime(1.05f);
+            Check(!notes.IsSelecting && ProbeBoard().TryGetPlacedBoardHolderIndexOfCard(0, out _), "Dragging cancels the hold timer and still places the card");
+            move.OnPointerDown(null); move.SetMovementLocked(true); yield return new WaitForSecondsRealtime(1.1f);
+            Check(!notes.IsSelecting && !notes.TrySelect(0), "Locking a held card cancels the gesture and prevents annotations"); move.SetMovementLocked(false);
+            notes.TrySelect(0); notes.Apply(Role == "host" ? CardAnnotation.Excluded : CardAnnotation.Candidate);
+            Click((BaseButtonView)ui.GetResetButton()); yield return new WaitForSecondsRealtime(.4f);
+            Check(match.State.Phase == MultiplayerPhase.Playing && match.State.Turn == 1
+                && FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>().Length == 0, "Annotations consume no turns or guesses");
+        }
+
         private IBoardPlacementQuery ProbeBoard()
         {
             var context = FindFirstObjectByType<GamePlayContext>();

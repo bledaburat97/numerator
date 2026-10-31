@@ -81,6 +81,103 @@ public static class FruitLabTutorialEditorTools
         return "Tutorial prefabs and Game scene saved; " + FruitLabSettingsEditorTools.Bake() + "; backup=" + backup;
     }
 
+    public static string BakeCardAnnotations()
+    {
+        const string path = "Assets/Prefabs/CardItem.prefab";
+        Directory.CreateDirectory(Folder + "/CardAnnotationBackups");
+        File.Copy(path, Folder + "/CardAnnotationBackups/CardItem-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + ".prefab", true);
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var view = root.GetComponent<NormalCardItemView>();
+            view.EnsureAnnotationVisuals(); view.SetAnnotation(CardAnnotation.Excluded); view.SetAnnotation(CardAnnotation.None);
+            var cross = root.transform.Find("AnimationProvider/AnnotationCross");
+            var oldPlate = cross.GetComponent<Image>();
+            if (oldPlate != null) Object.DestroyImmediate(oldPlate);
+            var oldRenderer = cross.GetComponent<CanvasRenderer>();
+            if (oldRenderer != null) Object.DestroyImmediate(oldRenderer);
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        return "Saved the card visual animation layer and inactive annotation cross in CardItem.prefab";
+    }
+
+    public static void ReviewCardAnnotations(Canvas canvas, Camera camera)
+    {
+        var errors = new List<string>();
+        Application.LogCallback collect = (message, stack, type) => {
+            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert || message.Contains("error inside a tween callback")) errors.Add(message);
+        };
+        Application.logMessageReceived += collect;
+        UpdateType update = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
+        try
+        {
+            ClearPreviewActors(canvas);
+            using (var game = new Fixture(canvas, camera))
+            {
+                game.BuildActors(); game.Gate.Clear();
+                var layout = canvas.GetComponent<FruitLabGameLayout>();
+                bool playable = true;
+                using (var notes = new CardAnnotationController(game.Initial, game.Placement, game.UI, layout, game.Gate, null, () => playable))
+                {
+                    Require(game.Initial.TryGetCardItem(0, out var card), "A normal card exists");
+                    var view = (NormalCardItemView)card.GetView();
+                    Require(notes.TrySelect(0), "An unlocked card can enter annotation mode"); notes.Cancel();
+                    card.GetCardMoveHandler().OnPointerDown(null); Tick(.4f);
+                    Require(!notes.IsSelecting, "A short hold cannot open annotations");
+                    Tick(.2f); Require(notes.IsSelecting, "A half-second hold opens annotations");
+                    card.GetCardMoveHandler().OnPointerUp(null);
+                    Require(game.Placement.GetCardsOnBoard().Count == 0, "Releasing a long press cannot place a card");
+                    Layer(canvas.transform); game.AssertHit((RectTransform)notes.GetButton(0).transform, typeof(Button));
+                    notes.GetButton(0).onClick.Invoke();
+                    Require(view.Annotation == CardAnnotation.Excluded && !notes.IsSelecting, "Red marks the fruit and closes selection");
+                    var cross = (RectTransform)view.transform.Find("AnimationProvider/AnnotationCross");
+                    Require(cross.GetComponent<Image>() == null && cross.GetComponentInChildren<FruitLabGlyph>().rectTransform.rect.width >= view.GetRectTransform().rect.width * .9f,
+                        "The red mark is a large plain cross without a background plate");
+                    card.GetCardMoveHandler().OnPointerDown(null); card.GetCardMoveHandler().OnPointerUp(null); Tick(.4f);
+                    Require(game.Placement.GetCardsOnBoard().Count == 1 && view.Annotation == CardAnnotation.Excluded, "A marked fruit stays movable and keeps its note");
+                    card.GetCardMoveHandler().OnPointerDown(null); Tick(1.1f); card.GetCardMoveHandler().OnPointerUp(null);
+                    notes.GetButton(2).onClick.Invoke();
+                    Require(view.Annotation == CardAnnotation.Candidate && !card.GetCardMoveHandler().IsMovementLocked(), "Green annotates a board card without fixing it");
+                    Require(view.GetComponentsInChildren<Image>(true).Any(image => image.name == "ResultOutline" && image.gameObject.activeSelf), "Green uses the existing result outline");
+                    card.GetCardMoveHandler().OnPointerDown(null); Tick(1.1f); card.GetCardMoveHandler().OnPointerUp(null);
+                    notes.GetButton(1).onClick.Invoke(); Require(view.Annotation == CardAnnotation.None, "Yellow clears both annotation types");
+                    card.GetCardMoveHandler().OnPointerDown(null); Tick(.3f); game.UI.TriggerResetNumbers(); Tick(1.1f);
+                    card.GetCardMoveHandler().OnPointerUp(null);
+                    Require(!notes.IsSelecting && game.Placement.GetCardsOnBoard().Count == 0, "Resetting during a hold prevents delayed selection and accidental release taps");
+                    notes.TrySelect(0); notes.Apply(CardAnnotation.Excluded); notes.TrySelect(0);
+                    ExecuteEvents.Execute(notes.Toolbar.parent.gameObject, new PointerEventData(EventSystem.current), ExecuteEvents.pointerDownHandler);
+                    Require(!notes.IsSelecting && view.Annotation == CardAnnotation.Excluded, "An outside press dismisses without changing the previous note");
+                    Require(game.Placement.TryRevealAndLockCard(0, 0, false), "The real reveal path fixes a card to the board");
+                    Require(view.Annotation == CardAnnotation.None && !notes.TrySelect(0), "Hints clear notes and fixed cards cannot be selected");
+                    view.SetResultOutline(CardResultState.Correct); view.SetAnnotation(CardAnnotation.Excluded);
+                    Require(view.Annotation == CardAnnotation.None, "Final truth takes precedence over annotations");
+                    var restored = layout.PowerUpArea.rect.height;
+                    game.View.SetOpponentInfoStatus(true); layout.ApplyLayout();
+                    Require(!layout.PowerUpArea.gameObject.activeSelf, "Multiplayer normally hides the powerup area");
+                    Require(notes.TrySelect(1) && layout.PowerUpArea.gameObject.activeSelf && layout.PowerUpArea.rect.height > 0,
+                        "Multiplayer temporarily opens a visible annotation row");
+                    notes.Cancel(); Require(!layout.PowerUpArea.gameObject.activeSelf, "Dismissing restores the multiplayer layout");
+                    game.View.SetOpponentInfoStatus(false); layout.ApplyLayout();
+                    Require(layout.PowerUpArea.gameObject.activeSelf && Mathf.Approximately(restored, layout.PowerUpArea.rect.height), "Single-player restores the original powerup row");
+                    game.Gate.Block(); Require(!notes.TrySelect(1), "Mandatory tutorial steps cannot be interrupted by annotations"); game.Gate.Clear();
+                    notes.TrySelect(1); playable = false; notes.Tick();
+                    Require(!notes.IsSelecting && !notes.TrySelect(1), "Ending or transitioning a match closes the annotation controls"); playable = true;
+                    notes.TrySelect(2); notes.Apply(CardAnnotation.Excluded);
+                    notes.TrySelect(3); notes.Apply(CardAnnotation.Candidate);
+                    notes.TrySelect(4); Layer(canvas.transform); Draw(camera);
+                    var before = RenderTexture.active; RenderTexture.active = camera.targetTexture;
+                    var image = new Texture2D(camera.targetTexture.width, camera.targetTexture.height, TextureFormat.RGB24, false);
+                    try { image.ReadPixels(new Rect(0, 0, image.width, image.height), 0, 0); image.Apply(); File.WriteAllBytes(Folder + "/preview-card-annotations.png", image.EncodeToPNG()); }
+                    finally { Object.DestroyImmediate(image); RenderTexture.active = before; }
+                }
+            }
+            Require(errors.Count == 0, "Annotation review produces no Unity errors: " + errors.FirstOrDefault());
+            File.WriteAllText(Folder + "/card-annotations-review.json", "{\"passed\":true,\"single_and_multiplayer_layout\":true,\"real_reveal_path\":true,\"outside_raycast\":true,\"unity_errors\":0}");
+        }
+        finally { DOTween.defaultUpdateType = update; Application.logMessageReceived -= collect; }
+    }
+
     public static void Review(Canvas canvas, Camera camera)
     {
         var errors = new List<string>();

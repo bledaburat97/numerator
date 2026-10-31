@@ -17,6 +17,8 @@ namespace Scripts
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private int _numOfCards;
         private readonly TutorialInputGate _tutorialGate;
+        private Func<int, bool> _longPressHandler;
+        public void SetLongPressHandler(Func<int, bool> handler) => _longPressHandler = handler;
         public event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
         public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
@@ -60,6 +62,7 @@ namespace Scripts
 
                 ICardMoveHandler cardMoveHandler = cardItem.GetCardMoveHandler();
                 cardMoveHandler.SetOnClick(OnCardClicked);
+                cardMoveHandler.SetOnLongPress(OnCardLongPressed);
                 cardMoveHandler.SetOnDragContinue(_cardItemLocator.OnDragContinue);
                 cardMoveHandler.SetOnDragStart(OnCardDragStarted);
                 cardMoveHandler.SetOnDragComplete(_cardItemLocator.OnDragComplete);
@@ -100,6 +103,9 @@ namespace Scripts
 
             OnCardClickedEvent?.Invoke(this, cardIndex);
         }
+
+        private bool OnCardLongPressed(int cardIndex) => CanMoveCard(cardIndex)
+            && (_tutorialGate == null || !_tutorialGate.IsRestricted) && _longPressHandler?.Invoke(cardIndex) == true;
 
         private void OnCardDragStarted(int cardIndex)
         {
@@ -319,6 +325,7 @@ namespace Scripts
     
     public interface ICardPlacementCoordinator
     {
+        void SetLongPressHandler(Func<int, bool> handler);
         event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
         void Initialize();
         bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);

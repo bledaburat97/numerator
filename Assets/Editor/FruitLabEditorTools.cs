@@ -51,7 +51,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -122,6 +122,10 @@ public static class FruitLabEditorTools
                 case "bomb-review":
                     FruitLabFailureValidation.ValidateBomb();
                     reply.details = "20 board/fruit combinations, late/repeated-use guards, wrong/correct guesses and in-memory save/resume passed";
+                    break;
+                case "card-annotations-review":
+                    reply.details = FruitLabTutorialEditorTools.BakeCardAnnotations()
+                        + "\n" + Render(2, 5, validation: FruitLabTutorialEditorTools.ReviewCardAnnotations, validateBeforeRender: true);
                     break;
                 case "single-input-review":
                     FruitLabFailureValidation.ValidateBomb();

@@ -9,9 +9,9 @@ namespace Scripts
         [Inject] private ILevelTracker _levelTracker;
         private void OnApplicationQuit()
         {
-            _levelTracker.SavePlayerPrefs();
+            _levelTracker?.SavePlayerPrefs();
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
+            if (_levelTracker != null && _levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
                 if (NetworkManager.Singleton != null)
                 {

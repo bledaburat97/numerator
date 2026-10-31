@@ -9,6 +9,9 @@ namespace Scripts
         protected Action<PointerEventData> _onDrag;
         protected Action<PointerEventData> _onPointerDown;
         protected Action<PointerEventData> _onPointerUp;
+        private Action _onPointerCancel;
+        public void SetOnPointerCancel(Action onCancel) => _onPointerCancel = onCancel;
+        protected virtual void OnDisable() => _onPointerCancel?.Invoke();
         
         public void SetParent(RectTransform parentTransform)
         {
@@ -64,5 +67,6 @@ namespace Scripts
         void SetOnDrag(Action<PointerEventData> onDrag);
         void SetOnPointerDown(Action<PointerEventData> onPointerDown);
         void SetOnPointerUp(Action<PointerEventData> onPointerUp);
+        void SetOnPointerCancel(Action onCancel);
     }
 }

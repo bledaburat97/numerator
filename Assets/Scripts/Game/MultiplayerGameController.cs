@@ -71,7 +71,7 @@ namespace Game
             int[] answer = fruits.Take(settings.BoardCount).ToArray();
             double seconds = MultiplayerRules.TurnSeconds;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (MultiplayerNetworkProbe.IsRunning) { answer = MultiplayerNetworkProbe.Answer(number); seconds = 10; }
+            if (MultiplayerNetworkProbe.IsRunning) { answer = MultiplayerNetworkProbe.Answer(number); seconds = MultiplayerNetworkProbe.TestTurnSeconds; }
 #endif
             _match = new MultiplayerMatchState(players, number, answer, _difficulty, seconds);
             BeginRoundClientRpc(number, players, (byte)_difficulty);

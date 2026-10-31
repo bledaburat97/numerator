@@ -628,7 +628,7 @@ public static class FruitLabCompletionValidation
         Require(cards.Length == count, "Every answer fruit must stay on the board at the end");
         foreach (var card in cards)
         {
-            var outline = card.transform.Find("ResultOutline")?.GetComponent<Image>();
+            var outline = card.GetComponentsInChildren<Image>(true).FirstOrDefault(image => image.name == "ResultOutline");
             Require(outline != null && outline.gameObject.activeSelf && outline.color == FruitLabStyle.Correct,
                 "Every winning board card must have a bright green outline");
         }

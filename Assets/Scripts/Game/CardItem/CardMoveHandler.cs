@@ -1,4 +1,5 @@
 ﻿using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -13,6 +14,9 @@ public class CardMoveHandler : ICardMoveHandler
     private Action<int, int> _onMoveToBoardRequested;
     private Action<int> _onMoveToInitialRequested;
     private Action<int> _onClick;
+    private Func<int, bool> _onLongPress;
+    private Tween _holdTween;
+    private bool _isPressed, _longPressConsumed;
     private bool _isDragStart;
     private bool _isMovementLocked;
     private int _cardIndex;
@@ -26,6 +30,7 @@ public class CardMoveHandler : ICardMoveHandler
     public void HandleDrag(Vector2 position)
     {
         if (_isMovementLocked) return;
+        CancelHoldTimer();
 
         if (!_isDragStart)
         {
@@ -41,6 +46,12 @@ public class CardMoveHandler : ICardMoveHandler
     {
         _onClick = onClick;
     }
+
+    public void SetOnLongPress(Func<int, bool> onLongPress)
+    { CancelPress(); _onLongPress = onLongPress; }
+    private void CancelHoldTimer() { _holdTween?.Kill(); _holdTween = null; }
+    public void CancelPress()
+    { CancelHoldTimer(); _isPressed = _isDragStart = _longPressConsumed = false; }
     
     public void SetOnDragComplete(Func<int, int> onDragComplete)
     {
@@ -69,7 +80,10 @@ public class CardMoveHandler : ICardMoveHandler
     
     public void OnPointerUp(PointerEventData data)
     {
+        if (!_isPressed) return;
+        CancelHoldTimer(); _isPressed = false;
         if (_isMovementLocked) return;
+        if (_longPressConsumed && !_isDragStart) { _longPressConsumed = false; return; }
 
         if (!IsDragStarted())
         {
@@ -97,9 +111,16 @@ public class CardMoveHandler : ICardMoveHandler
 
     public void OnPointerDown(PointerEventData data)
     {
+        CancelPress();
         if (_isMovementLocked) return;
 
-        _isDragStart = false;
+        _isPressed = true;
+        if (_onLongPress != null)
+            _holdTween = DOVirtual.DelayedCall(.5f, () => {
+                _holdTween = null;
+                if (_isPressed && !_isDragStart && !_isMovementLocked)
+                    _longPressConsumed = _onLongPress?.Invoke(_cardIndex) == true;
+            }, true).SetUpdate(DOTween.defaultUpdateType, true);
     }
 
     public void SetMovementLocked(bool isLocked)
@@ -107,7 +128,7 @@ public class CardMoveHandler : ICardMoveHandler
         _isMovementLocked = isLocked;
         if (isLocked)
         {
-            _isDragStart = false;
+            CancelPress();
         }
     }
 
@@ -124,6 +145,8 @@ public interface ICardMoveHandler
     void OnPointerUp(PointerEventData data);
     void SetOnDragStart(Action<int> onDragStart);
     void SetOnClick(Action<int> onClick);
+    void SetOnLongPress(Func<int, bool> onLongPress);
+    void CancelPress();
     void SetOnDragComplete(Func<int, int> onDragComplete);
     void SetOnDragContinue(Action<Vector2, int> onDragContinue);
     void SetOnMoveToBoardRequested(Action<int, int> onMoveToBoardRequested);

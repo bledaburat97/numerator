@@ -22,6 +22,16 @@ namespace Scripts
         [SerializeField] private ResultAreaView results;
 
         private Vector2 _lastSize;
+        private bool _cardAnnotationMode;
+        public RectTransform PowerUpArea => powerUpArea;
+        public PowerUpListHolderView PowerUpView => powerUpView;
+        public void SetCardAnnotationMode(bool active)
+        {
+            if (_cardAnnotationMode == active) return;
+            _cardAnnotationMode = active;
+            // The single-player row already has room; do not rebuild its life/reward UI.
+            if (gameView.IsMultiplayer) { ApplyLayout(); LayoutChanged?.Invoke(); }
+        }
         public event Action LayoutChanged;
 
         private void Awake()
@@ -80,10 +90,10 @@ namespace Scripts
             FruitLabStyle.Rim(gameArea);
             bool multiplayer = gameView.IsMultiplayer;
             lifeBar.gameObject.SetActive(!multiplayer);
-            float powerHeight = multiplayer ? 0f : layout.PowerUpHeight;
+            float powerHeight = multiplayer && !_cardAnnotationMode ? 0f : layout.PowerUpHeight;
             float reclaimed = layout.PowerUpHeight - powerHeight;
             FruitLabStyle.Place(gameArea, middleArea, layout.Padding, layout.BottomPadding, width, layout.GameAreaHeight - reclaimed);
-            powerUpArea.gameObject.SetActive(!multiplayer);
+            powerUpArea.gameObject.SetActive(!multiplayer || _cardAnnotationMode);
             float y = 0f;
             FruitLabStyle.Place(powerUpArea, gameArea, 0f, y, width, powerHeight);
             y += powerHeight + layout.Gap;

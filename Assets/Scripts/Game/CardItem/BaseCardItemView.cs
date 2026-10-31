@@ -71,7 +71,7 @@ namespace Scripts
             UpdateResultAlpha();
         }
 
-        public void SetResultOutline(CardResultState state)
+        public virtual void SetResultOutline(CardResultState state)
         {
             bool visible = state == CardResultState.Correct || state == CardResultState.Misplaced;
             if (visible)

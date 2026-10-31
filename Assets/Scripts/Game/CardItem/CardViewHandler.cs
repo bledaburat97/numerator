@@ -28,6 +28,7 @@ namespace Scripts
             _view.SetOnPointerDown(cardMoveHandler.OnPointerDown);
             _view.SetOnDrag(OnDrag);
             _view.SetOnPointerUp(cardMoveHandler.OnPointerUp);
+            _view.SetOnPointerCancel(cardMoveHandler.CancelPress);
             _view.SetSize(cardItemData.Size);
             SetProbability(cardItemData.InitialProbabilityType, cardItemData.InitialIsLocked);
         }
@@ -159,6 +160,7 @@ namespace Scripts
 
         public void DestroyObject()
         {
+            _cardMoveHandler.CancelPress();
             KillActiveMoveSequence();
             _view.DestroyObject();
         }

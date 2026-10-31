@@ -22,6 +22,10 @@ namespace Scripts
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private IGuessManager _guessManager;
+        [Inject] private IGameUIController _gameUi;
+        [Inject] private TutorialInputGate _tutorialGate;
+        private CardAnnotationController _annotations;
+        public CardAnnotationController Annotations => _annotations;
         private FruitLabGameLayout _presentation;
         private bool _layoutRefreshPending;
 
@@ -29,6 +33,10 @@ namespace Scripts
         {
             _presentation = GetComponentInChildren<FruitLabGameLayout>(true);
             if (_presentation != null) _presentation.LayoutChanged += OnLayoutChanged;
+            _annotations = new CardAnnotationController(_initialCardAreaController, _cardPlacementCoordinator,
+                _gameUi,
+                _presentation, _tutorialGate, _hapticController,
+                () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning());
             InitializeHapticController();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
@@ -37,6 +45,7 @@ namespace Scripts
         }
 
         private void OnLayoutChanged() => _layoutRefreshPending = true;
+        private void Update() => _annotations?.Tick();
 
         private void LateUpdate()
         {
@@ -85,10 +94,11 @@ namespace Scripts
 
         private void OnDestroy()
         {
+            _annotations?.Dispose();
             if (_presentation != null) _presentation.LayoutChanged -= OnLayoutChanged;
-            _cardPlacementCoordinator.Unsubscribe();
-            _cardInteractionManager.Unsubscribe();
-            _cardItemInfoPopupController.Unsubscribe();
+            _cardPlacementCoordinator?.Unsubscribe();
+            _cardInteractionManager?.Unsubscribe();
+            _cardItemInfoPopupController?.Unsubscribe();
             (_levelFlowOrchestrator as System.IDisposable)?.Dispose();
         }
         
@@ -110,6 +120,7 @@ namespace Scripts
         {
             if (!hasFocus)
             {
+                _annotations?.CancelAllGestures();
                 TrySave();
             }
 #else
@@ -117,6 +128,7 @@ namespace Scripts
         {
             if (pauseStatus)
             {
+                _annotations?.CancelAllGestures();
                 TrySave();
             }
 #endif
