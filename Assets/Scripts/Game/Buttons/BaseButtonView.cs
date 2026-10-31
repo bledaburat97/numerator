@@ -16,6 +16,7 @@ namespace Scripts
         [SerializeField] protected Image image;
         [SerializeField] private bool useLabActionStyle;
         [SerializeField] private bool primaryLabAction;
+        [SerializeField] private bool useLabSettingsStyle;
         private Canvas tutorialCanvas;
         private GraphicRaycaster tutorialRaycaster;
         private Vector2 innerBgOffsetMin;
@@ -58,6 +59,19 @@ namespace Scripts
             FruitLabStyle.Surface(shadow, new Color(0f, 0f, 0f, 0.22f));
             Transform frame = transform.Find("Frame");
             if (frame != null) FruitLabStyle.Surface(frame.GetComponent<Image>(), FruitLabStyle.Border, true);
+            if (useLabSettingsStyle)
+            {
+                if (text != null) text.gameObject.SetActive(false);
+                if (image == null) image = FruitLabStyle.Detail(transform, "SettingsIcon", Color.white);
+                if (image != null)
+                {
+                    image.gameObject.SetActive(true); image.enabled = true;
+                    FruitLabStyle.SetIcon(image, "Settings");
+                    FruitLabStyle.Place(image.rectTransform, transform, 9, 9, 26, 26);
+                    image.raycastTarget = false;
+                }
+                return;
+            }
             if (useLabActionStyle)
             {
                 if (image != null) image.gameObject.SetActive(false);
@@ -139,6 +153,11 @@ namespace Scripts
             useLabActionStyle = true;
             primaryLabAction = primary;
             ApplyLabStyle();
+        }
+
+        public void ApplyLabSettingsStyle()
+        {
+            useLabActionStyle = false; useLabSettingsStyle = true; ApplyLabStyle();
         }
 
         protected void SetLabBackground(Image background) => innerBg = background;

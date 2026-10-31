@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace Scripts
@@ -17,27 +16,34 @@ namespace Scripts
             {
                 var difficulty = (Difficulty)i;
                 _difficulty[i] = _buttons.Create(_view.GetDifficultyButton(i), () => {
-                    if (!PlayerLobby.Instance.IsAvailable || !_view.ValidatePlayerName()) return;
-                    PlayerLobby.Instance.SelectDifficulty(difficulty);
-                    _view.SetSelectedDifficulty(difficulty);
-                    PlayerLobby.Instance.CreateLobby("Düello", true);
+                    PlayerLobby.Instance.SelectDifficulty(difficulty); _view.SetSelectedDifficulty(difficulty);
                 });
                 _difficulty[i].SetClickOnRelease(true);
             }
             _view.SetSelectedDifficulty(PlayerLobby.Instance.RoomDifficulty);
-            _create = _buttons.Create(_view.GetCreateLobbyButton(), () => {
+            var createEntry = _buttons.Create(_view.GetCreateLobbyButton(), () => {
                 if (!PlayerLobby.Instance.IsReady) PlayerLobby.Instance.RetryInitialization();
                 _view.ShowCreateOptions();
             });
-            _create.SetText("Düello yarat"); _create.SetClickOnRelease(true);
-            _view.GetQuickJoinButton().SetButtonStatus(false);
-            _join = _buttons.Create(_view.GetJoinWithCodeButton(), () => {
-                if (!_view.IsJoinInputOpen) _view.ShowJoinCodeInput(); else Join();
+            createEntry.SetText("Oyun Oluştur"); createEntry.SetClickOnRelease(true);
+            var joinEntry = _buttons.Create(_view.GetJoinWithCodeButton(), _view.ShowJoinCodeInput);
+            joinEntry.SetText("Oyuna Katıl"); joinEntry.SetClickOnRelease(true);
+            _create = _buttons.Create(_view.GetCreateConfirmButton(), () => {
+                if (PlayerLobby.Instance.IsAvailable && _view.ValidatePlayerName()) PlayerLobby.Instance.CreateLobby("Oyun", true);
             });
-            _join.SetText("Düelloya katıl"); _join.SetClickOnRelease(true);
+            _create.SetText("Oluştur"); _create.SetClickOnRelease(true);
+            _join = _buttons.Create(_view.GetJoinConfirmButton(), Join);
+            _join.SetText("Giriş"); _join.SetClickOnRelease(true);
+            foreach (var close in new[] { _view.GetCreateCloseButton(), _view.GetJoinCloseButton() })
+            {
+                var button = _buttons.Create(close, _view.HideDialogs); button.SetText("×"); button.SetClickOnRelease(true);
+            }
+            var quick = _buttons.Create(_view.GetQuickJoinButton(), null);
+            quick.SetText("Hemen Oyna"); quick.SetButtonClickable(false);
             _view.SetCodeSubmit(Join);
-            var menu = _buttons.Create(_view.GetMenuButton(), () => { MultiplayerConnection.Shutdown(); SceneManager.LoadScene("Menu"); });
-            menu.SetText("Menü"); menu.SetClickOnRelease(true);
+            var settings = _buttons.Create(_view.GetMenuButton(), () =>
+                ((UnityEngine.Component)_view).GetComponentInParent<FruitLabOnlineLayout>().OpenSettings(_buttons));
+            settings.SetClickOnRelease(true);
             _view.InitPlayerNameInputField(MultiplayerManager.Instance.GetPlayerName(), MultiplayerManager.Instance.SetPlayerName);
             PlayerLobby.Instance.OnAvailabilityChanged += Refresh;
             Refresh(this, EventArgs.Empty);
@@ -45,14 +51,14 @@ namespace Scripts
         private void Join()
         {
             if (!PlayerLobby.Instance.IsAvailable || !_view.ValidatePlayerName()) return;
-            if (string.IsNullOrWhiteSpace(_view.GetCodeInputField())) { _view.ShowJoinCodeInput(); return; }
-            PlayerLobby.Instance.JoinWithCode(_view.GetCodeInputField());
+            if (string.IsNullOrWhiteSpace(_view.GetCodeInputField())) { _view.SetJoinError("Kod giriniz."); return; }
+            if (!PlayerLobby.IsValidRoomCode(_view.GetCodeInputField().Trim())) { _view.SetJoinError("6 haneli oda kodunu giriniz."); return; }
+            _view.SetJoinError(""); PlayerLobby.Instance.JoinWithCode(_view.GetCodeInputField());
         }
         private void Refresh(object sender, EventArgs args)
         {
             var lobby = PlayerLobby.Instance; if (lobby == null) return;
-            _create.SetButtonClickable(lobby.IsAvailable || (!lobby.IsReady && !lobby.IsInitializing));
-            _join.SetButtonClickable(lobby.IsAvailable);
+            _create.SetButtonClickable(lobby.IsAvailable); _join.SetButtonClickable(lobby.IsAvailable);
             foreach (var button in _difficulty) button.SetButtonClickable(lobby.IsAvailable);
         }
         public void Dispose() { if (PlayerLobby.Instance != null) PlayerLobby.Instance.OnAvailabilityChanged -= Refresh; }

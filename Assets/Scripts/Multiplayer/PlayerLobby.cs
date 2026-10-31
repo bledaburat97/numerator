@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -18,12 +21,14 @@ namespace Scripts
     {
         private const string RelayCodeKey = "relay_join_code";
         private const string DifficultyKey = "difficulty";
+        private const string RoomCodeKey = "friend_room_code";
+        private const string RoomLookupKey = "friend_code_lookup";
         private Lobby _joinedLobby;
         private string _roomCode;
         private Task _initialization;
         private bool _busy, _heartbeatInFlight, _connecting;
         private int _generation;
-        private double _nextHeartbeat;
+        private double _nextHeartbeat, _nextJoinAttempt, _nextLobbyQuery;
         public static PlayerLobby Instance { get; private set; }
         public bool IsReady { get; private set; }
         public bool IsAvailable => IsReady && !_busy && !_connecting;
@@ -74,8 +79,8 @@ namespace Scripts
         private async void RunOperation(bool host, string name, string code)
         {
             if (_busy || _connecting) return;
-            if (!host && string.IsNullOrWhiteSpace(code))
-            { LastError = "Oda kodunu gir."; OnServiceError?.Invoke(this, LastError); return; }
+            if (!host && !IsValidRoomCode(code?.Trim()))
+            { LastError = "6 haneli oda kodunu giriniz."; OnServiceError?.Invoke(this, LastError); return; }
             _busy = true; LastError = null; int generation = ++_generation;
             GameTelemetry.Connection(host ? "create" : "join", "attempt", RoomDifficulty);
             OnAvailabilityChanged?.Invoke(this, EventArgs.Empty);
@@ -87,11 +92,8 @@ namespace Scripts
                 CheckCurrent(generation);
                 if (host)
                 {
-                    Lobby created = await LobbyService.Instance.CreateLobbyAsync(string.IsNullOrWhiteSpace(name) ? "Meyve düellosu" : name,
-                        MultiplayerManager.MAX_NUM_OF_USERS, new CreateLobbyOptions { IsPrivate = true,
-                            Data = new Dictionary<string, DataObject> { { DifficultyKey, new DataObject(DataObject.VisibilityOptions.Member, ((int)RoomDifficulty).ToString()) } } });
-                    _joinedLobby = created; _roomCode = created.LobbyCode; CheckCurrent(generation);
-                    var allocation = await RelayService.Instance.CreateAllocationAsync(1); CheckCurrent(generation);
+                    Lobby created = await CreateNumberedLobbyAsync(string.IsNullOrWhiteSpace(name) ? "Oyun" : name, generation);
+                    var allocation = await RelayService.Instance.CreateAllocationAsync(MultiplayerManager.MAX_NUM_OF_USERS - 1); CheckCurrent(generation);
                     string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId); CheckCurrent(generation);
                     _joinedLobby = await LobbyService.Instance.UpdateLobbyAsync(created.Id, new UpdateLobbyOptions {
                         Data = new Dictionary<string, DataObject> { { RelayCodeKey, new DataObject(DataObject.VisibilityOptions.Member, joinCode) } } });
@@ -102,8 +104,13 @@ namespace Scripts
                 }
                 else
                 {
-                    _roomCode = code.Trim().ToUpperInvariant();
-                    _joinedLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(_roomCode); CheckCurrent(generation);
+                    _roomCode = code.Trim();
+                    // Lobby permits one join request per second, including unsuccessful codes.
+                    double joinDelay = _nextJoinAttempt - Time.realtimeSinceStartupAsDouble;
+                    if (joinDelay > 0) await Task.Delay((int)Math.Ceiling(joinDelay * 1000));
+                    CheckCurrent(generation);
+                    _nextJoinAttempt = Time.realtimeSinceStartupAsDouble + 1.1;
+                    _joinedLobby = await JoinLobbyWithBackoffAsync(_roomCode, generation); CheckCurrent(generation);
                     if (_joinedLobby.Data == null || !_joinedLobby.Data.TryGetValue(DifficultyKey, out var difficultyData)
                         || !int.TryParse(difficultyData.Value, out int difficulty) || difficulty < 0 || difficulty > 2)
                         throw new InvalidOperationException("Room difficulty is unavailable");
@@ -124,8 +131,9 @@ namespace Scripts
                 await LeaveLobbyAsync();
                 if (this != null)
                 {
-                    LastError = host ? "Oda oluşturulamadı. Bağlantını kontrol edip tekrar dene." : "Odaya katılınamadı. Kodu ve odanın açık olduğunu kontrol et.";
-                    Debug.LogWarning("Multiplayer connection failed: " + error.GetType().Name);
+                    LastError = host ? "Oda oluşturulamadı. Bağlantını kontrol edip tekrar dene." : "Giriş yapılamadı, kodu tekrar deneyiniz.";
+                    string reason = error is LobbyServiceException lobbyError ? " (" + lobbyError.Reason + ")" : "";
+                    Debug.LogWarning("Multiplayer connection failed: " + error.GetType().Name + reason);
                     if (host) OnCreateLobbyFailed?.Invoke(this, EventArgs.Empty); else OnJoinFailed?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -133,6 +141,89 @@ namespace Scripts
         }
         private void CheckCurrent(int generation)
         { if (this == null || generation != _generation) throw new OperationCanceledException(); }
+        public static bool IsValidRoomCode(string code)
+        {
+            if (code == null || code.Length != 6) return false;
+            foreach (char digit in code) if (digit < '0' || digit > '9') return false;
+            return true;
+        }
+        private static string GenerateRoomCode()
+        {
+            var bytes = new byte[4];
+            using (var random = RandomNumberGenerator.Create()) random.GetBytes(bytes);
+            return (100000 + BitConverter.ToUInt32(bytes, 0) % 900000).ToString(CultureInfo.InvariantCulture);
+        }
+        private static string CodeLookup(string code)
+        {
+            using (var hash = SHA256.Create())
+                return BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes("friends-v2:" + code))).Replace("-", "");
+        }
+        private static string CodePassword(string code) => "friends-v2:" + code;
+        private async Task<List<Lobby>> FindCodeLobbiesAsync(string code, int generation)
+        {
+            for (int retry = 0; ; retry++)
+            {
+                double delay = _nextLobbyQuery - Time.realtimeSinceStartupAsDouble;
+                if (delay > 0) await Task.Delay((int)Math.Ceiling(delay * 1000));
+                CheckCurrent(generation);
+                _nextLobbyQuery = Time.realtimeSinceStartupAsDouble + 1.1;
+                try
+                {
+                    var response = await LobbyService.Instance.QueryLobbiesAsync(new QueryLobbiesOptions {
+                        Count = 2, Filters = new List<QueryFilter> { new QueryFilter(QueryFilter.FieldOptions.S1, CodeLookup(code), QueryFilter.OpOptions.EQ) } });
+                    CheckCurrent(generation);
+                    return response.Results;
+                }
+                catch (LobbyServiceException error) when (error.Reason == LobbyExceptionReason.RateLimited && retry < 2)
+                { await Task.Delay((retry + 1) * 2000); }
+            }
+        }
+        private async Task<Lobby> CreateNumberedLobbyAsync(string name, int generation)
+        {
+            for (int attempt = 0; attempt < 4; attempt++)
+            {
+                string code = GenerateRoomCode();
+                if ((await FindCodeLobbiesAsync(code, generation)).Count != 0) continue;
+                var created = await LobbyService.Instance.CreateLobbyAsync(name, MultiplayerManager.MAX_NUM_OF_USERS,
+                    new CreateLobbyOptions { IsPrivate = false, Password = CodePassword(code), Data = new Dictionary<string, DataObject> {
+                        { DifficultyKey, new DataObject(DataObject.VisibilityOptions.Member, ((int)RoomDifficulty).ToString()) },
+                        { RoomCodeKey, new DataObject(DataObject.VisibilityOptions.Member, code) },
+                        { RoomLookupKey, new DataObject(DataObject.VisibilityOptions.Public, CodeLookup(code), DataObject.IndexOptions.S1) }
+                    } });
+                _joinedLobby = created; _roomCode = code; CheckCurrent(generation);
+                // Recheck after publishing too: concurrent creators must not silently share a code.
+                var matches = await FindCodeLobbiesAsync(code, generation);
+                if (matches.Count == 1 && matches[0].Id == created.Id) return created;
+                await LobbyService.Instance.DeleteLobbyAsync(created.Id);
+                _joinedLobby = null; _roomCode = null; CheckCurrent(generation);
+            }
+            throw new InvalidOperationException("A free numeric room code could not be reserved");
+        }
+        private async Task<Lobby> JoinLobbyWithBackoffAsync(string code, int generation)
+        {
+            var matches = await FindCodeLobbiesAsync(code, generation);
+            // Reject ambiguous results instead of selecting an arbitrary room.
+            if (matches.Count != 1 || matches[0].IsLocked || matches[0].AvailableSlots < 1)
+                throw new InvalidOperationException("Room code is unavailable or ambiguous");
+            for (int retry = 0; ; retry++)
+            {
+                CheckCurrent(generation);
+                try
+                {
+                    var joined = await LobbyService.Instance.JoinLobbyByIdAsync(matches[0].Id, new JoinLobbyByIdOptions { Password = CodePassword(code) });
+                    _joinedLobby = joined;
+                    CheckCurrent(generation);
+                    if (joined.Data == null || !joined.Data.TryGetValue(RoomCodeKey, out var roomCode) || roomCode.Value != code)
+                        throw new InvalidOperationException("Room code does not match the joined room");
+                    return joined;
+                }
+                catch (LobbyServiceException error) when (error.Reason == LobbyExceptionReason.RateLimited && retry < 2)
+                {
+                    // Service-side limits can outlive the local request interval.
+                    await Task.Delay((retry + 1) * 2000);
+                }
+            }
+        }
         private void Update()
         {
             if (_joinedLobby == null || !IsReady || _heartbeatInFlight || Time.realtimeSinceStartupAsDouble < _nextHeartbeat) return;
@@ -147,7 +238,7 @@ namespace Scripts
             finally { _heartbeatInFlight = false; }
         }
         public Lobby GetLobby() => _joinedLobby;
-        public string GetLobbyCode() => _roomCode ?? _joinedLobby?.LobbyCode ?? "";
+        public string GetLobbyCode() => _roomCode ?? (_joinedLobby?.Data != null && _joinedLobby.Data.TryGetValue(RoomCodeKey, out var data) ? data.Value : "");
         public void ConnectionFailed()
         {
             GameTelemetry.Connection("transport", "failed", RoomDifficulty);

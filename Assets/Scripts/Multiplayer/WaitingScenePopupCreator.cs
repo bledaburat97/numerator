@@ -22,15 +22,16 @@ namespace Scripts
             if (NetworkManager.Singleton.IsServer)
             {
                 if (clientId != NetworkManager.Singleton.LocalClientId)
-                    GetComponentInParent<Canvas>().GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Rakip ayrıldı veya bağlantısı kesildi.");
+                    GetComponentInParent<Canvas>().GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Bir oyuncu lobiden ayrıldı.");
                 return;
             }
+            if (clientId != NetworkManager.Singleton.LocalClientId && clientId != NetworkManager.ServerClientId) return;
             if (_shown) return; _shown = true;
             string reason = NetworkManager.Singleton.DisconnectReason;
             _fadePanelController.SetFadeImageStatus(true);
             var view = Instantiate(disconnectionPopupPrefab, transform);
             var controller = new DisconnectionPopupController(); controller.Initialize(view, _baseButtonControllerFactory);
-            controller.SetText(!string.IsNullOrEmpty(reason) && reason.Contains("çıkarıldın") ? "Düellodan çıkarıldın." : "Rakiple bağlantı kesildi.");
+            controller.SetText(!string.IsNullOrEmpty(reason) && reason.Contains("çıkarıldın") ? "Lobiden çıkarıldın." : "Kurucu ayrıldı veya bağlantısı kesildi. Lobi kapandı.");
             _hapticController.Vibrate(HapticType.Warning);
             PlayerLobby.Instance?.LeaveLobby();
         }

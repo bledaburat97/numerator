@@ -27,9 +27,9 @@ namespace Scripts
             ApplyLabLayout();
         }
 
-        public void SetMultiplayerOpponentLeft()
+        public void SetMultiplayerOpponentLeft(string message = null)
         {
-            _multiplayerSubtitle = "Rakip ayrıldı veya bağlantısı kesildi.";
+            _multiplayerSubtitle = message ?? "Yeterli oyuncu kalmadı. Maç sona erdi.";
             ApplyLabLayout();
         }
 

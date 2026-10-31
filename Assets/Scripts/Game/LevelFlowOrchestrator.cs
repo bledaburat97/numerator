@@ -260,31 +260,34 @@ namespace Game
         }
         private void OnMultiplayerFeedback(object sender, MultiplayerFeedback feedback)
         {
+            bool isLocalGuess = feedback.Player == NetworkManager.Singleton.LocalClientId;
             _roundStateManager.AddTriedCards(new System.Collections.Generic.List<int>(feedback.Cards));
             GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
             _resultAreaController.AddResultBlock(new ResultBlockModel { finalNumbers = new System.Collections.Generic.List<int>(feedback.Cards),
                 correctPosCount = feedback.Correct, wrongPosCount = feedback.Misplaced });
-            (_resultAreaController as ResultAreaController)?.LabelLatestMultiplayerGuess(feedback.Player == NetworkManager.Singleton.LocalClientId);
-            if (!feedback.Won) _gameUIController.TriggerResetNumbers();
+            (_resultAreaController as ResultAreaController)?.LabelLatestMultiplayerGuess(isLocalGuess, _multiplayer.GetPlayerName(feedback.Player));
+            if (!feedback.Won && isLocalGuess) _gameUIController.TriggerResetNumbers();
         }
         private void OnMultiplayerState(object sender, MultiplayerPublicState state)
         {
             bool canPlay = _multiplayer.IsLocalTurn;
+            bool canArrangeCards = state.Phase == MultiplayerPhase.Playing;
             _gameUIController.SetButtonClickable(canPlay, GameUIButtonType.Check);
-            _gameUIController.SetButtonClickable(canPlay, GameUIButtonType.Reset);
-            _gameUIController.SetButtonClickable(state.Phase != MultiplayerPhase.Finished && state.Phase != MultiplayerPhase.Disconnected, GameUIButtonType.Settings);
+            _gameUIController.SetButtonClickable(canArrangeCards, GameUIButtonType.Reset);
+            _gameUIController.SetButtonClickable(true, GameUIButtonType.Settings);
             for (int i = 0; i < _initialCardAreaController.GetCardCount(); i++)
-                if (_initialCardAreaController.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().SetMovementLocked(!canPlay);
+                if (_initialCardAreaController.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().SetMovementLocked(!canArrangeCards);
             string status = state.Phase == MultiplayerPhase.Preparing ? "Maç hazırlanıyor…"
-                : state.Phase == MultiplayerPhase.Playing ? (canPlay ? "Sıra sende" : state.CurrentPlayer == NetworkManager.Singleton.LocalClientId ? "Tahmin gönderiliyor…" : "Sıra rakipte")
-                : state.Phase == MultiplayerPhase.Disconnected ? "Rakiple bağlantı kesildi" : "Maç tamamlandı";
+                : state.Phase == MultiplayerPhase.Playing ? (canPlay ? "Sıra sende" : state.CurrentPlayer == NetworkManager.Singleton.LocalClientId ? "Tahmin gönderiliyor…" : "Sıra: " + _multiplayer.GetPlayerName(state.CurrentPlayer))
+                : state.Phase == MultiplayerPhase.Disconnected ? "Maç sona erdi" : "Maç tamamlandı";
             if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0)
-                status = _multiplayer.LocalRematchRequested ? "Rakibin yanıtı bekleniyor…" : "Rakibin yeni oyun teklif ediyor";
+                status = _multiplayer.LocalRematchRequested ? "Diğer oyuncular bekleniyor…" : "Yeni oyun teklifi var";
+            if (!string.IsNullOrEmpty(_multiplayer.StatusNotice)) status = _multiplayer.StatusNotice;
             (_gameUIController as GameUIController)?.SetMultiplayerTurn(status, state.Deadline,
                 state.Phase == MultiplayerPhase.Playing && state.CurrentPlayer == NetworkManager.Singleton.LocalClientId);
             if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0)
             {
-                _levelEndPopupController.InitButton(LevelFinishButtonType.Game, _multiplayer.LocalRematchRequested ? "Rakip bekleniyor…" : "Teklifi kabul et",
+                _levelEndPopupController.InitButton(LevelFinishButtonType.Game, _multiplayer.LocalRematchRequested ? "Oyuncular bekleniyor…" : "Teklifi kabul et",
                     _multiplayer.LocalRematchRequested ? (Action)(() => { }) : _multiplayer.RequestRematch);
                 _levelEndPopupController.ChangeFadeButtons(0f, 1f).Complete(true);
             }
@@ -297,7 +300,7 @@ namespace Game
                 _roundStateManager.GetTriedCardsList().Count);
             if (outcome.Disconnected && _isGameOver)
             {
-                (_levelEndPopupController as LevelEndPopupController)?.SetMultiplayerOpponentLeft();
+                (_levelEndPopupController as LevelEndPopupController)?.SetMultiplayerOpponentLeft(_multiplayer.DisconnectMessage);
                 return;
             }
             _multiplayerReveal?.Kill();
@@ -305,6 +308,7 @@ namespace Game
             bool won = !outcome.Disconnected && outcome.Winner == NetworkManager.Singleton.LocalClientId;
             _state = won ? LevelFlowState.EndingSuccess : LevelFlowState.EndingFail;
             _gameUIController.SetAllButtonsUnclickable(); _gamePopupCreator.EndTutorials(false);
+            _gameUIController.SetButtonClickable(true, GameUIButtonType.Settings);
             _resultAreaController.EnableReview();
             _gameUIController.TriggerResetNumbers();
             _multiplayerReveal = DOTween.Sequence().AppendInterval(.35f).AppendCallback(() =>
@@ -319,11 +323,10 @@ namespace Game
                 _initialCardAreaController.ChangeFadeInitialArea(0f, 0f).Complete(true);
                 _levelEndPopupController.SetAllStatusFalse(); _levelEndPopupController.SetOutcome(won);
                 (_levelEndPopupController as LevelEndPopupController)?.SetMultiplayerResult(won, outcome.Disconnected, won ? outcome.Reward : null);
-                _levelEndPopupController.InitText(outcome.Disconnected ? "Rakiple bağlantı kesildi" : won ? "Kazandın!" : "Rakibin kazandı");
+                _levelEndPopupController.InitText(outcome.Disconnected ? "Maç sona erdi" : won ? "Kazandın!" : _multiplayer.GetPlayerName(outcome.Winner) + " kazandı");
                 if (!outcome.Disconnected && _multiplayer.State.Phase != MultiplayerPhase.Disconnected) _levelEndPopupController.InitButton(LevelFinishButtonType.Game, "Tekrar oyna", _multiplayer.RequestRematch);
-                _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menü", OnMenuButtonClicked);
                 _levelEndPopupController.SetPopupStatus(true);
-                if (_multiplayer.State.Phase == MultiplayerPhase.Disconnected) (_levelEndPopupController as LevelEndPopupController)?.SetMultiplayerOpponentLeft();
+                if (_multiplayer.State.Phase == MultiplayerPhase.Disconnected) (_levelEndPopupController as LevelEndPopupController)?.SetMultiplayerOpponentLeft(_multiplayer.DisconnectMessage);
                 _levelEndPopupController.ScaleUpText(.2f);
                 _levelEndPopupController.ChangeFadeButtons(.2f, 1f);
             }).SetLink(_gamePopupCreator.GetCanvasRectTransform().gameObject);

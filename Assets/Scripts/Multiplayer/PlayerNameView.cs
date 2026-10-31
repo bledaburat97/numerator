@@ -29,6 +29,7 @@ namespace Scripts
             FruitLabStyle.AddSurface(gameObject, FruitLabStyle.Tile); FruitLabStyle.Rim(rectTransform, .2f);
             playerName.alignment = _role.alignment = TextAlignmentOptions.MidlineLeft;
             playerName.raycastTarget = false; playerName.fontSize = 16; playerName.enableAutoSizing = true;
+            playerName.richText = false;
             playerName.fontSizeMin = 11; playerName.fontSizeMax = 16; playerName.color = FruitLabStyle.Text;
             SetReadyStatus(false); ApplyRowLayout();
         }
@@ -42,19 +43,19 @@ namespace Scripts
                 if (image.gameObject != kickButton.gameObject) image.enabled = false;
             FruitLabStyle.AddSurface(kickButton.gameObject, FruitLabStyle.Recess).raycastTarget = true;
             foreach (var label in kickButton.GetComponentsInChildren<TMP_Text>(true)) { label.fontSize = 24; label.color = FruitLabStyle.OpponentPlayer; }
-            _role.text = (isHost ? "Düello sahibi" : "Katılımcı") + (isLocal ? " · Sen" : "");
+            _role.text = (isHost ? "Kurucu" : "Katılımcı") + (isLocal ? " · Sen" : "");
             ApplyRowLayout();
         }
         public void ApplyRowLayout()
         {
             var parent = (RectTransform)transform.parent;
-            float width = parent.rect.width, height = Mathf.Min(64f, Mathf.Max(48f, (parent.rect.height - 10f) * .5f));
+            float width = parent.rect.width, height = Mathf.Min(56f, Mathf.Max(42f, (parent.rect.height - 18f) / MultiplayerRules.MaxPlayers));
             rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(.5f, 1f);
             rectTransform.pivot = new Vector2(.5f, 1f); rectTransform.localScale = Vector3.one;
-            rectTransform.sizeDelta = new Vector2(width, height); rectTransform.anchoredPosition = new Vector2(0, -_index * (height + 10f));
+            rectTransform.sizeDelta = new Vector2(width, height); rectTransform.anchoredPosition = new Vector2(0, -_index * (height + 6f));
             float readyX = width - (_canKick ? 126f : 86f);
-            FruitLabStyle.Place(playerName.rectTransform, transform, 12, height * .5f, readyX - 20, 25);
-            if (_role != null) FruitLabStyle.Place(_role.rectTransform, transform, 12, 10, readyX - 20, 16);
+            FruitLabStyle.Place(playerName.rectTransform, transform, 12, height - 25, readyX - 20, 22);
+            if (_role != null) FruitLabStyle.Place(_role.rectTransform, transform, 12, 3, readyX - 20, 13);
             FruitLabStyle.Place(readyImage.rectTransform, transform, readyX, (height - 28f) * .5f, 74, 28);
             FruitLabStyle.Place(kickButton.GetButtonRectTransform(), transform, width - 44, (height - 34f) * .5f, 34, 34);
             if (_readyCheck != null) FruitLabStyle.Place(_readyCheck.rectTransform, readyImage.transform, 5, 6, 16, 16);

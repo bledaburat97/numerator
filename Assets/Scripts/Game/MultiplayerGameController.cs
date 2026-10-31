@@ -16,7 +16,13 @@ namespace Game
         private MultiplayerMatchState _match;
         private bool _initialized, _registered, _helloSent, _pending;
         private int _announcedRound, _builtRound, _lastFeedbackTurn;
-        private ulong _host, _guest;
+        private ulong[] _roundPlayers = Array.Empty<ulong>();
+        private readonly Dictionary<ulong, string> _playerNames = new Dictionary<ulong, string>();
+        private double _noticeUntil;
+        public string StatusNotice { get; private set; }
+        public string DisconnectMessage { get; private set; }
+        public string GetPlayerName(ulong player) => _playerNames.TryGetValue(player, out string name) && !string.IsNullOrWhiteSpace(name)
+            ? name : MultiplayerManager.Instance != null ? MultiplayerManager.Instance.GetPlayerName(player) : "Oyuncu";
         private double _waitingSince;
         private Difficulty _difficulty;
         private int _lastOutcomeRound;
@@ -50,13 +56,14 @@ namespace Game
             ulong sender = rpc.Receive.SenderClientId;
             if (!NetworkManager.ConnectedClientsIds.Contains(sender)) return;
             _joined.Add(sender);
-            if (_match == null && _joined.Count == 2) StartRound(1);
+            if (_match == null && NetworkManager.ConnectedClientsIds.Count >= MultiplayerRules.MinPlayers
+                && NetworkManager.ConnectedClientsIds.All(_joined.Contains)) StartRound(1);
         }
         private void StartRound(int number)
         {
-            if (!IsServer || NetworkManager.ConnectedClientsIds.Count != 2) return;
-            _host = Unity.Netcode.NetworkManager.ServerClientId;
-            _guest = NetworkManager.ConnectedClientsIds.First(id => id != _host);
+            if (!IsServer || NetworkManager.ConnectedClientsIds.Count < MultiplayerRules.MinPlayers
+                || NetworkManager.ConnectedClientsIds.Count > MultiplayerRules.MaxPlayers) return;
+            var players = NetworkManager.ConnectedClientsIds.OrderBy(id => id).ToArray();
             if (_match == null) _difficulty = PlayerLobby.Instance.RoomDifficulty;
             var settings = MultiplayerRules.For(_difficulty);
             var fruits = Enumerable.Range(1, settings.FruitCount).ToArray();
@@ -66,15 +73,17 @@ namespace Game
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (MultiplayerNetworkProbe.IsRunning) { answer = MultiplayerNetworkProbe.Answer(number); seconds = 10; }
 #endif
-            _match = new MultiplayerMatchState(_host, _guest, number, answer, _difficulty, seconds);
-            BeginRoundClientRpc(number, _host, _guest, (byte)_difficulty);
+            _match = new MultiplayerMatchState(players, number, answer, _difficulty, seconds);
+            BeginRoundClientRpc(number, players, (byte)_difficulty);
         }
         [ClientRpc]
-        private void BeginRoundClientRpc(int number, ulong host, ulong guest, byte difficulty)
+        private void BeginRoundClientRpc(int number, ulong[] players, byte difficulty)
         {
             if (number <= _announcedRound) return;
             _difficulty = MultiplayerRules.For((Difficulty)difficulty).Difficulty;
-            _host = host; _guest = guest; _announcedRound = number; _lastFeedbackTurn = 0; _pending = false;
+            _roundPlayers = players; _announcedRound = number; _lastFeedbackTurn = 0; _pending = false;
+            StatusNotice = null; DisconnectMessage = null;
+            foreach (ulong player in players) _playerNames[player] = MultiplayerManager.Instance.GetPlayerName(player);
             State = new MultiplayerPublicState(number, 0, MultiplayerPhase.Preparing, MultiplayerRules.NoPlayer, MultiplayerRules.NoPlayer, 0, 0);
             _waitingSince = Time.realtimeSinceStartupAsDouble;
             BuildAnnouncedRound();
@@ -180,14 +189,17 @@ namespace Game
         private void RematchServerRpc(int round, ServerRpcParams rpc = default)
         {
             if (_match == null || !NetworkManager.ConnectedClientsIds.Contains(rpc.Receive.SenderClientId)) return;
-            bool both = _match.VoteForRematch(rpc.Receive.SenderClientId, round);
-            BroadcastState(); if (both) StartRound(_match.Round + 1);
+            bool all = _match.VoteForRematch(rpc.Receive.SenderClientId, round);
+            BroadcastState(); if (all) StartRound(_match.Round + 1);
         }
-        public bool LocalRematchRequested => NetworkManager != null && (State.RematchVotes & (NetworkManager.LocalClientId == _host ? 1 : 2)) != 0;
+        public bool LocalRematchRequested => NetworkManager != null && Array.IndexOf(_roundPlayers, NetworkManager.LocalClientId) >= 0
+            && (State.RematchVotes & (1 << Array.IndexOf(_roundPlayers, NetworkManager.LocalClientId))) != 0;
         private void Update()
         {
             if (!_initialized) return;
             TryHello();
+            if (StatusNotice != null && Time.realtimeSinceStartupAsDouble >= _noticeUntil)
+            { StatusNotice = null; StateChanged?.Invoke(this, State); }
             if (IsServer && _match != null && _match.Tick(NetworkManager.ServerTime.Time)) BroadcastState();
             if (State.Phase == MultiplayerPhase.Preparing && Time.realtimeSinceStartupAsDouble - _waitingSince > 35)
                 EndDisconnected();
@@ -195,15 +207,48 @@ namespace Game
         private void OnDisconnected(ulong id)
         {
             if (!_initialized || MultiplayerConnection.IsLeaving) return;
-            if (!IsServer || id != NetworkManager.LocalClientId) EndDisconnected();
+            if (IsServer)
+            {
+                _joined.Remove(id);
+                if (id == Unity.Netcode.NetworkManager.ServerClientId) return;
+                if (_match == null)
+                {
+                    if (NetworkManager.ConnectedClientsIds.Count < MultiplayerRules.MinPlayers)
+                        DisconnectedClientRpc("Yeterli oyuncu kalmadı. Maç sona erdi.", Array.Empty<int>());
+                    else if (NetworkManager.ConnectedClientsIds.All(_joined.Contains)) StartRound(1);
+                    return;
+                }
+                if (!_match.RemovePlayer(id, NetworkManager.ServerTime.Time)) return;
+                if (_match.Phase == MultiplayerPhase.Disconnected)
+                    DisconnectedClientRpc("Yeterli oyuncu kalmadı. Maç sona erdi.", _match.RevealAnswer());
+                else
+                {
+                    ParticipantLeftClientRpc(_playerNames.TryGetValue(id, out string name) ? name : "Bir oyuncu");
+                    BroadcastState();
+                    if (_match.AllRematchVotesReceived) StartRound(_match.Round + 1);
+                }
+            }
+            else if (id == NetworkManager.LocalClientId || id == Unity.Netcode.NetworkManager.ServerClientId)
+                EndDisconnected("Kurucu ayrıldı veya bağlantısı kesildi. Maç sona erdi.");
         }
-        private void EndDisconnected()
+        [ClientRpc]
+        private void ParticipantLeftClientRpc(string playerName)
+        {
+            if (!_initialized) return;
+            StatusNotice = playerName + " oyundan ayrıldı.";
+            _noticeUntil = Time.realtimeSinceStartupAsDouble + 4;
+            StateChanged?.Invoke(this, State);
+        }
+        [ClientRpc]
+        private void DisconnectedClientRpc(string message, int[] answer) => EndDisconnected(message, answer);
+        private void EndDisconnected(string message = null, int[] answer = null)
         {
             if (State.Phase == MultiplayerPhase.Disconnected) return;
+            DisconnectMessage = message ?? "Bağlantı kesildi. Maç sona erdi.";
             _match?.Disconnect();
             State = new MultiplayerPublicState(State.Round, State.Turn, MultiplayerPhase.Disconnected, MultiplayerRules.NoPlayer, MultiplayerRules.NoPlayer, 0, 0);
             _pending = false; StateChanged?.Invoke(this, State);
-            MatchEnded?.Invoke(this, new MultiplayerOutcome(State.Round, MultiplayerRules.NoPlayer, IsServer ? _match?.RevealAnswer() : null, true));
+            MatchEnded?.Invoke(this, new MultiplayerOutcome(State.Round, MultiplayerRules.NoPlayer, answer ?? (IsServer ? _match?.RevealAnswer() : null), true));
         }
         public void Stop()
         {
@@ -220,6 +265,9 @@ namespace Game
         MultiplayerPublicState State { get; }
         bool IsLocalTurn { get; }
         bool LocalRematchRequested { get; }
+        string StatusNotice { get; }
+        string DisconnectMessage { get; }
+        string GetPlayerName(ulong player);
         void Initialize();
         void BoardReady(int round);
         void SubmitGuess(int[] cards);

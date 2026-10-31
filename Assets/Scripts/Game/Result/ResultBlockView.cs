@@ -59,7 +59,7 @@ namespace Scripts
         }
 
         public void SetCardResult(int index, CardResultState state) => _cards[index].SetResultOutline(state);
-        public void SetPlayerIdentity(bool isLocal)
+        public void SetPlayerIdentity(bool isLocal, string playerName = null)
         {
             IsLocalGuess = isLocal;
             Color color = isLocal ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer;
@@ -69,7 +69,10 @@ namespace Scripts
             FruitLabStyle.Surface(cardsHolderBgImageRectTransform.GetComponent<Image>(), Color.Lerp(FruitLabStyle.Tile, color, .12f));
             _playerLabel = transform.Find("PlayerLabel")?.GetComponent<TMP_Text>()
                 ?? FruitLabStyle.CreateText("PlayerLabel", transform, 10f, FruitLabStyle.Muted);
-            _playerLabel.text = isLocal ? "Sen" : "Rakip";
+            _playerLabel.richText = false;
+            _playerLabel.enableAutoSizing = true; _playerLabel.fontSizeMin = 7; _playerLabel.fontSizeMax = 10;
+            _playerLabel.overflowMode = TextOverflowModes.Ellipsis;
+            _playerLabel.text = isLocal ? "Sen" : string.IsNullOrWhiteSpace(playerName) ? "Rakip" : playerName;
             _playerLabel.color = color;
             Resize(_width, _height);
         }

@@ -84,7 +84,7 @@ namespace Scripts
             var manager = MultiplayerManager.Instance;
             if (manager == null || !manager.IsServer || !manager.IsPlayerIndexConnected(playerIndex)) return;
             PlayerData playerData = manager.GetPlayerDataFromPlayerIndex(playerIndex);
-            if (manager.KickPlayer(playerData.clientId)) PlayerLobby.Instance?.KickPlayerFromLobby(playerData.playerId.ToString());
+            manager.KickPlayer(playerData.clientId);
         }
 
         private void UnsubscribeEvents()

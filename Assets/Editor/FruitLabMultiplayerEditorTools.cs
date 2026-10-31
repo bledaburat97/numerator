@@ -87,22 +87,27 @@ public static class FruitLabMultiplayerEditorTools
                     var scaler = canvas.GetComponent<CanvasScaler>(); scaler.referenceResolution = new Vector2(375, 667); scaler.matchWidthOrHeight = 0;
                     scaler.SendMessage("Update", SendMessageOptions.DontRequireReceiver); Canvas.ForceUpdateCanvases();
                     var layout = canvas.GetComponent<FruitLabOnlineLayout>() ?? canvas.gameObject.AddComponent<FruitLabOnlineLayout>(); layout.ApplyLayout();
+                    var settingsData = new SerializedObject(layout);
+                    settingsData.FindProperty("settingsPopupPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SettingsPopupView>("Assets/Prefabs/SettingsPopup.prefab");
+                    settingsData.ApplyModifiedPropertiesWithoutUndo();
                     Transform panel = (Transform)canvas.GetComponentInChildren<LobbyUIView>(true)?.transform ?? canvas.GetComponentInChildren<WaitingSceneUIView>(true).transform;
                     Transform message = canvas.GetComponentInChildren<LobbyMessagePopupView>(true)?.transform;
+                    Transform settings = (Transform)(canvas.GetComponentInChildren<LobbyUIView>(true) != null
+                        ? canvas.GetComponentInChildren<LobbyUIView>(true).GetMenuButton().GetButtonRectTransform()
+                        : canvas.GetComponentInChildren<WaitingSceneUIView>(true).GetMenuButton().GetButtonRectTransform());
                     foreach (Graphic graphic in canvas.GetComponentsInChildren<Graphic>(true))
                         if (!graphic.transform.IsChildOf(panel) && (message == null || !graphic.transform.IsChildOf(message))
+                            && !graphic.transform.IsChildOf(settings)
                             && graphic.name != "LabRoom" && graphic.gameObject != canvas.gameObject) graphic.enabled = false;
-                    foreach (Image image in panel.GetComponentsInChildren<Image>(true))
-                        if (image.GetComponentInParent<BaseButtonView>() == null && image.name != "LabRim") FruitLabStyle.Surface(image, FruitLabStyle.Recess);
                     if (name == "Lobby")
                     {
                         var view = Find<LobbyUIView>(scene);
-                        view.GetCreateLobbyButton().SetText("Düello yarat"); view.GetJoinWithCodeButton().SetText("Düelloya katıl"); view.GetMenuButton().SetText("Menü");
+                        view.GetCreateLobbyButton().SetText("Oyun Oluştur"); view.GetJoinWithCodeButton().SetText("Oyuna Katıl"); view.HideDialogs();
                     }
                     else
                     {
                         var view = Find<WaitingSceneUIView>(scene); view.SetLobbyNameText("Orta"); view.SetLobbyCodeText("------");
-                        view.GetMenuButton().SetText("Menü"); view.GetReadyButton().SetText("Hazırım");
+                        view.GetReadyButton().SetText("Hazırım"); view.SetStartAvailability(true, false);
                     }
                 }
                 foreach (NetworkObject networkObject in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<NetworkObject>(true)))
@@ -124,7 +129,12 @@ public static class FruitLabMultiplayerEditorTools
         view.SetOpponentInfoStatus(true); view.SetMultiplayerStatus("Sıra sende", 60); view.SetCoinCounterStatus(false);
         canvas.GetComponentInChildren<LifeBarView>(true).gameObject.SetActive(false);
         canvas.GetComponentInChildren<PowerUpListHolderView>(true).gameObject.SetActive(false);
-        int rowIndex = 0; foreach (var row in canvas.GetComponentsInChildren<ResultBlockView>()) row.SetPlayerIdentity(rowIndex++ % 2 == 0);
+        int rowIndex = 0;
+        foreach (var row in canvas.GetComponentsInChildren<ResultBlockView>())
+        {
+            int player = rowIndex++ % 4;
+            row.SetPlayerIdentity(player == 0, "Oyuncu " + (player + 1));
+        }
         foreach (Transform child in canvas.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
         int count = canvas.GetComponentInChildren<BoardAreaView>(true).GetComponentsInChildren<BoardHolderView>(true).Length;
         Capture(camera, Folder + "/preview-multiplayer-game-" + count + ".png");
@@ -145,7 +155,7 @@ public static class FruitLabMultiplayerEditorTools
         popup.SetStatus(true); popup.GetText().gameObject.SetActive(true);
         popup.SetText("Kazandın!"); popup.GetText().rectTransform.localScale = Vector3.one;
         popup.GetButton(LevelFinishButtonType.Game).SetButtonStatus(true); popup.GetButton(LevelFinishButtonType.Game).SetText("Tekrar oyna");
-        popup.GetButton(LevelFinishButtonType.Menu).SetButtonStatus(true); popup.GetButton(LevelFinishButtonType.Menu).SetText("Menü");
+        popup.GetButton(LevelFinishButtonType.Menu).SetButtonStatus(false);
         popup.GetButton(LevelFinishButtonType.Claim).SetButtonStatus(false);
         foreach (var group in popup.GetComponentsInChildren<CanvasGroup>(true)) group.alpha = 1;
         Require(!((Component)popup.GetVerticalCrystalProgressView()).gameObject.activeSelf, "Multiplayer victory never displays a crystal bar");
@@ -153,7 +163,11 @@ public static class FruitLabMultiplayerEditorTools
         Capture(camera, Folder + "/preview-multiplayer-victory-" + count + ".png");
         popup.SetStatus(false);
     }
-    public static string RenderOnlineScenes() { RenderOnline("Lobby"); RenderOnline("WaitingScene"); return "Rendered lobby and waiting room"; }
+    public static string RenderOnlineScenes()
+    {
+        foreach (float height in new[] { 580f, 667f, 812f }) { RenderOnline("Lobby", height); RenderOnline("WaitingScene", height); }
+        return "Rendered entry/create/join dialogs and four-player lobby at 375x580, 375x667 and 375x812";
+    }
     public static void ValidateRules()
     {
         int cases = 0;
@@ -205,9 +219,54 @@ public static class FruitLabMultiplayerEditorTools
         var next = new MultiplayerMatchState(0, 7, 2, new[] { 2, 5, 6 }); next.MarkBoardReady(0, 2, 0); next.MarkBoardReady(7, 2, 0);
         Require(next.CurrentPlayer == 7, "Rematches alternate the starting player"); next.Disconnect();
         Require(!next.Tick(200) && !next.VoteForRematch(0, 2), "Disconnect finishes play and prevents rematch");
+        foreach (int count in new[] { 3, 4 })
+        foreach (Difficulty difficulty in Enum.GetValues(typeof(Difficulty)))
+        {
+            var players = new ulong[] { 0, 7, 31, 79 }.Take(count).ToArray();
+            int slots = MultiplayerRules.For(difficulty).BoardCount;
+            var answer = new[] { 4, 1, 7, 2, 5 }.Take(slots).ToArray();
+            var wrong = Enumerable.Range(1, slots).ToArray();
+            var group = new MultiplayerMatchState(players, 1, answer, difficulty);
+            for (int i = 0; i < count; i++)
+                Require(group.MarkBoardReady(players[i], 1, 100) == (i == count - 1), "Every connected board must be ready");
+            for (int turn = 1; turn <= count * 2; turn++)
+            {
+                ulong player = players[(turn - 1) % count];
+                Require(group.CurrentPlayer == player && group.TrySubmit(player, 1, turn, wrong, 100 + turn, out _, out _),
+                    "Three/four players rotate in join order without skipped or repeated turns");
+            }
+            Require(group.Tick(group.Deadline) && group.CurrentPlayer == players[1], "Timeout advances to the next group participant");
+            double deadline = group.Deadline;
+            group.RemovePlayer(players[count - 1], 200);
+            Require(group.Phase == MultiplayerPhase.Playing && group.Deadline == deadline, "A non-current guest departure preserves the active clock");
+            if (count == 4)
+            {
+                group.RemovePlayer(players[1], 201);
+                Require(group.CurrentPlayer == players[2] && group.Deadline == 261 && group.Players.Count == 2,
+                    "A departing current guest passes its turn to the next connected player");
+            }
+            group.RemovePlayer(group.Players.First(player => player != 0), 202);
+            Require(group.Phase == MultiplayerPhase.Disconnected, "A single remaining player cannot continue");
+            var rematch = new MultiplayerMatchState(players, 1, answer, difficulty);
+            foreach (ulong player in players) rematch.MarkBoardReady(player, 1, 0);
+            Require(rematch.TrySubmit(0, 1, 1, answer, 1, out _, out _), "Group victory accepted");
+            for (int i = 0; i < count; i++)
+                Require(rematch.VoteForRematch(players[i], 1) == (i == count - 1), "A group rematch requires every current participant");
+            var preparation = new MultiplayerMatchState(players, 1, answer, difficulty);
+            foreach (ulong player in players.Take(count - 1)) preparation.MarkBoardReady(player, 1, 0);
+            preparation.RemovePlayer(players[count - 1], 5);
+            Require(preparation.Phase == MultiplayerPhase.Playing, "A departing unready guest cannot block the remaining boards");
+            preparation.RemovePlayer(0, 6);
+            Require(preparation.Phase == MultiplayerPhase.Disconnected, "The host leaving ends the whole match");
+            var preparingRematch = new MultiplayerMatchState(players, 2, answer, difficulty);
+            foreach (ulong player in players.Where(player => player != players[1])) preparingRematch.MarkBoardReady(player, 2, 0);
+            preparingRematch.RemovePlayer(players[1], 5);
+            Require(preparingRematch.Phase == MultiplayerPhase.Playing && preparingRematch.CurrentPlayer == players[2]
+                && preparingRematch.Deadline == 65, "A rematch starter leaving during board setup passes its turn before the clock starts");
+        }
         Directory.CreateDirectory(Folder);
         File.WriteAllText(Folder + "/multiplayer-rules-review.json", Newtonsoft.Json.JsonConvert.SerializeObject(new {
-            passed = true, feedback_cases = cases, modes, checks = new[] { "host-only answer", "two-board readiness barrier", "authoritative 60-second deadlines", "sender/turn/round validation", "invalid and duplicate commands", "winner", "two-vote rematch", "alternating starter", "disconnect" }
+            passed = true, feedback_cases = cases, modes, player_counts = new[] { 2, 3, 4 }, group_lifecycle_checked = true, checks = new[] { "host-only answer", "all-player board readiness barrier", "authoritative 60-second deadlines", "sender/turn/round validation", "invalid and duplicate commands", "winner", "all-player rematch", "alternating starter", "disconnect" }
         }, Newtonsoft.Json.Formatting.Indented));
         Debug.Log("FRUIT_LAB_MULTIPLAYER_RULES_PASS: " + cases + " feedback cases across three modes and lifecycle guards.");
     }
@@ -250,7 +309,7 @@ public static class FruitLabMultiplayerEditorTools
         Require(report.summary.result == BuildResult.Succeeded, "Development player build: " + report.summary.result + ", errors=" + report.summary.totalErrors);
         return output;
     }
-    private static void RenderOnline(string name)
+    private static void RenderOnline(string name, float phoneHeight = 667)
     {
         var source = EditorSceneManager.OpenPreviewScene("Assets/Scenes/" + name + ".unity");
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
@@ -259,37 +318,62 @@ public static class FruitLabMultiplayerEditorTools
         {
             var clone = Object.Instantiate(Find<Canvas>(source).gameObject); SceneManager.MoveGameObjectToScene(clone, scene);
             var canvas = clone.GetComponent<Canvas>(); canvas.renderMode = RenderMode.WorldSpace;
-            var rect = (RectTransform)clone.transform; rect.localScale = Vector3.one; rect.position = Vector3.zero; rect.sizeDelta = new Vector2(375, 667);
+            var rect = (RectTransform)clone.transform; rect.localScale = Vector3.one; rect.position = Vector3.zero; rect.sizeDelta = new Vector2(375, phoneHeight);
             clone.GetComponent<FruitLabOnlineLayout>().ApplyLayout();
             var popup = clone.GetComponentInChildren<LobbyMessagePopupView>(true); if (popup != null) popup.gameObject.SetActive(false);
             foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
             var root = new GameObject("OnlineCapture", typeof(Camera)); SceneManager.MoveGameObjectToScene(root, scene);
             var camera = root.GetComponent<Camera>(); camera.enabled = false; camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
-            camera.orthographic = true; camera.orthographicSize = 333.5f; camera.aspect = 375f / 667; camera.nearClipPlane = 1; camera.farClipPlane = 2000;
+            camera.orthographic = true; camera.orthographicSize = phoneHeight * .5f; camera.aspect = 375f / phoneHeight; camera.nearClipPlane = 1; camera.farClipPlane = 2000;
             camera.transform.position = new Vector3(0, 0, -1000); camera.cullingMask = 1 << 30; camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = FruitLabStyle.Background; canvas.worldCamera = camera;
-            target = new RenderTexture(750, 1334, 24); target.Create(); camera.targetTexture = target;
+            target = new RenderTexture(750, Mathf.RoundToInt(phoneHeight * 2), 24); target.Create(); camera.targetTexture = target;
             if (name == "WaitingScene")
             {
                 var names = clone.GetComponentInChildren<PlayerNameAreaView>(true);
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < MultiplayerRules.MaxPlayers; i++)
                 {
                     var row = (PlayerNameView)names.CreatePlayerNameView(); row.Init(i, _ => { });
-                    row.SetPlayerName(i == 0 ? "Oyuncu 1" : "Oyuncu 2"); row.SetRole(i == 0, i == 0, i == 1); row.SetReadyStatus(i == 0);
+                    row.SetPlayerName("Oyuncu " + (i + 1)); row.SetRole(i == 0, i == 0, i > 0); row.SetReadyStatus(i != 3);
+                }
+                clone.GetComponentInChildren<WaitingSceneUIView>(true).SetStartAvailability(true, false);
+                clone.GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Tüm oyuncuların hazır olması bekleniyor.");
+            }
+            Canvas.ForceUpdateCanvases();
+            foreach (var button in clone.GetComponentsInChildren<BaseButtonView>())
+            {
+                var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(rect, button.GetButtonRectTransform());
+                Require(rect.rect.Contains(bounds.min) && rect.rect.Contains(bounds.max), "Online controls stay on screen at " + phoneHeight + ": " + button.name);
+            }
+            if (name == "WaitingScene")
+            {
+                Require(clone.GetComponentInChildren<WaitingSceneUIView>(true).transform.Find("OnlineTitle").GetComponent<TMPro.TMP_Text>().alignment
+                    == TMPro.TextAlignmentOptions.Midline, "Lobby heading is centered");
+                var names = clone.GetComponentInChildren<PlayerNameAreaView>(true).transform as RectTransform;
+                foreach (var row in names.GetComponentsInChildren<PlayerNameView>())
+                {
+                    var corners = new Vector3[4]; ((RectTransform)row.transform).GetWorldCorners(corners);
+                    var bounds = new Rect(names.rect.xMin - .1f, names.rect.yMin - .1f, names.rect.width + .2f, names.rect.height + .2f);
+                    Require(corners.All(corner => bounds.Contains(names.InverseTransformPoint(corner))), "All four player rows fit the lobby at " + phoneHeight);
                 }
             }
             foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
-            Capture(camera, Folder + "/preview-multiplayer-" + name.ToLowerInvariant() + ".png");
+            Capture(camera, Folder + "/preview-multiplayer-" + name.ToLowerInvariant() + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
             if (name == "Lobby")
             {
                 var view = clone.GetComponentInChildren<LobbyUIView>(true);
-                Require(!((Component)view.GetDifficultyButton(0)).gameObject.activeSelf && !view.CodeInput.gameObject.activeSelf, "Entry options start collapsed");
+                Require(view.NameInput.transform.parent.name == "ProfileSection" && ((Component)view.GetCreateLobbyButton()).transform.parent.name == "GameSection",
+                    "Profile input and game actions belong to separate panels");
+                Require(view.NameInput.placeholder.gameObject.activeInHierarchy && view.NameInput.placeholder.enabled,
+                    "An empty name shows its placeholder");
+                Require(!view.CreatePopup.gameObject.activeSelf && !view.JoinPopup.gameObject.activeSelf, "Entry dialogs start closed");
                 view.ShowCreateOptions();
-                Require(((Component)view.GetDifficultyButton(0)).gameObject.activeSelf && !view.CodeInput.gameObject.activeSelf, "Create expands difficulty options only");
-                Capture(camera, Folder + "/preview-multiplayer-lobby-create.png");
+                Require(view.CreatePopup.gameObject.activeInHierarchy && !view.JoinPopup.gameObject.activeSelf, "Create shows a separate difficulty dialog");
+                Capture(camera, Folder + "/preview-multiplayer-lobby-create" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
                 view.ShowJoinCodeInput();
-                Require(view.CodeInput.gameObject.activeSelf && !((Component)view.GetDifficultyButton(0)).gameObject.activeSelf, "Join expands only the code input");
-                Capture(camera, Folder + "/preview-multiplayer-lobby-join.png");
+                Require(view.JoinPopup.gameObject.activeInHierarchy && !view.CreatePopup.gameObject.activeSelf, "Join shows a separate code dialog");
+                view.SetJoinError("Giriş yapılamadı, kodu tekrar deneyiniz.");
+                Capture(camera, Folder + "/preview-multiplayer-lobby-join" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
             }
         }
         finally { if (target != null) { target.Release(); Object.DestroyImmediate(target); } EditorSceneManager.CloseScene(scene, true); EditorSceneManager.ClosePreviewScene(source); }

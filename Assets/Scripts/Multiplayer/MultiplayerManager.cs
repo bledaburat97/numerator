@@ -13,7 +13,15 @@ namespace Scripts
 
         public static MultiplayerManager Instance { get; private set; }
 
-        public const int MAX_NUM_OF_USERS = 2;
+        public const int MAX_NUM_OF_USERS = MultiplayerRules.MaxPlayers;
+        public bool IsMatchStarting { get; private set; }
+        public int PlayerCount => _playerDataNetworkList == null ? 0 : _playerDataNetworkList.Count;
+        public void CloseLobbyForGame() { if (IsServer) IsMatchStarting = true; }
+        public string GetPlayerName(ulong clientId)
+        {
+            int index = GetPlayerDataIndexFromClientId(clientId);
+            return index < 0 ? "Oyuncu" : _playerDataNetworkList[index].playerName.ToString();
+        }
         private const string PLAYER_NAME_KEY = "player_name_multiplayer";
         public event EventHandler OnTryingToJoinGame;
         public event EventHandler OnFailedToJoinGame;
@@ -58,6 +66,8 @@ namespace Scripts
 
         public bool StartHost()
         {
+            IsMatchStarting = false;
+            NetworkManager.Singleton.NetworkConfig.ProtocolVersion = 2;
             MultiplayerConnection.BeginSession();
             NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApprovalCallback;
             NetworkManager.Singleton.ConnectionApprovalCallback += OnConnectionApprovalCallback;
@@ -106,6 +116,8 @@ namespace Scripts
                 PlayerData playerData = _playerDataNetworkList[i];
                 if (playerData.clientId == clientId)
                 {
+                    if (clientId != Unity.Netcode.NetworkManager.ServerClientId)
+                        PlayerLobby.Instance?.KickPlayerFromLobby(playerData.playerId.ToString());
                     _playerDataNetworkList.RemoveAt(i);
                 }
             }
@@ -113,6 +125,7 @@ namespace Scripts
         
         public bool StartClient()
         {
+            NetworkManager.Singleton.NetworkConfig.ProtocolVersion = 2;
             MultiplayerConnection.BeginSession();
             OnTryingToJoinGame?.Invoke(this, EventArgs.Empty);
             RegisterClientCallbacks();
@@ -213,6 +226,7 @@ namespace Scripts
 
         private void Client_OnClientDisconnectCallback(ulong clientId)
         {
+            if (clientId != NetworkManager.Singleton.LocalClientId || MultiplayerConnection.IsLeaving) return;
             OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
         }
 
@@ -224,7 +238,7 @@ namespace Scripts
                 return;
             }
 
-            if (SceneManager.GetActiveScene().name != "WaitingScene")
+            if (IsMatchStarting || SceneManager.GetActiveScene().name != "WaitingScene")
             {
                 response.Approved = false;
                 response.Reason = "Game is already started.";
@@ -259,7 +273,7 @@ namespace Scripts
 
         public bool KickPlayer(ulong clientId)
         {
-            if (!IsServer || !IsSpawned || clientId == Unity.Netcode.NetworkManager.ServerClientId
+            if (!IsServer || !IsSpawned || IsMatchStarting || clientId == Unity.Netcode.NetworkManager.ServerClientId
                 || SceneManager.GetActiveScene().name != "WaitingScene"
                 || !NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId)) return false;
             NetworkManager.Singleton.DisconnectClient(clientId, "Düellodan çıkarıldın.");

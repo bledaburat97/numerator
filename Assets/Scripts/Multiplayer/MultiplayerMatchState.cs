@@ -9,6 +9,8 @@ namespace Scripts
     public static class MultiplayerRules
     {
         public const double TurnSeconds = 60;
+        public const int MinPlayers = 2;
+        public const int MaxPlayers = 4;
         public const ulong NoPlayer = ulong.MaxValue;
         public static MultiplayerSettings For(Difficulty difficulty) => new MultiplayerSettings(difficulty);
         public static MultiplayerSettings ForBoardCount(int count) => For((Difficulty)(count - 3));
@@ -63,7 +65,9 @@ namespace Scripts
     // Only the host owns this state. The public snapshot contains no hidden answer.
     public sealed class MultiplayerMatchState
     {
-        private readonly ulong _host, _guest;
+        private readonly ulong _host;
+        private readonly List<ulong> _players;
+        private readonly Dictionary<ulong, int> _seats;
         private readonly int[] _answer;
         private readonly double _turnSeconds;
         public MultiplayerSettings Settings { get; }
@@ -75,22 +79,32 @@ namespace Scripts
         public ulong CurrentPlayer { get; private set; }
         public ulong Winner { get; private set; } = MultiplayerRules.NoPlayer;
         public double Deadline { get; private set; }
+        public IReadOnlyList<ulong> Players => _players;
+        public bool AllRematchVotesReceived => Phase == MultiplayerPhase.Finished && _players.Count >= MultiplayerRules.MinPlayers
+            && _players.All(player => (_votes & (1 << _seats[player])) != 0);
         public MultiplayerPublicState Snapshot => new MultiplayerPublicState(Round, Turn, Phase, CurrentPlayer, Winner, Deadline, _votes);
 
         public MultiplayerMatchState(ulong host, ulong guest, int round, IReadOnlyList<int> answer, Difficulty difficulty = Difficulty.Easy, double turnSeconds = MultiplayerRules.TurnSeconds)
+            : this(new[] { host, guest }, round, answer, difficulty, turnSeconds) { }
+
+        public MultiplayerMatchState(IReadOnlyList<ulong> players, int round, IReadOnlyList<int> answer, Difficulty difficulty = Difficulty.Easy, double turnSeconds = MultiplayerRules.TurnSeconds)
         {
             Settings = MultiplayerRules.For(difficulty);
-            if (host == guest || round < 1 || !ValidCards(answer) || turnSeconds <= 0 || double.IsNaN(turnSeconds) || double.IsInfinity(turnSeconds)) throw new ArgumentException("Invalid two-player match setup");
+            if (players == null || players.Count < MultiplayerRules.MinPlayers || players.Count > MultiplayerRules.MaxPlayers
+                || players.Distinct().Count() != players.Count || players.Contains(MultiplayerRules.NoPlayer)
+                || round < 1 || !ValidCards(answer) || turnSeconds <= 0 || double.IsNaN(turnSeconds) || double.IsInfinity(turnSeconds)) throw new ArgumentException("Invalid multiplayer match setup");
             _turnSeconds = turnSeconds;
-            _host = host; _guest = guest; Round = round; _answer = answer.ToArray();
-            CurrentPlayer = round % 2 == 1 ? host : guest;
+            _players = players.ToList(); _host = players[0];
+            _seats = players.Select((player, index) => new { player, index }).ToDictionary(item => item.player, item => item.index);
+            Round = round; _answer = answer.ToArray();
+            CurrentPlayer = _players[(round - 1) % _players.Count];
         }
-        public bool Contains(ulong player) => player == _host || player == _guest;
+        public bool Contains(ulong player) => _players.Contains(player);
         public bool MarkBoardReady(ulong player, int round, double now)
         {
             if (Phase != MultiplayerPhase.Preparing || Round != round || !Contains(player)) return false;
             _ready.Add(player);
-            if (_ready.Count != 2) return false;
+            if (_ready.Count != _players.Count) return false;
             Phase = MultiplayerPhase.Playing; Turn = 1; Deadline = now + _turnSeconds;
             return true;
         }
@@ -105,8 +119,8 @@ namespace Scripts
             feedback = default;
             if (Phase != MultiplayerPhase.Playing) { error = "Maç henüz hazır değil."; return false; }
             if (round != Round || turn != Turn) { error = "Bu tahminin sırası geçti."; return false; }
-            if (!Contains(player) || player != CurrentPlayer) { error = "Şu an rakibinin sırası."; return false; }
-            if (now >= Deadline) { Advance(now); error = "Süren doldu. Sıra rakibinde."; return false; }
+            if (!Contains(player) || player != CurrentPlayer) { error = "Şu an başka bir oyuncunun sırası."; return false; }
+            if (now >= Deadline) { Advance(now); error = "Süren doldu. Sıra sonraki oyuncuda."; return false; }
             if (!ValidCards(cards)) { error = $"{Settings.BoardCount} farklı meyveyi alanlara yerleştir."; return false; }
             int correct = 0, present = 0;
             for (int i = 0; i < _answer.Length; i++)
@@ -122,8 +136,28 @@ namespace Scripts
         public bool VoteForRematch(ulong player, int round)
         {
             if (Phase != MultiplayerPhase.Finished || round != Round || !Contains(player)) return false;
-            _votes |= (byte)(player == _host ? 1 : 2);
-            return _votes == 3;
+            _votes |= (byte)(1 << _seats[player]);
+            return AllRematchVotesReceived;
+        }
+        public bool RemovePlayer(ulong player, double now)
+        {
+            int index = _players.IndexOf(player);
+            if (index < 0 || Phase == MultiplayerPhase.Disconnected) return false;
+            if (player == _host) { Disconnect(); return true; }
+            _players.RemoveAt(index); _ready.Remove(player);
+            _votes &= (byte)~(1 << _seats[player]);
+            if (_players.Count < MultiplayerRules.MinPlayers) { Disconnect(); return true; }
+            if (Phase == MultiplayerPhase.Preparing && CurrentPlayer == player)
+                CurrentPlayer = _players[index % _players.Count];
+            if (Phase == MultiplayerPhase.Playing && CurrentPlayer == player)
+            {
+                CurrentPlayer = _players[index % _players.Count]; Turn++; Deadline = now + _turnSeconds;
+            }
+            else if (Phase == MultiplayerPhase.Preparing && _ready.Count == _players.Count)
+            {
+                Phase = MultiplayerPhase.Playing; Turn = 1; Deadline = now + _turnSeconds;
+            }
+            return true;
         }
         public void Disconnect() { Phase = MultiplayerPhase.Disconnected; Winner = MultiplayerRules.NoPlayer; Deadline = 0; }
         public int[] RevealAnswer()
@@ -133,7 +167,7 @@ namespace Scripts
             return (int[])_answer.Clone();
         }
         private void Advance(double now)
-        { CurrentPlayer = CurrentPlayer == _host ? _guest : _host; Turn++; Deadline = now + _turnSeconds; }
+        { CurrentPlayer = _players[(_players.IndexOf(CurrentPlayer) + 1) % _players.Count]; Turn++; Deadline = now + _turnSeconds; }
         private bool ValidCards(IReadOnlyList<int> cards)
         {
             if (cards == null || cards.Count != Settings.BoardCount) return false;

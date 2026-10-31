@@ -61,10 +61,10 @@ namespace Game
             titleText.rectTransform.localScale = Vector3.zero;
         }
 
-        public void SetMultiplayerOpponentLeft()
+        public void SetMultiplayerOpponentLeft(string message = null)
         {
             SetButtonStatus(LevelFinishButtonType.Game, false); SetButtonStatus(LevelFinishButtonType.Claim, false);
-            _view.SetMultiplayerOpponentLeft();
+            _view.SetMultiplayerOpponentLeft(message);
         }
         public void SetOutcome(bool success, int earnedCrystalCount = 0) => _view.SetOutcome(success, earnedCrystalCount);
         public void SetMultiplayerResult(bool won, bool disconnected, RewardType? reward) => _view.SetMultiplayerResult(won, disconnected, reward);

@@ -24,7 +24,7 @@ namespace Scripts
         private bool _multiplayerMode;
         public bool IsMultiplayer => _multiplayerMode;
         private RectTransform _matchHud;
-        private TMP_Text _turnLabel, _timeLabel, _opponentNameLabel;
+        private TMP_Text _turnLabel, _timeLabel;
         private RectTransform _timerChip;
         public string MultiplayerStatusText => _turnLabel != null ? _turnLabel.text : "";
         public string MultiplayerTimerText => _timeLabel != null ? _timeLabel.text : "";
@@ -44,11 +44,11 @@ namespace Scripts
             _matchHud = new GameObject("MultiplayerStatus", typeof(RectTransform)).GetComponent<RectTransform>();
             _matchHud.SetParent(transform, false); FruitLabStyle.AddSurface(_matchHud.gameObject, FruitLabStyle.Panel);
             _turnLabel = FruitLabStyle.CreateText("Turn", _matchHud, 13f, FruitLabStyle.Mint);
+            _turnLabel.richText = false;
             _turnLabel.enableAutoSizing = true; _turnLabel.fontSizeMin = 10; _turnLabel.fontSizeMax = 13;
             _timerChip = new GameObject("Timer", typeof(RectTransform)).GetComponent<RectTransform>();
             _timerChip.SetParent(_matchHud, false); FruitLabStyle.AddSurface(_timerChip.gameObject, FruitLabStyle.Recess);
             _timeLabel = FruitLabStyle.CreateText("Time", _timerChip, 16f, FruitLabStyle.Text);
-            _opponentNameLabel = FruitLabStyle.CreateText("MultiplayerOpponent", transform, 15f, FruitLabStyle.Muted);
         }
         private void Update()
         {
@@ -71,13 +71,9 @@ namespace Scripts
                 FruitLabStyle.Place(_turnLabel.rectTransform, _matchHud, 10f, 0f, width - 92f, 32f);
                 FruitLabStyle.Place(_timerChip, _matchHud, width - 78f, 3f, 74f, 26f);
                 FruitLabStyle.Stretch(_timeLabel.rectTransform, 1f);
-                FruitLabStyle.Place(_opponentNameLabel.rectTransform, header, width * .5f - 4f, headerHeight - 34f, width * .5f - 40f, 30f);
-                _opponentNameLabel.text = opponentText.text;
-                _opponentNameLabel.enableAutoSizing = true; _opponentNameLabel.fontSizeMin = 10; _opponentNameLabel.fontSizeMax = 15;
             }
             if (_matchHud != null) _matchHud.gameObject.SetActive(_multiplayerMode);
-            if (_opponentNameLabel != null) _opponentNameLabel.gameObject.SetActive(_multiplayerMode);
-            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width * .5f - 20f : width - 180f, 30f);
+            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width - 64f : width - 180f, 30f);
             userText.fontSize = _multiplayerMode ? 15f : 19f;
             userText.enableAutoSizing = false;
             userText.fontStyle = FontStyles.Bold;

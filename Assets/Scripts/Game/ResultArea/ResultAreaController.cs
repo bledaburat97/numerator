@@ -43,9 +43,9 @@ namespace Scripts
         }
 
         public void EnableReview() => _view.EnableReview();
-        public void LabelLatestMultiplayerGuess(bool isLocal)
+        public void LabelLatestMultiplayerGuess(bool isLocal, string playerName = null)
         {
-            if (_resultBlockControllers.Count > 0) (_resultBlockControllers[_resultBlockControllers.Count - 1] as ResultBlockController)?.SetPlayerIdentity(isLocal);
+            if (_resultBlockControllers.Count > 0) (_resultBlockControllers[_resultBlockControllers.Count - 1] as ResultBlockController)?.SetPlayerIdentity(isLocal, playerName);
             _view.SetScrollPositionToBottom();
         }
 

@@ -23,7 +23,7 @@ namespace Scripts
             PlayerLobby.Instance.OnCreateLobbyStarted += Creating;
             PlayerLobby.Instance.OnJoinStarted += Joining;
             PlayerLobby.Instance.OnCreateLobbyFailed += OperationFailed;
-            PlayerLobby.Instance.OnJoinFailed += OperationFailed;
+            PlayerLobby.Instance.OnJoinFailed += JoinFailed;
             PlayerLobby.Instance.OnServiceError += ServiceError;
             if (PlayerLobby.Instance.LastError != null) lobbyMessagePopup.Show(PlayerLobby.Instance.LastError);
         }
@@ -31,18 +31,24 @@ namespace Scripts
         private void Creating(object sender, EventArgs args) => lobbyMessagePopup.Show("Düello oluşturuluyor…");
         private void Joining(object sender, EventArgs args) => lobbyMessagePopup.Show("Düelloya bağlanılıyor…");
         private void OperationFailed(object sender, EventArgs args) => lobbyMessagePopup.Show(PlayerLobby.Instance.LastError);
+        private void JoinFailed(object sender, EventArgs args)
+        {
+            lobbyMessagePopup.Hide();
+            var view = GetComponentInParent<Canvas>().GetComponentInChildren<LobbyUIView>(true);
+            view.ShowJoinCodeInput(); view.SetJoinError("Giriş yapılamadı, kodu tekrar deneyiniz.");
+        }
         private void ServiceError(object sender, string message) => lobbyMessagePopup.Show(message);
         private void Failed(object sender, EventArgs args)
         {
             PlayerLobby.Instance?.ConnectionFailed();
-            lobbyMessagePopup.Show("Odaya bağlanılamadı. Oda kapanmış veya dolmuş olabilir.");
+            JoinFailed(sender, args);
         }
         private void OnDestroy()
         {
             if (MultiplayerManager.Instance != null) MultiplayerManager.Instance.OnFailedToJoinGame -= Failed;
             if (PlayerLobby.Instance == null) return;
             PlayerLobby.Instance.OnCreateLobbyStarted -= Creating; PlayerLobby.Instance.OnJoinStarted -= Joining;
-            PlayerLobby.Instance.OnCreateLobbyFailed -= OperationFailed; PlayerLobby.Instance.OnJoinFailed -= OperationFailed;
+            PlayerLobby.Instance.OnCreateLobbyFailed -= OperationFailed; PlayerLobby.Instance.OnJoinFailed -= JoinFailed;
             PlayerLobby.Instance.OnServiceError -= ServiceError;
         }
     }

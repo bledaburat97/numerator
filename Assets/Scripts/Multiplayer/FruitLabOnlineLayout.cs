@@ -7,6 +7,7 @@ namespace Scripts
     [DefaultExecutionOrder(-11000)]
     public sealed class FruitLabOnlineLayout : MonoBehaviour
     {
+        [SerializeField] private SettingsPopupView settingsPopupPrefab;
         private Vector2 _size;
         private void Awake()
         {
@@ -21,24 +22,63 @@ namespace Scripts
             FruitLabStyle.Atmosphere((RectTransform)transform);
             var lobby = GetComponentInChildren<LobbyUIView>(true);
             var waiting = GetComponentInChildren<WaitingSceneUIView>(true);
-            float width = Mathf.Min(335f, _size.x - 24f), height = Mathf.Min(lobby != null ? 500f : 520f, _size.y - 32f);
+            float width = Mathf.Min(335, _size.x - 24), height = Mathf.Min(lobby != null ? 428 : 564, _size.y - 64);
             RectTransform panel = (lobby != null ? lobby.transform : waiting.transform) as RectTransform;
-            panel.SetParent(transform, false); panel.anchorMin = panel.anchorMax = panel.pivot = Vector2.one * .5f;
-            panel.anchoredPosition = Vector2.zero; panel.sizeDelta = new Vector2(width, height);
-            FruitLabStyle.AddSurface(panel.gameObject, FruitLabStyle.Panel); FruitLabStyle.Rim(panel);
+            panel.SetParent(transform, false); Center(panel, width, height);
+            var surface = FruitLabStyle.AddSurface(panel.gameObject, FruitLabStyle.Panel);
+            surface.enabled = lobby == null;
+            FruitLabStyle.Rim(panel); panel.Find("LabRim").gameObject.SetActive(lobby == null);
             foreach (LayoutGroup group in panel.GetComponents<LayoutGroup>()) group.enabled = false;
             foreach (ContentSizeFitter fitter in panel.GetComponents<ContentSizeFitter>()) fitter.enabled = false;
-            var heading = panel.Find("OnlineTitle")?.GetComponent<TMP_Text>() ?? FruitLabStyle.CreateText("OnlineTitle", panel, 24, FruitLabStyle.Text);
-            heading.text = lobby != null ? "Düello" : "Hazırlık";
-            FruitLabStyle.Place(heading.rectTransform, panel, 20, height - 58, width - 40, 36);
-            var detail = panel.Find("OnlineDetail")?.GetComponent<TMP_Text>() ?? FruitLabStyle.CreateText("OnlineDetail", panel, 13, FruitLabStyle.Muted);
-            detail.text = ""; detail.gameObject.SetActive(false);
-            detail.fontStyle = FontStyles.Normal;
-            FruitLabStyle.Place(detail.rectTransform, panel, 20, height - 98, width - 40, 40);
+            if (lobby == null) Title(panel, "Lobi", width, height, true);
+            else { var oldTitle = panel.Find("OnlineTitle"); if (oldTitle != null) oldTitle.gameObject.SetActive(false); }
+            Transform detail = panel.Find("OnlineDetail"); if (detail != null) detail.gameObject.SetActive(false);
             if (lobby != null) lobby.ApplyOnlineLayout(width, height);
             else waiting.ApplyOnlineLayout(width, height);
             var popup = GetComponentInChildren<LobbyMessagePopupView>(true);
-            if (popup != null) popup.ApplyOnlineLayout();
+            if (popup != null) { popup.ApplyOnlineLayout(); popup.transform.SetAsLastSibling(); }
+        }
+        public void OpenSettings(BaseButtonControllerFactory buttons)
+        {
+            if (settingsPopupPrefab == null || transform.Find("OnlineSettingsOverlay") != null) return;
+            var overlay = Rect("OnlineSettingsOverlay", transform);
+            FruitLabStyle.Stretch(overlay);
+            var blocker = overlay.gameObject.AddComponent<Image>(); blocker.color = new Color(0, 0, 0, .7f); blocker.raycastTarget = true;
+            var view = Instantiate(settingsPopupPrefab, overlay);
+            new SettingsPopupController().Initialize(view, () => Destroy(overlay.gameObject), null, null,
+                FindFirstObjectByType<LevelTracker>(), buttons);
+            view.GetCloseButton().SetText("Geri dön");
+            overlay.SetAsLastSibling();
+        }
+        public static RectTransform Rect(string name, Transform parent)
+        {
+            var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+            rect.SetParent(parent, false); return rect;
+        }
+        public static RectTransform Panel(string name, Transform parent)
+        {
+            var rect = Rect(name, parent); FruitLabStyle.AddSurface(rect.gameObject, FruitLabStyle.Panel).raycastTarget = true;
+            FruitLabStyle.Rim(rect); return rect;
+        }
+        public static void Center(RectTransform rect, float width, float height)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
+            rect.anchoredPosition = Vector2.zero; rect.localScale = Vector3.one; rect.sizeDelta = new Vector2(width, height);
+        }
+        public static void Title(RectTransform panel, string value, float width, float height, bool centered = false)
+        {
+            var heading = panel.Find("OnlineTitle")?.GetComponent<TMP_Text>();
+            if (heading == null) heading = FruitLabStyle.CreateText("OnlineTitle", panel, 23, FruitLabStyle.Text);
+            heading.text = value; heading.gameObject.SetActive(true);
+            heading.alignment = centered ? TextAlignmentOptions.Midline : TextAlignmentOptions.MidlineLeft;
+            FruitLabStyle.Place(heading.rectTransform, panel, 20, height - 62, width - (centered ? 40 : 76), 36);
+        }
+        public static void Settings(BaseButtonView button, RectTransform canvas)
+        {
+            button.name = "SettingsButton";
+            float topInset = Application.isPlaying && Screen.height > 0 ? (Screen.height - Screen.safeArea.yMax) / Screen.height * canvas.rect.height : 0;
+            FruitLabStyle.Place(button.GetButtonRectTransform(), canvas, canvas.rect.width - 58, canvas.rect.height - Mathf.Max(62, topInset + 56), 44, 44);
+            button.ApplyLabSettingsStyle(); button.gameObject.SetActive(true);
         }
         public static void Input(TMP_InputField input, Transform parent, float y, float width, string placeholder)
         {
@@ -47,12 +87,14 @@ namespace Scripts
             input.textComponent.fontSize = 16; input.textComponent.color = FruitLabStyle.Text; input.textComponent.raycastTarget = false;
             if (input.placeholder == null)
             {
-                var placeholderText = FruitLabStyle.CreateText("Placeholder", input.textViewport != null ? input.textViewport : input.textComponent.transform.parent, 15f, FruitLabStyle.Muted);
-                placeholderText.fontStyle = FontStyles.Normal; placeholderText.alignment = TextAlignmentOptions.MidlineLeft;
-                FruitLabStyle.Stretch(placeholderText.rectTransform); input.placeholder = placeholderText;
+                var label = FruitLabStyle.CreateText("Placeholder", input.textViewport != null ? input.textViewport : input.textComponent.transform.parent, 15, FruitLabStyle.Muted);
+                label.fontStyle = FontStyles.Normal; label.alignment = TextAlignmentOptions.MidlineLeft;
+                FruitLabStyle.Stretch(label.rectTransform); input.placeholder = label;
             }
             if (input.placeholder is TMP_Text text) { text.text = placeholder; text.fontSize = 15; text.color = FruitLabStyle.Muted; }
-            input.placeholder.gameObject.SetActive(string.IsNullOrEmpty(input.text));
+            // TMP toggles Graphic.enabled as text changes; its placeholder object must stay active.
+            input.placeholder.gameObject.SetActive(true);
+            input.placeholder.enabled = string.IsNullOrEmpty(input.text);
         }
         public static void Button(IBaseButtonView view, Transform parent, float y, float width, bool primary)
         {
