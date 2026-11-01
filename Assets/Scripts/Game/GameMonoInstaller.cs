@@ -1,4 +1,4 @@
-﻿using Game;
+using Game;
 using UnityEngine;
 using Zenject;
 
@@ -28,6 +28,13 @@ namespace Scripts
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
+            Container.Bind<PairEffect>().AsSingle();
+            Container.Bind<BoardSplitService>().AsSingle();
+            Container.Bind<GrowingBoardService>().AsSingle();
+            Container.Bind<DynamiteService>().AsSingle();
+            Container.Bind<HelperEffect>().AsSingle();
+            Container.Bind<EliminateFruitEffect>().AsSingle();
+            Container.Bind<LevelMechanicsController>().AsSingle();
             Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
             Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()
                 .WithArguments(lifeBarView);

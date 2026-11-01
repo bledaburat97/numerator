@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Game
 {
@@ -19,6 +19,12 @@ namespace Game
                 _cardIndexesOnBoardHolders.Add(EmptyCardIndex);
                 _reservedCardIndexesOnBoardHolders.Add(EmptyCardIndex);
             }
+        }
+
+        public void AddBoardHolder()
+        {
+            _cardIndexesOnBoardHolders.Add(EmptyCardIndex);
+            _reservedCardIndexesOnBoardHolders.Add(EmptyCardIndex);
         }
 
         public void DeleteLastBoardHolder()
@@ -216,6 +222,7 @@ namespace Game
     public interface IBoardPlacementCommands
     {
         void InitializeCardIndexesOnBoardHolders(int numOfBoardHolders);
+        void AddBoardHolder();
         void DeleteLastBoardHolder();
         bool TryPlaceCardOnBoardHolder(int boardHolderIndex, int cardIndex);
         bool TryReserveBoardHolderForCard(int boardHolderIndex, int cardIndex);

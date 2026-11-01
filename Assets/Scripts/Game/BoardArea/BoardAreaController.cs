@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using Game;
@@ -16,6 +16,7 @@ namespace Scripts
         private readonly IBoardPlacementCommands _boardPlacementCommands;
         private readonly List<IBoardCardHolderController> _boardHolderControllerList;
         private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
+        [InjectOptional] private BoardSplitService _split;
 
         public event EventHandler<int> BoardHolderClickedEvent;
 
@@ -44,6 +45,13 @@ namespace Scripts
             ClearBoardHolders();
             CreateBoardHolders(boardHolderCount);
             _boardPlacementCommands.InitializeCardIndexesOnBoardHolders(boardHolderCount);
+            UpdateSplitPresentation();
+        }
+
+        public void ShowDynamite(DynamiteRoundState state)
+        {
+            for (int i = 0; i < _boardHolderControllerList.Count; i++)
+                _boardHolderControllerList[i].GetView().ShowDynamite(state != null && state.Revealed && state.BoardIndex == i ? state : null);
         }
 
         public void RefreshLayout()
@@ -54,11 +62,28 @@ namespace Scripts
                 _boardHolderControllerList[i].SetSize(GetSizeOfBoardHolder());
                 _boardHolderControllerList[i].SetLocalPosition(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[i]);
             }
+            UpdateSplitPresentation();
+        }
+
+        private void UpdateSplitPresentation()
+        {
+            if (!(_view is BoardAreaView view)) return;
+            var partition = _split?.PartitionFor(_boardHolderControllerList.Count);
+            if (partition == null) { view.ShowSplitGroups(null,null); return; }
+            Rect GroupBounds(int start,int count)
+            {
+                var area = view.GetRectTransform();
+                var first = _boardHolderControllerList[start].GetView().GetRectTransform();
+                var last = _boardHolderControllerList[start+count-1].GetView().GetRectTransform();
+                Vector2 a = area.InverseTransformPoint(first.position), b = area.InverseTransformPoint(last.position);
+                return Rect.MinMaxRect(a.x-first.rect.width*.5f,a.y-first.rect.height*.5f,b.x+last.rect.width*.5f,b.y+last.rect.height*.5f);
+            }
+            view.ShowSplitGroups(GroupBounds(0,partition.FirstCount),GroupBounds(partition.FirstCount,partition.SecondCount));
         }
         
         private void CreateBoardHolders(int boardHolderCount)
         {
-            for (int i = 0; i < boardHolderCount; i++)
+            for (int i = _boardHolderControllerList.Count; i < boardHolderCount; i++)
             {
                 IBoardHolderView boardHolderView = _view.CreateBoardHolderView();
                 IBoardCardHolderController boardHolderController = new BoardCardHolderController(boardHolderView, _view.GetCamera());
@@ -106,6 +131,7 @@ namespace Scripts
 
         public void ClearBoardHolders()
         {
+            if (_view is BoardAreaView view) view.ShowSplitGroups(null,null);
             if (_boardHolderControllerList.Count > 0)
             {
                 foreach (IBoardCardHolderController boardHolder in _boardHolderControllerList)
@@ -211,9 +237,30 @@ namespace Scripts
             return _boardLayoutManager.GetSizeOfBoardHolder();
         }
 
+        public void AddBoardHolder()
+        {
+            _boardHolderCountManager.AddBoardHolder();
+            _boardPlacementCommands.AddBoardHolder();
+            int count = _boardHolderCountManager.GetBoardHolderCount();
+            _boardLayoutManager.Initialize(count);
+            CreateBoardHolders(count);
+            // Preserve existing holder instances, children, locked cards and clicks.
+            for (int i = 0; i < count-1; i++)
+            {
+                var rect = _boardHolderControllerList[i].GetView().GetRectTransform();
+                _boardHolderControllerList[i].SetSize(GetSizeOfBoardHolder());
+                rect.DOLocalMove(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[i],.28f)
+                    .SetEase(Ease.OutCubic).OnUpdate(UpdateSplitPresentation).SetLink(rect.gameObject);
+            }
+            UpdateSplitPresentation();
+            var holder = _boardHolderControllerList[count-1].GetView().GetRectTransform();
+            holder.localScale = Vector3.one*.15f;
+            holder.DOScale(Vector3.one,.34f).SetEase(Ease.OutBack).SetLink(holder.gameObject);
+        }
+
         public void RemoveLastBoardHolder()
         {
-            if (_boardHolderControllerList.Count <= 1) return;
+            if (!_boardHolderCountManager.CanShrink || _boardHolderControllerList.Count <= 1) return;
 
             DeleteOneBoardHolder();
         }
@@ -235,6 +282,7 @@ namespace Scripts
 
             MoveBoardHoldersToScene(1f);
             _boardPlacementCommands.DeleteLastBoardHolder();
+            UpdateSplitPresentation();
         }
 
         private void MoveBoardHoldersToScene(float duration)
@@ -244,11 +292,13 @@ namespace Scripts
             {
                 sequence.Join(_boardHolderControllerList[i].Move(_boardLayoutManager.GetBoardHolderSceneLocalPositionList()[i], duration));
             }
+            sequence.OnUpdate(UpdateSplitPresentation);
         }
     }
 
     public interface IBoardAreaController
     {
+        void ShowDynamite(DynamiteRoundState state);
         void RefreshLayout();
         event EventHandler<int> BoardHolderClickedEvent;
         RectTransform GetRectTransformOfGarden(int boardHolderIndex);
@@ -260,6 +310,7 @@ namespace Scripts
         Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders);
         void SetupTutorialModeOnEmptyBoardHolders();
         void CleanupTutorialModeOnShinyBoardHolders();
+        void AddBoardHolder();
         void RemoveLastBoardHolder();
         void CreateBoard();
         Sequence MoveBoardHoldersToOutsideScene(float duration);

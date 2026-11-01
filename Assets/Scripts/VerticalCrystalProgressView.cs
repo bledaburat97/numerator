@@ -15,11 +15,14 @@ namespace Scripts
         [SerializeField] private PowerUpButtonView revealingPowerUpButton;
         [SerializeField] private PowerUpButtonView lifePowerUpButton;
         [SerializeField] private PowerUpButtonView bombPowerUpButton;
+        [SerializeField] private PowerUpButtonView helperPowerUpButton;
+        [SerializeField] private PowerUpButtonView pairPowerUpButton;
+        [SerializeField] private PowerUpButtonView splitPowerUpButton;
         [SerializeField] private ParticleSystem completedParticle;
         [SerializeField] private Image crystalIcon;
 
         private float _currentPercentage;
-        private TMP_Text _countLabel, _rewardLabel;
+        private TMP_Text _countLabel;
         private RectTransform _presentationTarget;
         private RewardType _rewardType;
         private void Awake() => ApplyLabStyle();
@@ -36,7 +39,7 @@ namespace Scripts
             TMP_Text title = GetLabel("CrystalTitle", 13f, FruitLabStyle.Text);
             title.fontSize = 13f;
             title.gameObject.SetActive(true);
-            title.text = "Kristal enerjisi";
+            title.text = "Güçlendirici Barı";
             title.alignment = TextAlignmentOptions.MidlineLeft;
             FruitLabStyle.Place(title.rectTransform, transform, 14f, 76f, width - 88f, 24f);
             _countLabel = GetLabel("CrystalCount", 14f, FruitLabStyle.Pink);
@@ -75,11 +78,9 @@ namespace Scripts
                 FruitLabStyle.Surface(tick, new Color(.08f, .18f, .19f, .32f));
                 FruitLabStyle.Place(tick.rectTransform, transform, 60f + (width - 136f) * index / ConstantValues.NUM_OF_STARS_FOR_WILD, 43f, 1f, 8f);
             }
-            _rewardLabel = GetLabel("NextReward", 11f, FruitLabStyle.Muted);
-            _rewardLabel.fontSize = 11f;
-            _rewardLabel.gameObject.SetActive(true);
-            _rewardLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            FruitLabStyle.Place(_rewardLabel.rectTransform, transform, 58f, 12f, width - 72f, 22f);
+            // Hide the old subtitle in scene instances saved before the prefab update.
+            Transform oldSubtitle = transform.Find("NextReward");
+            if (oldSubtitle != null) oldSubtitle.gameObject.SetActive(false);
             Transform holder = transform.Find("RewardHolder");
             if (holder == null)
             {
@@ -88,6 +89,24 @@ namespace Scripts
             }
             FruitLabStyle.Place((RectTransform)holder, transform, width - 60f, 27f, 44f, 44f);
             // Older scenes serialized prefab assets here. Always animate local instances.
+            if (helperPowerUpButton == null && revealingPowerUpButton != null)
+            {
+                helperPowerUpButton = Instantiate(revealingPowerUpButton, holder, false);
+                helperPowerUpButton.name = "HelperRewardPreview";
+            }
+            if (pairPowerUpButton == null && revealingPowerUpButton != null)
+            {
+                pairPowerUpButton = Instantiate(revealingPowerUpButton, holder, false);
+                pairPowerUpButton.name = "PairRewardPreview";
+            }
+            if (splitPowerUpButton == null && revealingPowerUpButton != null)
+            {
+                splitPowerUpButton = Instantiate(revealingPowerUpButton,holder,false);
+                splitPowerUpButton.name = "SplitRewardPreview";
+            }
+            ResolvePreview(ref splitPowerUpButton,holder,"Split");
+            ResolvePreview(ref pairPowerUpButton, holder, "Pair");
+            ResolvePreview(ref helperPowerUpButton, holder, "Helper");
             ResolvePreview(ref revealingPowerUpButton, holder, "Reveal");
             ResolvePreview(ref lifePowerUpButton, holder, "Life");
             ResolvePreview(ref bombPowerUpButton, holder, "Bomb");
@@ -115,9 +134,6 @@ namespace Scripts
             for (int index = 1; index < ConstantValues.NUM_OF_STARS_FOR_WILD; index++)
                 FruitLabStyle.Place(GetSurface("CrystalTick" + index).rectTransform, transform,
                     45f + fillWidth * index / ConstantValues.NUM_OF_STARS_FOR_WILD, trackY + 2f, 1f, 6f);
-            _rewardLabel.gameObject.SetActive(roomy);
-            _rewardLabel.fontSize = 9f;
-            FruitLabStyle.Place(_rewardLabel.rectTransform, transform, 44f, 1f, width - 94f, 14f);
             FruitLabStyle.Place((RectTransform)holder, transform, width - 40f, (height - 28f) * .5f, 28f, 28f);
         }
 
@@ -301,10 +317,12 @@ namespace Scripts
         public void ShowRewardPreview(RewardType rewardType)
         {
             _rewardType = rewardType;
-            if (_rewardLabel != null) _rewardLabel.text = "Sonraki powerup: " + (rewardType == RewardType.Bomb ? "Bomba" : rewardType == RewardType.Life ? "Can" : "Göster");
             SetPowerUpButtonStatus(revealingPowerUpButton, rewardType == RewardType.Revealing);
             SetPowerUpButtonStatus(lifePowerUpButton, rewardType == RewardType.Life);
             SetPowerUpButtonStatus(bombPowerUpButton, rewardType == RewardType.Bomb);
+            SetPowerUpButtonStatus(helperPowerUpButton, rewardType == RewardType.Helper);
+            SetPowerUpButtonStatus(pairPowerUpButton, rewardType == RewardType.Pair);
+            SetPowerUpButtonStatus(splitPowerUpButton,rewardType == RewardType.Split);
         }
 
         public RectTransform GetRewardPreviewRectTransform(RewardType rewardType)
@@ -346,6 +364,9 @@ namespace Scripts
         {
             switch (rewardType)
             {
+                case RewardType.Pair: return pairPowerUpButton;
+                case RewardType.Split: return splitPowerUpButton;
+                case RewardType.Helper: return helperPowerUpButton;
                 case RewardType.Revealing:
                     return revealingPowerUpButton;
                 case RewardType.Life:

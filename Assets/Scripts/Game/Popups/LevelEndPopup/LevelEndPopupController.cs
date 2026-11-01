@@ -185,6 +185,9 @@ namespace Game
     {
         Revealing,
         Life,
-        Bomb
+        Bomb,
+        Helper,
+        Pair,
+        Split
     }
 }

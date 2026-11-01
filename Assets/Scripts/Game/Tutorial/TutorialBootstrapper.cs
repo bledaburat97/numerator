@@ -8,6 +8,7 @@ namespace Scripts
 {
     public sealed class TutorialBootstrapper : ITutorialBootstrapper
     {
+        [InjectOptional] private ILevelDataCreator _levels;
         private readonly ILevelTracker _tracker;
         private readonly IInitialCardAreaController _initial;
         private readonly IBoardAreaController _board;
@@ -62,11 +63,49 @@ namespace Scripts
                     });
                 _first.Start();
             }
+            else if (_levels != null && ExplainLevelMechanic()) { }
             else if (!TutorialProgress.Seen(TutorialProgress.CrystalHints) && _round.GetLifeBarRewardInfoList().Any(token => token.IsCrystal))
             {
-                ShowTip("Kristal ipuçları", "Oyunda kazanamadığın ilk pembe kristal yanlış bir meyveyi eleme ipucusu verir, ikincisi ise bir doğru meyveyi yerine koyarak başka bir ipucu daha verir.",
-                    TutorialProgress.CrystalHints, true, null, Find<LifeBarView>()?.GetRectTransform());
+                ShowTip("Kristal İpuçları", "Kazanamadığın kristaller oyun içinde sana yardım eder.",
+                    TutorialProgress.CrystalHints, TutorialMessagePlacement.Center, null, Find<LifeBarView>()?.GetRectTransform());
             }
+        }
+        private bool ExplainLevelMechanic()
+        {
+            var mechanic = LevelMechanicRules.Normalize(_levels.GetLevelData().Mechanic);
+            if (mechanic == LevelMechanic.Normal) return false;
+            if (mechanic == LevelMechanic.Dynamite)
+            {
+                if (TutorialProgress.Seen(TutorialProgress.DynamiteLevel)) return false;
+                ShowTip("Dinamitli Tahta", "İlk 4 hamlede dinamitli alan için doğru meyveyi bulmalısın yoksa oyun kaybedilir.",
+                    TutorialProgress.DynamiteLevel,TutorialMessagePlacement.Center,null,Find<BoardAreaView>()?.GetRectTransform());
+                return true;
+            }
+            if (mechanic == LevelMechanic.Growing)
+            {
+                if (TutorialProgress.Seen(TutorialProgress.GrowingLevel)) return false;
+                ShowTip("Büyüyen Tahta", "2 alanla başlarsın. Her 2 yanlışta bir alan açılır. 4 alana ulaşınca 4 ek hak kazanırsın.",
+                    TutorialProgress.GrowingLevel,TutorialMessagePlacement.Center,null,Find<BoardAreaView>()?.GetRectTransform());
+                return true;
+            }
+            if (mechanic == LevelMechanic.Split)
+            {
+                if (TutorialProgress.Seen(TutorialProgress.SplitLevel)) return false;
+                ShowTip("Bölünmüş Tahta", "İki grubun sonuçları ayrı hesaplanır, yerleştirilen meyveler kendi grubunda değerlendirilir.",
+                    TutorialProgress.SplitLevel,TutorialMessagePlacement.Center,null,Find<BoardAreaView>()?.GetRectTransform());
+                return true;
+            }
+            if (mechanic == LevelMechanic.Pair)
+            {
+                if (TutorialProgress.Seen(TutorialProgress.PairLevel)) return false;
+                ShowTip("Ardışık Bağlı Meyveler", "Cevapta bulunan yan yana iki meyveyi gösterir.",
+                    TutorialProgress.PairLevel, TutorialMessagePlacement.Center, null, PairTargets());
+                return true;
+            }
+            if (TutorialProgress.Seen(TutorialProgress.HelperLevel)) return false;
+            ShowTip("Bonus İpucu", "Her 3 yanlış tahminde bir tahmindeki meyvelerin detaylı bilgisi verilir",
+                TutorialProgress.HelperLevel, TutorialMessagePlacement.Center, null, LatestResult());
+            return true;
         }
         public void RoundEnded(bool success)
         {
@@ -84,7 +123,7 @@ namespace Scripts
             RectTransform bar = Find<VerticalCrystalProgressView>()?.GetRectTransform();
             if (bar != null && !bar.gameObject.activeInHierarchy) bar = null;
             ShowTip("Coin ve kristal enerjisi", "Sarı coin'leri biriktirebilir, pembe kristaller ile powerup kazanabilirsin.",
-                TutorialProgress.Currency, false, null, _ui.GetCoinImageRectTransform(), bar);
+                TutorialProgress.Currency, TutorialMessagePlacement.Top, null, _ui.GetCoinImageRectTransform(), bar);
         }
         private bool ExplainPowerUp(GameUIButtonType type, Action use)
         {
@@ -101,6 +140,18 @@ namespace Scripts
                     key = TutorialProgress.Reveal; title = "Göster"; reward = RewardType.Revealing;
                     body = "Hangi alandaki meyveyi öğrenmek istiyorsan o alana dokun. Doğru meyve o alana yerleşir ve kilitlenir.";
                     break;
+                case GameUIButtonType.PairPowerUp:
+                    key = TutorialProgress.Pair; title = "Bağlı"; reward = RewardType.Pair;
+                    body = "Cevapta bulunan yan yana iki meyveyi gösterir.";
+                    break;
+                case GameUIButtonType.SplitPowerUp:
+                    key = TutorialProgress.Split; title = "Bölme"; reward = RewardType.Split;
+                    body = "Tahtayı iki gruba böler. Her grubun sonuçları ayrı gösterilir.";
+                    break;
+                case GameUIButtonType.HelperPowerUp:
+                    key = TutorialProgress.Helper; title = "İpucu güçlendiricisi"; reward = RewardType.Helper;
+                    body = "Son tahmininin detaylı bilgisi verilir.";
+                    break;
                 case GameUIButtonType.LifePowerUp:
                     key = TutorialProgress.Life; title = "Can"; reward = RewardType.Life;
                     body = "3 ek tahmin hakkı verir. En az 3 hak harcadığında kullanabilirsin.";
@@ -109,25 +160,29 @@ namespace Scripts
             }
             if (TutorialProgress.Seen(key) || _tracker.GetPowerUpCount(reward) <= 0) return false;
             var button = Find<PowerUpListHolderView>()?.GetPowerUpButton(reward)?.GetButtonRectTransform();
-            ShowTip(title, body, key, false, use, button);
+            ShowTip(title, body, key, TutorialMessagePlacement.Top, use, button);
             return true;
         }
-        private void ShowTip(string title, string text, string key, bool bottom, Action use, params RectTransform[] targets)
+        private void ShowTip(string title, string text, string key, TutorialMessagePlacement placement, Action use, params RectTransform[] targets)
         {
             if (_message != null) return;
             GameTelemetry.Tutorial("tutorial_started", key);
             CreatePresentation(); _gate.Block(); LockCards(-1);
             foreach (var target in targets) _mask.Highlight(target);
-            _message.Show(title, text, true, bottom, use == null ? "Anladım" : "Devam et");
-            void End(bool proceed)
-            {
-                GameTelemetry.Tutorial(proceed ? "tutorial_completed" : "tutorial_dismissed", key);
+            _message.ShowAt(title, text, true, placement, "Tamam");
+            _message.Bind(_buttons, () => {
+                GameTelemetry.Tutorial("tutorial_completed", key);
                 TutorialProgress.Mark(key); ClosePresentation(!_roundEnded);
-                if (proceed) use?.Invoke();
-            }
-            _message.Bind(_buttons, () => End(true), () => End(false));
-            _message.SetSecondaryText(use == null ? "Kapat" : "Şimdi değil");
+                use?.Invoke();
+            });
         }
+        private RectTransform[] PairTargets()
+        {
+            var clue = Find<PairClueView>()?.Clue;
+            if (clue == null) return Array.Empty<RectTransform>();
+            return new[] { _initial.GetRectTransformOfCardItem(clue.First - 1), _initial.GetRectTransformOfCardItem(clue.Second - 1) };
+        }
+
         private void CreatePresentation()
         {
             _mask.Init(1f, _canvas.rect.height); _mask.InstantiateTutorialFade();

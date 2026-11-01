@@ -11,10 +11,10 @@ namespace Scripts
         public const float HistoryFeedbackReservation = 112f;
         public readonly float Width, Height, Padding, Gap, HeaderHeight;
         public readonly float TopPadding, BottomPadding;
-        public readonly float BoardHeight, ActionWidth, ChoicesWidth, ChoicesHeight, PowerUpHeight;
+        public readonly float BoardHeight, BoardFooterHeight, ActionWidth, ChoicesWidth, ChoicesHeight, PowerUpHeight;
         public readonly float GameAreaHeight, HistoryHeight, HistoryRowHeight, HistorySpacing;
 
-        public FruitLabLayoutMetrics(float width, float height)
+        public FruitLabLayoutMetrics(float width, float height, bool mechanicCaption = false, bool boardFooter = false)
         {
             Width = Math.Max(1f, width);
             Height = Math.Max(1f, height);
@@ -23,8 +23,9 @@ namespace Scripts
             Padding = 12f * scale * compact;
             TopPadding = BottomPadding = 4f * scale * compact;
             Gap = 6f * scale * compact;
-            HeaderHeight = 72f * scale;
-            BoardHeight = 64f * scale * compact;
+            HeaderHeight = (mechanicCaption ? 86f : 72f) * scale;
+            BoardFooterHeight = boardFooter ? Math.Max(24f,24f*scale*compact) : 0f;
+            BoardHeight = 64f * scale * compact + BoardFooterHeight;
             ActionWidth = 48f * scale * compact;
             ChoicesWidth = Width - Padding * 2f - (ActionWidth + Gap) * 2f;
             ChoicesHeight = 116f * scale * compact;

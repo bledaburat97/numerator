@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,7 +11,8 @@ namespace Scripts
         private readonly IHapticController _hapticController;
         private readonly ICardMoveHandler _cardMoveHandler;
         private readonly CardItemData _cardItemData;
-        private Sequence _activeMoveSequence;
+        private readonly object _moveTweenId = new object();
+        private int _moveVersion;
         private Camera _cam;
 
         public CardViewHandler(INormalCardItemView view, Camera cam, IHapticController hapticController,
@@ -101,6 +102,15 @@ namespace Scripts
             PlaceCard(parentTransform, onComplete);
         }
 
+        public void SnapToParent(RectTransform parentTransform)
+        {
+            // A locked placement supersedes any pending flight and its parent callback.
+            KillActiveMoveSequence();
+            SetParent(parentTransform);
+            _view.InitLocalScale();
+            _view.SetLocalPosition(Vector3.zero);
+        }
+
         public void MoveToInitialParent(Action onComplete = null)
         {
             PlaceCard(_cardItemData.Parent, onComplete);
@@ -111,17 +121,17 @@ namespace Scripts
             KillActiveMoveSequence();
             SetParent(_cardItemData.TempParent);
             _view.InitLocalScale();
-            _activeMoveSequence = DOTween.Sequence()
+            int version = _moveVersion;
+            DOTween.Sequence().SetId(_moveTweenId)
                 .Append(_view.ChangePosition(parentTransform.position, 0.3f))
                 .OnComplete(() =>
                 {
+                    if (version != _moveVersion) return;
                     _view.SetParent(parentTransform);
                     _view.InitLocalScale();
                     _view.SetLocalPosition(Vector3.zero);
-                    _activeMoveSequence = null;
                     onComplete?.Invoke();
-                })
-                .OnKill(() => _activeMoveSequence = null);
+                });
         }
 
         public void SuccessAnimation(float delayDuration)
@@ -225,8 +235,10 @@ namespace Scripts
 
         private void KillActiveMoveSequence()
         {
-            if (_activeMoveSequence == null || !_activeMoveSequence.IsActive()) return;
-            _activeMoveSequence.Kill();
+            // Kill every owned flight, even if DOTween is completing an older
+            // sequence in the same frame. Stale callbacks cannot change parent.
+            _moveVersion++;
+            DOTween.Kill(_moveTweenId);
         }
 
     }
@@ -250,6 +262,7 @@ namespace Scripts
         Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration);
         void SetLocalPosition(Vector2 localPosition);
         void MoveToParent(RectTransform parentTransform, Action onComplete = null);
+        void SnapToParent(RectTransform parentTransform);
         void MoveToInitialParent(Action onComplete = null);
     }
 }

@@ -7,6 +7,9 @@ namespace Scripts
 {
     public class GameSaveSnapshotProvider : IGameSaveSnapshotProvider
     {
+        [InjectOptional] private ILevelSaveDataManager _saveData;
+        [InjectOptional] private ILevelDataCreator _levels;
+        [InjectOptional] private ILevelTracker _tracker;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly ILevelFlowOrchestrator _levelFlowOrchestrator;
@@ -32,17 +35,35 @@ namespace Scripts
         {
             levelSaveData = null;
 
-            if (_roundStateManager.GetTriedCardsList().Count == 0) return false;
-            if (_levelFlowOrchestrator.IsGameOver()) return false;
+            var info = _cardItemInfoManager.GetCardItemInfoList();
+            bool mutatedBeforeGuess = _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
+                || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
+                || (info != null && info.Any(card => card.isLocked || !card.isExisted));
+            if (_roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess) return false;
+            if (_roundStateManager.GetRemainingGuessCount() <= 0 || _levelFlowOrchestrator.IsGameOver()) return false;
             if (_levelFlowOrchestrator.IsTransitioning()) return false;
 
             levelSaveData = new LevelSaveData
             {
                 TriedCardsList = CreateTriedCardsSnapshot(),
-                TargetCards = _targetNumberCreator.GetTargetCardsList(),
+                TargetCards = new List<int>(_targetNumberCreator.GetTargetCardsList()),
                 RemainingGuessCount = _roundStateManager.GetRemainingGuessCount(),
-                CardItemInfoList = _cardItemInfoManager.GetCardItemInfoList(),
-                RemovedBoardHolderCount = _boardHolderCountManager.GetRemovedBoardHolderCount()
+                CardItemInfoList = info.Select(card => new CardItemInfo {
+                    isExisted = card.isExisted, isLocked = card.isLocked, probabilityType = card.probabilityType,
+                    possibleCardHolderIndicatorIndexes = new List<int>(card.possibleCardHolderIndicatorIndexes)
+                }).ToList(),
+                RemovedBoardHolderCount = _boardHolderCountManager.GetRemovedBoardHolderCount(),
+                LevelId = _tracker?.GetLevelId() ?? -1,
+                Definition = _levels?.GetLevelData().Copy(),
+                TrialStockPrepared = _saveData?.GetLevelSaveData().TrialStockPrepared ?? false,
+                RevealedGuessNumbers = new List<int>(_saveData?.GetLevelSaveData().RevealedGuessNumbers ?? new List<int>()),
+                LastEliminationGuessNumber = _saveData?.GetLevelSaveData().LastEliminationGuessNumber ?? 0,
+                PairWasApplied = _saveData?.GetLevelSaveData().PairWasApplied ?? false,
+                BoardSplitApplied = _saveData?.GetLevelSaveData().BoardSplitApplied ?? false,
+                PairClue = _saveData?.GetLevelSaveData().PairClue,
+                GrowingBoard = _saveData?.GetLevelSaveData().GrowingBoard?.Copy(),
+                Dynamite = _saveData?.GetLevelSaveData().Dynamite?.Copy(),
+                ActiveRewardTokens = _roundStateManager.GetLifeBarRewardInfoList().Select(reward => reward.IsActive).ToList()
             };
 
             return true;

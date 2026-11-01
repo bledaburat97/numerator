@@ -74,7 +74,7 @@ namespace Scripts
             PrepareSceneVisuals();
             safeArea.ForceUpdateRectTransforms();
             _lastSize = safeArea.rect.size;
-            FruitLabLayoutMetrics layout = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y);
+            FruitLabLayoutMetrics layout = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y, !gameView.IsMultiplayer && gameView.HasMechanicStatus,gameView.HasDynamiteFooter);
             float width = layout.Width - layout.Padding * 2f;
 
             FruitLabStyle.Stretch(middleArea);
@@ -101,6 +101,7 @@ namespace Scripts
             FruitLabStyle.Place(actionArea, gameArea, 0f, y, width, layout.ChoicesHeight);
             y += layout.ChoicesHeight + layout.Gap;
             FruitLabStyle.Place(boardArea, gameArea, 0f, y, width, layout.BoardHeight);
+            boardArea.GetComponent<BoardAreaView>().SetFooterHeight(layout.BoardFooterHeight);
             FruitLabStyle.AddSurface(boardArea.gameObject, FruitLabStyle.Tile);
             FruitLabStyle.Rim(boardArea);
 

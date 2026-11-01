@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DG.Tweening;
 using Game;
 using UnityEngine;
@@ -155,9 +155,7 @@ namespace Scripts
             if (!TryGetCardItem(cardIndex, out INormalCardItemController normalCardItemController)) return false;
             if (!TryGetCardHolder(cardIndex, out IInitialCardHolderController normalCardHolderController)) return false;
 
-            normalCardItemController.GetView().SetParent(boardHolderParent);
-            normalCardItemController.GetView().InitLocalScale();
-            normalCardItemController.GetView().SetLocalPosition(Vector3.zero);
+            normalCardItemController.GetCardViewHandler().SnapToParent(boardHolderParent);
             normalCardItemController.GetView().SetSize(_initialCardAreaLayoutManager.GetBoxSize());
             normalCardItemController.SetProbability(ProbabilityType.Certain, true);
             normalCardHolderController.SetHolderIndicatorList(new List<int> { boardHolderIndex });
@@ -219,6 +217,8 @@ namespace Scripts
             _normalCardHolderControllerList[cardIndex].SetHolderIndicatorList(holderIndicatorList);
         }
 
+        public RectTransform GetDragParent() => _view.GetTempRectTransform();
+
         public RectTransform GetRectTransformOfCardItem(int cardIndex)
         {
             return _normalCardItemControllerList[cardIndex].GetRectTransform();
@@ -257,6 +257,7 @@ namespace Scripts
         void SetProbabilityOfCardItem(int cardIndex, ProbabilityType probabilityType, bool isLocked);
         void SetHolderIndicatorListOfCardHolder(int cardIndex, List<int> holderIndicatorList);
         RectTransform GetRectTransformOfCardItem(int cardIndex);
+        RectTransform GetDragParent();
         void DestroyCard(int cardIndex);
         Vector2 GetSizeOfInitialHolder();
         Sequence ChangeFadeInitialArea(float duration, float finalAlpha);

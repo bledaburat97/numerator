@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Netcode;
 using Zenject;
 
@@ -20,6 +20,7 @@ namespace Scripts
         public void SetSinglePlayerLevelData()
         {
             int levelId = _levelTracker.GetLevelId();
+            if (LevelPlaytestSchedule.TryCreate(levelId, out _levelData)) return;
             if (levelId < 30)
             {
                 _levelData = _startingLevelsDataList.Find(level => level.LevelId == levelId);
@@ -42,6 +43,12 @@ namespace Scripts
             {
                 _levelData = CreateDefaultLevelData(levelId);
             }
+        }
+
+        public void RestoreDefinition(LevelData definition)
+        {
+            _levelData = definition.Copy();
+            _levelData.Mechanic = LevelMechanicRules.Normalize(_levelData.Mechanic);
         }
 
         public LevelData GetLevelData()

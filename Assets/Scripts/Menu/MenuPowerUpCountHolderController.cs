@@ -28,7 +28,8 @@ namespace Scripts
         {
             if (_view == null) return;
 
-            bool unlocked = MenuProgression.AreCrystalRewardsUnlocked(_levelTracker.GetLevelId());
+            bool unlocked = PowerUpTypeUtility.IsUnlocked(RewardType.Revealing, _levelTracker.GetLevelId());
+            _view.SetProgression(_levelTracker.GetLevelId());
             _view.GetRectTransform().gameObject.SetActive(unlocked);
             if (!unlocked) return;
 

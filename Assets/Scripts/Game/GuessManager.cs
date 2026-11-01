@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using Scripts;
@@ -7,8 +7,10 @@ using Zenject;
 
 namespace Game
 {
-    public class GuessManager : IGuessManager
+    public class GuessManager : IGuessManager, IDisposable
     {
+        private Sequence _lifeGainAnimation;
+        private bool _failed;
         private readonly ILifeBarController _lifeBarController;
         private readonly IGameUIController _gameUIController;
         private readonly IRoundStateManager _roundStateManager;
@@ -31,6 +33,8 @@ namespace Game
         
         public void Initialize(bool deferRewardIntroAnimation = false)
         {
+            _failed = false;
+            _lifeGainAnimation?.Kill();
             _lifeBarController.SetLifeBar(
                 _roundStateManager.GetMaxGuessCount(),
                 _roundStateManager.GetLifeBarRewardInfoList(),
@@ -40,6 +44,7 @@ namespace Game
         
         private void OnWrongGuess(object sender, EventArgs args)
         {
+            _lifeGainAnimation?.Kill();
             if (_roundStateManager.GetRemainingGuessCount() <= 0) return;
             _roundStateManager.DecreaseRemainingGuessCount();
             int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
@@ -82,7 +87,7 @@ namespace Game
             _lifeBarController.UpdateProgressBar(
                 (float)remainingGuessCount / _roundStateManager.GetMaxGuessCount(),
                 1f,
-                remainingGuessCount == 0 ? () => LevelFailEvent?.Invoke(this, EventArgs.Empty) : null).Play();
+                remainingGuessCount == 0 ? () => { if (_roundStateManager.GetRemainingGuessCount() <= 0) FailRound(); } : null).Play();
 
 
             _gameUIController.TriggerResetNumbers();
@@ -90,41 +95,45 @@ namespace Game
         
         private void AddExtraLives(object sender, EventArgs args)
         {
-            int numOfLives = 3;
-            int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
-            if (remainingGuessCount <= 0) return;
-            int maxGuessCount = _roundStateManager.GetMaxGuessCount();
-            if (remainingGuessCount + numOfLives > maxGuessCount) return;
-            int lastRewardLifeBarIndex = remainingGuessCount;
-            Sequence sequence = DOTween.Sequence();
-            IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList = _roundStateManager.GetLifeBarRewardInfoList();
-            for (int i = 0; i < lifeBarRewardInfoList.Count; i++)
-            {
-                if (lifeBarRewardInfoList[i].BoundaryIndex >= remainingGuessCount &&
-                    lifeBarRewardInfoList[i].BoundaryIndex < remainingGuessCount + numOfLives)
-                {
-                    int boundaryIndex = lifeBarRewardInfoList[i].BoundaryIndex;
-                    sequence.Append(_lifeBarController.UpdateProgressBar(
-                        (float)(boundaryIndex + 1) / maxGuessCount,
-                        boundaryIndex - lastRewardLifeBarIndex + 1,
-                        null));
-                    lastRewardLifeBarIndex = boundaryIndex;
-                }
-            }
-
-            sequence.Append(_lifeBarController.UpdateProgressBar(
-                (float)(remainingGuessCount + numOfLives) / maxGuessCount,
-                remainingGuessCount + numOfLives - lastRewardLifeBarIndex,
-                () =>
-                {
-                    _roundStateManager.IncreaseRemainingGuessCount(numOfLives);
-                }));
-            sequence.Play();
+            GrantExtraLives(3);
         }
+
+        public bool GrantExtraLives(int amount,bool expandCapacity = false)
+        {
+            int remaining = _roundStateManager.GetRemainingGuessCount(), maximum = _roundStateManager.GetMaxGuessCount();
+            if (_failed || amount <= 0 || remaining < 0 || (!expandCapacity && (remaining == 0 || remaining+amount > maximum))) return false;
+            _lifeGainAnimation?.Kill();
+            if (expandCapacity)
+            {
+                _roundStateManager.IncreaseMaxGuessCount(amount);
+                maximum = _roundStateManager.GetMaxGuessCount();
+                _lifeBarController.ResizeCapacity(maximum,remaining);
+            }
+            // Commit before animation so an immediate pause preserves the grant.
+            _roundStateManager.IncreaseRemainingGuessCount(amount);
+            _lifeGainAnimation = _lifeBarController.AnimateGain((float)(remaining+amount)/maximum,amount);
+            _lifeGainAnimation.Play();
+            return true;
+        }
+        public bool FailRound()
+        {
+            if (_failed) return false;
+            _failed = true;
+            _lifeGainAnimation?.Kill();
+            bool hadLives = _roundStateManager.GetRemainingGuessCount() > 0;
+            _roundStateManager.ExhaustGuesses();
+            if (hadLives) _lifeBarController.UpdateProgressBar(0f,.2f,null).Play();
+            LevelFailEvent?.Invoke(this,EventArgs.Empty);
+            return true;
+        }
+
+        public void Dispose() => _lifeGainAnimation?.Kill();
     }
 
     public interface IGuessManager
     {
+        bool FailRound();
+        bool GrantExtraLives(int amount,bool expandCapacity = false);
         void Initialize(bool deferRewardIntroAnimation = false);
         event EventHandler LevelFailEvent;
         event EventHandler<HintRewardTokenEventArgs> HintRewardTokenEvent;

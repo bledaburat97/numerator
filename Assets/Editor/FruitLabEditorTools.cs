@@ -51,7 +51,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "level-intro-review" || requested.operation == "split-review" || requested.operation == "dynamite-review" || requested.operation == "growing-review" || requested.operation == "powerup-polish-review" || requested.operation == "mobile-polish-review" || requested.operation == "playtest-review" || requested.operation == "pair-review" || requested.operation == "level-mechanics-review" || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -122,6 +122,48 @@ public static class FruitLabEditorTools
                 case "bomb-review":
                     FruitLabFailureValidation.ValidateBomb();
                     reply.details = "20 board/fruit combinations, late/repeated-use guards, wrong/correct guesses and in-memory save/resume passed";
+                    break;
+                case "dynamite-review":
+                    FruitLabTutorialEditorTools.RefreshPlaytestSettings();
+                    reply.details = FruitLabTutorialEditorTools.BakeDynamiteView()+"\n"+Render(3,7,validation: FruitLabTutorialEditorTools.ReviewDynamite,validateBeforeRender:true);
+                    break;
+                case "growing-review":
+                    FruitLabTutorialEditorTools.RefreshPlaytestSettings();
+                    reply.details = Render(2,9,validation: FruitLabTutorialEditorTools.ReviewGrowingBoard,validateBeforeRender: true);
+                    break;
+                case "powerup-polish-review":
+                    FruitLabTutorialEditorTools.RefreshPlaytestSettings();
+                    reply.details = FruitLabTutorialEditorTools.BakePowerupPolish()+"\n"+Render(5,9,validation: FruitLabTutorialEditorTools.ReviewPowerupPolish,validateBeforeRender:true)+"\n"+FruitLabRewardEditorTools.RenderMenu();
+                    FruitLabRewardEditorTools.ValidateRewards();
+                    break;
+                case "split-review":
+                    reply.details = FruitLabTutorialEditorTools.BakeSplitViews() + "\n" + Render(5,9,validation: FruitLabTutorialEditorTools.ReviewSplit,validateBeforeRender:true);
+                    break;
+                case "level-intro-review":
+                    reply.details = Render(4,8,validation: FruitLabTutorialEditorTools.ReviewLevelIntros,validateBeforeRender:true);
+                    break;
+                case "mobile-polish-review":
+                    reply.details = FruitLabTutorialEditorTools.BakeMobilePolish()
+                        + "\n" + Render(5,9,validation: FruitLabTutorialEditorTools.ReviewMobilePolish,validateBeforeRender:true)
+                        + "\n" + Render(5,9,true)
+                        + "\n" + FruitLabRewardEditorTools.RenderMenu();
+                    break;
+                case "playtest-review":
+                    FruitLabTutorialEditorTools.RefreshPlaytestSettings();
+                    reply.details = Render(5, 9, validation: FruitLabTutorialEditorTools.ReviewPlaytest, validateBeforeRender: true)
+                        + "\n" + FruitLabRewardEditorTools.ReviewMenuProgression();
+                    break;
+                case "pair-review":
+                    reply.details = FruitLabTutorialEditorTools.BakePairViews()
+                        + "\n" + Render(5, 9, validation: FruitLabTutorialEditorTools.ReviewPair, validateBeforeRender: true)
+                        + "\n" + FruitLabRewardEditorTools.RenderMenu(50, true);
+                    FruitLabRewardEditorTools.ValidateRewards();
+                    break;
+                case "level-mechanics-review":
+                    reply.details = FruitLabTutorialEditorTools.BakeMechanicViews()
+                        + "\n" + Render(2, 5, validation: FruitLabTutorialEditorTools.ReviewLevelMechanics, validateBeforeRender: true)
+                        + "\n" + Render(5, 9)
+                        + "\n" + FruitLabRewardEditorTools.RenderMenu(24, true);
                     break;
                 case "card-annotations-review":
                     reply.details = FruitLabTutorialEditorTools.BakeCardAnnotations()
@@ -301,6 +343,7 @@ public static class FruitLabEditorTools
             powers.SetPowerUpCount(RewardType.Bomb, 2);
             powers.SetPowerUpCount(RewardType.Revealing, 1);
             powers.SetPowerUpCount(RewardType.Life, 3);
+            powers.SetPowerUpCount(RewardType.Helper, 1);
             var board = canvas.GetComponentInChildren<BoardAreaView>(true);
             var sizes = new SizeManager();
             var boardLayout = new BoardLayoutManager(board, sizes);

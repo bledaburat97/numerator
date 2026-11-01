@@ -71,43 +71,39 @@ namespace Scripts
             int crystalCapacity = GetCrystalCapacity();
             int simulatedCrystalCount = _currentCrystalCount;
             RewardType simulatedRewardType = _currentRewardType;
+            float barReadyAt = 0f;
             for (int i = 0; i < earnedCrystalCount; i++)
             {
-                IRewardTokenView tokenView = crystalTokenViews != null && i < crystalTokenViews.Count
-                    ? crystalTokenViews[i]
-                    : null;
+                IRewardTokenView token = crystalTokenViews != null && i < crystalTokenViews.Count ? crystalTokenViews[i] : null;
+                float launchAt = i * .16f;
+                float arrivalAt = launchAt + (token == null ? 0f : CrystalFlightAnimation.Duration(token, true));
+                sequence.Insert(launchAt, AnimateCrystalToBar(token));
+                float updateAt = Mathf.Max(arrivalAt, barReadyAt);
                 simulatedCrystalCount++;
-                bool isCompleted = simulatedCrystalCount >= crystalCapacity;
-                int progressCount = isCompleted ? crystalCapacity : simulatedCrystalCount;
-                int nextCrystalCount = isCompleted ? 0 : simulatedCrystalCount;
-
-                sequence.Append(AnimateCrystalToBar(tokenView));
-                sequence.Append(UpdateVerticalCrystalProgressBar(
-                    GetProgressPercentage(progressCount),
-                    0.16f,
-                    () =>
-                    {
-                        _currentCrystalCount = nextCrystalCount;
-                        _hapticController?.Vibrate(HapticType.Success);
-                    }));
-
-                if (isCompleted)
+                bool completed = simulatedCrystalCount >= crystalCapacity;
+                int progressCount = completed ? crystalCapacity : simulatedCrystalCount;
+                int nextCount = completed ? 0 : simulatedCrystalCount;
+                sequence.Insert(updateAt, UpdateVerticalCrystalProgressBar(GetProgressPercentage(progressCount), .14f, () => {
+                    _currentCrystalCount = nextCount;
+                    _hapticController?.Vibrate(HapticType.Success);
+                }));
+                if (completed)
                 {
-                    RewardType completedRewardType = simulatedRewardType;
-                    RewardType nextRewardType = GetNextRewardType(completedRewardType);
-                    simulatedRewardType = nextRewardType;
-                    sequence.Append(CompleteBar(completedRewardType));
-                    sequence.AppendCallback(() =>
-                    {
-                        _currentRewardType = nextRewardType;
-                        _view.InitProgress(0f);
-                        _view.ShowRewardPreview(_currentRewardType);
+                    var awarded = simulatedRewardType;
+                    var next = GetNextRewardType(awarded);
+                    simulatedRewardType = next;
+                    var feedback = CompleteBar(awarded);
+                    sequence.Insert(updateAt + .14f, feedback);
+                    barReadyAt = updateAt + .14f + feedback.Duration();
+                    sequence.InsertCallback(barReadyAt, () => {
+                        _currentRewardType = next; _view.InitProgress(0f); _view.ShowRewardPreview(next);
                     });
                     simulatedCrystalCount = 0;
                 }
                 else
                 {
-                    sequence.Append(_view.PunchBar(0.16f));
+                    sequence.Insert(updateAt, _view.PunchBar(.16f));
+                    barReadyAt = updateAt + .16f;
                 }
             }
 
@@ -171,9 +167,9 @@ namespace Scripts
             return Mathf.Clamp01(crystalCount / (float) GetCrystalCapacity());
         }
 
-        private static RewardType GetNextRewardType(RewardType rewardType)
+        private RewardType GetNextRewardType(RewardType rewardType)
         {
-            return (RewardType)(((int)rewardType + 1) % 3);
+            return PowerUpTypeUtility.NextReward(rewardType, _levelTracker.GetLevelId());
         }
 
         public Tween UpdateVerticalCrystalProgressBar(float targetPercentage, float animationDuration, Action onComplete)

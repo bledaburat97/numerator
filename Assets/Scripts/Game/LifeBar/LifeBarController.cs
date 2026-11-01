@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -142,6 +142,28 @@ namespace Scripts
             _view.InitProgress(targetPercentage);
         }
 
+        public void ResizeCapacity(int maximum,int remaining)
+        {
+            var boundarySize = _view.GetBoundaryRectTransform().sizeDelta;
+            var size = _view.GetFilledImageRectTransform().sizeDelta;
+            var positions = new List<Vector2>().GetLocalPositionList(maximum-1,size.x/maximum-boundarySize.x,boundarySize,-.14f);
+            for (int i = 0; i < positions.Count; i++)
+            {
+                if (i < _boundaryControllerList.Count) _boundaryControllerList[i].SetLocalPosition(positions[i]);
+                else
+                {
+                    var boundary = new BoundaryController();
+                    boundary.Initialize(_view.CreateBoundaryView(),new BoundaryModel { localPosition = positions[i] });
+                    _boundaryControllerList.Add(boundary);
+                }
+            }
+            // Never recreate reward tokens: an earned hint may already be flying.
+            _view.SetGuessCounts(remaining,maximum);
+            _view.InitProgress((float)remaining/maximum);
+        }
+
+        public Sequence AnimateGain(float targetPercentage, int amount) => _view.AnimateGain(targetPercentage, amount);
+
         public Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete)
         {
             return _view.SetProgress(targetPercentage, animationDuration, onComplete);
@@ -215,6 +237,8 @@ namespace Scripts
     public interface ILifeBarController
     {
         void DisableProgressBar();
+        void ResizeCapacity(int maximum,int remaining);
+        Sequence AnimateGain(float targetPercentage, int amount);
         Tween UpdateProgressBar(float targetPercentage, float animationDuration, Action onComplete);
         void SetRewardStatus(bool status, int lifeBarRewardInfoIndex, bool keepRewardItemVisibleWhenDisabled = false);
         IRewardTokenView GetRewardToken(int boundaryIndex);

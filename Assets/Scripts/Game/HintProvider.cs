@@ -10,6 +10,8 @@ namespace Game
 {
     public class HintProvider : IHintProvider
     {
+        [InjectOptional] private EliminateFruitEffect _eliminate;
+        [InjectOptional] private IRoundStateManager _round;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IInitialCardAreaController _initialCardAreaController;
@@ -25,6 +27,7 @@ namespace Game
             guessManager.HintRewardTokenEvent += OnHintRewardTokenEvent;
             guessManager.LevelFailEvent += CancelPendingHints;
             _targetNumberCreator = targetNumberCreator;
+            _eliminate = new EliminateFruitEffect(targetNumberCreator, cardItemInfoManager, cardPlacementCoordinator);
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
             _boardPlacementQuery = boardPlacementQuery;
@@ -60,14 +63,16 @@ namespace Game
 
         private bool TryApplyDestroyHint(IRewardTokenView rewardTokenView)
         {
-            if (!TryGetNonExistedCardIndex(out int cardIndex))
+            var history = _round?.GetTriedCardsList();
+            IReadOnlyList<int> preferred = history != null && history.Count > 0 ? history[history.Count - 1]
+                : _boardPlacementQuery.GetOccupiedCardIndexesOnBoard().Where(i => i >= 0).Select(i => i + 1).ToArray();
+            if (!_eliminate.TryApply(preferred, history?.Count ?? 0, out int cardIndex))
             {
                 return false;
             }
 
-            _cardItemInfoManager.MakeCardNotExisted(cardIndex);
-            _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
             RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
+            if (_initialCardAreaController.TryGetCardItem(cardIndex, out var eliminated)) eliminated.GetCardMoveHandler().SetMovementLocked(true);
             Action destroyCardAction = () => { _initialCardAreaController.DestroyCard(cardIndex); };
             Track(rewardTokenView, new RewardTokenAnimationManager().DestroyCard(rewardTokenView, cardRectTransform, destroyCardAction));
             return true;
@@ -93,67 +98,6 @@ namespace Game
                 hint.token.Destroy();
             }
             _activeHints.Clear();
-        }
-
-        private bool TryGetNonExistedCardIndex(out int cardIndex)
-        {
-            List<int> targetCardNumbers = _targetNumberCreator.GetTargetCardsList();
-            IReadOnlyList<int> cardIndexesOnBoard = _boardPlacementQuery.GetOccupiedCardIndexesOnBoard();
-            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
-            List<int> cardIndexesShouldBeRed = new List<int>();
-            cardIndex = -1;
-            for (int i = 0; i < cardIndexesOnBoard.Count; i++)
-            {
-                if (cardIndexesOnBoard[i] == -1) continue;
-                int cardNumber = cardIndexesOnBoard[i] + 1;
-                if (!cardItemInfoList[cardNumber - 1].isExisted || cardItemInfoList[cardNumber - 1].isLocked) continue;
-
-                if (cardItemInfoList[cardNumber - 1].probabilityType != ProbabilityType.NotExisted &&
-                    !targetCardNumbers.Contains(cardNumber))
-                {
-                    cardIndexesShouldBeRed.Add(cardNumber - 1);
-                }
-            }
-
-            if (cardIndexesShouldBeRed.Count > 0)
-            {
-                ListRandomizer.Randomize(cardIndexesShouldBeRed);
-                cardIndex = cardIndexesShouldBeRed[0];
-                return true;
-            }
-            for (int i = 0; i < cardItemInfoList.Count; i++)
-            {
-                if (!cardItemInfoList[i].isExisted || cardItemInfoList[i].isLocked) continue;
-
-                if (!cardIndexesOnBoard.Contains(i) && cardItemInfoList[i].probabilityType != ProbabilityType.NotExisted && !targetCardNumbers.Contains(i+1))
-                {
-                    cardIndexesShouldBeRed.Add(i);
-                }
-            }
-            if (cardIndexesShouldBeRed.Count > 0)
-            {
-                ListRandomizer.Randomize(cardIndexesShouldBeRed);
-                cardIndex = cardIndexesShouldBeRed[0];
-                return true;
-            }
-            
-            for (int i = 0; i < cardItemInfoList.Count; i++)
-            {
-                if (!cardItemInfoList[i].isExisted || cardItemInfoList[i].isLocked) continue;
-
-                if (!targetCardNumbers.Contains(i + 1))
-                {
-                    cardIndexesShouldBeRed.Add(i);
-                }
-            }
-            if (cardIndexesShouldBeRed.Count > 0)
-            {
-                ListRandomizer.Randomize(cardIndexesShouldBeRed);
-                cardIndex = cardIndexesShouldBeRed[0];
-                return true;
-            }
-
-            return false;
         }
 
         private bool TryGetExistedCardIndex( out int cardIndex, out int boardHolderIndex)

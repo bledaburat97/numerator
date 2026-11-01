@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using DG.Tweening;
 using TMPro;
@@ -13,6 +13,10 @@ namespace Scripts
         [SerializeField] private SlicedFilledImage image;
         [SerializeField] private CanvasGroup canvasGroup;
         
+        private Tween _progressTween;
+        private Sequence _gainFeedback;
+        private TMP_Text _gainLabel;
+        private Image _gainGlow;
         private float _currentPercentage;
         private int _maxGuessCount;
         private TMP_Text _guessLabel;
@@ -20,9 +24,9 @@ namespace Scripts
         private Image _trackFrame;
         private Image _guessBackground;
 
-        public void ApplyLabLayout(RectTransform header, float width, float headerHeight)
+        public void ApplyLabLayout(RectTransform header, float width, float headerHeight, float bottomOffset = 0f)
         {
-            FruitLabStyle.Place(rectTransform, header, 0f, 0f, width, 34f);
+            FruitLabStyle.Place(rectTransform, header, 0f, bottomOffset, width, 34f);
             Image oldFrame = GetComponent<Image>();
             if (oldFrame != null) oldFrame.enabled = false;
             _trackFrame = GetSurface(_trackFrame, "TrackFrame");
@@ -106,6 +110,7 @@ namespace Scripts
 
         public void InitProgress(float targetPercentage)
         {
+            _gainFeedback?.Kill(); _progressTween?.Kill();
             _currentPercentage = targetPercentage;
             image.fillAmount = _currentPercentage;
             UpdateGuessLabel();
@@ -113,7 +118,8 @@ namespace Scripts
 
         public Tween SetProgress(float targetPercentage, float duration, Action onComplete)
         {
-            return DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
+            _progressTween?.Kill();
+            return _progressTween = DOTween.To(() => _currentPercentage, x => _currentPercentage = x, targetPercentage, duration)
                 .SetEase(Ease.OutQuad)
                 .OnUpdate(() => { image.fillAmount = _currentPercentage; UpdateGuessLabel(); })
                 .OnComplete(() =>
@@ -122,6 +128,44 @@ namespace Scripts
                     onComplete?.Invoke();
                 }).Pause();
         }
+        public Sequence AnimateGain(float targetPercentage, int amount)
+        {
+            _gainFeedback?.Kill();
+            if (_gainLabel == null) _gainLabel = FruitLabStyle.CreateText("LifeGain", transform, 20f, FruitLabStyle.Mint);
+            _gainLabel.fontStyle = FontStyles.Bold;
+            _gainLabel.text = "+" + amount;
+            _gainLabel.raycastTarget = false;
+            FruitLabStyle.Place(_gainLabel.rectTransform, transform, rectTransform.rect.width - 74f, 0f, 74f, 26f);
+            _gainGlow = FruitLabStyle.Detail(transform, "LifeGainGlow", new Color(.55f, 1f, .86f, 0f), true);
+            _gainGlow.sprite = FruitLabStyle.ResultFrame;
+            FruitLabStyle.Place(_gainGlow.rectTransform, transform, 0f, 3f, rectTransform.rect.width - 81f, 18f);
+            _gainGlow.transform.SetAsLastSibling(); _gainLabel.transform.SetAsLastSibling();
+            _gainLabel.alpha = 1f; _guessLabel.alpha = 0f;
+            _gainFeedback = DOTween.Sequence()
+                .Append(SetProgress(targetPercentage, .58f, null))
+                .Join(image.DOColor(new Color(.86f, 1f, .94f), .14f).SetLoops(2, LoopType.Yoyo))
+                .Join(rectTransform.DOPunchScale(new Vector3(.025f, .10f, 0f), .55f, 5, .6f))
+                .Insert(0f, _gainGlow.DOFade(.85f, .12f))
+                .Insert(.12f, _gainGlow.DOFade(0f, .48f))
+                .Insert(.30f, _gainLabel.DOFade(0f, .26f))
+                .Insert(.30f, _guessLabel.DOFade(1f, .26f))
+                .OnKill(RestoreGainAppearance)
+                .OnComplete(RestoreGainAppearance)
+                .SetLink(gameObject, LinkBehaviour.KillOnDestroy);
+            return _gainFeedback;
+        }
+
+        private void RestoreGainAppearance()
+        {
+            if (this == null) return;
+            if (_gainLabel != null) _gainLabel.alpha = 0f;
+            if (_gainGlow != null) { var tint = _gainGlow.color; tint.a = 0; _gainGlow.color = tint; }
+            if (_guessLabel != null) _guessLabel.alpha = 1f;
+            if (image != null) image.color = FruitLabStyle.Mint;
+            if (rectTransform != null) rectTransform.localScale = Vector3.one;
+        }
+        private void OnDestroy() { _gainFeedback?.Kill(); _progressTween?.Kill(); }
+
     }
 
     public interface ILifeBarView
@@ -131,6 +175,7 @@ namespace Scripts
         IBoundaryView CreateBoundaryView();
         RectTransform GetBoundaryRectTransform();
         Tween SetProgress(float targetPercentage, float duration, Action onComplete);
+        Sequence AnimateGain(float targetPercentage, int amount);
         void DisableProgressBar();
         void InitProgress(float targetPercentage);
         CanvasGroup GetCanvasGroup();

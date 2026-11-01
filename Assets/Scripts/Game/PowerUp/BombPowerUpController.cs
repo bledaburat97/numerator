@@ -6,6 +6,8 @@ namespace Scripts
 {
     public class BombPowerUpController : IBombPowerUpController
     {
+        [InjectOptional] private PairEffect _pair;
+        [InjectOptional] private DynamiteService _dynamite;
         private readonly IBoardAreaController _boardAreaController;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
         private readonly ITargetNumberCreator _targetNumberCreator;
@@ -34,7 +36,7 @@ namespace Scripts
         private void OnRemoveBoardHolder(object sender, EventArgs args)
         {
             int boardCount = _boardHolderCountManager.GetBoardHolderCount();
-            if (boardCount <= 1 || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
+            if (!_boardHolderCountManager.CanShrink || boardCount <= 1 || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || _roundStateManager.GetTriedCardsList().Count > 0
                 || _targetNumberCreator.GetTargetCardsList()?.Count != boardCount) return;
 
@@ -42,6 +44,9 @@ namespace Scripts
             if (!_targetNumberCreator.TryRemoveLastTargetCard()) return;
             _boardAreaController.RemoveLastBoardHolder();
             _cardItemInfoManager.RemoveLastCardHolderIndicator();
+            _dynamite?.Prepare();
+            // Pair reconciliation can checkpoint; the hidden slot must already be valid.
+            _pair?.Reconcile();
         }
     }
 

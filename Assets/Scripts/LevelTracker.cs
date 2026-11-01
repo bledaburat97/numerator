@@ -1,14 +1,20 @@
-﻿using Game;
+using Game;
 using UnityEngine;
 namespace Scripts
 {
     public class LevelTracker : MonoBehaviour, ILevelTracker
     {
+#if UNITY_EDITOR
+        public bool SuppressPersistenceForTests { get; set; }
+#endif
         private int _starCount;
         private int _giftStarCount;
         private int _revealingPowerUpCount;
         private int _lifePowerUpCount;
         private int _bombPowerUpCount;
+        private int _helperPowerUpCount;
+        private int _pairPowerUpCount;
+        private int _splitPowerUpCount;
         private int _levelId;
         private RewardType _currentRewardType;
         
@@ -27,12 +33,20 @@ namespace Scripts
             _revealingPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("revealing_power_up_count", 0));
             _lifePowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("life_power_up_count", 0));
             _bombPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("bomb_power_up_count", 0));
+            _helperPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("helper_power_up_count", 0));
+            _pairPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("pair_power_up_count", 0));
+            _splitPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("split_power_up_count", 0));
             _currentRewardType = (RewardType)PlayerPrefs.GetInt("reward_type", 0);
+
+            if (!System.Enum.IsDefined(typeof(RewardType), _currentRewardType)) _currentRewardType = RewardType.Revealing;
 
             bool shouldSaveSanitizedCounts =
                 _revealingPowerUpCount != PlayerPrefs.GetInt("revealing_power_up_count", 0) ||
                 _lifePowerUpCount != PlayerPrefs.GetInt("life_power_up_count", 0) ||
-                _bombPowerUpCount != PlayerPrefs.GetInt("bomb_power_up_count", 0);
+                _bombPowerUpCount != PlayerPrefs.GetInt("bomb_power_up_count", 0) ||
+                _helperPowerUpCount != PlayerPrefs.GetInt("helper_power_up_count", 0) ||
+                _pairPowerUpCount != PlayerPrefs.GetInt("pair_power_up_count", 0) ||
+                _splitPowerUpCount != PlayerPrefs.GetInt("split_power_up_count", 0);
 
             if (shouldSaveSanitizedCounts)
             {
@@ -48,11 +62,17 @@ namespace Scripts
             PlayerPrefs.DeleteKey("life_power_up_count");
             PlayerPrefs.DeleteKey("bomb_power_up_count");
             PlayerPrefs.DeleteKey("hint_power_up_count");
+            PlayerPrefs.DeleteKey("helper_power_up_count");
+            PlayerPrefs.DeleteKey("pair_power_up_count");
+            PlayerPrefs.DeleteKey("split_power_up_count");
             PlayerPrefs.DeleteKey("reward_type");
         }
         
         public void SavePlayerPrefs()
         {
+#if UNITY_EDITOR
+            if (SuppressPersistenceForTests) return;
+#endif
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (MultiplayerNetworkProbe.IsRunning) return;
 #endif
@@ -62,6 +82,9 @@ namespace Scripts
             PlayerPrefs.SetInt("revealing_power_up_count", _revealingPowerUpCount);
             PlayerPrefs.SetInt("life_power_up_count", _lifePowerUpCount);
             PlayerPrefs.SetInt("bomb_power_up_count", _bombPowerUpCount);
+            PlayerPrefs.SetInt("helper_power_up_count", _helperPowerUpCount);
+            PlayerPrefs.SetInt("pair_power_up_count", _pairPowerUpCount);
+            PlayerPrefs.SetInt("split_power_up_count", _splitPowerUpCount);
             PlayerPrefs.DeleteKey("hint_power_up_count");
             PlayerPrefs.SetInt("reward_type", (int)_currentRewardType);
             PlayerPrefs.Save();
@@ -94,11 +117,15 @@ namespace Scripts
 
         public void IncrementLevelIdWithRewards(int coinCount, int crystalCount)
         {
+            // Normalize legacy locked rewards before advancing across an unlock boundary.
+            // The first awarded item must match the preview shown in the completed level.
+            _currentRewardType = GetCurrentRewardType();
             _levelId++;
             _starCount += coinCount;
             int totalCrystalCount = _giftStarCount + crystalCount;
             while (totalCrystalCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
             {
+                if (!PowerUpTypeUtility.IsUnlocked(_currentRewardType, _levelId)) _currentRewardType = GetNextRewardType(_currentRewardType);
                 IncreasePowerUpCount(_currentRewardType);
                 totalCrystalCount -= ConstantValues.NUM_OF_STARS_FOR_WILD;
                 _currentRewardType = GetNextRewardType(_currentRewardType);
@@ -188,7 +215,7 @@ namespace Scripts
 
         public RewardType GetCurrentRewardType()
         {
-            return _currentRewardType;
+            return PowerUpTypeUtility.IsUnlocked(_currentRewardType, _levelId) ? _currentRewardType : GetNextRewardType(_currentRewardType);
         }
 
         public int GetPowerUpCount(RewardType rewardType)
@@ -199,6 +226,9 @@ namespace Scripts
                     return GetRevealingPowerUpCount();
                 case RewardType.Life:
                     return GetLifePowerUpCount();
+                case RewardType.Pair: return Mathf.Max(0, _pairPowerUpCount);
+                case RewardType.Split: return Mathf.Max(0, _splitPowerUpCount);
+                case RewardType.Helper: return Mathf.Max(0, _helperPowerUpCount);
                 case RewardType.Bomb:
                     return GetBombPowerUpCount();
                 default:
@@ -217,6 +247,15 @@ namespace Scripts
                     break;
                 case RewardType.Life:
                     DecreaseLifePowerUpCount();
+                    break;
+                case RewardType.Pair:
+                    _pairPowerUpCount = Mathf.Max(0, _pairPowerUpCount - 1); SavePlayerPrefs();
+                    break;
+                case RewardType.Split:
+                    _splitPowerUpCount = Mathf.Max(0, _splitPowerUpCount - 1); SavePlayerPrefs();
+                    break;
+                case RewardType.Helper:
+                    _helperPowerUpCount = Mathf.Max(0, _helperPowerUpCount - 1); SavePlayerPrefs();
                     break;
                 case RewardType.Bomb:
                     DecreaseBombPowerUpCount();
@@ -237,9 +276,9 @@ namespace Scripts
             return false; //_levelId == 9 && PlayerPrefs.GetInt("card_info_tutorial_completed", 0) == 0;
         }
 
-        private void IncreasePowerUpCount(RewardType rewardType)
+        private void IncreasePowerUpCount(RewardType rewardType, string source = "crystal")
         {
-            GameTelemetry.Powerup(rewardType, true, "crystal");
+            GameTelemetry.Powerup(rewardType, true, source);
             switch (rewardType)
             {
                 case RewardType.Revealing:
@@ -248,20 +287,50 @@ namespace Scripts
                 case RewardType.Life:
                     _lifePowerUpCount++;
                     break;
+                case RewardType.Pair: _pairPowerUpCount++; break;
+                case RewardType.Split: _splitPowerUpCount++; break;
+                case RewardType.Helper: _helperPowerUpCount++; break;
                 case RewardType.Bomb:
                     _bombPowerUpCount++;
                     break;
             }
         }
 
-        private static RewardType GetNextRewardType(RewardType rewardType)
+        public void EnsurePlaytestPowerUp(RewardType type)
         {
-            return (RewardType)(((int)rewardType + 1) % 3);
+            if (_gameOption != GameOption.SinglePlayer || !LevelPlaytestSchedule.IsActive(_levelId) || GetPowerUpCount(type) > 0) return;
+            IncreasePowerUpCount(type, "playtest");
+            SavePlayerPrefs();
+        }
+
+        private RewardType GetNextRewardType(RewardType rewardType)
+        {
+            return PowerUpTypeUtility.NextReward(rewardType, _levelId);
+        }
+
+        public void GrantIntroducedPowerUps()
+        {
+#if UNITY_EDITOR
+            if (SuppressPersistenceForTests) return;
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (MultiplayerNetworkProbe.IsRunning) return;
+#endif
+            foreach (var type in PowerUpTypeUtility.OrderedRewardTypes)
+            {
+                string key = "powerup_intro_granted_" + (int)type;
+                if (!PowerUpTypeUtility.IsUnlocked(type, _levelId) || PlayerPrefs.GetInt(key, 0) != 0) continue;
+                IncreasePowerUpCount(type, "introduction");
+                PlayerPrefs.SetInt(key, 1);
+            }
+            SavePlayerPrefs();
         }
     }
 
     public interface ILevelTracker
     {
+        void GrantIntroducedPowerUps();
+        void EnsurePlaytestPowerUp(RewardType type);
         void ClearPlayerPrefs();
         void SavePlayerPrefs();
         void SetGameOption(GameOption gameOption);
@@ -297,6 +366,14 @@ namespace Scripts
         public int NumOfBoardHolders;
         public int NumOfCards;
         public int MaxNumOfTries;
+        public LevelMechanic Mechanic;
+        public int PlaytestRevision;
+        public int PlaytestStep;
+        public int PlaytestStepCount;
+        public RewardType? TrialPowerUp;
+        [Newtonsoft.Json.JsonIgnore] public bool IsPlaytest => PlaytestRevision > 0;
+        // Every definition field is a value type; never mutate a shared resource or save definition.
+        public LevelData Copy() => (LevelData)MemberwiseClone();
     }
     
     public enum GameOption

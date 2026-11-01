@@ -1,0 +1,91 @@
+{
+  "Enabled": true,
+  "StartLevel": 5,
+  "Revision": 3,
+  "Cycle": [
+    {
+      "NumOfBoardHolders": 2,
+      "NumOfCards": 5,
+      "MaxNumOfTries": 6,
+      "Mechanic": 0
+    },
+    {
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 9,
+      "Mechanic": 2
+    },
+    {
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 8,
+      "MaxNumOfTries": 10,
+      "Mechanic": 3
+    },
+    {
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 10,
+      "Mechanic": 0,
+      "TrialPowerUp": 2
+    },
+    {
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 6,
+      "MaxNumOfTries": 9,
+      "Mechanic": 0,
+      "TrialPowerUp": 0
+    },
+    {
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 8,
+      "MaxNumOfTries": 9,
+      "Mechanic": 0,
+      "TrialPowerUp": 1
+    },
+    {
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 10,
+      "Mechanic": 0,
+      "TrialPowerUp": 3
+    },
+    {
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 9,
+      "Mechanic": 0,
+      "TrialPowerUp": 4
+    },
+    {
+      "NumOfBoardHolders": 4,
+      "NumOfCards": 8,
+      "MaxNumOfTries": 10,
+      "Mechanic": 4
+    },
+    {
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 10,
+      "Mechanic": 4
+    },
+    {
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 10,
+      "Mechanic": 0,
+      "TrialPowerUp": 5
+    },
+    {
+      "NumOfBoardHolders": 2,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 8,
+      "Mechanic": 5
+    },
+    {
+      "NumOfBoardHolders": 3,
+      "NumOfCards": 7,
+      "MaxNumOfTries": 8,
+      "Mechanic": 6
+    }
+  ]
+}

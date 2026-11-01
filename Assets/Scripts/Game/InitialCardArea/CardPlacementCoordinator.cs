@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 using System.Collections.Generic;
 using Game;
 using Zenject;
@@ -16,10 +17,12 @@ namespace Scripts
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private int _numOfCards;
+        private int _pairDragFirst = -1, _pairDragSecond = -1;
         private readonly TutorialInputGate _tutorialGate;
         private Func<int, bool> _longPressHandler;
         public void SetLongPressHandler(Func<int, bool> handler) => _longPressHandler = handler;
         public event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
+        public event EventHandler<(int cardIndex, int boardIndex)> CardLockedEvent;
         public event EventHandler<int> OnCardClickedEvent;
         public event EventHandler OnCardDragStartedEvent;
         
@@ -49,6 +52,7 @@ namespace Scripts
 
         public void Initialize()
         {
+            if (_pairDragFirst >= 0) EndPairDrag(-1,false);
             _numOfCards = _initialCardAreaController.GetCardCount();
             AddCardActions();
             RestoreLockedCards();
@@ -77,6 +81,66 @@ namespace Scripts
                 || (_tutorialGate != null && !_tutorialGate.AllowsPlacement(cardIndex, boardCardHolderIndex))) return false;
 
             return PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
+        }
+
+        public bool TryBeginPairDrag(int first, int second, RectTransform parent)
+        {
+            if (parent == null || _pairDragFirst >= 0 || first == second || !CanMoveCard(first) || !CanMoveCard(second)
+                || (_tutorialGate != null && _tutorialGate.IsRestricted)) return false;
+            if (!TryGetCardItem(first, out var a) || !TryGetCardItem(second, out var b)
+                || a.GetCardMoveHandler().IsMovementLocked() || b.GetCardMoveHandler().IsMovementLocked()
+                || a.GetCardMoveHandler().IsDragStarted() || b.GetCardMoveHandler().IsDragStarted()) return false;
+            OnCardDragStartedEvent?.Invoke(this, EventArgs.Empty);
+            _pairDragFirst = first; _pairDragSecond = second;
+            foreach (var card in new[] {a,b})
+            {
+                card.GetCardMoveHandler().SetMovementLocked(true);
+                card.GetCardViewHandler().InitializeDrag(parent);
+            }
+            RemoveCardFromBoard(first); RemoveCardFromBoard(second);
+            return true;
+        }
+
+        public bool EndPairDrag(int firstHolder, bool reverse)
+        {
+            if (_pairDragFirst < 0) return false;
+            int first = _pairDragFirst, second = _pairDragSecond;
+            _pairDragFirst = _pairDragSecond = -1;
+            foreach (int index in new[] {first,second})
+                if (TryGetCardItem(index, out var card)) card.GetCardMoveHandler().SetMovementLocked(IsCardLocked(index) || (_tutorialGate != null && _tutorialGate.IsRestricted));
+            bool placed = firstHolder >= 0 && TryPlacePairOnBoard(reverse ? second : first, reverse ? first : second, firstHolder);
+            if (!placed) { RestoreCard(first); RestoreCard(second); }
+            return placed;
+        }
+
+        public bool TryPlacePairOnBoard(int first, int second, int holder)
+        {
+            int count = _boardPlacementQuery.GetPlacedCardIndexesOnBoard().Count;
+            if (first == second || !CanMoveCard(first) || !CanMoveCard(second) || holder < 0 || holder + 1 >= count
+                || (_tutorialGate != null && (!_tutorialGate.AllowsPlacement(first, holder) || !_tutorialGate.AllowsPlacement(second, holder + 1)))) return false;
+            for (int slot = holder; slot <= holder + 1; slot++)
+                if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(slot, out int occupant) && occupant != first && occupant != second) return false;
+            _boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(first, out int oldA);
+            _boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(second, out int oldB);
+            RemoveCardFromBoard(first); RemoveCardFromBoard(second);
+            if (!_boardPlacementCommands.TryPlaceCardOnBoardHolder(holder, first)
+                || !_boardPlacementCommands.TryPlaceCardOnBoardHolder(holder + 1, second))
+            {
+                RemoveCardFromBoard(first); RemoveCardFromBoard(second);
+                if (oldA >= 0) _boardPlacementCommands.TryPlaceCardOnBoardHolder(oldA, first);
+                if (oldB >= 0) _boardPlacementCommands.TryPlaceCardOnBoardHolder(oldB, second);
+                return false;
+            }
+            PlaceCardOnBoard(first, holder); PlaceCardOnBoard(second, holder + 1);
+            return true;
+        }
+
+        private void RestoreCard(int index)
+        {
+            if (!TryGetCardItem(index, out var card) || card.GetRectTransform() == null) return;
+            if (_boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(index, out int slot))
+                card.GetCardViewHandler().MoveToParent(_boardAreaController.GetRectTransformOfGarden(slot));
+            else card.GetCardViewHandler().MoveToInitialParent();
         }
 
         public bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex)
@@ -180,6 +244,7 @@ namespace Scripts
             }
 
             _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int> { boardHolderIndex });
+            CardLockedEvent?.Invoke(this,(cardIndex,boardHolderIndex));
             if (playSuccessAnimation)
             {
                 _boardAreaController.PlaySuccessFrameAnimation(boardHolderIndex);
@@ -243,7 +308,9 @@ namespace Scripts
 
         private bool CanMoveCard(int cardIndex)
         {
-            return CanUseCard(cardIndex) && !IsCardLocked(cardIndex);
+            var info = _cardItemInfoManager.GetCardItemInfoList();
+            bool eliminated = info != null && cardIndex >= 0 && cardIndex < info.Count && !info[cardIndex].isExisted;
+            return CanUseCard(cardIndex) && !IsCardLocked(cardIndex) && !eliminated;
         }
 
         private bool TryGetCardItem(int cardIndex, out INormalCardItemController cardItem)
@@ -327,7 +394,11 @@ namespace Scripts
     {
         void SetLongPressHandler(Func<int, bool> handler);
         event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
+        event EventHandler<(int cardIndex, int boardIndex)> CardLockedEvent;
         void Initialize();
+        bool TryBeginPairDrag(int first, int second, RectTransform parent);
+        bool EndPairDrag(int firstHolder, bool reverse);
+        bool TryPlacePairOnBoard(int first, int second, int holder);
         bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
         bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex);
         bool TryRevealAndLockCard(int boardHolderIndex, int cardIndex, bool playSuccessAnimation = true);

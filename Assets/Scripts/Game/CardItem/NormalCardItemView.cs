@@ -1,4 +1,4 @@
-﻿using DG.Tweening;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -156,7 +156,7 @@ namespace Scripts
 
         public void DestroyObject()
         {
-            Destroy(gameObject);
+            if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
         }
         
         public Sequence ChangeLocalPosition(Vector3 localPosition, float duration)

@@ -10,6 +10,7 @@ namespace Scripts
 
         private int _boardHolderCount;
         private int _removedBoardHolderCount;
+        private bool _canShrink = true;
 
         [Inject]
         public BoardHolderCountManager(ILevelSaveDataManager levelSaveDataManager, ILevelDataCreator levelDataCreator)
@@ -20,9 +21,14 @@ namespace Scripts
 
         public void Initialize()
         {
+            _canShrink = _levelDataCreator.GetLevelData().Mechanic != LevelMechanic.Growing;
             _removedBoardHolderCount = _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount;
-            _boardHolderCount = _levelDataCreator.GetLevelData().NumOfBoardHolders - _removedBoardHolderCount;
+            _boardHolderCount = (_levelSaveDataManager.GetLevelSaveData().GrowingBoard?.ActiveCount
+                ?? _levelDataCreator.GetLevelData().NumOfBoardHolders) - _removedBoardHolderCount;
         }
+
+        public bool CanShrink => _canShrink;
+        public void AddBoardHolder() => _boardHolderCount++;
 
         public void RemoveLastBoardHolder()
         {
@@ -43,6 +49,8 @@ namespace Scripts
 
     public interface IBoardHolderCountManager
     {
+        bool CanShrink { get; }
+        void AddBoardHolder();
         void Initialize();
         void RemoveLastBoardHolder();
         int GetBoardHolderCount();

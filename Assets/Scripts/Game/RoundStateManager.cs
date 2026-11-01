@@ -29,7 +29,7 @@ namespace Game
             LevelData levelData = _levelDataCreator.GetLevelData();
             LevelSaveData levelSaveData = _levelSaveDataManager.GetLevelSaveData();
 
-            _maxGuessCount = levelData.MaxNumOfTries;
+            _maxGuessCount = levelData.MaxNumOfTries + (levelSaveData.GrowingBoard?.BonusGranted == true ? GrowingBoardState.BonusLives : 0);
             _remainingGuessCount = levelSaveData.RemainingGuessCount;
             _triedCardsList = (levelSaveData.TriedCardsList ?? new List<List<int>>())
                 .Select(triedCards => new List<int>(triedCards))
@@ -37,11 +37,16 @@ namespace Game
 
             int crystalTokenCount = levelData.NumOfBoardHolders - 2;
             _lifeBarRewardInfoList = CreateLifeBarRewardInfoList(
-                _maxGuessCount,
+                levelData.MaxNumOfTries,
                 _remainingGuessCount,
                 _triedCardsList.Count,
                 crystalTokenCount);
+            if (levelSaveData.ActiveRewardTokens?.Count == _lifeBarRewardInfoList.Count)
+                for (int i = 0; i < _lifeBarRewardInfoList.Count; i++)
+                    _lifeBarRewardInfoList[i].SetIsActive(levelSaveData.ActiveRewardTokens[i]);
         }
+
+        public void IncreaseMaxGuessCount(int amount) => _maxGuessCount += amount;
 
         public int GetMaxGuessCount()
         {
@@ -52,6 +57,8 @@ namespace Game
         {
             return _remainingGuessCount;
         }
+
+        public void ExhaustGuesses() => _remainingGuessCount = 0;
 
         public void DecreaseRemainingGuessCount()
         {
@@ -128,8 +135,10 @@ namespace Game
     public interface IRoundStateManager
     {
         void Initialize();
+        void IncreaseMaxGuessCount(int amount);
         int GetMaxGuessCount();
         int GetRemainingGuessCount();
+        void ExhaustGuesses();
         void DecreaseRemainingGuessCount();
         void IncreaseRemainingGuessCount(int amount);
         IReadOnlyList<List<int>> GetTriedCardsList();

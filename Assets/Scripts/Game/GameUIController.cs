@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -275,7 +275,10 @@ namespace Scripts
         RevealingPowerUp,
         LifePowerUp,
         BombPowerUp,
-        Default
+        Default,
+        HelperPowerUp,
+        PairPowerUp,
+        SplitPowerUp
     }
 
     public interface IGameUIController

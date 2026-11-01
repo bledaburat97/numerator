@@ -1,94 +1,109 @@
-﻿{
+{
   "levels": [
     {
       "LevelId": 0,
       "NumOfBoardHolders": 3,
       "NumOfCards": 5,
-      "MaxNumOfTries": 6
+      "MaxNumOfTries": 6,
+      "Mechanic": 0
     },
     {
       "LevelId": 1,
       "NumOfBoardHolders": 3,
       "NumOfCards": 7,
-      "MaxNumOfTries": 8
+      "MaxNumOfTries": 8,
+      "Mechanic": 0
     },
     {
       "LevelId": 2,
       "NumOfBoardHolders": 4,
       "NumOfCards": 8,
-      "MaxNumOfTries": 9
+      "MaxNumOfTries": 9,
+      "Mechanic": 0
     },
     {
       "LevelId": 3,
       "NumOfBoardHolders": 4,
       "NumOfCards": 9,
-      "MaxNumOfTries": 10
+      "MaxNumOfTries": 10,
+      "Mechanic": 0
     },
     {
       "LevelId": 4,
       "NumOfBoardHolders": 2,
       "NumOfCards": 7,
-      "MaxNumOfTries": 8
+      "MaxNumOfTries": 8,
+      "Mechanic": 0
     },
     {
       "LevelId": 5,
       "NumOfBoardHolders": 3,
       "NumOfCards": 6,
-      "MaxNumOfTries": 7
+      "MaxNumOfTries": 7,
+      "Mechanic": 0
     },
     {
       "LevelId": 6,
       "NumOfBoardHolders": 4,
       "NumOfCards": 7,
-      "MaxNumOfTries": 8
+      "MaxNumOfTries": 8,
+      "Mechanic": 0
     },
     {
       "LevelId": 7,
       "NumOfBoardHolders": 5,
       "NumOfCards": 8,
-      "MaxNumOfTries": 11
+      "MaxNumOfTries": 11,
+      "Mechanic": 0
     },
     {
       "LevelId": 8,
       "NumOfBoardHolders": 3,
       "NumOfCards": 6,
-      "MaxNumOfTries": 7
+      "MaxNumOfTries": 7,
+      "Mechanic": 0
     },
     {
       "LevelId": 9,
       "NumOfBoardHolders": 4,
       "NumOfCards": 9,
-      "MaxNumOfTries": 10
+      "MaxNumOfTries": 10,
+      "Mechanic": 0
     },
     {
       "LevelId": 10,
       "NumOfBoardHolders": 2,
       "NumOfCards": 6,
-      "MaxNumOfTries": 7
+      "MaxNumOfTries": 7,
+      "Mechanic": 0
     },
     {
       "LevelId": 11,
       "NumOfBoardHolders": 3,
       "NumOfCards": 5,
-      "MaxNumOfTries": 6
+      "MaxNumOfTries": 6,
+      "Mechanic": 0
     },
     {
       "LevelId": 12,
       "NumOfBoardHolders": 4,
       "NumOfCards": 7,
-      "MaxNumOfTries": 8
+      "MaxNumOfTries": 8,
+      "Mechanic": 0
     },
     {
       "LevelId": 13,
       "NumOfBoardHolders": 4,
       "NumOfCards": 8,
-      "MaxNumOfTries": 9
+      "MaxNumOfTries": 9,
+      "Mechanic": 0
     },
     {
       "LevelId": 14,
       "NumOfBoardHolders": 5,
       "NumOfCards": 9,
-      "MaxNumOfTries": 12
+      "MaxNumOfTries": 12,
+      "Mechanic": 0
     }
   ]
 }

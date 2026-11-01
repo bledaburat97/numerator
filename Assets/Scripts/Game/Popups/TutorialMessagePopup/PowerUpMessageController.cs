@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Game;
 using Zenject;
 
@@ -6,6 +6,9 @@ namespace Scripts
 {
     public class PowerUpMessageController : IPowerUpMessageController
     {
+        [InjectOptional] private HelperEffect _helper;
+        [InjectOptional] private PairEffect _pair;
+        [InjectOptional] private BoardSplitService _split;
         [InjectOptional] private TutorialInputGate _tutorialGate;
         private IFadePanelController _fadePanelController;
         private ILevelTracker _levelTracker;
@@ -40,6 +43,25 @@ namespace Scripts
             if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType, () => OnPowerUpClicked(sender, powerUpType))) return;
             switch (powerUpType)
             {
+                case GameUIButtonType.SplitPowerUp:
+                    if (_split == null || !_split.CanApply) return;
+                    CloseActivePowerUp();
+                    _split.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Split));
+                    _gamePowerUpAreaController.Refresh();
+                    break;
+                case GameUIButtonType.PairPowerUp:
+                    if (_pair == null || !_pair.CanApply) return;
+                    CloseActivePowerUp();
+                    _pair.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Pair));
+                    _gamePowerUpAreaController.Refresh();
+                    break;
+                case GameUIButtonType.HelperPowerUp:
+                    if (_helper == null || !_helper.CanApply) return;
+                    CloseActivePowerUp();
+                    if (!_levelTracker.TryConsumePowerUp(RewardType.Helper)) return;
+                    _helper.TryApply();
+                    _gamePowerUpAreaController.Refresh();
+                    break;
                 case GameUIButtonType.LifePowerUp:
                     if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
                     {
@@ -47,8 +69,8 @@ namespace Scripts
                     }
                     if (!CanAddExtraLives()) return;
                     if (!_levelTracker.TryConsumePowerUp(RewardType.Life)) return;
-                    _gamePowerUpAreaController.Refresh();
                     AddLifeEvent?.Invoke(this, EventArgs.Empty);
+                    _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.BombPowerUp:
                     if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
@@ -91,12 +113,12 @@ namespace Scripts
         private bool CanAddExtraLives()
         {
             const int extraLifeCount = 3;
-            return _roundStateManager.GetRemainingGuessCount() + extraLifeCount <= _roundStateManager.GetMaxGuessCount();
+            return _roundStateManager.GetRemainingGuessCount() > 0 && _roundStateManager.GetRemainingGuessCount() + extraLifeCount <= _roundStateManager.GetMaxGuessCount();
         }
 
         private bool CanUseBomb()
         {
-            return _boardHolderCountManager.GetBoardHolderCount() > 1 &&
+            return _boardHolderCountManager.CanShrink && _boardHolderCountManager.GetBoardHolderCount() > 1 &&
                    _roundStateManager.GetTriedCardsList().Count == 0 &&
                    _boardHolderCountManager.GetRemovedBoardHolderCount() == 0 &&
                    !HasRevealedCard();

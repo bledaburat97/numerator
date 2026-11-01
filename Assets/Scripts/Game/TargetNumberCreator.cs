@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game;
@@ -14,12 +14,25 @@ namespace Scripts
         [Inject] private ILevelDataCreator _levelDataCreator;
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private ILevelTracker _levelTracker;
+        [InjectOptional] private ILevelSaveDataManager _saveData;
 
         public void SetTargetNumber(int numOfBoardHolders)
         {
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer)
             {
                 _targetCardsList = new List<int>();
+                return;
+            }
+            if (_levelDataCreator?.GetLevelData()?.Mechanic == LevelMechanic.Growing)
+            {
+                var state = _saveData.GetLevelSaveData().GrowingBoard;
+                if (state.FullTarget.Count == 0)
+                {
+                    state.FullTarget = Enumerable.Range(1,_levelDataCreator.GetLevelData().NumOfCards).ToList();
+                    ListRandomizer.Randomize(state.FullTarget);
+                    state.FullTarget = state.FullTarget.Take(GrowingBoardState.MaximumCount).ToList();
+                }
+                _targetCardsList = state.FullTarget.Take(numOfBoardHolders).ToList();
                 return;
             }
             if (_levelTracker.IsFirstLevelTutorial())
@@ -44,6 +57,19 @@ namespace Scripts
         public List<int> GetTargetCardsList()
         {
             return _targetCardsList;
+        }
+
+        public IReadOnlyList<int> GetHistoryTargetCards() =>
+            _saveData?.GetLevelSaveData().GrowingBoard?.LegacyHistoryTarget ?? _targetCardsList;
+
+        public IReadOnlyList<int> GetProtectedTargetCards() =>
+            _saveData?.GetLevelSaveData().GrowingBoard?.FullTarget ?? _targetCardsList;
+
+        public bool TryAppendTargetCard(int card)
+        {
+            if (_targetCardsList == null || _targetCardsList.Count >= GrowingBoardState.MaximumCount || _targetCardsList.Contains(card)) return false;
+            _targetCardsList.Add(card);
+            return true;
         }
 
         public bool TryRemoveLastTargetCard()
@@ -108,6 +134,9 @@ namespace Scripts
     {
         void CreateMultiplayerTargetNumber();
         List<int> GetTargetCardsList();
+        IReadOnlyList<int> GetHistoryTargetCards();
+        IReadOnlyList<int> GetProtectedTargetCards();
+        bool TryAppendTargetCard(int card);
         bool TryRemoveLastTargetCard();
         void SetTargetNumber(int numOfBoardHolders);
     }

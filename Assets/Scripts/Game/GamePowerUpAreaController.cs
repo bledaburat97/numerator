@@ -7,6 +7,9 @@ namespace Scripts
 {
     public class GamePowerUpAreaController : IGamePowerUpAreaController
     {
+        [InjectOptional] private HelperEffect _helper;
+        [InjectOptional] private PairEffect _pair;
+        [InjectOptional] private BoardSplitService _split;
         private const float DisabledAlpha = 0.35f;
         private const float EnabledAlpha = 1f;
 
@@ -49,9 +52,7 @@ namespace Scripts
             }
 
             _view.SetRaycastStatus(true);
-            CreateButtonController(RewardType.Revealing);
-            CreateButtonController(RewardType.Life);
-            CreateButtonController(RewardType.Bomb);
+            foreach (var type in PowerUpTypeUtility.OrderedRewardTypes) CreateButtonController(type);
             _isInitialized = true;
             Refresh();
         }
@@ -60,6 +61,7 @@ namespace Scripts
         {
             if (_view == null || !_isInitialized) return;
 
+            _view.SetProgression(_levelTracker.GetLevelId());
             foreach (RewardType rewardType in PowerUpTypeUtility.OrderedRewardTypes)
             {
                 int count = _levelTracker.GetPowerUpCount(rewardType);
@@ -90,7 +92,13 @@ namespace Scripts
         private bool IsPowerUpAvailable(RewardType rewardType, int count)
         {
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) return false;
-            if (count <= 0) return false;
+            if (_roundStateManager.GetRemainingGuessCount() <= 0) return false;
+            if (count <= 0 || !PowerUpTypeUtility.IsUnlocked(rewardType, _levelTracker.GetLevelId())) return false;
+            if (rewardType == RewardType.Pair) return _pair != null && _pair.CanApply;
+            if (rewardType == RewardType.Split) return _split != null && _split.CanApply;
+            if (rewardType == RewardType.Helper) return _helper != null && _helper.CanApply;
+            if (rewardType == RewardType.Life) return _roundStateManager.GetRemainingGuessCount() > 0 &&
+                _roundStateManager.GetRemainingGuessCount() + 3 <= _roundStateManager.GetMaxGuessCount();
             if (rewardType != RewardType.Bomb) return true;
 
             return CanUseBombPowerUp();
@@ -98,7 +106,7 @@ namespace Scripts
 
         private bool CanUseBombPowerUp()
         {
-            if (_boardHolderCountManager.GetBoardHolderCount() <= 1) return false;
+            if (!_boardHolderCountManager.CanShrink || _boardHolderCountManager.GetBoardHolderCount() <= 1) return false;
             if (_roundStateManager.GetTriedCardsList().Count > 0) return false;
             if (_boardHolderCountManager.GetRemovedBoardHolderCount() > 0) return false;
 

@@ -6,8 +6,25 @@ namespace Scripts
     // Small functional symbols stay sharp at every UI scale and don't need a font glyph.
     public class FruitLabGlyph : MaskableGraphic
     {
-        public enum Symbol { Check, Swap, Reset, Cross }
+        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite }
         public Symbol Type;
+        private Color _meshTint;
+        private static readonly Vector2[] FirstPairCard = {
+            new Vector2(-.4f,-.27f), new Vector2(-.4f,.27f), new Vector2(-.12f,.27f), new Vector2(-.12f,-.27f), new Vector2(-.4f,-.27f) };
+        private static readonly Vector2[] SecondPairCard = {
+            new Vector2(.12f,-.27f), new Vector2(.12f,.27f), new Vector2(.4f,.27f), new Vector2(.4f,-.27f), new Vector2(.12f,-.27f) };
+        private static readonly Vector2[] PairCord = { new Vector2(-.12f,.02f), new Vector2(0,-.1f), new Vector2(.12f,.02f) };
+        private static readonly Vector2[] RopePath = MakeRope();
+        private static Vector2[] MakeRope()
+        {
+            var points = new Vector2[17];
+            for (int i = 0; i < points.Length; i++)
+            {
+                float t = i / 16f;
+                points[i] = new Vector2(t - .5f, .08f - .25f * Mathf.Sin(t * Mathf.PI));
+            }
+            return points;
+        }
         private static readonly Vector2[] CheckPath = { new Vector2(-.31f, 0), new Vector2(-.105f, -.205f), new Vector2(.32f, .255f) };
         private static readonly Vector2[] CrossA = { new Vector2(-.3f, -.3f), new Vector2(.3f, .3f) };
         private static readonly Vector2[] CrossB = { new Vector2(-.3f, .3f), new Vector2(.3f, -.3f) };
@@ -40,6 +57,7 @@ namespace Scripts
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();
+            _meshTint = color;
             Rect r = GetPixelAdjustedRect();
             Vector2 center = r.center;
             float size = Mathf.Min(r.width, r.height);
@@ -49,10 +67,34 @@ namespace Scripts
             {
                 RoundedStroke(mesh, CheckPath, center, size, stroke);
             }
+            else if (Type == Symbol.Dynamite) DrawDynamite(mesh,center,size);
             else if (Type == Symbol.Swap)
             {
                 Arrow(mesh, center + size * new Vector2(-0.33f, 0.2f), center + size * new Vector2(0.32f, 0.2f), stroke);
                 Arrow(mesh, center + size * new Vector2(0.33f, -0.2f), center + size * new Vector2(-0.32f, -0.2f), stroke);
+            }
+            else if (Type == Symbol.Pair)
+            {
+                RoundedStroke(mesh, FirstPairCard, center, size, stroke * .72f);
+                RoundedStroke(mesh, SecondPairCard, center, size, stroke * .72f);
+                RoundedStroke(mesh, PairCord, center, size, stroke * .7f);
+            }
+            else if (Type == Symbol.Split)
+            {
+                RoundedStroke(mesh,FirstPairCard,center,size,stroke*.8f);
+                RoundedStroke(mesh,SecondPairCard,center,size,stroke*.8f);
+                for (int index = 0; index < 3; index++)
+                    Line(mesh,center+size*new Vector2(0,-.32f+index*.22f),center+size*new Vector2(0,-.21f+index*.22f),stroke*.55f);
+            }
+            else if (Type == Symbol.Rope)
+            {
+                Color tint = _meshTint;
+                _meshTint = new Color(tint.r * .35f, tint.g * .35f, tint.b * .35f, tint.a);
+                RoundedStroke(mesh, RopePath, center, size, stroke * 1.25f);
+                _meshTint = tint;
+                RoundedStroke(mesh, RopePath, center, size, stroke * .7f);
+                Disc(mesh, center + RopePath[0] * size, stroke * .7f);
+                Disc(mesh, center + RopePath[RopePath.Length - 1] * size, stroke * .7f);
             }
             else if (Type == Symbol.Cross)
             {
@@ -63,6 +105,30 @@ namespace Scripts
             {
                 RoundedStroke(mesh, UndoCurve, center, size, stroke);
                 RoundedStroke(mesh, UndoHead, center, size, stroke);
+            }
+        }
+
+        private static readonly Vector2[] DynamiteFuse = { new Vector2(0,.18f),new Vector2(.02f,.32f),new Vector2(.16f,.29f),new Vector2(.23f,.41f) };
+        private void DrawDynamite(VertexHelper mesh,Vector2 center,float size)
+        {
+            float alpha = _meshTint.a;
+            for (int i = 0; i < 3; i++)
+            {
+                float x = -.20f+i*.20f, top = i == 1 ? .16f : .10f;
+                Vector2 a = center+size*new Vector2(x,-.30f), b = center+size*new Vector2(x,top);
+                _meshTint = new Color(.24f,.04f,.055f,alpha); Line(mesh,a,b,size*.23f); Disc(mesh,a,size*.115f); Disc(mesh,b,size*.115f);
+                _meshTint = new Color(.94f,.20f,.24f,alpha); Line(mesh,a,b,size*.17f); Disc(mesh,a,size*.085f); Disc(mesh,b,size*.085f);
+                _meshTint = new Color(1f,.48f,.40f,alpha); Line(mesh,a+Vector2.left*size*.035f,b+Vector2.left*size*.035f,size*.035f);
+            }
+            _meshTint = new Color(.24f,.16f,.13f,alpha);
+            Line(mesh,center+size*new Vector2(-.31f,-.18f),center+size*new Vector2(.31f,-.18f),size*.08f);
+            Line(mesh,center+size*new Vector2(-.31f,-.01f),center+size*new Vector2(.31f,-.01f),size*.08f);
+            _meshTint = new Color(1f,.80f,.37f,alpha); RoundedStroke(mesh,DynamiteFuse,center,size,size*.045f);
+            Vector2 spark = center+size*DynamiteFuse[3];
+            for (int i = 0; i < 5; i++)
+            {
+                float angle = i*Mathf.PI*2f/5f; var direction = new Vector2(Mathf.Cos(angle),Mathf.Sin(angle));
+                Line(mesh,spark+direction*size*.035f,spark+direction*size*.11f,size*.035f);
             }
         }
 
@@ -77,11 +143,11 @@ namespace Scripts
         {
             const int segments = 12;
             int first = mesh.currentVertCount;
-            mesh.AddVert(center, color, Vector2.zero);
+            mesh.AddVert(center, _meshTint, Vector2.zero);
             for (int i = 0; i <= segments; i++)
             {
                 float angle = i * Mathf.PI * 2 / segments;
-                mesh.AddVert(center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius, color, Vector2.zero);
+                mesh.AddVert(center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius, _meshTint, Vector2.zero);
                 if (i > 0) mesh.AddTriangle(first, first + i, first + i + 1);
             }
         }
@@ -100,10 +166,10 @@ namespace Scripts
             Vector2 direction = (end - start).normalized;
             Vector2 normal = new Vector2(-direction.y, direction.x) * stroke * 0.5f;
             int index = mesh.currentVertCount;
-            mesh.AddVert(start - normal, color, Vector2.zero);
-            mesh.AddVert(start + normal, color, Vector2.zero);
-            mesh.AddVert(end + normal, color, Vector2.zero);
-            mesh.AddVert(end - normal, color, Vector2.zero);
+            mesh.AddVert(start - normal, _meshTint, Vector2.zero);
+            mesh.AddVert(start + normal, _meshTint, Vector2.zero);
+            mesh.AddVert(end + normal, _meshTint, Vector2.zero);
+            mesh.AddVert(end - normal, _meshTint, Vector2.zero);
             mesh.AddTriangle(index, index + 1, index + 2);
             mesh.AddTriangle(index, index + 2, index + 3);
         }

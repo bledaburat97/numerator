@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -85,7 +85,9 @@ public class CardMoveHandler : ICardMoveHandler
         if (_isMovementLocked) return;
         if (_longPressConsumed && !_isDragStart) { _longPressConsumed = false; return; }
 
-        if (!IsDragStarted())
+        bool wasDragging = _isDragStart;
+        _isDragStart = false;
+        if (!wasDragging)
         {
             _onClick?.Invoke(_cardIndex);
         }

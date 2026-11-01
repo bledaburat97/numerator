@@ -252,7 +252,7 @@ namespace Scripts
                 Check(popup != null && !((Component)popup.GetButton(LevelFinishButtonType.Game)).gameObject.activeSelf,
                     "A disconnected match offers no broken rematch action");
                 Check(FindFirstObjectByType<GameUIView>().MultiplayerStatusText == "Maç sona erdi", "A peer departure is shown in the game header");
-                Check(PowerUpTypeUtility.OrderedRewardTypes.Sum(type => FindFirstObjectByType<LevelTracker>().GetPowerUpCount(type)) == _wins,
+                Check(PowerUpTypeUtility.MultiplayerRewardTypes.Sum(type => FindFirstObjectByType<LevelTracker>().GetPowerUpCount(type)) == _wins,
                     "Disconnect does not grant a powerup reward");
                 Finish(true, null);
             }
@@ -391,7 +391,7 @@ namespace Scripts
                 if (won) { _wins++; _expectedRewards[(int)_lastOutcome.Reward.Value]++; }
                 _rounds++;
                 var tracker = FindFirstObjectByType<LevelTracker>();
-                foreach (RewardType type in PowerUpTypeUtility.OrderedRewardTypes)
+                foreach (RewardType type in PowerUpTypeUtility.MultiplayerRewardTypes)
                     Check(tracker.GetPowerUpCount(type) == _expectedRewards[(int)type], "Exactly one winner receives each group reward");
                 var rows = FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>();
                 if (round == 1 && Scenario == "group-drop") activeCount--;
@@ -658,7 +658,7 @@ namespace Scripts
             Check(_completedOutcomes == round && _lastOutcome.Reward.HasValue, "The host announces one validated win and reward per round");
             if (won) { _wins++; _expectedRewards[(int)_lastOutcome.Reward.Value]++; }
             var tracker = FindFirstObjectByType<LevelTracker>();
-            foreach (RewardType type in PowerUpTypeUtility.OrderedRewardTypes)
+            foreach (RewardType type in PowerUpTypeUtility.MultiplayerRewardTypes)
                 Check(tracker.GetPowerUpCount(type) == _expectedRewards[(int)type], "Only the winner receives exactly one of the announced powerups");
             if (won) Check(popup.transform.Find("ResultSubtitle").GetComponent<TMPro.TMP_Text>().text.Contains(PowerUpTypeUtility.Name(_lastOutcome.Reward.Value)), "The victory panel names the granted powerup");
             foreach (var row in FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>())
@@ -670,7 +670,7 @@ namespace Scripts
             }
             if (Role == "host") match.RepeatProbeOutcome();
             yield return new WaitForSecondsRealtime(.2f);
-            Check(_completedOutcomes == round && PowerUpTypeUtility.OrderedRewardTypes.Sum(tracker.GetPowerUpCount) == _wins,
+            Check(_completedOutcomes == round && PowerUpTypeUtility.MultiplayerRewardTypes.Sum(tracker.GetPowerUpCount) == _wins,
                 "Replayed finish packets cannot grant a second reward or show a second outcome");
             _rounds++;
         }

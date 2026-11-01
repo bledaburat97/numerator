@@ -46,7 +46,7 @@ namespace Scripts
 
         public void DestroyObject()
         {
-            Destroy(gameObject);
+            if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
         }
     }
 

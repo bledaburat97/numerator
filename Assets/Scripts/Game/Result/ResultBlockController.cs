@@ -12,6 +12,7 @@ namespace Scripts
         {
             _view = view;
             _numbers = new List<int>(model.finalNumbers);
+            if (view is ResultBlockView row) row.ConfigureGroups(model.groups);
             view.Init(new NonDraggableCardItemViewFactory(), resultAreaWidth, rowHeight);
             foreach (int number in model.finalNumbers)
             {
@@ -25,25 +26,15 @@ namespace Scripts
         public void DestroyResultBlock() => _view.Destroy();
         public void SetPlayerIdentity(bool isLocal, string playerName = null) => (_view as ResultBlockView)?.SetPlayerIdentity(isLocal, playerName);
 
+        public void RevealDetails(IReadOnlyList<CardResultState> states)
+        {
+            if (_view is ResultBlockView view) view.RevealDetails(states);
+        }
+
         public void RevealAnswer(IReadOnlyList<int> answer)
         {
-            var remaining = new Dictionary<int, int>();
-            var states = new CardResultState[_numbers.Count];
-            for (int i = 0; i < answer.Count; i++)
-            {
-                if (i < _numbers.Count && _numbers[i] == answer[i]) states[i] = CardResultState.Correct;
-                else remaining[answer[i]] = remaining.TryGetValue(answer[i], out int count) ? count + 1 : 1;
-            }
-            for (int i = 0; i < _numbers.Count; i++)
-            {
-                if (states[i] != CardResultState.Correct)
-                {
-                    bool found = remaining.TryGetValue(_numbers[i], out int count) && count > 0;
-                    states[i] = found ? CardResultState.Misplaced : CardResultState.Absent;
-                    if (found) remaining[_numbers[i]]--;
-                }
-                _view.SetCardResult(i, states[i]);
-            }
+            var evaluation = new GuessEvaluation(0, _numbers, answer);
+            for (int i = 0; i < evaluation.States.Count; i++) _view.SetCardResult(i, evaluation.States[i]);
         }
     }
 
@@ -59,5 +50,6 @@ namespace Scripts
         public List<int> finalNumbers;
         public int correctPosCount;
         public int wrongPosCount;
+        public IReadOnlyList<GuessGroupFeedback> groups;
     }
 }

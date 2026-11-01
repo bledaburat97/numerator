@@ -38,6 +38,7 @@ namespace Game
         private readonly ILevelFailAnimationManager _levelFailAnimationManager;
         private readonly IFadePanelController _fadePanelController;
 
+        [InjectOptional] private LevelMechanicsController _mechanics;
         [InjectOptional] private IMultiplayerGameController _multiplayer;
         private bool _multiplayerSubscribed;
         private Sequence _multiplayerReveal;
@@ -182,11 +183,14 @@ namespace Game
             _initialCardAreaController.Initialize(!isResumeFlow);
             _gameUIController.Initialize(!isResumeFlow);
 
+            _levelTracker.GrantIntroducedPowerUps();
+            LevelPlaytestSchedule.PrepareTrialStock(_levelTracker, _levelSaveDataManager, _levelDataCreator.GetLevelData());
             InitializeGameplaySystems(!isResumeFlow);
             GameTelemetry.BeginSingle(_levelTracker.GetLevelId() + 1, _boardHolderCountManager.GetBoardHolderCount(),
                 _levelDataCreator.GetLevelData().NumOfCards, isResumeFlow ? LevelEntryMode.Resume : mode,
-                _roundStateManager.GetTriedCardsList().Count);
+                _roundStateManager.GetTriedCardsList().Count, _levelDataCreator.GetLevelData().Mechanic);
 
+            _mechanics?.Begin(_levelDataCreator.GetLevelData().Mechanic);
             if (isResumeFlow)
             {
                 _state = LevelFlowState.Playing;
@@ -347,9 +351,17 @@ namespace Game
             if (mode == LevelEntryMode.Resume)
             {
                 LevelSaveData savedLevel = _gameSaveService.GetSavedLevel();
+                if (savedLevel?.Definition?.Mechanic == LevelMechanic.Growing) GrowingBoardState.UpgradeLegacy(savedLevel);
                 if (savedLevel != null && (!_levelTracker.IsFirstLevelTutorial()
                     || FirstLevelTutorialController.CanResume(savedLevel, _levelDataCreator.GetLevelData().MaxNumOfTries)))
                 {
+                    if ((savedLevel.LevelId >= 0 && savedLevel.LevelId != _levelTracker.GetLevelId())
+                        || !LevelPlaytestSchedule.CanResume(_levelTracker.GetLevelId(), savedLevel.Definition)
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Growing && !GrowingBoardState.IsValid(savedLevel))
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(savedLevel)))
+                    { _gameSaveService.DeleteSave(); _levelSaveDataManager.CreateDefaultLevelSaveData(); return false; }
+                    if (savedLevel.Definition != null) (_levelDataCreator as LevelDataCreator)?.RestoreDefinition(savedLevel.Definition);
+                    savedLevel.RevealedGuessNumbers ??= new System.Collections.Generic.List<int>();
                     _levelSaveDataManager.SetLevelSaveDataAsSaved(savedLevel);
                     return true;
                 }
@@ -380,7 +392,7 @@ namespace Game
             _state = LevelFlowState.EndingSuccess;
             _gamePopupCreator.EndTutorials(true);
             _gameUIController.SetAllButtonsUnclickable();
-            _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
+            _resultAreaController.RevealAnswer(_targetNumberCreator.GetHistoryTargetCards());
             _gameSaveService.DeleteSave();
             _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             StartSuccessFlow();
@@ -395,7 +407,7 @@ namespace Game
             GameTelemetry.Finish("fail", _roundStateManager.GetTriedCardsList().Count);
             _gamePopupCreator.EndTutorials(false);
             _gameUIController.SetAllButtonsUnclickable();
-            _resultAreaController.RevealAnswer(_targetNumberCreator.GetTargetCardsList());
+            _resultAreaController.RevealAnswer(_targetNumberCreator.GetHistoryTargetCards());
             _gameSaveService.DeleteSave();
             _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             StartFailFlow();

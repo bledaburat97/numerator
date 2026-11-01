@@ -37,6 +37,10 @@ public static class FruitLabRewardEditorTools
             Canvas.ForceUpdateCanvases();
             popup.ApplyLabLayout();
             var view = (VerticalCrystalProgressView)popup.GetVerticalCrystalProgressView();
+            Require(view.transform.Find("CrystalTitle").GetComponent<TMPro.TMP_Text>().text == "Güçlendirici Barı",
+                "Level-end progress uses the powerup bar heading");
+            Require(view.transform.Find("NextReward") == null || !view.transform.Find("NextReward").gameObject.activeSelf,
+                "Level-end progress does not show a reward subtitle");
             var fill = (SlicedFilledImage)new SerializedObject(view).FindProperty("progressImage").objectReferenceValue;
             Require(fill.transform.GetSiblingIndex() > view.transform.Find("CrystalTrack").GetSiblingIndex(),
                 "Pink crystal fill must render above the recessed track");
@@ -115,7 +119,7 @@ public static class FruitLabRewardEditorTools
             Require(clicks == 1, "Modern level-end controller must resolve through DI and retain its button callback after legacy cleanup");
             endController.SetAllStatusFalse();
             var view = (VerticalCrystalProgressView)popup.GetVerticalCrystalProgressView();
-            foreach (string field in new[] { "revealingPowerUpButton", "lifePowerUpButton", "bombPowerUpButton" })
+            foreach (string field in new[] { "revealingPowerUpButton", "lifePowerUpButton", "bombPowerUpButton", "helperPowerUpButton", "pairPowerUpButton", "splitPowerUpButton" })
             {
                 var preview = (PowerUpButtonView)new SerializedObject(view).FindProperty(field).objectReferenceValue;
                 Require(preview != null && preview.transform.IsChildOf(view.transform), "Powerup preview must be a local scene instance: " + field);
@@ -123,6 +127,7 @@ public static class FruitLabRewardEditorTools
             trackerObject = new GameObject("RewardPreviewTracker");
             trackerObject.SetActive(false);
             var tracker = trackerObject.AddComponent<LevelTracker>();
+            Field(tracker, "_levelId", 50);
             foreach (int previous in new[] { 0, 4, 5 })
             foreach (int earned in new[] { 0, 1, 2, 3 })
             foreach (RewardType type in Enum.GetValues(typeof(RewardType)))
@@ -140,7 +145,7 @@ public static class FruitLabRewardEditorTools
                 int capacity = ConstantValues.NUM_OF_STARS_FOR_WILD;
                 Require(view.transform.Find("CrystalCount").GetComponent<TMPro.TMP_Text>().text == (total % capacity) + " / " + capacity,
                     "Animated crystal count must carry remaining crystals after overflow");
-                RewardType next = (RewardType)(((int)type + total / capacity) % 3);
+                RewardType next = (RewardType)(((int)type + total / capacity) % PowerUpTypeUtility.OrderedRewardTypes.Length);
                 var preview = view.GetRewardPreviewRectTransform(next);
                 Require(preview != null && preview.gameObject.activeSelf,
                     "Upcoming reward follows the existing rotation");
@@ -216,12 +221,16 @@ public static class FruitLabRewardEditorTools
             var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu);
             new MenuPowerUpCountHolderController(powers, tracker).Initialize();
             new RewardProgressDisplayController(crystals, tracker).Initialize();
+            Require(crystals.transform.Find("CrystalTitle").GetComponent<TMPro.TMP_Text>().text == "Güçlendirici Barı",
+                "Menu progress uses the powerup bar heading");
+            Require(crystals.transform.Find("NextReward") == null || !crystals.transform.Find("NextReward").gameObject.activeSelf,
+                "Menu progress does not show a reward subtitle");
             menu.SetSinglePlayerButtonText("Bölüm " + (levelId + 1));
             if (validateProgression)
             {
-                bool rewardsUnlocked = levelId >= 10;
+                bool rewardsUnlocked = levelId >= (LevelPlaytestSchedule.Settings.Enabled ? 4 : 10);
                 Require(crystals.gameObject.activeSelf == rewardsUnlocked && powers.gameObject.activeSelf == rewardsUnlocked,
-                    "Crystal energy and powerups unlock together at the first crystal level, independent of balances");
+                    "Crystal energy and powers follow the active content profile, independent of balances");
                 var multi = (BaseButtonView)menu.GetMultiplayerButton();
                 var group = multi.GetComponent<CanvasGroup>();
                 bool multiplayerUnlocked = levelId >= 5;

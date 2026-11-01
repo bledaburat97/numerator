@@ -1,4 +1,4 @@
-﻿using Game;
+using Game;
 using Unity.Netcode;
 using UnityEngine;
 using Zenject;
@@ -20,10 +20,13 @@ namespace Scripts
         [Inject] private IGamePowerUpAreaController _gamePowerUpAreaController;
         [Inject] private ILevelFlowOrchestrator _levelFlowOrchestrator;
         [Inject] private IBoardAreaController _boardAreaController;
+        [Inject] private IBoardPlacementQuery _boardQuery;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private IGuessManager _guessManager;
+        [Inject] private IRoundStateManager _roundStateManager;
         [Inject] private IGameUIController _gameUi;
         [Inject] private TutorialInputGate _tutorialGate;
+        [Inject] private LevelMechanicsController _mechanics;
         private CardAnnotationController _annotations;
         public CardAnnotationController Annotations => _annotations;
         private FruitLabGameLayout _presentation;
@@ -37,6 +40,10 @@ namespace Scripts
                 _gameUi,
                 _presentation, _tutorialGate, _hapticController,
                 () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning());
+            var view = GetComponentInChildren<GameUIView>(true);
+            view?.GetPairView()?.Configure(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
+                _tutorialGate, _gameUi, () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning());
+            _mechanics.Attach(view, TrySave);
             InitializeHapticController();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
@@ -94,7 +101,10 @@ namespace Scripts
 
         private void OnDestroy()
         {
+            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
             _annotations?.Dispose();
+            _mechanics?.Dispose();
+            (_guessManager as System.IDisposable)?.Dispose();
             if (_presentation != null) _presentation.LayoutChanged -= OnLayoutChanged;
             _cardPlacementCoordinator?.Unsubscribe();
             _cardInteractionManager?.Unsubscribe();
@@ -104,6 +114,7 @@ namespace Scripts
         
         private void TrySave()
         {
+            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.CancelDrag();
             if (_levelTracker == null || _gameSaveSnapshotProvider == null || _gameSaveService == null) return;
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
@@ -111,6 +122,12 @@ namespace Scripts
                 if (_gameSaveSnapshotProvider.TryCreateSnapshot(out LevelSaveData levelSaveData))
                 {
                     _gameSaveService.Save(levelSaveData);
+                }
+                else if (_levelFlowOrchestrator?.GetState() == LevelFlowState.Playing && _roundStateManager?.GetRemainingGuessCount() <= 0)
+                {
+                    // The fail animation can still be running when the app closes.
+                    // Do not leave the previous, still-alive turn available to resume.
+                    _gameSaveService.DeleteSave();
                 }
             }
         }

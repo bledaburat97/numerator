@@ -128,7 +128,7 @@ namespace Game
             BroadcastState();
             if (feedback.Won)
             {
-                _roundReward = PowerUpTypeUtility.OrderedRewardTypes[UnityEngine.Random.Range(0, PowerUpTypeUtility.OrderedRewardTypes.Length)];
+                _roundReward = PowerUpTypeUtility.MultiplayerRewardTypes[UnityEngine.Random.Range(0, PowerUpTypeUtility.MultiplayerRewardTypes.Length)];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (MultiplayerNetworkProbe.IsRunning) _roundReward = (RewardType)((round - 1) % 3);
 #endif

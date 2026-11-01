@@ -1,9 +1,12 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Scripts
 {
+    public enum TutorialMessagePlacement { Top, Bottom, Center }
+
     public class TutorialMessagePopupView : MonoBehaviour, ITutorialMessagePopupView
     {
         [SerializeField] private TMP_Text text;
@@ -11,31 +14,30 @@ namespace Scripts
         [SerializeField] private TMP_Text title;
         [SerializeField] private BaseButtonView nextButton;
         [SerializeField] private BaseButtonView secondaryButton;
-        private bool _bottom;
+        private TutorialMessagePlacement _placement;
+        private Image _surface, _rim;
         private Vector2 _lastParentSize;
         public void Init()
         {
             transform.localScale = Vector3.one;
-            secondaryButton.SetButtonStatus(false);
+            if (secondaryButton != null) secondaryButton.SetButtonStatus(false);
             transform.SetAsLastSibling(); ApplyLayout();
         }
-        public void Bind(BaseButtonControllerFactory factory, Action next, Action secondary = null)
+        public void Bind(BaseButtonControllerFactory factory, Action next)
         {
             var nextControl = factory.Create(nextButton, next); nextControl.SetClickOnRelease(true);
-            secondaryButton.SetButtonStatus(secondary != null);
-            if (secondary != null)
-            {
-                var control = factory.Create(secondaryButton, secondary); control.SetClickOnRelease(true);
-            }
+            if (secondaryButton != null) secondaryButton.SetButtonStatus(false);
             ApplyLayout();
         }
-        public void Show(string heading, string body, bool canContinue, bool bottom = false, string continueText = "Anladım")
+        public void Show(string heading, string body, bool canContinue, bool bottom = false, string continueText = "Tamam")
+            => ShowAt(heading, body, canContinue, bottom ? TutorialMessagePlacement.Bottom : TutorialMessagePlacement.Top, continueText);
+
+        public void ShowAt(string heading, string body, bool canContinue, TutorialMessagePlacement placement, string continueText = "Tamam")
         {
-            title.text = heading; text.text = body; _bottom = bottom;
+            title.text = heading; text.text = body; _placement = placement;
             nextButton.SetButtonStatus(canContinue); nextButton.SetText(continueText);
             ApplyLayout();
         }
-        public void SetSecondaryText(string label) => secondaryButton.SetText(label);
         public void Destroy() => TutorialObjectUtility.Destroy(gameObject);
         public void SetText(string value) => text.SetText(value);
         private void LateUpdate()
@@ -48,20 +50,38 @@ namespace Scripts
             _lastParentSize = parent != null ? parent.rect.size : Vector2.zero;
             float available = parent != null && parent.rect.width > 1 ? parent.rect.width : 375f;
             float width = Mathf.Min(335f, available - 24f);
+            if (text != null) { text.fontSize = 19f; text.enableAutoSizing = false; text.lineSpacing = 3f; }
+            if (title != null) { title.fontSize = 21f; title.enableAutoSizing = false; title.fontStyle = FontStyles.Bold; }
+            if (nextButton != null)
+                foreach (TMP_Text buttonLabel in nextButton.GetComponentsInChildren<TMP_Text>(true)) { buttonLabel.fontSize = 18f; buttonLabel.enableAutoSizing = false; }
             float bodyHeight = text != null ? Mathf.Max(56f, text.GetPreferredValues(text.text, width - 32f, 0f).y + 4f) : 56f;
-            bool secondary = secondaryButton != null && secondaryButton.gameObject.activeSelf;
-            bool actions = secondary || (nextButton != null && nextButton.gameObject.activeSelf);
+            bool actions = nextButton != null && nextButton.gameObject.activeSelf;
             float height = bodyHeight + (actions ? 110f : 58f);
-            rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(.5f, _bottom ? 0f : 1f);
-            rectTransform.pivot = new Vector2(.5f, _bottom ? 0f : 1f);
-            rectTransform.anchoredPosition = new Vector2(0f, _bottom ? 12f : -90f);
+            bool centered = _placement == TutorialMessagePlacement.Center;
+            bool bottom = _placement == TutorialMessagePlacement.Bottom;
+            rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(.5f, centered ? .5f : bottom ? 0f : 1f);
+            rectTransform.pivot = rectTransform.anchorMin;
+            rectTransform.anchoredPosition = centered ? Vector2.zero : new Vector2(0f, bottom ? 12f : -90f);
             rectTransform.sizeDelta = new Vector2(width, height);
+            ApplyAppearance(centered);
             if (title == null || nextButton == null) return;
             FruitLabStyle.Place(title.rectTransform, rectTransform, 16f, height - 42f, width - 32f, 28f);
             FruitLabStyle.Place(text.rectTransform, rectTransform, 16f, height - 45f - bodyHeight, width - 32f, bodyHeight);
-            FruitLabStyle.Place(secondaryButton.GetButtonRectTransform(), rectTransform, 16f, 12f, 86f, 44f);
-            FruitLabStyle.Place(nextButton.GetButtonRectTransform(), rectTransform, secondary ? 112f : 16f, 12f,
-                width - (secondary ? 128f : 32f), 44f);
+            FruitLabStyle.Place(nextButton.GetButtonRectTransform(), rectTransform, 16f, 12f, width - 32f, 44f);
+        }
+
+        private void ApplyAppearance(bool centered)
+        {
+            if (_surface == null) _surface = GetComponent<Image>();
+            if (_rim == null) _rim = transform.Find("LabRim")?.GetComponent<Image>();
+            if (_surface != null) _surface.color = centered ? Color.Lerp(FruitLabStyle.Text,FruitLabStyle.Mint,.15f) : FruitLabStyle.Panel;
+            if (_rim != null) _rim.color = centered ? FruitLabStyle.Mint : new Color(FruitLabStyle.Border.r,FruitLabStyle.Border.g,FruitLabStyle.Border.b,.8f);
+            if (title != null)
+            {
+                title.color = centered ? FruitLabStyle.Background : FruitLabStyle.Mint;
+                title.alignment = centered ? TextAlignmentOptions.Midline : TextAlignmentOptions.MidlineLeft;
+            }
+            if (text != null) text.color = centered ? FruitLabStyle.Background : FruitLabStyle.Text;
         }
     }
     public interface ITutorialMessagePopupView

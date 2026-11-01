@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using Game;
@@ -55,42 +54,31 @@ namespace Scripts
             EnableReview();
         }
 
+        public void RevealGuess(GuessEvaluation guess)
+        {
+            if (guess.Number > 0 && guess.Number <= _resultBlockControllers.Count)
+                (_resultBlockControllers[guess.Number - 1] as ResultBlockController)?.RevealDetails(guess.States);
+        }
+
         public void AddResultBlock(ResultBlockModel resultBlockModel)
         {
-            int finalNumber = 0;
-            for (int i = 0; i < resultBlockModel.finalNumbers.Count; i++)
-            {
-                finalNumber += resultBlockModel.finalNumbers[i] * ((int) Math.Pow(10, i));
-            }
-            
-            AddNewResultBlock(finalNumber, resultBlockModel.correctPosCount, resultBlockModel.wrongPosCount);
-        }
-        
-        public void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
-        {
             IResultBlockController resultBlockController = new ResultBlockController();
-            IResultBlockView resultBlockView = _view.CreateResultBlock();
-            List<int> finalNumbers = new List<int>();
-            while (finalNumber != 0)
-            {
-                int a = finalNumber % 10;
-                finalNumbers.Add(a);
-                finalNumber /= 10;
-            }
-
-            resultBlockController.Initialize(resultBlockView, new ResultBlockModel()
-            {
-                finalNumbers = finalNumbers,
-                correctPosCount = correctPosCount,
-                wrongPosCount = wrongPosCount
-            }, _view.GetWidth(), _view.GetRowHeight());
+            resultBlockController.Initialize(_view.CreateResultBlock(), resultBlockModel, _view.GetWidth(), _view.GetRowHeight());
             _resultBlockControllers.Add(resultBlockController);
-            
+
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
             {
                 _view.SetScrollPositionToBottom();
             }
         }
+        // Compatibility for existing numeric callers; gameplay uses the card-list model directly.
+        public void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
+        {
+            var cards = new List<int>();
+            while (finalNumber != 0) { cards.Add(finalNumber % 10); finalNumber /= 10; }
+            AddResultBlock(new ResultBlockModel { finalNumbers = cards, correctPosCount = correctPosCount, wrongPosCount = wrongPosCount });
+        }
+
         public ResultAreaInfo GetResultAreaInfo()
         {
             return _view.GetResultAreaInfo();
@@ -117,5 +105,6 @@ namespace Scripts
         void RemoveResultBlocks();
         void EnableReview();
         void RevealAnswer(IReadOnlyList<int> answer);
+        void RevealGuess(GuessEvaluation guess);
     }
 }

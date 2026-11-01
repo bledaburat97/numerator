@@ -174,6 +174,7 @@ public static class FruitLabFailureValidation
     {
         public event EventHandler LevelSuccessEvent;
         public event EventHandler WrongGuessEvent;
+        public event EventHandler<GuessEvaluation> GuessResolved;
         public void Wrong() => WrongGuessEvent?.Invoke(this, EventArgs.Empty);
         public void TryAddTriedCards() { }
     }
@@ -209,6 +210,8 @@ public static class FruitLabFailureValidation
         public LifeProbe(IRewardTokenView token) => _token = token;
         public void SetFade(bool isNewGame) { }
         public void DisableProgressBar() { }
+        public void ResizeCapacity(int maximum,int remaining) { }
+        public Sequence AnimateGain(float target, int amount) => DOTween.Sequence();
         public void ClearBoundaries() { }
         public void ClearLifeBarRewardInfoList() { }
         public void SetLifeBar(int max, IReadOnlyList<LifeBarRewardInfo> rewards, int remaining, bool deferRewardIntroAnimation = false) { }
@@ -504,6 +507,7 @@ public static class FruitLabFailureValidation
     }
     private sealed class BombResults : IResultAreaController
     {
+        public void RevealGuess(GuessEvaluation guess) { }
         public ResultBlockModel Last;
         public void AddResultBlock(ResultBlockModel model) => Last = model;
         public void AddNewResultBlock(int number, int correct, int wrong) { }
@@ -528,6 +532,7 @@ public static class FruitLabFailureValidation
     }
     private sealed class BombHolder : IBoardHolderView
     {
+        public void ShowDynamite(DynamiteRoundState state) { }
         public readonly RectTransform Rect;
         public BombHolder(Transform parent) { Rect = new GameObject("BombHolder", typeof(RectTransform)).GetComponent<RectTransform>(); Rect.SetParent(parent, false); }
         public RectTransform GetRectTransform() => Rect;
@@ -685,11 +690,12 @@ public static class FruitLabRetryValidation
         try
         {
             var tracker = objects.AddComponent<LevelTracker>();
-            Field(tracker, "_levelId", 11);
+            Field(tracker, "_levelId", 24);
             Field(tracker, "_bombPowerUpCount", 2);
             Field(tracker, "_revealingPowerUpCount", 2);
             Field(tracker, "_lifePowerUpCount", 2);
             var round = new RoundStateManager(null, null);
+            Field(round, "_maxGuessCount", 8); Field(round, "_remainingGuessCount", 5);
             var container = new DiContainer();
             var haptics = new HapticController();
             container.Bind<IHapticController>().FromInstance(haptics);

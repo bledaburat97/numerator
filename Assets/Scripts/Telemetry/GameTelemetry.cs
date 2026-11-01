@@ -11,7 +11,7 @@ namespace Scripts
         public const string EventName = "fruitlabGameplay";
         private sealed class Attempt
         {
-            public string Mode, Difficulty, Entry;
+            public string Mode, Difficulty, Entry, Mechanic;
             public int Level, Slots, Fruits, Round, Guesses;
             public double Started, PausedAt = -1, PausedSeconds;
         }
@@ -22,11 +22,11 @@ namespace Scripts
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset() { _attempt = null; _testRecorder = null; _clock = () => Time.realtimeSinceStartupAsDouble; }
 
-        public static void BeginSingle(int level, int slots, int fruits, LevelEntryMode entry, int guesses)
+        public static void BeginSingle(int level, int slots, int fruits, LevelEntryMode entry, int guesses, LevelMechanic mechanic = LevelMechanic.Normal)
         {
             Abandon("restart");
             _attempt = new Attempt { Mode = "single", Level = level, Slots = slots, Fruits = fruits,
-                Entry = entry.ToString().ToLowerInvariant(), Guesses = guesses, Started = _clock() };
+                Mechanic = mechanic.ToString().ToLowerInvariant(), Entry = entry.ToString().ToLowerInvariant(), Guesses = guesses, Started = _clock() };
             EmitAttempt("level_started");
         }
         public static void BeginDuel(int round, MultiplayerSettings settings)
@@ -67,6 +67,7 @@ namespace Scripts
             data["flFruits"] = a.Fruits; data["flGuesses"] = a.Guesses;
             double end = a.PausedAt < 0 ? _clock() : a.PausedAt;
             data["flDuration"] = Math.Max(0, end - a.Started - a.PausedSeconds);
+            if (a.Mechanic != null) data["flSource"] = a.Mechanic;
             if (a.Difficulty != null) data["flDifficulty"] = a.Difficulty;
             if (a.Entry != null) data["flEntry"] = a.Entry;
             if (a.Mode == "duel") data["flRound"] = a.Round;
@@ -84,6 +85,12 @@ namespace Scripts
         {
             var data = Context(earned ? "powerup_earned" : "powerup_used");
             data["flPowerup"] = type.ToString().ToLowerInvariant(); data["flSource"] = source;
+            Send(data);
+        }
+        public static void Mechanic(string action, LevelMechanic mechanic)
+        {
+            var data = Context(action);
+            data["flSource"] = mechanic.ToString().ToLowerInvariant();
             Send(data);
         }
         public static void Connection(string operation, string outcome, Difficulty difficulty)

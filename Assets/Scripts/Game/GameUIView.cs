@@ -21,6 +21,45 @@ namespace Scripts
         [SerializeField] private Image coinImage;
         [SerializeField] private TextHolderAdjustment coinCountHolder;
 
+        [SerializeField] private PairClueView pairClue;
+        public PairClueView GetPairView() => pairClue;
+        public bool HasPairClue => pairClue != null && pairClue.gameObject.activeSelf && !_multiplayerMode;
+        public void SetPairClue(PairClue clue)
+        {
+            if (pairClue == null) return;
+            pairClue.Show(_multiplayerMode ? null : clue);
+            pairClue.RefreshRope(0f);
+        }
+        private bool _dynamiteFooter;
+        public bool HasDynamiteFooter => _dynamiteFooter && !_multiplayerMode;
+        public bool SetDynamiteLayout(bool visible)
+        {
+            if (_dynamiteFooter == visible) return false;
+            _dynamiteFooter = visible;
+            GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
+            return true;
+        }
+
+        private TMP_Text _mechanicLabel;
+        public bool HasMechanicStatus => _mechanicLabel != null && _mechanicLabel.gameObject.activeSelf;
+        public void SetMechanicStatus(string text)
+        {
+            if (_mechanicLabel == null) _mechanicLabel = userText.transform.parent.Find("MechanicStatus")?.GetComponent<TMP_Text>()
+                ?? FruitLabStyle.CreateText("MechanicStatus", userText.transform.parent, 10f, FruitLabStyle.Mint);
+            _mechanicLabel.text = text;
+            _mechanicLabel.raycastTarget = false;
+            _mechanicLabel.enableAutoSizing = true; _mechanicLabel.fontSizeMin = 8; _mechanicLabel.fontSizeMax = 10;
+            _mechanicLabel.gameObject.SetActive(!string.IsNullOrEmpty(text) && !_multiplayerMode);
+            PlaceMechanicStatus();
+            GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
+        }
+        private void PlaceMechanicStatus()
+        {
+            if (_mechanicLabel == null) return;
+            var header = (RectTransform)userText.transform.parent;
+            FruitLabStyle.Place(_mechanicLabel.rectTransform, header, 0, 34f, header.rect.width, 14f);
+        }
+
         private bool _multiplayerMode;
         public bool IsMultiplayer => _multiplayerMode;
         private RectTransform _matchHud;
@@ -64,6 +103,8 @@ namespace Scripts
         public void ApplyLabLayout(RectTransform header, RectTransform actionArea, float width, float headerHeight, float actionWidth, float actionHeight)
         {
             opponentInfo.SetActive(false);
+            PlaceMechanicStatus();
+            if (_mechanicLabel != null && _multiplayerMode) _mechanicLabel.gameObject.SetActive(false);
             if (_multiplayerMode)
             {
                 EnsureMultiplayerHud();
@@ -130,6 +171,7 @@ namespace Scripts
         public void SetOpponentInfoStatus(bool status)
         {
             _multiplayerMode = status;
+            if (status && pairClue != null) pairClue.Show(null);
             opponentInfo.SetActive(false);
             GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
         }

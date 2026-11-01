@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Game;
 using TMPro;
 using UnityEngine;
@@ -15,24 +17,61 @@ namespace Scripts
         [SerializeField] private TMP_Text lifePowerUpCount;
         [SerializeField] private TMP_Text bombPowerUpCount;
 
+        [SerializeField] private PowerUpButtonView helperPowerUpButton;
+        [SerializeField] private TMP_Text helperPowerUpCount;
+        [SerializeField] private PowerUpButtonView pairPowerUpButton;
+        [SerializeField] private TMP_Text pairPowerUpCount;
+        [SerializeField] private PowerUpButtonView splitPowerUpButton;
+        [SerializeField] private TMP_Text splitPowerUpCount;
         private CanvasGroup _canvasGroup;
+        private static readonly RewardType[] DisplayOrder = { RewardType.Bomb, RewardType.Revealing, RewardType.Life, RewardType.Helper, RewardType.Pair, RewardType.Split };
+        private int _levelId = int.MaxValue - 1;
+        private float _width, _height;
+
+        private void EnsureExtraButtons()
+        {
+            Create(ref helperPowerUpButton, ref helperPowerUpCount, "HelperPowerUpButton");
+            Create(ref pairPowerUpButton, ref pairPowerUpCount, "PairPowerUpButton");
+            Create(ref splitPowerUpButton, ref splitPowerUpCount, "SplitPowerUpButton");
+            void Create(ref PowerUpButtonView button, ref TMP_Text count, string objectName)
+            {
+                if (button != null) return;
+                button = Instantiate(revealingPowerUpButton, revealingPowerUpButton.transform.parent, false);
+                button.name = objectName;
+                count = button.transform.Find("CountHolder")?.GetComponentInChildren<TMP_Text>(true);
+                if (count != null) count.text = "0";
+            }
+        }
+
+        public void SetProgression(int levelId)
+        {
+            if (_levelId == levelId) return;
+            _levelId = levelId;
+            if (_width > 0) ApplyLabLayout(_width, _height);
+        }
 
         public void ApplyLabLayout(float width, float height)
         {
+            EnsureExtraButtons(); _width = width; _height = height;
             foreach (LayoutGroup group in GetComponents<LayoutGroup>()) group.enabled = false;
-            float gap = 6f;
-            float buttonWidth = (width - gap * 2f) / 3f;
-            SetLabButton(bombPowerUpButton, bombPowerUpCount, "Bomb", "Bomba", 0);
-            SetLabButton(revealingPowerUpButton, revealingPowerUpCount, "Reveal", "Göster", 1);
-            SetLabButton(lifePowerUpButton, lifePowerUpCount, "Life", "Can", 2);
-
-            void SetLabButton(PowerUpButtonView button, TMP_Text count, string icon, string label, int index)
+            var visible = DisplayOrder.Where(t => PowerUpTypeUtility.IsUnlocked(t, _levelId)).ToArray();
+            const float gap = 6f;
+            float buttonWidth = (width - gap * Mathf.Max(0, visible.Length - 1)) / Mathf.Max(1, visible.Length);
+            int index = 0;
+            foreach (var type in DisplayOrder)
             {
-                FruitLabStyle.Place(button.GetButtonRectTransform(), transform,
-                    index * (buttonWidth + gap), 0f, buttonWidth, height);
-                button.ApplyLabLayout(icon, label, count, buttonWidth, height);
+                var button = (PowerUpButtonView)GetPowerUpButton(type);
+                bool unlocked = visible.Contains(type);
+                button.gameObject.SetActive(unlocked);
+                if (!unlocked) continue;
+                FruitLabStyle.Place(button.GetButtonRectTransform(), transform, index++ * (buttonWidth + gap), 0f, buttonWidth, height);
+                button.ApplyLabLayout(PowerUpTypeUtility.IconName(type), PowerUpTypeUtility.Name(type), CountText(type), buttonWidth, height);
             }
         }
+
+        private TMP_Text CountText(RewardType type) => type == RewardType.Split ? splitPowerUpCount : type == RewardType.Pair ? pairPowerUpCount : type == RewardType.Helper ? helperPowerUpCount
+            : type == RewardType.Bomb ? bombPowerUpCount : type == RewardType.Life ? lifePowerUpCount : revealingPowerUpCount;
+
 
         
         public IBaseButtonView GetRevealingPowerUpButton()
@@ -72,8 +111,12 @@ namespace Scripts
 
         public IBaseButtonView GetPowerUpButton(RewardType rewardType)
         {
+            EnsureExtraButtons();
             switch (rewardType)
             {
+                case RewardType.Pair: return pairPowerUpButton;
+                case RewardType.Split: return splitPowerUpButton;
+                case RewardType.Helper: return helperPowerUpButton;
                 case RewardType.Revealing:
                     return revealingPowerUpButton;
                 case RewardType.Life:
@@ -87,38 +130,14 @@ namespace Scripts
 
         public void SetPowerUpCount(RewardType rewardType, int count)
         {
-            string text = count.ToString();
-            switch (rewardType)
-            {
-                case RewardType.Revealing:
-                    SetRevealingPowerUpCount(text);
-                    break;
-                case RewardType.Life:
-                    SetLifePowerUpCount(text);
-                    break;
-                case RewardType.Bomb:
-                    SetBombPowerUpCount(text);
-                    break;
-            }
+            EnsureExtraButtons();
+            CountText(rewardType).SetText(count.ToString());
         }
 
         public void SetPowerUpAlpha(RewardType rewardType, float alpha)
         {
-            switch (rewardType)
-            {
-                case RewardType.Revealing:
-                    SetButtonAlpha(revealingPowerUpButton, alpha);
-                    SetTextAlpha(revealingPowerUpCount, alpha);
-                    break;
-                case RewardType.Life:
-                    SetButtonAlpha(lifePowerUpButton, alpha);
-                    SetTextAlpha(lifePowerUpCount, alpha);
-                    break;
-                case RewardType.Bomb:
-                    SetButtonAlpha(bombPowerUpButton, alpha);
-                    SetTextAlpha(bombPowerUpCount, alpha);
-                    break;
-            }
+            SetButtonAlpha(GetPowerUpButton(rewardType), alpha);
+            SetTextAlpha(CountText(rewardType), alpha);
         }
 
         public void SetRaycastStatus(bool status)
@@ -172,5 +191,6 @@ namespace Scripts
         void SetPowerUpCount(RewardType rewardType, int count);
         void SetPowerUpAlpha(RewardType rewardType, float alpha);
         void SetRaycastStatus(bool status);
+        void SetProgression(int levelId);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Scripts;
 using Zenject;
 
@@ -24,6 +24,9 @@ namespace Game
         public void CreateDefaultLevelSaveData()
         {
             LevelData levelData = _levelDataCreator.GetLevelData();
+            _levelSaveData = new LevelSaveData { Definition = levelData,
+                GrowingBoard = levelData.Mechanic == LevelMechanic.Growing ? new GrowingBoardState() : null,
+                Dynamite = levelData.Mechanic == LevelMechanic.Dynamite ? new DynamiteRoundState() : null };
             _levelSaveData.TriedCardsList = new List<List<int>>();
             _levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
             _levelSaveData.CardItemInfoList = new List<CardItemInfo>();

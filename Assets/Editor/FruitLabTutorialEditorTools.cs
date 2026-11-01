@@ -19,7 +19,7 @@ using Zenject;
 using Object = UnityEngine.Object;
 
 // Explicit editor tasks, never an automatic profile reset on import or scene load.
-public static class FruitLabTutorialEditorTools
+public static partial class FruitLabTutorialEditorTools
 {
     private const string Folder = "Library/FruitLabEditor";
     private const string MaskPath = "Assets/UnmaskService.prefab";
@@ -241,7 +241,7 @@ public static class FruitLabTutorialEditorTools
                 }
                 flags.Remove(TutorialProgress.Reveal); int cancelledUses = 0;
                 Require(game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp, () => cancelledUses++), "Unseen reveal can be explained");
-                game.CancelTip(); Require(cancelledUses == 0 && !game.Gate.IsRestricted, "Not now closes a first-use tip without using the powerup");
+                game.Next(); Require(cancelledUses == 1 && !game.Gate.IsRestricted, "Tamam acknowledges the first-use tip and continues the action");
                 flags.Remove(TutorialProgress.Reveal); Field(game.Tracker, "_revealingPowerUpCount", 0);
                 Require(!game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp, () => cancelledUses++), "No-stock powerups do not open a use tutorial");
                 game.Bootstrap.ShowRewards(2, 1); Require(game.Message != null, "First earned currencies are explained");
@@ -273,33 +273,37 @@ public static class FruitLabTutorialEditorTools
         public readonly LevelTracker Tracker; public readonly TargetNumberCreator Target;
         public readonly RoundStateManager Round; public readonly BoardAreaController Board;
         public readonly InitialCardAreaController Initial; public readonly CardPlacementCoordinator Placement;
+        public ResultManager Results; public PowerUpMessageController PowerMessages; public RevealingPowerUpController Reveal;
         public readonly GameUIController UI; public readonly GameUIView View; public readonly TutorialBootstrapper Bootstrap;
         private readonly CardInteractionManager _interaction;
-        private readonly GamePowerUpAreaController _powers;
-        private readonly GuessManager _guess;
-        private readonly ResultAreaController _area;
-        private readonly CardItemInfoManager _info;
+        public readonly GamePowerUpAreaController _powers;
+        public readonly GuessManager _guess;
+        public readonly ResultAreaController _area;
+        public readonly CardItemInfoManager _info;
         private readonly GameObject _objects, _events;
         private readonly BaseButtonControllerFactory _buttons;
-        private readonly LevelSaveDataManager _saves;
-        private readonly BoardHolderCountManager _counts;
+        public readonly LevelSaveDataManager _saves;
+        public readonly BoardHolderCountManager _counts;
         private readonly MemorySave _memory = new MemorySave();
         public TutorialMessagePopupView Message => Canvas.GetComponentInChildren<TutorialMessagePopupView>(true);
         public int Step => ((FirstLevelTutorialController)Get(Bootstrap, "_first"))?.Step ?? -1;
-        public Fixture(Canvas canvas, Camera camera)
+        public Fixture(Canvas canvas, Camera camera, LevelData definition = null)
         {
             Canvas = canvas; Camera = camera;
             _objects = new GameObject("TutorialTestServices"); _objects.SetActive(false); _objects.transform.SetParent(canvas.transform, false);
             _events = new GameObject("TutorialTestEvents", typeof(EventSystem)); SceneManager.MoveGameObjectToScene(_events, canvas.gameObject.scene);
-            Tracker = _objects.AddComponent<LevelTracker>(); Field(Tracker, "_levelId", 0); Field(Tracker, "_gameOption", GameOption.SinglePlayer);
+            Tracker = _objects.AddComponent<LevelTracker>(); Tracker.SuppressPersistenceForTests = true; Field(Tracker, "_levelId", 0); Field(Tracker, "_gameOption", GameOption.SinglePlayer);
             foreach (string name in new[] { "_bombPowerUpCount", "_revealingPowerUpCount", "_lifePowerUpCount" }) Field(Tracker, name, 1);
-            var level = new TestLevel(); var saves = _saves = new LevelSaveDataManager(level); saves.CreateDefaultLevelSaveData();
+            var level = new TestLevel(definition); var saves = _saves = new LevelSaveDataManager(level); saves.CreateDefaultLevelSaveData();
             Round = new RoundStateManager(level, saves); Round.Initialize();
             var counts = _counts = new BoardHolderCountManager(saves, level); var indexes = new BoardCardIndexManager(); var sizes = new SizeManager();
             var boardView = canvas.GetComponentInChildren<BoardAreaView>(true);
-            Board = new BoardAreaController(boardView, new BoardLayoutManager(boardView, sizes), counts, indexes, indexes);
+            var split = new BoardSplitService(level,Tracker);
+            var boardLayout = new BoardLayoutManager(boardView,sizes); Field(boardLayout,"_split",split);
+            Board = new BoardAreaController(boardView, boardLayout, counts, indexes, indexes); Field(Board,"_split",split);
             Target = _objects.AddComponent<TargetNumberCreator>();
-            Field(Target, "_levelDataCreator", level); Field(Target, "_gameSaveService", _memory); Field(Target, "_levelTracker", Tracker);
+            Field(Target, "_levelDataCreator", level); Field(Target, "_gameSaveService", _memory); Field(Target, "_levelTracker", Tracker); Field(Target,"_saveData",saves);
+            Field(split,"_save",saves); Field(split,"_target",Target); Field(split,"_round",Round);
             var initialView = canvas.GetComponentInChildren<InitialCardAreaView>(true); var layout = new InitialCardAreaLayoutManager(initialView, sizes);
             var haptic = new HapticController();
             Initial = new InitialCardAreaController(initialView, Board, counts, level, saves, Target, layout, new InitialCardAreaFactory(initialView, haptic, layout));
@@ -308,15 +312,18 @@ public static class FruitLabTutorialEditorTools
             container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             _buttons = container.Resolve<BaseButtonControllerFactory>();
             _powers = new GamePowerUpAreaController(_buttons, canvas.GetComponentInChildren<PowerUpListHolderView>(true), Tracker, Round, _info, counts);
+            Field(_powers,"_split",split);
             View = canvas.GetComponentInChildren<GameUIView>(true);
             UI = new GameUIController(_buttons, Tracker, null, haptic, View, _powers); Field(UI, "_tutorialGate", Gate);
             var fade = new FadePanelController(canvas.GetComponentInChildren<FadePanelView>(true));
-            var powerMessages = new PowerUpMessageController(_powers, fade, Tracker, Round, _info, counts); Field(powerMessages, "_tutorialGate", Gate);
-            var reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target);
+            var powerMessages = PowerMessages = new PowerUpMessageController(_powers, fade, Tracker, Round, _info, counts); Field(powerMessages, "_tutorialGate", Gate);
+            Field(powerMessages,"_split",split);
+            var reveal = Reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target);
             var locator = new CardItemLocator(Board, UI); locator.Initialize();
             Placement = new CardPlacementCoordinator(Board, locator, UI, indexes, indexes, reveal, Initial, _info, Gate);
             _area = new ResultAreaController(Tracker, null, canvas.GetComponentInChildren<ResultAreaView>(true));
-            var results = new ResultManager(UI, _area, Target, indexes, Round, _powers);
+            var results = Results = new ResultManager(UI, _area, Target, indexes, Round, _powers);
+            Field(results,"_split",split);
             _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), Target, _info, powerMessages, UI, Round);
             _interaction = new CardInteractionManager(UI, new BoardHolderClickRouter(Board, reveal), Initial, haptic, Placement);
             var mask = _objects.AddComponent<UnmaskServiceAreaView>(); Set(mask, "unmaskServicePrefab", AssetDatabase.LoadAssetAtPath<UnmaskServiceView>(MaskPath));
@@ -327,10 +334,11 @@ public static class FruitLabTutorialEditorTools
                 (HandTutorialView)data.FindProperty("handTutorialPrefab").objectReferenceValue,
                 (TutorialMessagePopupView)data.FindProperty("tutorialMessagePopupPrefab").objectReferenceValue);
             results.LevelSuccessEvent += (sender, args) => Bootstrap.RoundEnded(true);
+            View.GetPairView()?.Configure(Initial, Placement, Board, indexes, Gate, UI, () => true);
         }
         public void BuildActors()
         {
-            Board.CreateBoard(); Target.SetTargetNumber(2); _info.Initialize(); Initial.Initialize(false);
+            Board.CreateBoard(); Target.SetTargetNumber(_counts.GetBoardHolderCount()); _info.Initialize(); Initial.Initialize(false);
             _powers.Initialize(); UI.Initialize(false); Placement.Initialize(); _interaction.Initialize(); _area.Initialize(false); _guess.Initialize();
             Layer(Canvas.transform);
         }
@@ -341,7 +349,6 @@ public static class FruitLabTutorialEditorTools
         }
         public void Check() => Click((BaseButtonView)View.GetCheckButton());
         public void Next() => Click((BaseButtonView)new SerializedObject(Message).FindProperty("nextButton").objectReferenceValue);
-        public void CancelTip() => Click((BaseButtonView)new SerializedObject(Message).FindProperty("secondaryButton").objectReferenceValue);
         public void Feedback(int rowIndex, int[] fruits, int correct, int misplaced)
         {
             Require(Round.GetTriedCardsList()[rowIndex].SequenceEqual(fruits), "Real guess must retain the instructed board order");
@@ -360,7 +367,8 @@ public static class FruitLabTutorialEditorTools
         }
         public void AssertNoSkip()
         {
-            Require(Message != null && !((BaseButtonView)new SerializedObject(Message).FindProperty("secondaryButton").objectReferenceValue).gameObject.activeSelf,
+            var secondary = Message != null ? new SerializedObject(Message).FindProperty("secondaryButton").objectReferenceValue as BaseButtonView : null;
+            Require(Message != null && (secondary == null || !secondary.gameObject.activeSelf),
                 "The first lesson has no skip/close action");
             Require(Message.transform.Find("SkipButton") == null, "Old skip object is removed from the prefab");
         }
@@ -438,6 +446,7 @@ public static class FruitLabTutorialEditorTools
         }
         public void Dispose()
         {
+            View.GetPairView()?.Unbind(); _guess.Dispose();
             Bootstrap.Dispose(); _interaction.Unsubscribe(); Tick(2f);
             Object.DestroyImmediate(_events); Object.DestroyImmediate(_objects);
         }
@@ -446,7 +455,7 @@ public static class FruitLabTutorialEditorTools
     public static string ResetLocalProgress()
     {
         Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Stop Play mode before the requested profile reset");
-        string[] ints = new[] { "level_id", "star_count", "gift_star_count", "revealing_power_up_count", "life_power_up_count", "bomb_power_up_count", "reward_type" }.Concat(TutorialProgress.Keys).ToArray();
+        string[] ints = new[] { "level_id", "star_count", "gift_star_count", "revealing_power_up_count", "life_power_up_count", "bomb_power_up_count", "helper_power_up_count", "pair_power_up_count", "split_power_up_count", "reward_type" }.Concat(TutorialProgress.Keys).ToArray();
         string[] strings = { "saved_game_key", "star_count_of_levels" };
         string backup = Folder + "/PlayerPrefsBackups/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + ".json";
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backup));
@@ -477,7 +486,9 @@ public static class FruitLabTutorialEditorTools
 
     private sealed class TestLevel : ILevelDataCreator
     {
-        public LevelData GetLevelData() => new LevelData { NumOfBoardHolders = 2, NumOfCards = 5, MaxNumOfTries = 6 };
+        private readonly LevelData _definition;
+        public TestLevel(LevelData definition = null) => _definition = definition ?? new LevelData { NumOfBoardHolders = 2, NumOfCards = 5, MaxNumOfTries = 6 };
+        public LevelData GetLevelData() => _definition;
         public void SetSinglePlayerLevelData() { } public void SetMultiplayerLevelData() { }
     }
     private sealed class MemorySave : IGameSaveService
@@ -516,7 +527,7 @@ public static class FruitLabTutorialEditorTools
     private static T Find<T>(Scene scene) where T : Component => scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<T>(true)).First();
     private static void Set(Object target, string name, Object value) { var data = new SerializedObject(target); data.FindProperty(name).objectReferenceValue = value; data.ApplyModifiedPropertiesWithoutUndo(); EditorUtility.SetDirty(target); }
     private static void Dirty(GameObject root) { foreach (Component component in root.GetComponentsInChildren<Component>(true)) { if (component == null) continue; EditorUtility.SetDirty(component); if (PrefabUtility.IsPartOfPrefabInstance(component)) PrefabUtility.RecordPrefabInstancePropertyModifications(component); } }
-    private static string Profile() => string.Join("|", new[] { "level_id", "star_count", "gift_star_count", "revealing_power_up_count", "life_power_up_count", "bomb_power_up_count", "reward_type" }.Concat(TutorialProgress.Keys).Select(key => key + ":" + PlayerPrefs.HasKey(key) + ":" + PlayerPrefs.GetInt(key))) + PlayerPrefs.GetString("saved_game_key") + PlayerPrefs.GetString("star_count_of_levels");
+    private static string Profile() => string.Join("|", new[] { "level_id", "star_count", "gift_star_count", "revealing_power_up_count", "life_power_up_count", "bomb_power_up_count", "helper_power_up_count", "pair_power_up_count", "split_power_up_count", "reward_type" }.Concat(TutorialProgress.Keys).Select(key => key + ":" + PlayerPrefs.HasKey(key) + ":" + PlayerPrefs.GetInt(key))) + PlayerPrefs.GetString("saved_game_key") + PlayerPrefs.GetString("star_count_of_levels");
     private static void Draw(Camera camera)
     {
         Canvas.ForceUpdateCanvases();

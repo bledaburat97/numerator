@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game;
@@ -11,6 +11,7 @@ namespace Scripts
     {
         [InjectOptional] private ILevelTracker _levelTracker;
         [InjectOptional] private IMultiplayerGameController _multiplayer;
+        [InjectOptional] private BoardSplitService _split;
         private readonly IResultAreaController _resultAreaController;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
@@ -19,6 +20,7 @@ namespace Scripts
 
         public event EventHandler LevelSuccessEvent;
         public event EventHandler WrongGuessEvent;
+        public event EventHandler<GuessEvaluation> GuessResolved;
 
         [Inject]
         public ResultManager(IGameUIController gameUIController, 
@@ -38,33 +40,20 @@ namespace Scripts
         {
             foreach (List<int> triedCards in _roundStateManager.GetTriedCardsList())
             {
-                CalculatePositionCounts(triedCards, out int numOfCorrectPos, out int numOfWrongPos);
-                _resultAreaController.AddResultBlock(new ResultBlockModel()
-                {
-                    finalNumbers = triedCards,
-                    correctPosCount = numOfCorrectPos,
-                    wrongPosCount = numOfWrongPos
-                });
+                var evaluation = Evaluate(0,triedCards);
+                _resultAreaController.AddResultBlock(CreateRow(triedCards,evaluation));
             }
         }
 
-        private void CalculatePositionCounts(List<int> finalCards, out int numOfCorrectPos, out int numOfWrongPos)
+        private GuessEvaluation Evaluate(int number,List<int> cards)
         {
-            numOfCorrectPos = 0;
-            numOfWrongPos = 0;
-            
-            for (int i = 0; i < finalCards.Count; i++)
-            {
-                for (int j = 0; j < _targetNumberCreator.GetTargetCardsList().Count; j++)
-                {
-                    if (finalCards[i] == _targetNumberCreator.GetTargetCardsList()[j])
-                    {
-                        if (i == j) numOfCorrectPos++;
-                        else numOfWrongPos++;
-                    }
-                }
-            }
+            var answer = number == 0 ? _targetNumberCreator.GetHistoryTargetCards() : _targetNumberCreator.GetTargetCardsList();
+            return _split != null ? _split.Evaluate(number,cards,answer) : new GuessEvaluation(number,cards,answer);
         }
+
+        private static ResultBlockModel CreateRow(List<int> cards,GuessEvaluation evaluation) => new ResultBlockModel {
+            finalNumbers = cards, correctPosCount = evaluation.Correct, wrongPosCount = evaluation.Misplaced, groups = evaluation.Groups
+        };
 
         private void CheckFinalCards(object sender, EventArgs args)
         {
@@ -83,6 +72,7 @@ namespace Scripts
                 _multiplayer?.SubmitGuess(finalCards.ToArray());
                 return;
             }
+            if (_roundStateManager.GetRemainingGuessCount() <= 0) return;
             if (finalCards.Count != _targetNumberCreator.GetTargetCardsList().Count)
             {
                 Debug.LogError("Final number size and target number size are not equal.");
@@ -92,19 +82,16 @@ namespace Scripts
             _roundStateManager.AddTriedCards(finalCards);
             GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
             _gamePowerUpAreaController.Refresh();
-            CalculatePositionCounts(finalCards, out int numOfCorrectPos, out int numOfWrongPos);
-            DetermineAction(finalCards, numOfCorrectPos, numOfWrongPos);
+            var evaluation = Evaluate(_roundStateManager.GetTriedCardsList().Count, finalCards);
+            DetermineAction(finalCards, evaluation);
+            GuessResolved?.Invoke(this, evaluation);
+            _gamePowerUpAreaController.Refresh();
         }
 
-        private void DetermineAction(List<int> finalCards, int numOfCorrectPos, int numOfWrongPos)
+        private void DetermineAction(List<int> finalCards, GuessEvaluation evaluation)
         {
-            _resultAreaController.AddResultBlock(new ResultBlockModel()
-            {
-                finalNumbers = finalCards,
-                correctPosCount = numOfCorrectPos,
-                wrongPosCount = numOfWrongPos
-            });
-            if (numOfCorrectPos == finalCards.Count)
+            _resultAreaController.AddResultBlock(CreateRow(finalCards,evaluation));
+            if (evaluation.Won)
             {
                 LevelSuccessEvent?.Invoke(this, EventArgs.Empty);
             }
@@ -119,6 +106,7 @@ namespace Scripts
     {
         event EventHandler LevelSuccessEvent;
         event EventHandler WrongGuessEvent;
+        event EventHandler<GuessEvaluation> GuessResolved;
         void TryAddTriedCards();
     }
 }

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Scripts
 {
@@ -32,6 +32,8 @@ namespace Scripts
             _rewardTokenView.SetStatus(status);
         }
 
+        public void SetLocalPosition(Vector2 position) => _view.GetRectTransform().localPosition = position;
+
         public void DestroyObject()
         {
             _view.DestroyObject();
@@ -48,6 +50,7 @@ namespace Scripts
         void Initialize(IBoundaryView view, BoundaryModel model);
         void AddRewardToken(Vector2 tokenLocalPosition, LifeBarRewardType rewardType);
         void SetRewardTokenStatus(bool status);
+        void SetLocalPosition(Vector2 position);
         void DestroyObject();
         IRewardTokenView GetRewardToken();
     }

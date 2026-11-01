@@ -1,4 +1,4 @@
-﻿using Game;
+using Game;
 using Menu;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +15,7 @@ namespace Scripts
 
         public static bool AreCrystalRewardsUnlocked(int levelId)
         {
+            if (LevelPlaytestSchedule.IsActive(levelId)) return true;
             // Derive introduction from level data; later two-slot levels stay unlocked.
             return LevelDataGetter.GetStartingLevelsData().Exists(level =>
                 level.LevelId <= levelId && level.NumOfBoardHolders > 2);

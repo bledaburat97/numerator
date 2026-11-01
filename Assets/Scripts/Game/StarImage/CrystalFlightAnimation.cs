@@ -5,13 +5,16 @@ namespace Scripts
 {
     public static class CrystalFlightAnimation
     {
+        public static float Duration(IRewardTokenView token, bool collection = false) => token is CrystalView crystal
+            ? crystal.GetFlightDuration(collection) : collection ? .62f : .78f;
+
         public static Tween Create(IRewardTokenView token, RectTransform target, bool collection = false)
         {
             RectTransform item = token?.GetRectTransform();
             if (item == null || target == null) return DOTween.Sequence();
 
             var crystal = token as CrystalView;
-            float duration = crystal != null ? crystal.GetFlightDuration(collection) : (collection ? .62f : .78f);
+            float duration = Duration(token, collection);
             RectTransform space = null;
             Vector3 start = default, control = default, end = default;
             return DOVirtual.Float(0f, 1f, duration, progress =>
