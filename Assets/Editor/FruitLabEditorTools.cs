@@ -37,6 +37,11 @@ public static class FruitLabEditorTools
             File.Delete(refresh);
             EditorApplication.delayCall += () => {
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+                var knownScripts = new System.Collections.Generic.HashSet<string>(CompilationPipeline.GetAssemblies()
+                    .SelectMany(assembly => assembly.sourceFiles).Select(path => path.Replace('\\', '/')));
+                foreach (string path in Directory.GetFiles("Assets/Scripts", "*.cs", SearchOption.AllDirectories).Concat(Directory.GetFiles("Assets/Editor", "*.cs", SearchOption.AllDirectories)))
+                    if (!knownScripts.Contains(path) || AssetDatabase.LoadAssetAtPath<MonoScript>(path) == null)
+                        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
                 DateTime runtimeSource = Directory.GetFiles("Assets/Scripts", "*.cs", SearchOption.AllDirectories)
                     .Select(File.GetLastWriteTimeUtc).Max();
                 DateTime editorSource = Directory.GetFiles("Assets/Editor", "*.cs", SearchOption.AllDirectories)
@@ -78,6 +83,8 @@ public static class FruitLabEditorTools
         {
             switch (job.operation)
             {
+                case "session-bindings-review": reply.details = FruitLabTutorialEditorTools.ReviewSessionBindings(); break;
+                case "performance-review": reply.details = Render(5, 9, validation: FruitLabTutorialEditorTools.ReviewPerformance, validateBeforeRender: true); break;
                 case "inspect": reply.details = Inspect(); break;
                 case "menu-progression-review": reply.details = FruitLabRewardEditorTools.ReviewMenuProgression(); break;
                 case "telemetry-install":

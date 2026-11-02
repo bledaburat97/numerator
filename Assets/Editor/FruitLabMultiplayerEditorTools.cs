@@ -126,7 +126,7 @@ public static class FruitLabMultiplayerEditorTools
     public static void Review(Canvas canvas, Camera camera)
     {
         var view = canvas.GetComponentInChildren<GameUIView>(true); view.SetUserText("Oyuncu 1"); view.SetOpponentText("Oyuncu 2");
-        view.SetOpponentInfoStatus(true); view.SetMultiplayerStatus("Sıra sende", 60); view.SetCoinCounterStatus(false);
+        view.SetOpponentInfoStatus(true); view.SetMultiplayerStatus("Sıra sende"); view.SetMultiplayerTimer(60, true); view.SetCoinCounterStatus(false);
         canvas.GetComponentInChildren<LifeBarView>(true).gameObject.SetActive(false);
         canvas.GetComponentInChildren<PowerUpListHolderView>(true).gameObject.SetActive(false);
         int rowIndex = 0;
@@ -145,9 +145,9 @@ public static class FruitLabMultiplayerEditorTools
             var stripe = row.transform.Find("PlayerStripe").GetComponent<Image>();
             Require(stripe.gameObject.activeSelf && !stripe.raycastTarget && stripe.color == (row.IsLocalGuess == true ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer), "Player stripes show local perspective without intercepting scroll input");
         }
-        view.SetMultiplayerTurn("Sıra sende", 60, true);
+        view.SetMultiplayerTurn("Sıra sende", true, true);
         Require(!canvas.GetComponentsInChildren<Transform>(true).Any(t => t.name == "YourTurnNotification"), "Turn status stays in the header without covering history");
-        view.SetMultiplayerTurn("Rakibin yeni oyun teklif ediyor", 0, false);
+        view.SetMultiplayerTurn("Rakibin yeni oyun teklif ediyor", false, false);
         foreach (Transform child in canvas.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
         Capture(camera, Folder + "/preview-multiplayer-rematch-" + count + ".png");
         var popup = canvas.GetComponentInChildren<LevelFinishPopupView>(true);

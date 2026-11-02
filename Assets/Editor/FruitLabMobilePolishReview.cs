@@ -420,7 +420,7 @@ public static partial class FruitLabTutorialEditorTools
                     Field(provider,"_saveData",game._saves); Field(provider,"_levels",new TestLevel(definition)); Field(provider,"_tracker",game.Tracker);
                     using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,split,game.Board))
                     {
-                        rules.Attach(game.View,() => provider.TryCreateSnapshot(out checkpoint)); rules.Begin(LevelMechanic.Normal);
+                        rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => provider.TryCreateSnapshot(out checkpoint)); rules.Begin(LevelMechanic.Normal);
                         if (oldGuesses > 0)
                         {
                             SubmitSplit(game,new[] {3,4,1,2,5}.Take(count).ToArray()); SubmitSplit(game,answer.Reverse().ToArray());

@@ -92,7 +92,7 @@ public static partial class FruitLabTutorialEditorTools
                 using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
                     game.Target, game._area, game._powers, game.Tracker))
                 {
-                    rules.Attach(game.View, () => { if (snapshot.TryCreateSnapshot(out var data)) memory.Save(data); });
+                    rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), () => { if (snapshot.TryCreateSnapshot(out var data)) memory.Save(data); });
                     rules.Begin(LevelMechanic.Helper); game._powers.Refresh();
                     Require(!helper.CanApply && !helper.TryApply(), "No Helper before a submitted guess");
                     for (int i = 0; i < 3; i++) { game.Place(0); game.Place(1); game.Check(); Tick(.6f); }
@@ -137,7 +137,7 @@ public static partial class FruitLabTutorialEditorTools
                 using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
                     game.Target, game._area, game._powers, game.Tracker))
                 {
-                    rules.Attach(game.View, null); rules.Begin(LevelMechanic.LegacyElimination);
+                    rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), null); rules.Begin(LevelMechanic.LegacyElimination);
                     for (int i = 0; i < 3; i++) { game.Place(0); game.Place(1); game.Check(); Tick(.6f); }
                     Require(game._info.GetCardItemInfoList().All(card => card.isExisted)
                         && game._saves.GetLevelSaveData().RevealedGuessNumbers.Count == 0, "Retired elimination saves behave as normal levels");
@@ -224,7 +224,7 @@ public static partial class FruitLabTutorialEditorTools
                 using (var rules = GrowingRules(game,definition,growth))
                 {
                     var provider = GrowingSnapshot(game,definition); LevelSaveData immediate = null;
-                    rules.Attach(game.View,() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Growing);
+                    rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Growing);
                     Require(provider.TryCreateSnapshot(out var initial) && GrowingBoardState.IsValid(initial),"An untouched Growing round saves all four future fruits");
                     checkpoints.Add(initial);
                     for (int number = 1; number <= 6; number++)
@@ -263,7 +263,7 @@ public static partial class FruitLabTutorialEditorTools
                     game._saves.SetLevelSaveDataAsSaved(loaded); game.Round.Initialize(); game.BuildActors(); game.Results.TryAddTriedCards(); game.Gate.Clear();
                     using (var rules = GrowingRules(game,definition,GrowthFor(game,definition)))
                     {
-                        rules.Attach(game.View,null); rules.Begin(LevelMechanic.Growing);
+                        rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Growing);
                         Require(game.Target.GetTargetCardsList().SequenceEqual(saved.TargetCards) && game._counts.GetBoardHolderCount() == saved.GrowingBoard.ActiveCount,"Resume restores the exact visible answer and slot count");
                         Require(game.Round.GetRemainingGuessCount() == saved.RemainingGuessCount && game.Round.GetMaxGuessCount() == 8+(saved.GrowingBoard.BonusGranted ? 4 : 0),"Resume preserves capacity and never repeats the bonus");
                         Require(game.Round.GetLifeBarRewardInfoList().Select(reward => reward.IsActive).SequenceEqual(saved.ActiveRewardTokens),"Consumed reward tokens do not return after resume");
@@ -486,7 +486,7 @@ public static partial class FruitLabTutorialEditorTools
                 using (var rules = DangerRules(game,definition,danger))
                 {
                     var provider = GrowingSnapshot(game,definition); LevelSaveData immediate = null;
-                    rules.Attach(game.View,() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Dynamite);
+                    rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Dynamite);
                     var state = danger.Current;
                     Require(provider.TryCreateSnapshot(out var initial) && DynamiteRoundState.IsValid(initial),"Visible slot and full counter save before the first guess"); checkpoints.Add(initial);
                     Require(state.Revealed && state.Remaining == 4,"Dynamite is visible below the slot before the first guess");
@@ -591,7 +591,7 @@ public static partial class FruitLabTutorialEditorTools
                     using (var rules = DangerRules(game,definition,danger))
                     {
                         LevelSaveData immediate = null; var provider = GrowingSnapshot(game,definition);
-                        rules.Attach(game.View,() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Dynamite);
+                        rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Dynamite);
                         if (!beforeGuess) SubmitDynamite(game,new[] {2,5,6},.05f);
                         Field(game.Tracker,"_revealingPowerUpCount",1); game._powers.Refresh();
                         Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Revealing));
@@ -619,7 +619,7 @@ public static partial class FruitLabTutorialEditorTools
                 using (var rules = DangerRules(game,definition,danger,pair))
                 {
                     var provider = GrowingSnapshot(game,definition);
-                    rules.Attach(game.View,() => {
+                    rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => {
                         if (provider.TryCreateSnapshot(out var current)) Require(DynamiteRoundState.IsValid(current),"Every intermediate Pair/Bomb checkpoint has a valid danger slot");
                     });
                     rules.Begin(LevelMechanic.Dynamite); Require(pair.TryApply(),"Pair may precede Bomb on a danger level");
@@ -696,7 +696,7 @@ public static partial class FruitLabTutorialEditorTools
     {
         var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
         var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,pair,(BoardSplitService)Get(game.Results,"_split"),game.Board,null,danger);
-        Field(rules,"_levels",new TestLevel(definition)); rules.Attach(game.View,null); return rules;
+        Field(rules,"_levels",new TestLevel(definition)); rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); return rules;
     }
     private static void AssertDynamiteCardPinned(Fixture game,int frame = -1)
     {

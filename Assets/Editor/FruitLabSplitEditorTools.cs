@@ -74,7 +74,7 @@ public static partial class FruitLabTutorialEditorTools
                     Field(game._powers,"_helper",helper); Field(game.PowerMessages,"_helper",helper);
                     using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
                     {
-                        rules.Attach(game.View,null); rules.Begin(LevelMechanic.Split);
+                        rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Split);
                         var partial = answer.ToArray(); (partial[count-2],partial[count-1]) = (partial[count-1],partial[count-2]);
                         int wins = 0; game.Results.LevelSuccessEvent += (sender,args) => wins++;
                         SubmitSplit(game,partial); Require(wins == 0 && game.Round.GetRemainingGuessCount() == 9,"One solved group neither wins nor spends an extra life");
@@ -128,7 +128,7 @@ public static partial class FruitLabTutorialEditorTools
                     var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
                     using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
                     {
-                        rules.Attach(game.View,null); rules.Begin(LevelMechanic.Split);
+                        rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Split);
                         var details = helper.EvaluateGuess(6);
                         Require(rows[5].GetComponentsInChildren<FruitLabGlyph>().Count(glyph => glyph.name == "HelperAbsent")
                             == details.States.Count(state => state == CardResultState.Absent),"Resume restores group-aware Helper details");

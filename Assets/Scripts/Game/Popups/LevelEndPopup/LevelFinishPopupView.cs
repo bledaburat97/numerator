@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -140,6 +141,35 @@ namespace Scripts
                     _success ? 32f : Mathf.Min(40f, height * .44f));
                 button.buttonView.GetComponent<BaseButtonView>().ApplyLabActionStyle(!menu);
             }
+        }
+
+        public void ResetTitle()
+        {
+            if (text == null) return;
+            text.gameObject.SetActive(false); text.alpha = 1;
+        }
+        public void PrepareTitle(string value)
+        {
+            if (text == null) return;
+            text.gameObject.SetActive(true); text.alpha = 1; SetText(value);
+            text.rectTransform.localScale = Vector3.zero;
+        }
+        public Sequence PlayTitleIntro(float duration) => text == null ? DOTween.Sequence()
+            : DOTween.Sequence().Append(text.rectTransform.DOScale(1, duration)).SetLink(gameObject);
+        public Sequence FadeButton(LevelFinishButtonType type, float duration, float alpha)
+        {
+            var group = GetButton(type)?.GetCanvasGroup();
+            return group == null ? DOTween.Sequence() : DOTween.Sequence().Append(group.DOFade(alpha, duration)).SetLink(gameObject);
+        }
+        public Sequence FadeButtons(float duration, float alpha) => DOTween.Sequence()
+            .Join(FadeButton(LevelFinishButtonType.Game, duration, alpha))
+            .Join(FadeButton(LevelFinishButtonType.Menu, duration, alpha)).SetLink(gameObject);
+        public void SetButtonStatus(LevelFinishButtonType type, bool active) => GetButton(type)?.SetButtonStatus(active);
+        public void SetButtonAlpha(LevelFinishButtonType type, float alpha) => GetButton(type)?.SetAlpha(alpha);
+        public void ResetRewardProgress()
+        {
+            if (verticalCrystalProgressView == null) return;
+            verticalCrystalProgressView.SetAlpha(0); verticalCrystalProgressView.ResetFill(); verticalCrystalProgressView.SetStatus(false);
         }
 
         public void SetOutcome(bool success, int earnedCrystalCount = 0)

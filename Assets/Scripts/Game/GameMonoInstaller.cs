@@ -81,6 +81,15 @@ namespace Scripts
             Container.Bind<ILevelSuccessAnimationManager>().To<LevelSuccessAnimationManager>().AsSingle();
             Container.Bind<ILevelStartAnimationManager>().To<LevelStartAnimationManager>().AsSingle();
             Container.Bind<ILevelFailAnimationManager>().To<LevelFailAnimationManager>().AsSingle();
+            Container.Bind<RoundBuilder>().AsSingle();
+            Container.Bind<LevelPresentation>().AsSingle();
+            Container.Bind<MultiplayerRoundPresenter>().AsSingle();
+            Container.Bind<SinglePlayerSession>().AsSingle();
+            Container.Bind<MultiplayerSession>().AsSingle();
+            Container.Bind<ILevelSession>().FromMethod(context =>
+                context.Container.Resolve<ILevelTracker>().GetGameOption() == GameOption.MultiPlayer
+                    ? (ILevelSession)context.Container.Resolve<MultiplayerSession>()
+                    : context.Container.Resolve<SinglePlayerSession>()).AsSingle();
             Container.Bind<ILevelFlowOrchestrator>().To<LevelFlowOrchestrator>().AsSingle();
             Container.Bind<BoardCardIndexManager>().AsSingle();
             Container.Bind<IBoardPlacementQuery>().To<BoardCardIndexManager>().FromResolve();

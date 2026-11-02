@@ -44,14 +44,17 @@ namespace Scripts
         public bool HasMechanicStatus => _mechanicLabel != null && _mechanicLabel.gameObject.activeSelf;
         public void SetMechanicStatus(string text)
         {
+            bool wasVisible = HasMechanicStatus;
+            bool visible = !string.IsNullOrEmpty(text) && !_multiplayerMode;
+            if (_mechanicLabel != null && _mechanicLabel.text == text && wasVisible == visible) return;
             if (_mechanicLabel == null) _mechanicLabel = userText.transform.parent.Find("MechanicStatus")?.GetComponent<TMP_Text>()
                 ?? FruitLabStyle.CreateText("MechanicStatus", userText.transform.parent, 10f, FruitLabStyle.Mint);
             _mechanicLabel.text = text;
             _mechanicLabel.raycastTarget = false;
             _mechanicLabel.enableAutoSizing = true; _mechanicLabel.fontSizeMin = 8; _mechanicLabel.fontSizeMax = 10;
-            _mechanicLabel.gameObject.SetActive(!string.IsNullOrEmpty(text) && !_multiplayerMode);
+            _mechanicLabel.gameObject.SetActive(visible);
             PlaceMechanicStatus();
-            GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
+            if (wasVisible != visible) GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
         }
         private void PlaceMechanicStatus()
         {
@@ -67,15 +70,22 @@ namespace Scripts
         private RectTransform _timerChip;
         public string MultiplayerStatusText => _turnLabel != null ? _turnLabel.text : "";
         public string MultiplayerTimerText => _timeLabel != null ? _timeLabel.text : "";
-        private double _deadline;
-        public void SetMultiplayerStatus(string value, double deadline)
+        public void SetMultiplayerStatus(string value)
         {
-            EnsureMultiplayerHud(); _turnLabel.text = value; _deadline = deadline; Update();
+            EnsureMultiplayerHud();
+            if (_turnLabel.text != value) _turnLabel.text = value;
         }
-        public void SetMultiplayerTurn(string value, double deadline, bool localTurn)
+        public void SetMultiplayerTurn(string value, bool timed, bool localTurn)
         {
-            SetMultiplayerStatus(value, deadline);
-            _turnLabel.color = deadline <= 0 ? FruitLabStyle.Muted : localTurn ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer;
+            SetMultiplayerStatus(value);
+            _turnLabel.color = !timed ? FruitLabStyle.Muted : localTurn ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer;
+        }
+        public void SetMultiplayerTimer(int seconds, bool visible)
+        {
+            EnsureMultiplayerHud();
+            _timeLabel.text = visible ? seconds + " sn" : "";
+            _timeLabel.color = visible && seconds <= 10 ? FruitLabStyle.OpponentPlayer : FruitLabStyle.Text;
+            if (_timerChip.gameObject.activeSelf != visible) _timerChip.gameObject.SetActive(visible);
         }
         private void EnsureMultiplayerHud()
         {
@@ -89,17 +99,6 @@ namespace Scripts
             _timerChip.SetParent(_matchHud, false); FruitLabStyle.AddSurface(_timerChip.gameObject, FruitLabStyle.Recess);
             _timeLabel = FruitLabStyle.CreateText("Time", _timerChip, 16f, FruitLabStyle.Text);
         }
-        private void Update()
-        {
-            if (!_multiplayerMode || _timeLabel == null) return;
-            double now = Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening
-                ? Unity.Netcode.NetworkManager.Singleton.ServerTime.Time : 0;
-            _timeLabel.text = _deadline > 0 ? Mathf.CeilToInt((float)System.Math.Max(0, _deadline - now)) + " sn" : "";
-            _timeLabel.color = _deadline > 0 && _deadline - now <= 10 ? FruitLabStyle.OpponentPlayer : FruitLabStyle.Text;
-            _timerChip.gameObject.SetActive(_deadline > 0);
-
-        }
-
         public void ApplyLabLayout(RectTransform header, RectTransform actionArea, float width, float headerHeight, float actionWidth, float actionHeight)
         {
             opponentInfo.SetActive(false);

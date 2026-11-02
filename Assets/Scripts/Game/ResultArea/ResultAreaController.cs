@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using DG.Tweening;
-using Game;
 using UnityEngine;
 using Zenject;
 
@@ -8,24 +7,22 @@ namespace Scripts
 {
     public class ResultAreaController : IResultAreaController
     {
-        private ILevelTracker _levelTracker;
-        private ITurnOrderDeterminer _turnOrderDeterminer;
         private IResultAreaView _view;
-        private List<IResultBlockController> _resultBlockControllers;
+        private readonly List<ResultBlockModel> _history = new List<ResultBlockModel>();
+        public int HistoryCount => _history.Count;
+        public ResultBlockModel GetHistoryEntry(int index) => _history[index];
         
         [Inject]
-        public ResultAreaController(ILevelTracker levelTracker, ITurnOrderDeterminer turnOrderDeterminer, IResultAreaView view)
+        public ResultAreaController(IResultAreaView view)
         {
-            _levelTracker = levelTracker;
-            _turnOrderDeterminer = turnOrderDeterminer;
             _view = view;
-            _resultBlockControllers = new List<IResultBlockController>();
+            _view.SetHistory(_history);
         }
 
         public void Initialize(bool isNewGame)
         {
             if (isNewGame) RemoveResultBlocks();
-            _view.SetEmptyState(_resultBlockControllers.Count == 0);
+            _view.SetEmptyState(_history.Count == 0);
             if (isNewGame)
             {
                 _view.GetCanvasGroup().alpha = 0f;
@@ -44,32 +41,39 @@ namespace Scripts
         public void EnableReview() => _view.EnableReview();
         public void LabelLatestMultiplayerGuess(bool isLocal, string playerName = null)
         {
-            if (_resultBlockControllers.Count > 0) (_resultBlockControllers[_resultBlockControllers.Count - 1] as ResultBlockController)?.SetPlayerIdentity(isLocal, playerName);
+            if (_history.Count > 0)
+            {
+                var row = _history[_history.Count - 1];
+                row.isLocalGuess = isLocal; row.playerName = playerName;
+                _view.RefreshRow(_history.Count - 1);
+            }
             _view.SetScrollPositionToBottom();
         }
 
         public void RevealAnswer(IReadOnlyList<int> answer)
         {
-            foreach (IResultBlockController row in _resultBlockControllers) row.RevealAnswer(answer);
+            for (int i = 0; i < _history.Count; i++)
+            {
+                var row = _history[i];
+                row.reviewStates = new GuessEvaluation(0, row.finalNumbers, answer).States;
+            }
+            _view.RefreshVisibleRows();
             EnableReview();
         }
 
         public void RevealGuess(GuessEvaluation guess)
         {
-            if (guess.Number > 0 && guess.Number <= _resultBlockControllers.Count)
-                (_resultBlockControllers[guess.Number - 1] as ResultBlockController)?.RevealDetails(guess.States);
+            if (guess.Number <= 0 || guess.Number > _history.Count) return;
+            _history[guess.Number - 1].hintStates = guess.States;
+            _view.RefreshRow(guess.Number - 1);
         }
 
         public void AddResultBlock(ResultBlockModel resultBlockModel)
         {
-            IResultBlockController resultBlockController = new ResultBlockController();
-            resultBlockController.Initialize(_view.CreateResultBlock(), resultBlockModel, _view.GetWidth(), _view.GetRowHeight());
-            _resultBlockControllers.Add(resultBlockController);
+            _history.Add(resultBlockModel.Snapshot());
+            _view.HistoryChanged();
 
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
-            {
-                _view.SetScrollPositionToBottom();
-            }
+            _view.SetScrollPositionToBottom();
         }
         // Compatibility for existing numeric callers; gameplay uses the card-list model directly.
         public void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
@@ -86,12 +90,8 @@ namespace Scripts
 
         public void RemoveResultBlocks()
         {
-            while (_resultBlockControllers.Count > 0)
-            {
-                _resultBlockControllers[0].DestroyResultBlock();
-                _resultBlockControllers[0] = null;
-                _resultBlockControllers.Remove(_resultBlockControllers[0]);
-            }
+            _history.Clear();
+            _view.HistoryChanged();
         }
     }
 

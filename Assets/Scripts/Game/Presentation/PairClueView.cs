@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,34 +14,26 @@ namespace Scripts
         private readonly Vector3[] _corners = new Vector3[4];
         private BaseButtonView[] _controls = Array.Empty<BaseButtonView>();
         private RectTransform _powerArea;
-        private IInitialCardAreaController _initial;
-        private ICardPlacementCoordinator _placement;
-        private IBoardAreaController _board;
-        private IBoardPlacementQuery _query;
-        private IGameUIController _ui;
-        private TutorialInputGate _gate;
-        private Func<bool> _canInteract;
+        private PairDragPresenter _presenter;
         private PairClue _clue;
         private RectTransform _a, _b;
-        private bool _reset = true, _dragging;
+        private bool _reset = true;
         private int _pointer;
         private Vector2 _dragStart, _startA, _startB;
         private RectTransform _dragParent;
         private CanvasGroup _group;
+        private readonly CardVisualCache _visualA = new CardVisualCache();
+        private readonly CardVisualCache _visualB = new CardVisualCache();
         public PairClue Clue => _clue;
         public PairRopeSimulation Simulation => _simulation;
-        public bool IsGroupDragging => _dragging;
+        public bool IsGroupDragging => _presenter != null && _presenter.IsDragging;
         public PairRopeGraphic Graphic => rope;
-        public bool CanDragGroup => _clue != null && _initial != null && _placement != null && (_canInteract?.Invoke() ?? false)
-            && (_gate == null || !_gate.IsRestricted) && TryActors(out var a, out var b)
-            && !a.GetCardMoveHandler().IsMovementLocked() && !b.GetCardMoveHandler().IsMovementLocked();
+        public bool CanDragGroup => _presenter != null && _presenter.CanDrag(_clue);
 
-        public void Configure(IInitialCardAreaController initial, ICardPlacementCoordinator placement, IBoardAreaController board,
-            IBoardPlacementQuery query, TutorialInputGate gate, IGameUIController ui, Func<bool> canInteract)
+        public void Configure(PairDragPresenter presenter)
         {
-            Unbind(); _initial = initial; _placement = placement; _board = board; _query = query;
-            _gate = gate; _ui = ui; _canInteract = canInteract;
-            _ui.OpenSettings += CancelFromUI; _ui.ResetNumbers += CancelFromUI; _ui.CheckFinalNumbers += CancelFromUI;
+            Unbind();
+            _presenter = presenter;
             _group = GetComponent<CanvasGroup>();
             var canvas = GetComponentInParent<Canvas>();
             _controls = canvas != null ? canvas.GetComponentsInChildren<BaseButtonView>(true) : Array.Empty<BaseButtonView>();
@@ -49,9 +42,7 @@ namespace Scripts
         }
         public void Unbind()
         {
-            CancelDrag();
-            if (_ui != null) { _ui.OpenSettings -= CancelFromUI; _ui.ResetNumbers -= CancelFromUI; _ui.CheckFinalNumbers -= CancelFromUI; }
-            _initial = null; _placement = null; _board = null; _query = null; _ui = null; _canInteract = null;
+            _presenter?.Dispose(); _presenter = null;
             _controls = Array.Empty<BaseButtonView>(); _powerArea = null;
         }
         public void Show(PairClue clue)
@@ -60,30 +51,59 @@ namespace Scripts
             gameObject.SetActive(clue != null);
             if (rope != null) { rope.Owner = this; rope.Clear(); }
         }
-        private void CancelFromUI(object sender, EventArgs args) => CancelDrag();
         private void LateUpdate() => RefreshRope(Time.unscaledDeltaTime);
         public void RefreshRope(float deltaTime)
         {
-            if (_dragging && (!(_canInteract?.Invoke() ?? false) || (_gate != null && _gate.IsRestricted))) CancelDrag();
+            _presenter?.Tick();
             if (rope == null || !TryActors(out var a, out var b)) { rope?.Clear(); return; }
-            _a = a.GetRectTransform(); _b = b.GetRectTransform();
+            _a = a; _b = b;
             if (_a == null || _b == null || !_a.gameObject.activeInHierarchy || !_b.gameObject.activeInHierarchy) { rope.Clear(); return; }
-            var visualA = _a.Find("AnimationProvider") as RectTransform ?? _a;
-            var visualB = _b.Find("AnimationProvider") as RectTransform ?? _b;
+            var visualA = _visualA.Resolve(_a);
+            var visualB = _visualB.Resolve(_b);
             Rect bodyA = Bounds(visualA), bodyB = Bounds(visualB);
             var area = (RectTransform)transform;
             if (!area.rect.Contains(bodyA.center) || !area.rect.Contains(bodyB.center)) { rope.Clear(); return; }
             Vector2 anchorA = BottomAnchor(visualA), anchorB = BottomAnchor(visualB);
             if (_reset) { _simulation.Reset(anchorA,anchorB); _reset = false; }
             _simulation.Advance(anchorA,anchorB,deltaTime);
-            if (_group != null) _group.alpha = Mathf.Min(Opacity(_a),Opacity(_b));
+            if (_group != null) _group.alpha = Mathf.Min(_visualA.Opacity, _visualB.Opacity);
             rope.UpdateCurve(_simulation);
         }
-        private float Opacity(Transform card)
+
+        private sealed class CardVisualCache
         {
-            float alpha = 1;
-            foreach (var group in card.GetComponentsInParent<CanvasGroup>()) alpha *= group.alpha;
-            return alpha;
+            private RectTransform _root, _visual;
+            private readonly List<Transform> _parents = new List<Transform>();
+            private readonly List<CanvasGroup> _groups = new List<CanvasGroup>();
+            public float Opacity
+            {
+                get
+                {
+                    float alpha = 1;
+                    for (int i = 0; i < _groups.Count; i++) if (_groups[i] != null) alpha *= _groups[i].alpha;
+                    return alpha;
+                }
+            }
+            public RectTransform Resolve(RectTransform root)
+            {
+                if (_root != root || _visual == null)
+                {
+                    _root = root;
+                    _visual = root.Find("AnimationProvider") as RectTransform ?? root;
+                    _parents.Clear();
+                }
+                Transform parent = root;
+                int index = 0;
+                while (parent != null && index < _parents.Count && _parents[index] == parent)
+                { parent = parent.parent; index++; }
+                if (parent != null || index != _parents.Count)
+                {
+                    _parents.Clear();
+                    for (parent = root; parent != null; parent = parent.parent) _parents.Add(parent);
+                    root.GetComponentsInParent(false, _groups);
+                }
+                return _visual;
+            }
         }
         private Rect Bounds(RectTransform rect)
         {
@@ -98,17 +118,19 @@ namespace Scripts
             // rotation, scaling and reparenting between the initial area and board.
             return transform.InverseTransformPoint(card.TransformPoint(new Vector3(card.rect.center.x, card.rect.yMin, 0f)));
         }
-        private bool TryActors(out INormalCardItemController a, out INormalCardItemController b)
+        private bool TryActors(out RectTransform a, out RectTransform b)
         {
             a = b = null;
-            return _clue != null && _initial != null && _initial.TryGetCardItem(_clue.First-1,out a) && _initial.TryGetCardItem(_clue.Second-1,out b);
+            return _presenter != null && _presenter.TryGetFruitRects(_clue, out a, out b);
         }
         public bool IsOverFruit(Vector2 screen, Camera camera)
         {
-            if (_initial == null) return false;
-            for (int i = 0; i < _initial.GetCardCount(); i++)
-                if (_initial.TryGetCardItem(i,out var card) && card.GetRectTransform() != null
-                    && RectTransformUtility.RectangleContainsScreenPoint(card.GetRectTransform(),screen,camera)) return true;
+            if (_presenter == null) return false;
+            for (int i = 0; i < _presenter.CardCount; i++)
+            {
+                var rect = _presenter.CardRect(i);
+                if (rect != null && RectTransformUtility.RectangleContainsScreenPoint(rect, screen, camera)) return true;
+            }
             return false;
         }
         public bool IsOverControls(Vector2 screen,Camera camera)
@@ -121,48 +143,43 @@ namespace Scripts
         public void BeginGroupDrag(PointerEventData data)
         {
             if (!CanDragGroup || !TryActors(out var a,out var b)) return;
-            _dragParent = _initial.GetDragParent();
+            _dragParent = _presenter.DragParent;
             if (_dragParent == null) return;
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_dragParent,data.position,data.pressEventCamera,out _dragStart)) return;
-            if (!_placement.TryBeginPairDrag(_clue.First-1,_clue.Second-1,_dragParent)) return;
-            _a = a.GetRectTransform(); _b = b.GetRectTransform();
+            if (!_presenter.TryBegin(_clue, _dragParent)) return;
+            _a = a; _b = b;
             _startA = _dragParent.InverseTransformPoint(_a.position); _startB = _dragParent.InverseTransformPoint(_b.position);
-            _dragging = true; _pointer = data.pointerId;
+            _pointer = data.pointerId;
         }
         public void DragGroup(PointerEventData data)
         {
-            if (!_dragging || data.pointerId != _pointer || _a == null || _b == null) return;
+            if (!IsGroupDragging || data.pointerId != _pointer || _a == null || _b == null) return;
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_dragParent,data.position,data.pressEventCamera,out var point)) return;
             Vector2 delta = point-_dragStart;
             _a.position = _dragParent.TransformPoint(_startA+delta); _b.position = _dragParent.TransformPoint(_startB+delta);
         }
         public void EndGroupDrag(PointerEventData data)
         {
-            if (!_dragging || data.pointerId != _pointer) return;
+            if (!IsGroupDragging || data.pointerId != _pointer) return;
             int best = -1;
-            if ((_canInteract?.Invoke() ?? false) && (_gate == null || !_gate.IsRestricted))
+            if (_presenter.CanInteract)
             {
-                var boardView = _board.GetRectTransformOfGarden(0).GetComponentInParent<BoardAreaView>();
-                if (boardView != null && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)boardView.transform,data.position,data.pressEventCamera))
+                var boardView = _presenter.BoardRect;
+                if (boardView != null && RectTransformUtility.RectangleContainsScreenPoint(boardView,data.position,data.pressEventCamera))
                 {
                     float distance = float.MaxValue;
-                    for (int i = 0; i < _query.GetPlacedCardIndexesOnBoard().Count-1; i++)
+                    for (int i = 0; i < _presenter.SlotCount-1; i++)
                     {
                         Vector2 center = RectTransformUtility.WorldToScreenPoint(data.pressEventCamera,
-                            (_board.GetRectTransformOfGarden(i).position+_board.GetRectTransformOfGarden(i+1).position)*.5f);
+                            (_presenter.SlotPosition(i)+_presenter.SlotPosition(i+1))*.5f);
                         float current = (center-data.position).sqrMagnitude;
                         if (current < distance) { distance = current; best = i; }
                     }
                 }
             }
-            _dragging = false;
-            _placement.EndPairDrag(best,_a != null && _b != null && _a.position.x > _b.position.x);
+            _presenter.End(best,_a != null && _b != null && _a.position.x > _b.position.x);
         }
-        public void CancelDrag()
-        {
-            if (!_dragging) return;
-            _dragging = false; _placement?.EndPairDrag(-1,false);
-        }
+        public void CancelDrag() => _presenter?.Cancel();
         private void OnDisable() => CancelDrag();
         private void OnDestroy() => Unbind();
     }

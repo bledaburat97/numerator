@@ -41,9 +41,9 @@ namespace Scripts
                 _presentation, _tutorialGate, _hapticController,
                 () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning());
             var view = GetComponentInChildren<GameUIView>(true);
-            view?.GetPairView()?.Configure(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
-                _tutorialGate, _gameUi, () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning());
-            _mechanics.Attach(view, TrySave);
+            view?.GetPairView()?.Configure(new PairDragPresenter(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
+                _tutorialGate, _gameUi, () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning()));
+            _mechanics.Attach(new LevelMechanicsPresenter(view, _boardAreaController), TrySave);
             InitializeHapticController();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
@@ -52,7 +52,11 @@ namespace Scripts
         }
 
         private void OnLayoutChanged() => _layoutRefreshPending = true;
-        private void Update() => _annotations?.Tick();
+        private void Update()
+        {
+            _annotations?.Tick();
+            (_gameUi as GameUIController)?.TickPresentation();
+        }
 
         private void LateUpdate()
         {

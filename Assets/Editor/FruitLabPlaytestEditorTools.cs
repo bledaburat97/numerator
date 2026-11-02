@@ -66,7 +66,7 @@ public static partial class FruitLabTutorialEditorTools
                     using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
                         game.Target, game._area, game._powers, game.Tracker, pair,(BoardSplitService)Get(game.Results,"_split"),game.Board))
                     {
-                        Field(rules, "_levels", new TestLevel(definition)); rules.Attach(game.View, null);
+                        Field(rules, "_levels", new TestLevel(definition)); rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), null);
                         LevelPlaytestSchedule.PrepareTrialStock(game.Tracker, game._saves, definition);
                         rules.Begin(definition.Mechanic); game._powers.Refresh(); Tick(.3f);
                         var caption = canvas.GetComponentsInChildren<TMPro.TMP_Text>(true).Single(text => text.name == "MechanicStatus");

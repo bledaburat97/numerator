@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +16,9 @@ namespace Scripts
         [SerializeField] private Image playerStripe;
         public bool? IsLocalGuess { get; private set; }
 
+        public int HistoryIndex { get; set; } = -1;
+        private readonly List<INonDraggableCardItemView> _cardPool = new List<INonDraggableCardItemView>();
+        private readonly List<FruitLabGlyph> _absentMarks = new List<FruitLabGlyph>();
         private readonly List<INonDraggableCardItemView> _cards = new List<INonDraggableCardItemView>();
         private NonDraggableCardItemViewFactory _cardFactory;
         private TMP_Text _correctCount, _misplacedCount;
@@ -40,27 +44,71 @@ namespace Scripts
             FruitLabStyle.Surface(cardsHolderBgImageRectTransform.GetComponent<Image>(), FruitLabStyle.Tile);
             cardsHolderBgImageRectTransform.gameObject.SetActive(!IsSplit);
 
-            if (IsSplit)
+            if (_feedback == null)
             {
+                _feedback = new GameObject("Feedback", typeof(RectTransform)).GetComponent<RectTransform>();
+                _feedback.SetParent(transform, false);
+                _correctIcon = FruitLabGlyph.Create(_feedback, FruitLabGlyph.Symbol.Check, FruitLabStyle.Mint);
+                _misplacedIcon = FruitLabGlyph.Create(_feedback, FruitLabGlyph.Symbol.Swap, FruitLabStyle.Gold);
+                _correctCount = FruitLabStyle.CreateText("CorrectCount", _feedback, 14f, FruitLabStyle.Text);
+                _misplacedCount = FruitLabStyle.CreateText("MisplacedCount", _feedback, 14f, FruitLabStyle.Text);
+            }
+            if (IsSplit && _groupViews == null)
                 _groupViews = new[] {
                     new GroupFeedbackView(transform,"SplitGroupA",FruitLabStyle.SplitFirstGroup),
                     new GroupFeedbackView(transform,"SplitGroupB",FruitLabStyle.SplitSecondGroup)
                 };
-                Resize(width,height); return;
-            }
-            _feedback = new GameObject("Feedback", typeof(RectTransform)).GetComponent<RectTransform>();
-            _feedback.SetParent(transform, false);
-            _correctIcon = FruitLabGlyph.Create(_feedback, FruitLabGlyph.Symbol.Check, FruitLabStyle.Mint);
-            _misplacedIcon = FruitLabGlyph.Create(_feedback, FruitLabGlyph.Symbol.Swap, FruitLabStyle.Gold);
-            _correctCount = FruitLabStyle.CreateText("CorrectCount", _feedback, 14f, FruitLabStyle.Text);
-            _misplacedCount = FruitLabStyle.CreateText("MisplacedCount", _feedback, 14f, FruitLabStyle.Text);
+            _feedback.gameObject.SetActive(!IsSplit);
+            if (_groupViews != null) foreach (var group in _groupViews) group.SetActive(IsSplit);
             Resize(width, height);
+        }
+
+        public void Bind(ResultBlockModel model, float width, float height)
+        {
+            ResetForReuse();
+            ConfigureGroups(model.groups);
+            Init(_cardFactory ?? new NonDraggableCardItemViewFactory(), width, height);
+            foreach (int number in model.finalNumbers)
+            {
+                var card = CreateCardItem(); card.Init(number); card.InitLocalScale(); card.SetAlpha(1);
+            }
+            DisplayFeedback(model.correctPosCount, model.wrongPosCount);
+            if (model.isLocalGuess.HasValue) SetPlayerIdentity(model.isLocalGuess.Value, model.playerName);
+            if (model.hintStates != null) RevealDetails(model.hintStates);
+            if (model.reviewStates != null)
+                for (int i = 0; i < _cards.Count && i < model.reviewStates.Count; i++) SetCardResult(i, model.reviewStates[i]);
+        }
+
+        public void ResetForReuse()
+        {
+            rectTransform.DOKill();
+            for (int i = 0; i < _cardPool.Count; i++)
+            {
+                var card = _cardPool[i];
+                ((Component)card).transform.DOKill();
+                card.SetResultOutline(CardResultState.Unrevealed);
+                card.SetAlpha(1); card.InitLocalScale();
+                ((Component)card).gameObject.SetActive(false);
+                if (_absentMarks[i] != null) _absentMarks[i].gameObject.SetActive(false);
+            }
+            _cards.Clear();
+            IsLocalGuess = null; HistoryIndex = -1;
+            FruitLabStyle.Surface(cardsHolderBgImageRectTransform.GetComponent<Image>(), FruitLabStyle.Tile);
+            if (playerStripe != null) playerStripe.gameObject.SetActive(false);
+            if (_playerLabel != null) { _playerLabel.text = ""; _playerLabel.gameObject.SetActive(false); }
         }
 
         public INonDraggableCardItemView CreateCardItem()
         {
-            INonDraggableCardItemView card = _cardFactory.Spawn(cardsHolder, nonDraggableCardItemPrefab);
-            _cards.Add(card);
+            int index = _cards.Count;
+            if (index == _cardPool.Count)
+            {
+                _cardPool.Add(_cardFactory.Spawn(cardsHolder, nonDraggableCardItemPrefab));
+                _absentMarks.Add(null);
+            }
+            var card = _cardPool[index];
+            ((Component)card).gameObject.SetActive(true);
+            _cards.Add(card); ArrangeCards();
             return card;
         }
 
@@ -85,11 +133,13 @@ namespace Scripts
                 _cards[i].SetResultOutline(states[i]);
                 // A cross means absent, amber means present in a different slot.
                 if (states[i] != CardResultState.Absent) continue;
-                var card = _cards[i] as Component;
-                if (card == null || card.transform.Find("HelperAbsent") != null) continue;
-                var cross = FruitLabGlyph.Create(card.transform, FruitLabGlyph.Symbol.Cross, new Color(.30f, .025f, .045f, 1f));
-                cross.name = "HelperAbsent";
-                FruitLabStyle.Stretch(cross.rectTransform, 4f);
+                var mark = _absentMarks[i];
+                if (mark == null)
+                {
+                    mark = _absentMarks[i] = FruitLabGlyph.Create(((Component)_cards[i]).transform, FruitLabGlyph.Symbol.Cross, new Color(.30f, .025f, .045f, 1f));
+                    mark.name = "HelperAbsent"; FruitLabStyle.Stretch(mark.rectTransform, 4f);
+                }
+                mark.gameObject.SetActive(true);
             }
         }
 
@@ -97,11 +147,8 @@ namespace Scripts
         {
             _cards[index].SetResultOutline(state);
             // A group-local absent hint can become a global misplaced result at completion.
-            if (state != CardResultState.Absent && _cards[index] is Component card)
-            {
-                var cross = card.transform.Find("HelperAbsent");
-                if (cross != null) TutorialObjectUtility.Destroy(cross.gameObject);
-            }
+            if (state != CardResultState.Absent && _absentMarks[index] != null)
+                _absentMarks[index].gameObject.SetActive(false);
         }
         public void SetPlayerIdentity(bool isLocal, string playerName = null)
         {
@@ -113,6 +160,7 @@ namespace Scripts
             FruitLabStyle.Surface(cardsHolderBgImageRectTransform.GetComponent<Image>(), Color.Lerp(FruitLabStyle.Tile, color, .12f));
             _playerLabel = transform.Find("PlayerLabel")?.GetComponent<TMP_Text>()
                 ?? FruitLabStyle.CreateText("PlayerLabel", transform, 10f, FruitLabStyle.Muted);
+            _playerLabel.gameObject.SetActive(true);
             _playerLabel.richText = false;
             _playerLabel.enableAutoSizing = true; _playerLabel.fontSizeMin = 7; _playerLabel.fontSizeMax = 10;
             _playerLabel.overflowMode = TextOverflowModes.Ellipsis;
@@ -134,10 +182,10 @@ namespace Scripts
                 _groupViews[1].Resize(groupWidth+10f,groupWidth,height);
                 ArrangeCards(); return;
             }
-            if (playerStripe != null) FruitLabStyle.Place(playerStripe.rectTransform, transform, 0f, 6f, 4f, Mathf.Max(4f, height - 12f));
+            if (playerStripe != null && IsLocalGuess.HasValue) FruitLabStyle.Place(playerStripe.rectTransform, transform, 0f, 6f, 4f, Mathf.Max(4f, height - 12f));
             FruitLabStyle.Place(cardsHolder, transform, 6f, 0f, width - FruitLabLayoutMetrics.HistoryFeedbackReservation, height);
-            float feedbackHeight = height - (_playerLabel != null ? 14f : 0f);
-            if (_playerLabel != null) FruitLabStyle.Place(_playerLabel.rectTransform, transform, width - 96f, height - 14f, 92f, 12f);
+            float feedbackHeight = height - (IsLocalGuess.HasValue ? 14f : 0f);
+            if (_playerLabel != null && IsLocalGuess.HasValue) FruitLabStyle.Place(_playerLabel.rectTransform, transform, width - 96f, height - 14f, 92f, 12f);
             FruitLabStyle.Place(_feedback, transform, width - 96f, 0f, 92f, feedbackHeight);
             float iconSize = Mathf.Min(24f, height - 4f);
             FruitLabStyle.Place(_correctIcon.rectTransform, _feedback, 0f, (feedbackHeight - iconSize) * 0.5f, iconSize, iconSize);
@@ -198,6 +246,7 @@ namespace Scripts
                 _correctCount = FruitLabStyle.CreateText("CorrectCount",_panel.transform,16f,FruitLabStyle.Text);
                 _misplacedCount = FruitLabStyle.CreateText("MisplacedCount",_panel.transform,16f,FruitLabStyle.Text);
             }
+            public void SetActive(bool active) => _panel.gameObject.SetActive(active);
             public void Display(GuessGroupFeedback result)
             { _correctCount.text = result.Correct.ToString(); _misplacedCount.text = result.Misplaced.ToString(); }
             public void Resize(float x,float width,float height)

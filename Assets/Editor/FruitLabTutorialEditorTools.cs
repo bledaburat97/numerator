@@ -21,6 +21,121 @@ using Object = UnityEngine.Object;
 // Explicit editor tasks, never an automatic profile reset on import or scene load.
 public static partial class FruitLabTutorialEditorTools
 {
+    public static string ReviewSessionBindings()
+    {
+        var scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
+        try
+        {
+            foreach (var mode in new[] { GameOption.SinglePlayer, GameOption.MultiPlayer })
+            {
+                var root = new GameObject("SessionValidationTracker"); root.SetActive(false); SceneManager.MoveGameObjectToScene(root, scene);
+                try
+                {
+                    var tracker = root.AddComponent<LevelTracker>(); tracker.SuppressPersistenceForTests = true; Field(tracker, "_gameOption", mode);
+                    var container = new DiContainer(true); container.Settings = new ZenjectSettings(ValidationErrorResponses.Throw);
+                    container.Bind<Context>().FromInstance(Find<SceneContext>(scene));
+                    container.Bind<ILevelTracker>().FromInstance(tracker);
+                    container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
+                    container.Bind<IHapticController>().To<HapticController>().AsSingle();
+                    container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
+                    var installer = Find<GameMonoInstaller>(scene);
+                    typeof(MonoInstallerBase).GetProperty("Container", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(installer, container);
+                    installer.InstallBindings();
+                    container.Resolve(typeof(ILevelFlowOrchestrator));
+                    container.Resolve(typeof(SinglePlayerSession)); container.Resolve(typeof(MultiplayerSession));
+                    container.ResolveRoots();
+                }
+                finally { Object.DestroyImmediate(root); }
+            }
+            return "Singleplayer and multiplayer session dependency graphs validated with the real Game scene installer; no PlayerPrefs writes";
+        }
+        finally { EditorSceneManager.ClosePreviewScene(scene); }
+    }
+
+    public static void ReviewPerformance(Canvas canvas, Camera camera)
+    {
+        ClearPreviewActors(canvas);
+        var previous = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
+        try
+        {
+            using (var game = new Fixture(canvas, camera))
+            {
+                game.BuildActors(); game.Gate.Clear();
+                var area = canvas.GetComponentInChildren<ResultAreaView>(true);
+                var answer = new[] { 1, 2, 3, 4, 5 };
+                var cards = new List<int> { 1, 3, 2, 6, 7 };
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                for (int i = 0; i < 1000; i++)
+                {
+                    var evaluation = new GuessEvaluation(i + 1, cards, answer, i % 2 == 0 ? BoardPartition.ForCount(5) : null);
+                    game._area.AddResultBlock(new ResultBlockModel { finalNumbers = cards, correctPosCount = evaluation.Correct,
+                        wrongPosCount = evaluation.Misplaced, groups = evaluation.Groups });
+                    game._area.LabelLatestMultiplayerGuess(i % 2 == 0, "Oyuncu " + i);
+                    if (i == 0) game._area.RevealGuess(evaluation);
+                }
+                clock.Stop();
+                Require(game._area.HistoryCount == 1000 && area.HistoryCount == 1000, "All guesses remain available in the data model");
+                Require(area.VisibleRowCount <= 12 && area.AllocatedRowCount <= 12, "A long match uses a bounded number of UI rows");
+                int allocated = area.AllocatedRowCount;
+                var scroll = area.GetComponentInParent<ScrollRect>();
+                scroll.verticalNormalizedPosition = 1; scroll.onValueChanged.Invoke(Vector2.up);
+                var first = area.GetVisibleRow(0);
+                Require(first != null && first.IsLocalGuess == true && first.IsSplit, "Scrolling back restores old player identity and split counters");
+                Require(first.transform.Find("PlayerLabel").GetComponent<TMP_Text>().text == "Sen", "A recycled row has the correct player label");
+                Require(first.GetComponentsInChildren<Transform>().Any(t => t.name == "HelperAbsent"), "Offscreen detailed hints survive row recycling");
+                game._area.RevealAnswer(answer);
+                scroll.verticalNormalizedPosition = 0; scroll.onValueChanged.Invoke(Vector2.zero);
+                Require(area.GetVisibleRow(999) != null && area.GetVisibleRow(999).IsLocalGuess == false, "The latest opponent row remains accessible after review");
+                scroll.verticalNormalizedPosition = 1; scroll.onValueChanged.Invoke(Vector2.up);
+                first = area.GetVisibleRow(0);
+                Require(game._area.GetHistoryEntry(0).reviewStates[0] == CardResultState.Correct
+                    && game._area.GetHistoryEntry(0).reviewStates[1] == CardResultState.Misplaced,
+                    "End review persists correct and misplaced states for offscreen rows");
+                Require(area.AllocatedRowCount == allocated, "Scrolling and review reuse the existing row pool");
+                game._area.RemoveResultBlocks();
+                Require(area.VisibleRowCount == 0 && game._area.HistoryCount == 0, "Rematch clears history and releases visible rows");
+                for (int i = 0; i < 8; i++) game._area.AddResultBlock(new ResultBlockModel { finalNumbers = new List<int> { 2, 1 } });
+                Require(area.GetComponentsInChildren<ResultBlockView>().All(row => !row.IsSplit && row.IsLocalGuess == null
+                    && !row.GetComponentsInChildren<Transform>().Any(t => t.name == "HelperAbsent")), "New rounds clear old groups, players, hints and review frames");
+                using (var notes = new CardAnnotationController(game.Initial, game.Placement, game.UI, canvas.GetComponent<FruitLabGameLayout>(), game.Gate, null, () => true))
+                {
+                    Require(notes.TrySelect(0), "Performance fixture can open marking");
+                    notes.Tick();
+                    long before = GC.GetAllocatedBytesForCurrentThread();
+                    for (int i = 0; i < 600; i++) notes.Tick();
+                    long annotationBytes = GC.GetAllocatedBytesForCurrentThread() - before;
+                    Require(annotationBytes == 0, "Idle marking ticks do not allocate managed memory");
+                }
+                double now = 0; int timerUpdates = 0, seconds = 0; bool timerVisible = false;
+                var timer = new MultiplayerHudPresenter(() => now, (value, visible) => { timerUpdates++; seconds = value; timerVisible = visible; });
+                timer.SetDeadline(60);
+                long timerBefore = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 600; i++) timer.Tick();
+                long timerBytes = GC.GetAllocatedBytesForCurrentThread() - timerBefore;
+                Require(timerUpdates == 1 && timerBytes == 0, "An unchanged timer does not write text or allocate");
+                now = 15.2; timer.Tick(); Require(seconds == 45, "The display follows the server deadline after a time jump");
+                now = 61; timer.Tick(); Require(seconds == 0, "An expired deadline never displays a negative time");
+                timer.SetDeadline(0); Require(!timerVisible, "Match end hides the timer");
+                var simulation = new PairRopeSimulation();
+                var a = new Vector2(-60, 0); var b = new Vector2(60, 0);
+                simulation.Reset(a, b);
+                for (int i = 0; i < 2400; i++) simulation.Advance(a, b, 1f / 60);
+                Require(simulation.IsSleeping, "A settled rope sleeps while preserving its shape");
+                int revision = simulation.Revision;
+                for (int i = 0; i < 120; i++) simulation.Advance(a, b, 1f / 60);
+                Require(simulation.Revision == revision, "A sleeping rope does not rebuild its mesh");
+                simulation.Advance(a + new Vector2(20, 10), b, 1f / 60);
+                Require(!simulation.IsSleeping && simulation.Revision > revision, "Moving a card wakes the rope immediately");
+                File.WriteAllText(Folder + "/performance-review.json", Newtonsoft.Json.JsonConvert.SerializeObject(new {
+                    passed = true, history = 1000, allocatedRows = allocated, historyBuildMilliseconds = clock.Elapsed.TotalMilliseconds,
+                    idleTimerBytes = timerBytes, ropeSleep = true, offscreenHintsAndReview = true, recycledPlayerIdentity = true,
+                    environment = "Unity Editor; not a device FPS benchmark"
+                }, Newtonsoft.Json.Formatting.Indented));
+            }
+        }
+        finally { DOTween.defaultUpdateType = previous; }
+    }
+
     private const string Folder = "Library/FruitLabEditor";
     private const string MaskPath = "Assets/UnmaskService.prefab";
     private const string MessagePath = "Assets/Prefabs/TutorialMessagePopup.prefab";
@@ -321,7 +436,7 @@ public static partial class FruitLabTutorialEditorTools
             var reveal = Reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target);
             var locator = new CardItemLocator(Board, UI); locator.Initialize();
             Placement = new CardPlacementCoordinator(Board, locator, UI, indexes, indexes, reveal, Initial, _info, Gate);
-            _area = new ResultAreaController(Tracker, null, canvas.GetComponentInChildren<ResultAreaView>(true));
+            _area = new ResultAreaController(canvas.GetComponentInChildren<ResultAreaView>(true));
             var results = Results = new ResultManager(UI, _area, Target, indexes, Round, _powers);
             Field(results,"_split",split);
             _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), Target, _info, powerMessages, UI, Round);
@@ -334,7 +449,7 @@ public static partial class FruitLabTutorialEditorTools
                 (HandTutorialView)data.FindProperty("handTutorialPrefab").objectReferenceValue,
                 (TutorialMessagePopupView)data.FindProperty("tutorialMessagePopupPrefab").objectReferenceValue);
             results.LevelSuccessEvent += (sender, args) => Bootstrap.RoundEnded(true);
-            View.GetPairView()?.Configure(Initial, Placement, Board, indexes, Gate, UI, () => true);
+            View.GetPairView()?.Configure(new PairDragPresenter(Initial, Placement, Board, indexes, Gate, UI, () => true));
         }
         public void BuildActors()
         {
@@ -352,8 +467,8 @@ public static partial class FruitLabTutorialEditorTools
         public void Feedback(int rowIndex, int[] fruits, int correct, int misplaced)
         {
             Require(Round.GetTriedCardsList()[rowIndex].SequenceEqual(fruits), "Real guess must retain the instructed board order");
-            var controllers = (List<IResultBlockController>)Get(_area, "_resultBlockControllers");
-            var view = (ResultBlockView)Get(controllers[rowIndex], "_view");
+            var view = Canvas.GetComponentInChildren<ResultAreaView>(true).GetVisibleRow(rowIndex);
+            Require(view != null, "Tutorial feedback row is visible");
             Require(((TMP_Text)Get(view, "_correctCount")).text == correct.ToString()
                 && ((TMP_Text)Get(view, "_misplacedCount")).text == misplaced.ToString(), "Actual result feedback matches tutorial text");
         }

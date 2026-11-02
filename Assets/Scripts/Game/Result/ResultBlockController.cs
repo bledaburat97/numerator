@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Scripts
 {
@@ -51,5 +52,15 @@ namespace Scripts
         public int correctPosCount;
         public int wrongPosCount;
         public IReadOnlyList<GuessGroupFeedback> groups;
+        public bool? isLocalGuess;
+        public string playerName;
+        public IReadOnlyList<CardResultState> hintStates;
+        public IReadOnlyList<CardResultState> reviewStates;
+
+        public ResultBlockModel Snapshot() => new ResultBlockModel {
+            finalNumbers = new List<int>(finalNumbers), correctPosCount = correctPosCount, wrongPosCount = wrongPosCount,
+            groups = groups?.ToArray(), isLocalGuess = isLocalGuess, playerName = playerName,
+            hintStates = hintStates?.ToArray(), reviewStates = reviewStates?.ToArray()
+        };
     }
 }

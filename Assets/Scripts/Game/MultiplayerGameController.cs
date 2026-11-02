@@ -27,6 +27,8 @@ namespace Game
         private Difficulty _difficulty;
         private int _lastOutcomeRound;
         private RewardType _roundReward;
+        public ulong LocalPlayerId => NetworkManager != null ? NetworkManager.LocalClientId : MultiplayerRules.NoPlayer;
+        public double ServerTime => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : 0;
         public MultiplayerPublicState State { get; private set; }
         public bool IsLocalTurn => _initialized && !_pending && State.Phase == MultiplayerPhase.Playing
             && NetworkManager != null && State.CurrentPlayer == NetworkManager.LocalClientId;
@@ -262,6 +264,8 @@ namespace Game
 
     public interface IMultiplayerGameController
     {
+        ulong LocalPlayerId { get; }
+        double ServerTime { get; }
         MultiplayerPublicState State { get; }
         bool IsLocalTurn { get; }
         bool LocalRematchRequested { get; }

@@ -577,7 +577,7 @@ public static class FruitLabCompletionValidation
         {
             var tracker = state.AddComponent<LevelTracker>();
             var view = new AreaProbe(state.AddComponent<CanvasGroup>());
-            var area = new ResultAreaController(tracker, null, view);
+            var area = new ResultAreaController(view);
             area.AddNewResultBlock(531, 1, 1);
             area.RevealAnswer(new[] { 1, 2, 3 });
             Require(view.Rows[0].Cards[0].State == C && view.Rows[0].Cards[1].State == M && view.Rows[0].Cards[2].State == A,
@@ -585,10 +585,11 @@ public static class FruitLabCompletionValidation
             Require(view.Review && view.Group.alpha == 1f, "Completed history must remain visible and interactive");
             area.Initialize(false);
             Require(!view.Rows[0].Destroyed, "Review/resume must retain existing guesses");
+            var previousRow = view.Rows[0];
             area.Initialize(true);
-            Require(view.Empty && view.Rows[0].Destroyed, "A fresh round must clear the completed history");
+            Require(view.Empty && previousRow.Destroyed && view.Rows.Count == 0, "A fresh round must clear the completed history");
             area.AddNewResultBlock(321, 3, 0);
-            foreach (var card in view.Rows[1].Cards) Require(card.State == CardResultState.Unrevealed, "Next round cannot inherit answer highlights");
+            foreach (var card in view.Rows[0].Cards) Require(card.State == CardResultState.Unrevealed, "Next round cannot inherit answer highlights");
         }
         finally { Object.DestroyImmediate(state); }
         Debug.Log("FRUIT_LAB_COMPLETION_FEEDBACK_PASS: eight classification cases, duplicate-safe feedback, late reveal and next-round cleanup.");
@@ -669,6 +670,24 @@ public static class FruitLabCompletionValidation
         public AreaProbe(CanvasGroup group) => Group = group;
         public ResultAreaInfo GetResultAreaInfo() => default;
         public IResultBlockView CreateResultBlock() { var row = new RowProbe(); Rows.Add(row); return row; }
+        private IReadOnlyList<ResultBlockModel> _history;
+        public void SetHistory(IReadOnlyList<ResultBlockModel> history) { _history = history; HistoryChanged(); }
+        public void HistoryChanged()
+        {
+            while (Rows.Count > _history.Count) { Rows[Rows.Count-1].Destroy(); Rows.RemoveAt(Rows.Count-1); }
+            while (Rows.Count < _history.Count)
+            {
+                int index = Rows.Count;
+                new ResultBlockController().Initialize(CreateResultBlock(), _history[index], GetWidth(), GetRowHeight());
+            }
+        }
+        public void RefreshRow(int index)
+        {
+            var model = _history[index];
+            var states = model.reviewStates ?? model.hintStates;
+            if (states != null) for (int i = 0; i < states.Count; i++) Rows[index].SetCardResult(i, states[i]);
+        }
+        public void RefreshVisibleRows() { for (int i = 0; i < Rows.Count; i++) RefreshRow(i); }
         public void SetScrollPositionToBottom() { }
         public CanvasGroup GetCanvasGroup() => Group;
         public float GetWidth() => 331f;

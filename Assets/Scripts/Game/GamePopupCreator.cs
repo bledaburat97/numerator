@@ -28,7 +28,6 @@ namespace Scripts
         private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
         private SettingsPopupControllerFactory _settingsPopupControllerFactory;
         private SettingsPopupViewFactory _settingsPopupViewFactory;
-        private DisconnectionPopupControllerFactory _disconnectionPopupControllerFactory;
         private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
         private WaitingOpponentPopupControllerFactory _waitingOpponentPopupControllerFactory;
         private WaitingOpponentPopupViewFactory _waitingOpponentPopupViewFactory;
@@ -51,7 +50,6 @@ namespace Scripts
 
             _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
             _settingsPopupViewFactory = new SettingsPopupViewFactory();
-            _disconnectionPopupControllerFactory = new DisconnectionPopupControllerFactory();
             _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
             _multiplayerLevelEndPopupControllerFactory = new MultiplayerLevelEndPopupControllerFactory();
             _multiplayerLevelEndPopupViewFactory = new MultiplayerLevelEndPopupViewFactory();
@@ -145,7 +143,7 @@ namespace Scripts
         public void CreateDisconnectionPopup()
         {
             _fadePanelController.SetFadeImageStatus(true);
-            IDisconnectionPopupController disconnectionPopupController = _disconnectionPopupControllerFactory.Spawn();
+            IDisconnectionPopupController disconnectionPopupController = new DisconnectionPopupController();
             IDisconnectionPopupView disconnectionPopupView =
                 _disconnectionPopupViewFactory.Spawn(transform, disconnectionPopupPrefab);
             _hapticController.Vibrate(HapticType.Warning);

@@ -1,8 +1,6 @@
 using System;
 using DG.Tweening;
 using Scripts;
-using TMPro;
-using UnityEngine;
 using Zenject;
 
 namespace Game
@@ -19,20 +17,7 @@ namespace Game
 
         public void SetAllStatusFalse()
         {
-            TMP_Text text = _view.GetText();
-            if (text != null)
-            {
-                text.gameObject.SetActive(false);
-                text.alpha = 1f;
-            }
-
-            IVerticalCrystalProgressView verticalCrystalProgressView = _view.GetVerticalCrystalProgressView();
-            if (verticalCrystalProgressView != null)
-            {
-                verticalCrystalProgressView.SetAlpha(0f);
-                verticalCrystalProgressView.ResetFill();
-                verticalCrystalProgressView.SetStatus(false);
-            }
+            _view.ResetTitle(); _view.ResetRewardProgress();
 
             SetButtonStatus(LevelFinishButtonType.Game, false);
             SetButtonStatus(LevelFinishButtonType.Menu, false);
@@ -52,13 +37,7 @@ namespace Game
 
         public void InitText(string text)
         {
-            TMP_Text titleText = _view.GetText();
-            if (titleText == null) return;
-
-            titleText.gameObject.SetActive(true);
-            titleText.alpha = 1f;
-            _view.SetText(text);
-            titleText.rectTransform.localScale = Vector3.zero;
+            _view.PrepareTitle(text);
         }
 
         public void SetMultiplayerOpponentLeft(string message = null)
@@ -92,7 +71,6 @@ namespace Game
 
                 isClaiming = true;
                 Sequence hideRewardSequence = hideRewardSequenceFactory?.Invoke() ?? DOTween.Sequence();
-                CanvasGroup claimCanvasGroup = claimButton.GetCanvasGroup();
                 DOTween.Sequence()
                     .AppendCallback(() =>
                     {
@@ -101,15 +79,12 @@ namespace Game
                         SetButtonAlpha(LevelFinishButtonType.Game, 0f);
                         SetButtonAlpha(LevelFinishButtonType.Menu, 0f);
                     })
-                    .Append(claimCanvasGroup == null
-                        ? DOTween.Sequence()
-                        : claimCanvasGroup.DOFade(0f, buttonFadeDuration))
+                    .Append(_view.FadeButton(LevelFinishButtonType.Claim, buttonFadeDuration, 0))
                     .Join(hideRewardSequence)
                     .AppendCallback(() => claimButton.SetButtonStatus(false))
                     .Append(ChangeFadeButtons(buttonFadeDuration, 1f));
             };
 
-            CanvasGroup claimCanvasGroup = claimButton.GetCanvasGroup();
 
             return DOTween.Sequence()
                 .AppendCallback(() =>
@@ -120,52 +95,20 @@ namespace Game
                     InitButton(LevelFinishButtonType.Claim, "Ödülü al", onClickClaim);
                 })
                 .Append(rewardPresentationSequence ?? DOTween.Sequence())
-                .Append(claimCanvasGroup == null
-                    ? DOTween.Sequence()
-                    : claimCanvasGroup.DOFade(1f, buttonFadeDuration));
+                .Append(_view.FadeButton(LevelFinishButtonType.Claim, buttonFadeDuration, 1));
         }
 
-        public Sequence ChangeFadeButtons(float duration, float finalAlpha)
-        {
-            Sequence sequence = DOTween.Sequence();
-            AppendButtonFade(sequence, LevelFinishButtonType.Game, duration, finalAlpha);
-            AppendButtonFade(sequence, LevelFinishButtonType.Menu, duration, finalAlpha);
-            return sequence;
-        }
+        public Sequence ChangeFadeButtons(float duration, float finalAlpha) => _view.FadeButtons(duration, finalAlpha);
 
         public void SetPopupStatus(bool status)
         {
             _view.SetStatus(status);
         }
 
-        public Sequence ScaleUpText(float duration)
-        {
-            TMP_Text text = _view.GetText();
-            return text == null
-                ? DOTween.Sequence()
-                : DOTween.Sequence().Append(text.rectTransform.DOScale(1f, duration));
-        }
+        public Sequence ScaleUpText(float duration) => _view.PlayTitleIntro(duration);
+        private void SetButtonStatus(LevelFinishButtonType type, bool active) => _view.SetButtonStatus(type, active);
+        private void SetButtonAlpha(LevelFinishButtonType type, float alpha) => _view.SetButtonAlpha(type, alpha);
 
-        private void SetButtonStatus(LevelFinishButtonType buttonType, bool status)
-        {
-            _view.GetButton(buttonType)?.SetButtonStatus(status);
-        }
-
-        private void SetButtonAlpha(LevelFinishButtonType buttonType, float alpha)
-        {
-            _view.GetButton(buttonType)?.SetAlpha(alpha);
-        }
-
-        private void AppendButtonFade(Sequence sequence, LevelFinishButtonType buttonType, float duration, float finalAlpha)
-        {
-            IFadeButtonView buttonView = _view.GetButton(buttonType);
-            if (buttonView == null) return;
-
-            CanvasGroup canvasGroup = buttonView.GetCanvasGroup();
-            if (canvasGroup == null) return;
-
-            sequence.Join(canvasGroup.DOFade(finalAlpha, duration));
-        }
     }
 
     public interface ILevelEndPopupController

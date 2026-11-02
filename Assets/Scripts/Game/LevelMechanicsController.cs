@@ -22,7 +22,7 @@ namespace Scripts
         private readonly IGamePowerUpAreaController _powers;
         private readonly ILevelTracker _tracker;
         private LevelMechanic _mechanic;
-        private GameUIView _view;
+        private ILevelMechanicsPresentation _presentation;
         private Action _checkpoint;
 
         public LevelMechanicsController(IResultManager results, HelperEffect helper, IRoundStateManager round,
@@ -39,7 +39,7 @@ namespace Scripts
             if (_dynamite != null) _dynamite.Changed += OnDynamite;
         }
 
-        public void Attach(GameUIView view, Action checkpoint) { _view = view; _checkpoint = checkpoint; }
+        public void Attach(ILevelMechanicsPresentation presentation, Action checkpoint) { _presentation = presentation; _checkpoint = checkpoint; }
 
         public void Begin(LevelMechanic mechanic)
         {
@@ -89,13 +89,12 @@ namespace Scripts
 
         private void UpdateDynamiteView()
         {
-            if (_view?.SetDynamiteLayout(_mechanic == LevelMechanic.Dynamite) == true) _board?.RefreshLayout();
-            _board?.ShowDynamite(_dynamite?.Current);
+            _presentation?.ShowDynamite(_mechanic, _dynamite?.Current);
         }
 
         private void OnPair(object sender, PairClue clue)
         {
-            _view?.SetPairClue(clue); _powers.Refresh();
+            _presentation?.ShowPair(clue); _powers.Refresh();
             if (clue != null) _checkpoint?.Invoke();
         }
 
@@ -106,14 +105,8 @@ namespace Scripts
 
         private void UpdateStatus()
         {
-            var definition = _levels?.GetLevelData();
-            string text = definition != null && definition.IsPlaytest ? LevelPlaytestSchedule.Status(definition)
-                : LevelMechanicRules.Description(_mechanic);
-            if (_mechanic == LevelMechanic.Growing) text += " · " + (_save.GetLevelSaveData().GrowingBoard?.ActiveCount ?? 2) + "/" + GrowingBoardState.MaximumCount + " alan";
-            if (_mechanic == LevelMechanic.Helper) text += " · " + (_round.GetTriedCardsList().Count % 3) + "/3";
-            if (_mechanic != LevelMechanic.Split && (_split?.IsActive ?? false))
-                text = string.IsNullOrEmpty(text) ? "Bölünmüş Tahta" : text+" · Bölünmüş Tahta";
-            _view?.SetMechanicStatus(text);
+            _presentation?.ShowStatus(_mechanic, _levels?.GetLevelData(), _save.GetLevelSaveData().GrowingBoard?.ActiveCount ?? 2,
+                _round.GetTriedCardsList().Count, _split?.IsActive ?? false);
         }
 
         public void Dispose()
@@ -122,7 +115,7 @@ namespace Scripts
             if (_pair != null) _pair.Changed -= OnPair;
             if (_split != null) _split.Applied -= OnSplit;
             if (_dynamite != null) { _dynamite.Changed -= OnDynamite; _dynamite.Dispose(); }
-            _checkpoint = null; _view = null;
+            _checkpoint = null; _presentation = null;
         }
     }
     // Called once a submitted guess has been evaluated and its life consumed.

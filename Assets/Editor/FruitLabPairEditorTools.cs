@@ -58,7 +58,7 @@ public static partial class FruitLabTutorialEditorTools
                     using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
                         game.Target, game._area, game._powers, game.Tracker, pair))
                     {
-                        rules.Attach(game.View, () => { if (snapshot.TryCreateSnapshot(out var data)) memory.Save(data); });
+                        rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), () => { if (snapshot.TryCreateSnapshot(out var data)) memory.Save(data); });
                         rules.Begin(LevelMechanic.Pair); Tick(.3f);
                         Require(pair.Current != null && pair.Current.Matches(answer) && game.View.HasPairClue, "Automatic pair is adjacent, unordered and visible");
                         Require(game.Tracker.GetPowerUpCount(RewardType.Pair) == 2 && !pair.CanApply, "Level clue is free and cannot be bought twice");

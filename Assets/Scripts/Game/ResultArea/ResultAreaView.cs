@@ -1,5 +1,3 @@
-﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -15,8 +13,18 @@ namespace Scripts
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private VerticalLayoutGroup verticalLayoutGroup;
         [SerializeField] private CanvasGroup canvasGroup;
-        private Coroutine _scrollRoutine;
         private TMP_Text _emptyState;
+        private IReadOnlyList<ResultBlockModel> _history;
+        private readonly Dictionary<int, ResultBlockView> _visible = new Dictionary<int, ResultBlockView>();
+        private readonly Stack<ResultBlockView> _pool = new Stack<ResultBlockView>();
+        private readonly List<int> _releasedIndexes = new List<int>();
+        private const int BufferRows = 2;
+        private bool _listening, _scrollPending, _refreshing;
+        private float _rowHeight, _rowWidth, _viewportHeight;
+        public int VisibleRowCount => _visible.Count;
+        public int AllocatedRowCount => _visible.Count + _pool.Count;
+        public int HistoryCount => _history?.Count ?? 0;
+        public ResultBlockView GetVisibleRow(int index) => _visible.TryGetValue(index, out var row) ? row : null;
 
         public void ApplyLabLayout(float spacing)
         {
@@ -25,108 +33,197 @@ namespace Scripts
             Mask mask = scrollRect.GetComponent<Mask>();
             if (mask != null)
             {
-                // The mask still needs an opaque graphic to write the stencil.
                 mask.showMaskGraphic = false;
                 if (oldBackground != null) oldBackground.color = Color.white;
             }
             else if (oldBackground != null) oldBackground.color = Color.clear;
             rectTransform.anchorMin = new Vector2(0f, 1f);
             rectTransform.anchorMax = Vector2.one;
-            rectTransform.pivot = new Vector2(0.5f, 1f);
-            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.pivot = new Vector2(.5f, 1f);
+            if (_history == null) rectTransform.anchoredPosition = Vector2.zero;
             rectTransform.sizeDelta = new Vector2(0f, rectTransform.sizeDelta.y);
             verticalLayoutGroup.spacing = spacing;
             int padding = Mathf.CeilToInt(spacing);
             verticalLayoutGroup.padding = new RectOffset(0, 0, padding, padding);
-            verticalLayoutGroup.childControlWidth = false;
-            verticalLayoutGroup.childControlHeight = false;
-            verticalLayoutGroup.childForceExpandWidth = false;
-            verticalLayoutGroup.childForceExpandHeight = false;
-            ContentSizeFitter fitter = rectTransform.GetComponent<ContentSizeFitter>();
-            if (fitter != null) fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            verticalLayoutGroup.childControlWidth = verticalLayoutGroup.childControlHeight = false;
+            verticalLayoutGroup.childForceExpandWidth = verticalLayoutGroup.childForceExpandHeight = false;
+            SetLayoutMode();
             rectTransform.ForceUpdateRectTransforms();
-            if (_emptyState == null)
-            {
-                _emptyState = scrollRect.viewport.Find("HistoryHint")?.GetComponent<TMP_Text>();
-            }
+            if (_emptyState == null) _emptyState = scrollRect.viewport.Find("HistoryHint")?.GetComponent<TMP_Text>();
             if (_emptyState == null)
             {
                 _emptyState = FruitLabStyle.CreateText("HistoryHint", scrollRect.viewport, 12f, FruitLabStyle.Muted);
                 _emptyState.text = "Tahminlerin burada görünecek";
             }
             FruitLabStyle.Stretch(_emptyState.rectTransform, 8f);
-            foreach (ResultBlockView row in rectTransform.GetComponentsInChildren<ResultBlockView>())
-                row.Resize(GetWidth(), GetRowHeight());
+            if (_history != null)
+            {
+                SetEmptyState(_history.Count == 0);
+                RefreshWindow(true);
+            }
+            else foreach (ResultBlockView row in rectTransform.GetComponentsInChildren<ResultBlockView>()) row.Resize(GetWidth(), GetRowHeight());
+        }
+
+        private void SetLayoutMode()
+        {
+            // Runtime history positions its bounded set of rows directly. Legacy editor previews use the layout group.
+            verticalLayoutGroup.enabled = _history == null;
+            ContentSizeFitter fitter = rectTransform.GetComponent<ContentSizeFitter>();
+            if (fitter != null)
+            {
+                fitter.enabled = _history == null;
+                if (_history == null) fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            }
+        }
+
+        public void SetHistory(IReadOnlyList<ResultBlockModel> history)
+        {
+            _history = history;
+            SetLayoutMode(); Listen(); HistoryChanged();
+        }
+        private void Listen()
+        {
+            if (_listening || scrollRect == null) return;
+            scrollRect.onValueChanged.AddListener(OnScroll); _listening = true;
+        }
+        private void OnEnable() => Listen();
+        private void OnDisable()
+        {
+            if (_listening && scrollRect != null) scrollRect.onValueChanged.RemoveListener(OnScroll);
+            _listening = false;
+        }
+        private void OnScroll(Vector2 position) => RefreshWindow(false);
+        private void LateUpdate()
+        {
+            if (_scrollPending)
+            {
+                _scrollPending = false;
+                ScrollToBottom();
+            }
+            else if (_history != null && (Mathf.Abs(_viewportHeight - scrollRect.viewport.rect.height) > .01f || Mathf.Abs(_rowWidth - GetWidth()) > .01f))
+                RefreshWindow(true);
+        }
+        public void HistoryChanged()
+        {
+            SetEmptyState(HistoryCount == 0);
+            if (HistoryCount == 0)
+            {
+                _scrollPending = false; scrollRect.StopMovement(); rectTransform.anchoredPosition = Vector2.zero;
+            }
+            RefreshWindow(false);
+        }
+        public void RefreshRow(int index)
+        {
+            if (_visible.TryGetValue(index, out var row) && row != null) Bind(row, index);
+        }
+        public void RefreshVisibleRows()
+        {
+            foreach (var pair in _visible) if (pair.Value != null) Bind(pair.Value, pair.Key);
+        }
+        private void Bind(ResultBlockView row, int index)
+        {
+            row.Bind(_history[index], _rowWidth, _rowHeight);
+            row.HistoryIndex = index;
+        }
+        private void RefreshWindow(bool resize)
+        {
+            if (_history == null || _refreshing) return;
+            _refreshing = true;
+            try
+            {
+                float height = scrollRect.viewport.rect.height, width = GetWidth(), rowHeight = GetRowHeight();
+                bool sizeChanged = resize || Mathf.Abs(_rowHeight - rowHeight) > .01f || Mathf.Abs(_rowWidth - width) > .01f;
+                _viewportHeight = height; _rowWidth = width; _rowHeight = rowHeight;
+                float spacing = verticalLayoutGroup.spacing, padding = verticalLayoutGroup.padding.top;
+                float stride = rowHeight + spacing;
+                float contentHeight = Mathf.Max(height, padding * 2 + _history.Count * rowHeight + Mathf.Max(0, _history.Count - 1) * spacing);
+                if (Mathf.Abs(rectTransform.rect.height - contentHeight) > .01f) rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, contentHeight);
+                float offset = Mathf.Clamp(rectTransform.anchoredPosition.y, 0, Mathf.Max(0, contentHeight - height));
+                int first = Mathf.Max(0, Mathf.FloorToInt((offset - padding) / Mathf.Max(1, stride)) - BufferRows);
+                int end = Mathf.Min(_history.Count, Mathf.CeilToInt((offset + height - padding) / Mathf.Max(1, stride)) + BufferRows);
+                _releasedIndexes.Clear();
+                foreach (var pair in _visible) if (pair.Key < first || pair.Key >= end) _releasedIndexes.Add(pair.Key);
+                foreach (int index in _releasedIndexes)
+                {
+                    var row = _visible[index]; _visible.Remove(index);
+                    if (row == null) continue;
+                    row.ResetForReuse(); row.gameObject.SetActive(false); _pool.Push(row);
+                }
+                bool windowChanged = _releasedIndexes.Count > 0;
+                for (int index = first; index < end; index++)
+                {
+                    bool added = !_visible.TryGetValue(index, out var row) || row == null;
+                    if (added)
+                    {
+                        windowChanged = true;
+                        do { row = _pool.Count > 0 ? _pool.Pop() : null; } while (row == null && _pool.Count > 0);
+                        if (row == null) row = Instantiate(resultBlockPrefab, rectTransform);
+                        _visible[index] = row; row.gameObject.SetActive(true);
+                        Bind(row, index);
+                    }
+                    if (added || sizeChanged)
+                    {
+                        var rect = row.GetRectTransform();
+                        rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f); rect.pivot = new Vector2(.5f, 1f);
+                        row.Resize(width, rowHeight);
+                        rect.anchoredPosition = new Vector2(0, -padding - index * stride);
+                    }
+                }
+                if (windowChanged)
+                    for (int index = first; index < end; index++) _visible[index].transform.SetAsLastSibling();
+            }
+            finally { _refreshing = false; }
         }
 
         public void SetEmptyState(bool empty)
         {
-            if (_emptyState != null) _emptyState.gameObject.SetActive(empty);
+            if (_emptyState != null && _emptyState.gameObject.activeSelf != empty) _emptyState.gameObject.SetActive(empty);
         }
-
         public void EnableReview()
         {
-            canvasGroup.alpha = 1f;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            scrollRect.enabled = true;
-            scrollRect.vertical = true;
+            canvasGroup.alpha = 1; canvasGroup.interactable = canvasGroup.blocksRaycasts = true;
+            scrollRect.enabled = scrollRect.vertical = true;
             Image hitArea = scrollRect.GetComponent<Image>();
             if (hitArea != null) hitArea.raycastTarget = true;
         }
-
-        public float GetRowHeight()
-        {
-            return FruitLabLayoutMetrics.GetHistoryRowHeight(scrollRect.viewport.rect.height,
-                Mathf.Ceil(verticalLayoutGroup.spacing), rectTransform.rect.width / 331f);
-        }
-        
-        public CanvasGroup GetCanvasGroup()
-        {
-            return canvasGroup;
-        }
-
-        public float GetWidth()
-        {
-            return rectTransform.rect.width;
-        }
-
+        public float GetRowHeight() => FruitLabLayoutMetrics.GetHistoryRowHeight(scrollRect.viewport.rect.height,
+            Mathf.Ceil(verticalLayoutGroup.spacing), rectTransform.rect.width / 331f);
+        public CanvasGroup GetCanvasGroup() => canvasGroup;
+        public float GetWidth() => rectTransform.rect.width;
         public void SetScrollPositionToBottom()
         {
-            if (_scrollRoutine != null) StopCoroutine(_scrollRoutine);
-            _scrollRoutine = StartCoroutine(ScrollToBottomCoroutine());
+            ScrollToBottom();
+            if (Application.isPlaying) _scrollPending = true;
         }
-        
-        IEnumerator ScrollToBottomCoroutine () {
-            yield return new WaitForEndOfFrame ();
-            Canvas.ForceUpdateCanvases();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+        private void ScrollToBottom()
+        {
+            if (_history != null) RefreshWindow(false);
             scrollRect.StopMovement();
-            scrollRect.verticalNormalizedPosition = 0f;
-            _scrollRoutine = null;
+            if (_history == null) scrollRect.verticalNormalizedPosition = 0;
+            else
+            {
+                rectTransform.anchoredPosition = new Vector2(0, Mathf.Max(0, rectTransform.rect.height - scrollRect.viewport.rect.height));
+                RefreshWindow(false);
+            }
         }
-        
         public IResultBlockView CreateResultBlock()
         {
             SetEmptyState(false);
-            return Instantiate(resultBlockPrefab, transform);
+            return Instantiate(resultBlockPrefab, rectTransform);
         }
-
-        public ResultAreaInfo GetResultAreaInfo()
-        {
-            return new ResultAreaInfo()
-            {
-                topPoint = rectTransform.position,
-                resultBlockSize = new Vector2(rectTransform.rect.width, GetRowHeight()),
-                spacing = verticalLayoutGroup.spacing,
-            };
-        }
+        public ResultAreaInfo GetResultAreaInfo() => new ResultAreaInfo {
+            topPoint = rectTransform.position, resultBlockSize = new Vector2(GetWidth(), GetRowHeight()), spacing = verticalLayoutGroup.spacing
+        };
     }
 
     public interface IResultAreaView
     {
         ResultAreaInfo GetResultAreaInfo();
         IResultBlockView CreateResultBlock();
+        void SetHistory(IReadOnlyList<ResultBlockModel> history);
+        void HistoryChanged();
+        void RefreshRow(int index);
+        void RefreshVisibleRows();
         void SetScrollPositionToBottom();
         CanvasGroup GetCanvasGroup();
         float GetWidth();
@@ -134,7 +231,6 @@ namespace Scripts
         void SetEmptyState(bool empty);
         void EnableReview();
     }
-
     public struct ResultAreaInfo
     {
         public Vector2 topPoint;

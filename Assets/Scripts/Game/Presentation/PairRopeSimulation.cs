@@ -8,10 +8,15 @@ namespace Scripts
         public const int NodeCount = 24;
         public readonly Vector2[] Points = new Vector2[NodeCount];
         private readonly Vector2[] _previous = new Vector2[NodeCount];
+        private readonly Vector2[] _frameStart = new Vector2[NodeCount];
         private float _restLength, _accumulator;
+        private float _settledTime;
+        private bool _sleeping;
         private bool _ready;
         private Vector2 _lastA, _lastB;
         public float Tension { get; private set; }
+        public int Revision { get; private set; }
+        public bool IsSleeping => _sleeping;
 
         public void Reset(Vector2 a, Vector2 b)
         {
@@ -24,11 +29,16 @@ namespace Scripts
                 _previous[i] = Points[i];
             }
             _lastA = a; _lastB = b; _ready = true; _accumulator = 0;
+            _sleeping = false; _settledTime = 0; Revision++;
         }
 
         public void Advance(Vector2 a, Vector2 b, float deltaTime)
         {
             if (!_ready || (a - _lastA).sqrMagnitude > 40000f || (b - _lastB).sqrMagnitude > 40000f) Reset(a,b);
+            bool anchorsMoved = (a - _lastA).sqrMagnitude > .000001f || (b - _lastB).sqrMagnitude > .000001f;
+            if (_sleeping && !anchorsMoved) return;
+            if (anchorsMoved) { _sleeping = false; _settledTime = 0; }
+            for (int i = 0; i < NodeCount; i++) _frameStart[i] = Points[i];
             _lastA = a; _lastB = b;
             float distance = Vector2.Distance(a,b);
             if (distance < .1f)
@@ -36,6 +46,8 @@ namespace Scripts
                 // Coincident cards have no visible span; avoid a closed loop.
                 for (int i = 0; i < NodeCount; i++) Points[i] = _previous[i] = Vector2.Lerp(a,b,i/(float)(NodeCount-1));
                 _accumulator = 0;
+                Revision++;
+                _sleeping = true;
                 return;
             }
             Tension = Mathf.InverseLerp(_restLength * .9f, _restLength * 1.5f, distance);
@@ -68,6 +80,11 @@ namespace Scripts
             }
             Points[0] = a; Points[NodeCount - 1] = b;
             KeepMaterialOrder(a,b,distance);
+            float movement = 0;
+            for (int i = 0; i < NodeCount; i++) movement = Mathf.Max(movement, (Points[i] - _frameStart[i]).sqrMagnitude);
+            if (movement > .000001f || anchorsMoved) Revision++;
+            _settledTime = !anchorsMoved && movement < .0004f ? _settledTime + Mathf.Max(0, deltaTime) : 0;
+            _sleeping = _settledTime >= .5f;
         }
 
         private void KeepMaterialOrder(Vector2 a,Vector2 b,float distance)

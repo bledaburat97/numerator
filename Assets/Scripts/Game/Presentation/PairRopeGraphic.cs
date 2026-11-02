@@ -10,8 +10,12 @@ namespace Scripts
         private readonly Vector2[] _curve = new Vector2[PairRopeSimulation.NodeCount * 2 - 1];
         private int _count;
         private float _width = 3.2f;
+        private PairRopeSimulation _simulation;
+        private int _revision = -1;
         public void UpdateCurve(PairRopeSimulation simulation)
         {
+            if (_simulation == simulation && _revision == simulation.Revision && _count > 0) return;
+            _simulation = simulation; _revision = simulation.Revision;
             var p = simulation.Points; _count = 0;
             Vector2 span = p[p.Length-1]-p[0];
             Vector2 axis = span.sqrMagnitude > .0001f ? span.normalized : Vector2.right;
@@ -30,7 +34,11 @@ namespace Scripts
             _width = Mathf.Lerp(3.6f,2.5f,simulation.Tension);
             SetVerticesDirty();
         }
-        public void Clear() { _count = 0; SetVerticesDirty(); }
+        public void Clear()
+        {
+            if (_count == 0) return;
+            _count = 0; _revision = -1; SetVerticesDirty();
+        }
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear(); if (_count < 2) return;
