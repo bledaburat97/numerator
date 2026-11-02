@@ -14,7 +14,7 @@ namespace Scripts
         public readonly float BoardHeight, BoardFooterHeight, ActionWidth, ChoicesWidth, ChoicesHeight, PowerUpHeight;
         public readonly float GameAreaHeight, HistoryHeight, HistoryRowHeight, HistorySpacing;
 
-        public FruitLabLayoutMetrics(float width, float height, bool mechanicCaption = false, bool boardFooter = false)
+        public FruitLabLayoutMetrics(float width, float height, bool mechanicCaption = false, bool boardFooter = false, bool positionIndicators = false)
         {
             Width = Math.Max(1f, width);
             Height = Math.Max(1f, height);
@@ -28,7 +28,7 @@ namespace Scripts
             BoardHeight = 64f * scale * compact + BoardFooterHeight;
             ActionWidth = 48f * scale * compact;
             ChoicesWidth = Width - Padding * 2f - (ActionWidth + Gap) * 2f;
-            ChoicesHeight = 116f * scale * compact;
+            ChoicesHeight = (116f + (positionIndicators ? 30f : 0f)) * scale * compact;
             PowerUpHeight = 44f * scale * compact;
             GameAreaHeight = BoardHeight + ChoicesHeight + PowerUpHeight + Gap * 2f;
             HistoryHeight = Height - TopPadding - BottomPadding - HeaderHeight - GameAreaHeight - Gap * 2f;

@@ -27,7 +27,11 @@ namespace Scripts
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<IResultAreaController>().To<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
+            Container.Bind<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
+            Container.Bind<IResultAreaController>().To<ResultAreaController>().FromResolve();
+            Container.Bind<IResultHistorySource>().To<ResultAreaController>().FromResolve();
+            Container.Bind<IPositionAssistanceView>().To<PositionAssistanceView>().AsSingle().WithArguments(gameUI, resultAreaView);
+            Container.Bind<PositionAssistanceController>().AsSingle();
             Container.Bind<PairEffect>().AsSingle();
             Container.Bind<BoardSplitService>().AsSingle();
             Container.Bind<GrowingBoardService>().AsSingle();

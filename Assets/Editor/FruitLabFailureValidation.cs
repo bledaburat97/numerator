@@ -293,12 +293,15 @@ public static class FruitLabFailureValidation
                     }
                     Require(placement.GetCardsOnBoard().SequenceEqual(answer.Select(number => cards[number - 1].GetCardViewHandler())),
                         "Winning cards must follow board positions rather than fruit numbers");
+                    foreach (int fruit in answer) ((NormalCardItemView)cards[fruit-1].GetView()).SetPositionDeduction(FruitPresence.Present);
                     var animation = new LevelSuccessBoardAnimationController(board, placement).Play(.1f, .24f, .2f);
                     animation.SetUpdate(UpdateType.Manual).Play();
                     for (int position = 0; position < answer.Length; position++)
                     {
                         float delta = position == 0 ? .001f : .1f;
                         DOTween.ManualUpdate(delta, delta);
+                        // Late assistance updates must not reveal frames ahead of the success animation.
+                        foreach (int number in answer) ((NormalCardItemView)cards[number-1].GetView()).SetPositionDeduction(FruitPresence.Present);
                         for (int fruit = 0; fruit < cards.Length; fruit++)
                         {
                             int slot = Array.IndexOf(answer, fruit + 1);

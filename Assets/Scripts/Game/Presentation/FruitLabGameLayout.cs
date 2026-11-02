@@ -22,7 +22,13 @@ namespace Scripts
         [SerializeField] private ResultAreaView results;
 
         private Vector2 _lastSize;
-        private bool _cardAnnotationMode;
+        private bool _cardAnnotationMode, _evidenceReasonMode;
+        public void SetEvidenceReasonMode(bool visible)
+        {
+            if (_evidenceReasonMode == visible) return;
+            _evidenceReasonMode = visible;
+            if (gameView.IsMultiplayer) { ApplyLayout(); LayoutChanged?.Invoke(); }
+        }
         public RectTransform PowerUpArea => powerUpArea;
         public PowerUpListHolderView PowerUpView => powerUpView;
         public void SetCardAnnotationMode(bool active)
@@ -74,7 +80,7 @@ namespace Scripts
             PrepareSceneVisuals();
             safeArea.ForceUpdateRectTransforms();
             _lastSize = safeArea.rect.size;
-            FruitLabLayoutMetrics layout = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y, !gameView.IsMultiplayer && gameView.HasMechanicStatus,gameView.HasDynamiteFooter);
+            FruitLabLayoutMetrics layout = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y, !gameView.IsMultiplayer && gameView.HasMechanicStatus,gameView.HasDynamiteFooter, gameView.HasPositionIndicators);
             float width = layout.Width - layout.Padding * 2f;
 
             FruitLabStyle.Stretch(middleArea);
@@ -90,10 +96,10 @@ namespace Scripts
             FruitLabStyle.Rim(gameArea);
             bool multiplayer = gameView.IsMultiplayer;
             lifeBar.gameObject.SetActive(!multiplayer);
-            float powerHeight = multiplayer && !_cardAnnotationMode ? 0f : layout.PowerUpHeight;
+            float powerHeight = multiplayer && !(_cardAnnotationMode || _evidenceReasonMode) ? 0f : layout.PowerUpHeight;
             float reclaimed = layout.PowerUpHeight - powerHeight;
             FruitLabStyle.Place(gameArea, middleArea, layout.Padding, layout.BottomPadding, width, layout.GameAreaHeight - reclaimed);
-            powerUpArea.gameObject.SetActive(!multiplayer || _cardAnnotationMode);
+            powerUpArea.gameObject.SetActive(!multiplayer || _cardAnnotationMode || _evidenceReasonMode);
             float y = 0f;
             FruitLabStyle.Place(powerUpArea, gameArea, 0f, y, width, powerHeight);
             y += powerHeight + layout.Gap;

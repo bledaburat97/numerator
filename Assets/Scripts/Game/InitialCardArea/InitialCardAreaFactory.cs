@@ -131,6 +131,7 @@ namespace Scripts
                 : _view.CreateCardHolderViewOnLowerHolder();
             IInitialCardHolderController initialHolderController = new InitialCardHolderController(initialHolderView);
             initialHolderView.SetFruit(_view.GetFruitSprite(index + 1));
+            initialHolderView.SetIndicatorColor(_view.GetFruitColor(index + 1));
             initialHolderController.Initialize(
                 index,
                 cardItemInfo,

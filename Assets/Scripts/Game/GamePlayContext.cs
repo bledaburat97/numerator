@@ -27,8 +27,9 @@ namespace Scripts
         [Inject] private IGameUIController _gameUi;
         [Inject] private TutorialInputGate _tutorialGate;
         [Inject] private LevelMechanicsController _mechanics;
-        private CardAnnotationController _annotations;
-        public CardAnnotationController Annotations => _annotations;
+        [Inject] private PositionAssistanceController _positionAssistance;
+        public PositionAssistanceController PositionAssistance => _positionAssistance;
+        public CardAnnotationController Annotations => null;
         private FruitLabGameLayout _presentation;
         private bool _layoutRefreshPending;
 
@@ -36,10 +37,8 @@ namespace Scripts
         {
             _presentation = GetComponentInChildren<FruitLabGameLayout>(true);
             if (_presentation != null) _presentation.LayoutChanged += OnLayoutChanged;
-            _annotations = new CardAnnotationController(_initialCardAreaController, _cardPlacementCoordinator,
-                _gameUi,
-                _presentation, _tutorialGate, _hapticController,
-                () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning());
+            // Manual red/yellow/green marking is retained in code but disabled for this version.
+            _cardPlacementCoordinator.SetLongPressHandler(null);
             var view = GetComponentInChildren<GameUIView>(true);
             view?.GetPairView()?.Configure(new PairDragPresenter(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
                 _tutorialGate, _gameUi, () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning()));
@@ -49,12 +48,13 @@ namespace Scripts
             InitializeTurnOrderDeterminer();
             InitializePowerUpUi();
             InitializeGame();
+            _positionAssistance.Refresh();
         }
 
         private void OnLayoutChanged() => _layoutRefreshPending = true;
         private void Update()
         {
-            _annotations?.Tick();
+            _positionAssistance?.Tick();
             (_gameUi as GameUIController)?.TickPresentation();
         }
 
@@ -105,8 +105,7 @@ namespace Scripts
 
         private void OnDestroy()
         {
-            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
-            _annotations?.Dispose();
+            _positionAssistance?.Dispose();            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
             _mechanics?.Dispose();
             (_guessManager as System.IDisposable)?.Dispose();
             if (_presentation != null) _presentation.LayoutChanged -= OnLayoutChanged;
@@ -116,6 +115,14 @@ namespace Scripts
             (_levelFlowOrchestrator as System.IDisposable)?.Dispose();
         }
         
+        private void CancelCardGestures()
+        {
+            _positionAssistance?.Suspend();
+            if (_initialCardAreaController == null) return;
+            for (int i = 0; i < _initialCardAreaController.GetCardCount(); i++)
+                if (_initialCardAreaController.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().CancelPress();
+        }
+
         private void TrySave()
         {
             GetComponentInChildren<GameUIView>(true)?.GetPairView()?.CancelDrag();
@@ -141,7 +148,7 @@ namespace Scripts
         {
             if (!hasFocus)
             {
-                _annotations?.CancelAllGestures();
+                CancelCardGestures();
                 TrySave();
             }
 #else
@@ -149,7 +156,7 @@ namespace Scripts
         {
             if (pauseStatus)
             {
-                _annotations?.CancelAllGestures();
+                CancelCardGestures();
                 TrySave();
             }
 #endif

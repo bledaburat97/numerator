@@ -16,6 +16,8 @@ namespace Scripts
         [SerializeField] private Image resultOutline;
         private Color _resultColor = FruitLabStyle.Correct;
         private float _alpha = 1f;
+        protected virtual float ContentOpacityMultiplier => 1f;
+        protected void RefreshContentOpacity() => SetAlpha(_alpha);
 
         public virtual void Init(int cardNumber)
         {
@@ -54,6 +56,7 @@ namespace Scripts
         public void SetAlpha(float alpha)
         {
             _alpha = alpha;
+            alpha *= ContentOpacityMultiplier;
             Color imageColor = image.color;
             imageColor.a = alpha;
             image.color = imageColor;
@@ -89,6 +92,7 @@ namespace Scripts
             if (resultGlow != null) resultGlow.color = new Color(_resultColor.r, _resultColor.g, _resultColor.b, .32f * _alpha);
         }
 
+        public Color GetFruitColor(int number) => fruits[number - 1].fruitColor;
         public Sprite GetFruitSprite(int number) => fruits[number - 1].fruitImage;
     }
 

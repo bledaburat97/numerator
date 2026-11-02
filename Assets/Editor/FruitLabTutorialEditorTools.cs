@@ -21,6 +21,366 @@ using Object = UnityEngine.Object;
 // Explicit editor tasks, never an automatic profile reset on import or scene load.
 public static partial class FruitLabTutorialEditorTools
 {
+    public static string BakePositionIndicators()
+    {
+        const string path = "Assets/Prefabs/PossibleHolderIndicator.prefab";
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var view = root.GetComponent<PossibleHolderIndicatorView>();
+            view.Configure(1, null); view.SetSize(new Vector2(10, InitialHolderView.IndicatorHeight));
+            foreach (string name in new[] { "InnerImage", "CrossImage" })
+            {
+                var obsolete = root.transform.Find(name);
+                if (obsolete != null) Object.DestroyImmediate(obsolete.gameObject);
+            }
+            Dirty(root); PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        return "Updated the existing position indicator prefab: compact numbered / cross / confirmation cells";
+    }
+
+    private static void ValidatePositionDeductions()
+    {
+        var noneCorrect = new PositionDeductionService(7, 3);
+        Require(noneCorrect.ApplyGuess(1, new[] {1,2,3}, 0, 2), "Aggregate feedback is accepted");
+        for (int i = 0; i < 3; i++) Require(!noneCorrect.IsPossible(i + 1, i), "Zero correct excludes the tried fruit/slot pairs");
+        Require(noneCorrect.Presence(1) == FruitPresence.Unknown, "Two misplaced do not identify which two of three fruit are present");
+        var noMisplaced = new PositionDeductionService(7, 3);
+        noMisplaced.ApplyGuess(1, new[] {1,2,3}, 2, 0);
+        for (int fruit = 1; fruit <= 3; fruit++)
+        {
+            Require(noMisplaced.FixedSlot(fruit) == -1 && noMisplaced.Presence(fruit) == FruitPresence.Unknown,
+                "One remaining position is insufficient to confirm an unknown fruit");
+            for (int slot = 0; slot < 3; slot++) Require(noMisplaced.IsPossible(fruit, slot) == (slot == fruit - 1), "Zero misplaced excludes other slots");
+        }
+        var absent = new PositionDeductionService(7, 3); absent.ApplyGuess(1, new[] {1,2,3}, 0, 0);
+        for (int fruit = 1; fruit <= 3; fruit++) Require(absent.Presence(fruit) == FruitPresence.Absent, "Zero/zero excludes every guessed fruit");
+        var allPresent = new PositionDeductionService(7, 3); allPresent.ApplyGuess(1, new[] {1,2,3}, 1, 2);
+        for (int fruit = 1; fruit <= 7; fruit++) Require(allPresent.Presence(fruit) == (fruit <= 3 ? FruitPresence.Present : FruitPresence.Absent), "A complete set confirms membership and excludes other fruit");
+        var cascade = new PositionDeductionService(7, 3);
+        cascade.ApplyGuess(1, new[] {1,2,3}, 0, 3); cascade.ApplyGuess(2, new[] {4,1,2}, 0, 2);
+        Require(cascade.FixedSlot(1) == 2 && cascade.FixedSlot(2) == 0 && cascade.FixedSlot(3) == 1,
+            "Known membership and remaining slots propagate to a fixed point");
+        Require(cascade.Reason(1, 2).Guesses.SequenceEqual(new[] {1,2}), "Derived confirmations retain their actual evidence rows");
+        var column = new PositionDeductionService(5, 2);
+        column.ApplyGuess(1, new[] {1,2}, 0, 0); column.ApplyGuess(2, new[] {3,4}, 1, 0); column.ApplyGuess(3, new[] {3,5}, 0, 1);
+        Require(column.FixedSlot(5) == 0 && column.FixedSlot(4) == 1, "A unique candidate in a slot confirms unknown membership and propagates");
+        var invalid = new PositionDeductionService(5, 3);
+        Require(!invalid.ApplyGuess(1, new[] {1,1,3}, 0, 2) && !invalid.ApplyGuess(1, new[] {1,2,3}, 4, 0)
+            && invalid.Presence(1) == FruitPresence.Unknown && invalid.IsPossible(1, 0), "Invalid input cannot create exclusions");
+        int checkedFeedback = 0;
+        var guesses = Permutations(5, 3).ToArray();
+        foreach (var answer in guesses)
+        foreach (var guess in guesses)
+        {
+            var evaluation = new GuessEvaluation(1, guess, answer);
+            var state = new PositionDeductionService(5, 3); state.ApplyGuess(1, guess, evaluation.Correct, evaluation.Misplaced);
+            AssertSoundDeduction(state, answer); checkedFeedback++;
+        }
+        var random = new System.Random(1946);
+        for (int slots = 1; slots <= 5; slots++)
+        for (int count = 0; count < 100; count++)
+        {
+            int fruits = slots == 5 ? 9 : 7;
+            var answer = Enumerable.Range(1, fruits).OrderBy(_ => random.Next()).Take(slots).ToArray();
+            var state = new PositionDeductionService(fruits, slots);
+            for (int turn = 1; turn <= 15; turn++)
+            {
+                var guess = Enumerable.Range(1, fruits).OrderBy(_ => random.Next()).Take(slots).ToArray();
+                var evaluation = new GuessEvaluation(turn, guess, answer);
+                state.ApplyGuess(turn, guess, evaluation.Correct, evaluation.Misplaced);
+                AssertSoundDeduction(state, answer); checkedFeedback++;
+            }
+        }
+        Require(checkedFeedback == 11100, "The full 3/5 matrix and deterministic multi-guess cases were evaluated");
+    }
+    private static IEnumerable<int[]> Permutations(int fruits, int slots)
+    {
+        var values = new int[slots];
+        IEnumerable<int[]> Next(int index)
+        {
+            if (index == slots) { yield return (int[])values.Clone(); yield break; }
+            for (int fruit = 1; fruit <= fruits; fruit++)
+            {
+                bool exists = false; for (int previous = 0; previous < index; previous++) if (values[previous] == fruit) exists = true;
+                if (exists) continue;
+                values[index] = fruit;
+                foreach (var result in Next(index + 1)) yield return result;
+            }
+        }
+        return Next(0);
+    }
+    private static void AssertSoundDeduction(PositionDeductionService state, IReadOnlyList<int> answer)
+    {
+        Require(state.IsConsistent, "Legitimate public feedback cannot produce contradictory deductions");
+        for (int fruit = 1; fruit <= state.FruitCount; fruit++)
+        {
+            if (state.Presence(fruit) == FruitPresence.Absent) Require(!answer.Contains(fruit), "An absent deduction never removes a true fruit");
+            if (state.Presence(fruit) == FruitPresence.Present) Require(answer.Contains(fruit), "A membership deduction is always true");
+            if (state.FixedSlot(fruit) >= 0) Require(answer[state.FixedSlot(fruit)] == fruit, "A confirmed position is always true");
+            for (int slot = 0; slot < state.SlotCount; slot++) if (answer[slot] == fruit) Require(state.IsPossible(fruit, slot), "A true position is never excluded");
+        }
+    }
+    private static PositionAssistanceController AssistanceFor(Fixture game, LevelData definition, out PositionAssistanceView view)
+    {
+        view = new PositionAssistanceView(game.Initial, game.View, game.Canvas.GetComponentInChildren<ResultAreaView>(true), game.UI, null);
+        return new PositionAssistanceController(game._area, game.Initial, game._counts, new TestLevel(definition), game._info,
+            (BoardSplitService)Get(game.Results, "_split"), view);
+    }
+    private static void SubmitAssistedGuess(Fixture game, int[] cards, PositionAssistanceController assistance)
+    {
+        game.UI.TriggerResetNumbers(); Tick(.5f);
+        for (int slot = 0; slot < cards.Length; slot++) Require(game.Placement.TryPlaceCardOnBoard(cards[slot]-1, slot), "A chosen fruit is placeable");
+        Tick(.5f); game.Check(); Tick(.6f); assistance.Tick();
+    }
+    private static void ClickPositionIndicator(Fixture game, PossibleHolderIndicatorView indicator)
+    {
+        Layer(game.Canvas.transform); Draw(game.Camera);
+        var rect=indicator.GetRectTransform();
+        var data=new PointerEventData(((GameObject)Get(game,"_events")).GetComponent<EventSystem>()) {
+            position=RectTransformUtility.WorldToScreenPoint(game.Camera,rect.TransformPoint(rect.rect.center)), button=PointerEventData.InputButton.Left
+        };
+        var hits=new List<RaycastResult>();game.Canvas.GetComponent<GraphicRaycaster>().Raycast(data,hits);
+        Require(hits.Count>0 && ExecuteEvents.GetEventHandler<IPointerClickHandler>(hits[0].gameObject)==indicator.gameObject,
+            "The small indicator receives real UI raycasts without triggering card placement; first="+hits.FirstOrDefault().gameObject?.name);
+        int guesses=game.Round.GetTriedCardsList().Count;
+        ExecuteEvents.Execute(indicator.gameObject,data,ExecuteEvents.pointerClickHandler);
+        Require(game.Round.GetTriedCardsList().Count==guesses,"Reading evidence cannot submit a guess");
+    }
+
+    public static void ReviewPositionAssistance(Canvas canvas, Camera camera)
+    {
+        ValidatePositionDeductions();
+        var previous = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
+        var errors = new List<string>(); Application.LogCallback collect = (message, stack, type) => { if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) errors.Add(message); };
+        Application.logMessageReceived += collect;
+        try
+        {
+            var definition = new LevelData { NumOfBoardHolders = 3, NumOfCards = 7, MaxNumOfTries = 9, Mechanic = LevelMechanic.Normal };
+            LevelSaveData saved = null;
+            ClearPreviewActors(canvas);
+            using (var game = new Fixture(canvas, camera, definition))
+            {
+                Field(game.Tracker, "_levelId", 7); game.BuildActors(); game.Gate.Clear(); game.Target.RevealMultiplayerAnswer(new[] {2,3,1});
+                using (var assistance = AssistanceFor(game, definition, out var view))
+                {
+                    assistance.Refresh();
+                    game.Initial.TryGetCardItem(0,out var heldCard);var move=heldCard.GetCardMoveHandler();
+                    move.OnPointerDown(null);Tick(.8f);
+                    Require(!canvas.GetComponentsInChildren<RectTransform>(true).Any(rect=>rect.name=="CardAnnotationOverlay" && rect.gameObject.activeSelf),"Long holds no longer open a probability toolbar");
+                    move.OnPointerUp(null);Tick(.5f);game.UI.TriggerResetNumbers();Tick(.5f);
+                    Require(game.Round.GetTriedCardsList().Count==0,"A long hold is not a submitted guess");
+                    Require(game.Initial.GetHolderView(0).Indicators.Count == 3, "Every fruit holder displays one numbered cell per board slot");
+                    SubmitAssistedGuess(game, new[] {1,2,3}, assistance);
+                    Require(game.Initial.GetHolderView(0).Indicators[0].IsExcluded, "A submitted zero-correct guess creates the right crosses");
+                    Require(((NormalCardItemView)game.Initial.GetRectTransformOfCardItem(0).GetComponent<NormalCardItemView>()).DeducedPresence == FruitPresence.Present, "Complete membership gives a green frame");
+                    Require(game.Initial.GetHolderView(3).Indicators.All(indicator => indicator.IsExcluded), "Absent fruit have all their cells crossed");
+                    Require(game.Initial.TryGetCardItem(3, out var absent) && ((NormalCardItemView)absent.GetView()).DeducedPresence == FruitPresence.Absent
+                        && ((NormalCardItemView)absent.GetView()).GetImage().color.a <= .33f, "Absent fruit stay available, faded and crossed without being deleted");
+                    ClickPositionIndicator(game,game.Initial.GetHolderView(0).Indicators[0]);
+                    var history = canvas.GetComponentInChildren<ResultAreaView>(true);
+                    Require(view.IsReasonVisible && view.ReasonText.Contains("1. tahminde doğru yerde meyve yoktu") && history.EvidenceRows.Contains(0),
+                        "Clicking a cross explains its public evidence and highlights the right history row");
+                    Layer(canvas.transform); Draw(camera); Capture(camera, Folder + "/preview-position-reason.png"); view.CloseReason();
+                    game.View.SetPairClue(new PairClue(1,2));
+                    for(int frame=0;frame<60;frame++)game.View.GetPairView().RefreshRope(1f/60);
+                    var cell=game.Initial.GetHolderView(0).Indicators[0];var point=RectTransformUtility.WorldToScreenPoint(camera,cell.transform.position);
+                    Require(game.View.GetPairView().IsOverControls(point,camera),"The pair rope yields input to the indicator strip");
+                    ClickPositionIndicator(game,cell);Require(view.IsReasonVisible,"Evidence remains tappable with an active pair rope");
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-position-pair.png");
+                    view.CloseReason();game.View.SetPairClue(null);
+                    SubmitAssistedGuess(game, new[] {4,1,2}, assistance);
+                    Require(assistance.State.FixedSlot(1) == 2 && game.Initial.GetHolderView(0).Indicators[2].IsConfirmed, "A confirmed position displays a green check");
+                    Require(game._info.GetCardItemInfoList().All(info => !info.isLocked && info.isExisted), "Inferences never change real reveal locks or eliminate cards from the game state");
+                    Require(game.Placement.GetCardsOnBoard().Count == 0, "Inferences do not place cards on behalf of the player");
+                    var provider = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
+                    Field(provider, "_saveData", game._saves); Field(provider, "_tracker", game.Tracker); Field(provider, "_levels", new TestLevel(definition));
+                    Require(provider.TryCreateSnapshot(out saved), "The ordinary checkpoint contains the accepted guesses");
+                    saved = Newtonsoft.Json.JsonConvert.DeserializeObject<LevelSaveData>(Newtonsoft.Json.JsonConvert.SerializeObject(saved));
+                    Layer(canvas.transform); Draw(camera); Capture(camera, Folder + "/preview-position-confirmed.png");
+                }
+            }
+            ClearPreviewActors(canvas);
+            using (var game = new Fixture(canvas, camera, definition))
+            {
+                Field(game.Tracker, "_levelId", 7); ((IGameSaveService)Get(game, "_memory")).Save(saved); game._saves.SetLevelSaveDataAsSaved(saved);
+                game.Round.Initialize(); game.BuildActors(); game.Results.TryAddTriedCards(); game.Gate.Clear();
+                using (var assistance = AssistanceFor(game, definition, out var view))
+                {
+                    assistance.Refresh();
+                    Require(assistance.State.FixedSlot(1) == 2 && assistance.State.Reason(1, 2).Guesses.SequenceEqual(new[] {1,2}), "Save/resume reconstructs deductions and reasons from existing history");
+                    game._area.RemoveResultBlocks(); assistance.Tick();
+                    Require(assistance.State.Presence(1) == FruitPresence.Unknown && game.Initial.GetHolderView(0).Indicators.All(cell => !cell.IsExcluded && !cell.IsConfirmed), "A new history generation clears all deductions");
+                }
+            }
+            ClearPreviewActors(canvas);
+            using (var game = new Fixture(canvas, camera, definition))
+            {
+                Field(game.Tracker,"_levelId",7); Field(game.Tracker,"_gameOption",GameOption.MultiPlayer);game.BuildActors();game.Gate.Clear();game.UI.InitializeForMultiplayer();
+                using(var assistance=AssistanceFor(game,definition,out var view))
+                {
+                    assistance.Refresh();
+                    game._area.AddResultBlock(new ResultBlockModel{finalNumbers=new List<int>{1,2,3},correctPosCount=0,wrongPosCount=2,isLocalGuess=false,playerName="Rakip"});
+                    assistance.Tick();
+                    Require(!assistance.State.IsPossible(1,0),"Opponent feedback also updates local deductions");
+                    var layout=canvas.GetComponent<FruitLabGameLayout>();
+                    Require(!layout.PowerUpArea.gameObject.activeSelf,"The multiplayer powerup row remains hidden normally");
+                    ClickPositionIndicator(game,game.Initial.GetHolderView(0).Indicators[0]);
+                    Require(view.IsReasonVisible && layout.PowerUpArea.gameObject.activeSelf,"Multiplayer explanations get their own visible space");
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-position-multiplayer.png");
+                    view.CloseReason();Require(!layout.PowerUpArea.gameObject.activeSelf,"Closing an explanation restores multiplayer layout");
+                }
+                game.View.SetPositionIndicators(false);game.View.SetOpponentInfoStatus(false);
+            }
+            ClearPreviewActors(canvas);
+            var four=new LevelData{NumOfBoardHolders=4,NumOfCards=8,MaxNumOfTries=10};
+            using(var game=new Fixture(canvas,camera,four))
+            {
+                Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_splitPowerUpCount",1);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
+                using(var assistance=AssistanceFor(game,four,out var view))
+                {
+                    assistance.Refresh();
+                    new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+                    game._powers.Refresh();Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Bomb));Tick(1.2f);assistance.Tick();
+                    Require(assistance.State.SlotCount==3 && game.Initial.GetHolderView(0).Indicators.Count(cell=>cell.gameObject.activeSelf)==3,"Bomb resizes the visible cells and resets the deduction schema");
+                    SubmitAssistedGuess(game,new[]{2,3,1},assistance);Require(assistance.State.Presence(1)==FruitPresence.Present,"Bomb leaves valid public inference feedback");
+                    game._powers.Refresh();Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Split));assistance.Tick();
+                    // Bomb has left three slots; Split cannot activate on three. Test an actual mid-round split on a fresh four-slot board below.
+                }
+            }
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,four))
+            {
+                Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_splitPowerUpCount",1);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
+                using(var assistance=AssistanceFor(game,four,out var view))
+                {
+                    assistance.Refresh();SubmitAssistedGuess(game,new[]{2,3,4,1},assistance);
+                    Require(assistance.State!=null,"Ordinary boards initially offer assistance");
+                    game._powers.Refresh();Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Split));assistance.Tick();
+                    Require(assistance.State==null && !game.View.HasPositionIndicators,"Activating Split mid-round removes whole-board assistance and marks");
+                    Require(game.Initial.TryGetCardItem(0,out var card) && ((NormalCardItemView)card.GetView()).DeducedPresence==FruitPresence.Unknown,"Split clears old membership frames");
+                }
+            }
+            foreach (var mechanic in new[] {LevelMechanic.Growing, LevelMechanic.Split})
+            {
+                var special = new LevelData { NumOfBoardHolders = mechanic == LevelMechanic.Split ? 4 : 2, NumOfCards = 9, MaxNumOfTries = 9, Mechanic = mechanic };
+                ClearPreviewActors(canvas);
+                using (var game = new Fixture(canvas, camera, special))
+                {
+                    Field(game.Tracker, "_levelId", 8); game.BuildActors();
+                    using (var assistance = AssistanceFor(game, special, out var view))
+                    {
+                        assistance.Refresh(); Require(assistance.State == null && !game.View.HasPositionIndicators, "Growing and split boards do not expose positional deductions");
+                    }
+                }
+            }
+            int layouts = 0;
+            foreach (var size in new[] {new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
+            for (int slots = 2; slots <= 5; slots++)
+            for (int fruits = 5; fruits <= 9; fruits++)
+            {
+                ClearPreviewActors(canvas); ((RectTransform)canvas.transform).sizeDelta = size; canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
+                var level = new LevelData {NumOfBoardHolders=slots,NumOfCards=fruits,MaxNumOfTries=9};
+                using (var game = new Fixture(canvas, camera, level))
+                {
+                    Field(game.Tracker,"_levelId",7);game.BuildActors();game.Gate.Clear();
+                    using (var assistance = AssistanceFor(game, level, out var view))
+                    {
+                        assistance.Refresh(); Canvas.ForceUpdateCanvases();
+                        var area = canvas.GetComponentInChildren<InitialCardAreaView>(true).GetRectTransform();
+                        var historyArea=canvas.GetComponentInChildren<ResultAreaView>(true);
+                        var scroll=historyArea.GetComponentInParent<ScrollRect>();
+                        Require(historyArea.GetRowHeight()*6+historyArea.GetResultAreaInfo().spacing*7<=scroll.viewport.rect.height+.1f,"Six history rows remain available with indicators");
+                        for (int fruit = 0; fruit < fruits; fruit++)
+                        {
+                            var holder=game.Initial.GetHolderView(fruit); var body=holder.GetRectTransform();
+                            Require(holder.Indicators.Count==slots,"Slot count matches the current board");
+                            var corners=new Vector3[4];holder.Indicators[0].GetRectTransform().GetWorldCorners(corners);
+                            Vector2 low=area.InverseTransformPoint(corners[0]);
+                            holder.Indicators[slots-1].GetRectTransform().GetWorldCorners(corners);Vector2 high=area.InverseTransformPoint(corners[2]);
+                            Require(low.x>=area.rect.xMin-.5f && high.x<=area.rect.xMax+.5f && low.y>=area.rect.yMin-.5f && high.y<=area.rect.yMax+.5f,
+                                "Indicator strip fits its fruit area at "+size+", board="+slots+", fruits="+fruits+", low="+low+", high="+high);
+                            Require(Mathf.Abs((high.x-low.x)-body.rect.width)<1,"All cells together span the fruit holder width");
+                            Require(holder.Indicators.All(cell=>cell.GetRectTransform().rect.width>=7 && cell.GetComponentInChildren<TMP_Text>(true).fontSize>=8),"Numbers and symbols remain readable");
+                            var card = game.Initial.GetRectTransformOfCardItem(fruit).GetComponent<NormalCardItemView>();
+                            Color expected = Color.Lerp(card.GetFruitColor(fruit+1),FruitLabStyle.Text,.35f); expected.a=1;
+                            Require(holder.Indicators.All(cell=>cell.GetComponentInChildren<TMP_Text>(true).color==expected),"Each fruit's digits retain its own readable card colour");
+                            Color fg=expected.linear, bg=FruitLabStyle.Recess.linear;
+                            float contrast=(.2126f*fg.r+.7152f*fg.g+.0722f*fg.b+.05f)/(.2126f*bg.r+.7152f*bg.g+.0722f*bg.b+.05f);
+                            Require(contrast>=4.5f,"Small fruit-coloured numbers have sufficient contrast: fruit="+(fruit+1)+", ratio="+contrast);
+                        }
+                        if(slots==5 && fruits==9)
+                        {Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-position-5-9-"+(int)size.x+"-"+(int)size.y+".png");}
+                        layouts++;
+                    }
+                }
+            }
+            Require(errors.Count==0,"No Unity errors during positional assistance review: "+string.Join(" | ",errors));
+            File.WriteAllText(Folder+"/position-assistance-review.json",Newtonsoft.Json.JsonConvert.SerializeObject(new{
+                passed=true,publicFeedbackChecks=11100,layouts,saveResume=true,ordinaryStateUnchanged=true,reasonAndHistoryFocus=true,growingAndSplitDisabled=true,multiplayer=true,bombResize=true,midRoundSplit=true
+            },Newtonsoft.Json.Formatting.Indented));
+        }
+        finally
+        {
+            ((RectTransform)canvas.transform).sizeDelta=new Vector2(375,812);canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
+            DOTween.defaultUpdateType=previous;Application.logMessageReceived-=collect;
+        }
+    }
+
+    public static void ReviewCrystalHome(Canvas canvas, Camera camera)
+    {
+        var previous = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
+        try
+        {
+            foreach (int slots in new[] {3,5})
+            foreach (bool targetOnBoard in new[] {true,false})
+            {
+                ClearPreviewActors(canvas);
+                var level = new LevelData {NumOfBoardHolders=slots,NumOfCards=slots+4,MaxNumOfTries=9,Mechanic=LevelMechanic.Normal};
+                using (var game = new Fixture(canvas,camera,level))
+                {
+                    Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();
+                    var answer = Enumerable.Range(1,slots).ToArray();game.Target.RevealMultiplayerAnswer(answer);
+                    var query = (IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
+                    var hints = new HintProvider(game._guess,game.Target,game._info,game.Initial,query,game.Placement);
+                    Field(hints,"_round",game.Round);
+                    Field(hints,"_eliminate",new EliminateFruitEffect(game.Target,game._info,game.Placement,game._saves));
+                    CrystalView crystal = null;int flights=0;
+                    game._guess.HintRewardTokenEvent += (sender,args)=>{crystal=(CrystalView)args.RewardTokenView;flights++;};
+                    int boundary = game.Round.GetLifeBarRewardInfoList().Where(reward=>reward.IsCrystal).Max(reward=>reward.BoundaryIndex);
+                    var guess = targetOnBoard ? answer.Take(slots-1).Concat(new[]{slots+1}).ToArray() : answer.Skip(1).Concat(new[]{1}).ToArray();
+                    while(game.Round.GetRemainingGuessCount()>boundary)
+                    {
+                        for(int i=0;i<slots;i++)Require(game.Placement.TryPlaceCardOnBoard(guess[i]-1,i),"The crystal regression submits a real playable board");
+                        Tick(.5f);game.Check();
+                        if(crystal==null){Tick(1.5f);continue;}
+                        int removed=game._info.GetCardItemInfoList().FindIndex(info=>!info.isExisted);
+                        Require(removed>=0 && (!targetOnBoard || removed==slots),"The first lost crystal eliminates the absent fruit from the submitted guess when possible");
+                        Require(game.Initial.TryGetCardItem(removed,out var card),"Logical elimination precedes visual removal");
+                        var rect=card.GetView().GetRectTransform();var home=game.Initial.GetHolderView(removed).GetRectTransform();
+                        Require(card.GetCardMoveHandler().IsMovementLocked() && query.GetOccupiedCardIndexesOnBoard().All(index=>index<0),"Pending elimination cannot be dragged or retained in logical board slots");
+                        Tick(.35f);
+                        Require(rect.parent==home && Vector3.Distance(rect.position,home.position)<.05f,"The eliminated fruit returns home with the other cards before crystal impact");
+                        float flight=crystal.GetFlightDuration(false);
+                        for(float elapsed=.35f;elapsed<flight+.03f;elapsed+=.01f)Tick(.01f);
+                        float miss=Vector3.Distance(crystal.GetRectTransform().TransformPoint(crystal.GetRectTransform().rect.center),rect.TransformPoint(rect.rect.center));
+                        Require(rect.parent==home && miss<.05f,"The crystal hits the fruit centre on its initial holder; miss="+miss);
+                        if(slots==5 && targetOnBoard){Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-crystal-home-impact.png");}
+                        Tick(.6f);
+                        Require(rect==null && home!=null && !game.Initial.TryGetCardItem(removed,out _),"Impact removes only the fruit and preserves its initial holder");
+                        Require(flights==1 && game.Round.GetTriedCardsList().Count==9-boundary && game.Round.GetRemainingGuessCount()==boundary,"Crystal return never submits an extra guess or consumes extra life");
+                        GC.KeepAlive(hints);
+                        break;
+                    }
+                    Require(flights==1,"Actual wrong guesses must cross a crystal reward boundary");
+                }
+            }
+            Debug.Log("FRUIT_LAB_CRYSTAL_HOME_PASS: real wrong-guess boundaries on 3/5 slots, board/home targets, return-before-impact, model and holder preservation.");
+        }
+        finally {DOTween.defaultUpdateType=previous;}
+    }
+
     public static string ReviewSessionBindings()
     {
         var scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
@@ -43,6 +403,7 @@ public static partial class FruitLabTutorialEditorTools
                     installer.InstallBindings();
                     container.Resolve(typeof(ILevelFlowOrchestrator));
                     container.Resolve(typeof(SinglePlayerSession)); container.Resolve(typeof(MultiplayerSession));
+                    container.Resolve(typeof(PositionAssistanceController));
                     container.ResolveRoots();
                 }
                 finally { Object.DestroyImmediate(root); }

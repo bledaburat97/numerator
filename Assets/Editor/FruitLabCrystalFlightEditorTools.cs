@@ -145,7 +145,7 @@ public static class FruitLabCrystalFlightEditorTools
             target.position = canvas.GetComponentInChildren<BoardHolderView>(true).GetRectTransform().position;
             token.GetRectTransform().position = canvas.GetComponentInChildren<LifeBarView>(true).GetRectTransform().position;
             Sequence animation = null;
-            Sequence move = null;
+            var previousUpdate = DOTween.defaultUpdateType;
             try
             {
                 int hits = 0;
@@ -153,9 +153,8 @@ public static class FruitLabCrystalFlightEditorTools
                 animation = reveal ? manager.RevealCard(token, target, () => hits++) : manager.DestroyCard(token, target, () => hits++);
                 animation.SetUpdate(UpdateType.Manual).Play();
                 DOTween.ManualUpdate(.04f, .04f);
+                DOTween.defaultUpdateType = UpdateType.Manual;
                 handler.MoveToInitialParent(); // The real wrong-guess reset starts after the hint.
-                move = (Sequence)typeof(CardViewHandler).GetField("_activeMoveSequence", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(handler);
-                move.SetUpdate(UpdateType.Manual).Play();
                 for (int i = 0; i < 48; i++) DOTween.ManualUpdate(1f / 60f, 1f / 60f);
                 Require(target.parent == home && Vector3.Distance(target.position, home.position) < .05f, "Real card reset must finish at its initial holder");
                 float miss = Vector3.Distance(token.GetRectTransform().TransformPoint(token.GetRectTransform().rect.center), target.TransformPoint(target.rect.center));
@@ -165,7 +164,7 @@ public static class FruitLabCrystalFlightEditorTools
             finally
             {
                 if (animation != null && animation.IsActive()) animation.Kill();
-                if (move != null && move.IsActive()) move.Kill();
+                DOTween.defaultUpdateType = previousUpdate;
                 Object.DestroyImmediate(token.gameObject);
                 Object.DestroyImmediate(card.gameObject);
             }

@@ -23,6 +23,15 @@ namespace Scripts
         private NonDraggableCardItemViewFactory _cardFactory;
         private TMP_Text _correctCount, _misplacedCount;
         private TMP_Text _playerLabel;
+        private Image _evidenceFrame;
+        public void SetEvidenceHighlight(bool visible)
+        {
+            if (_evidenceFrame == null && !visible) return;
+            if (_evidenceFrame == null) _evidenceFrame = FruitLabStyle.Detail(transform, "DeductionEvidence", FruitLabStyle.Gold, true);
+            FruitLabStyle.Stretch(_evidenceFrame.rectTransform, 1);
+            _evidenceFrame.raycastTarget = false; _evidenceFrame.gameObject.SetActive(visible);
+            if (visible) _evidenceFrame.transform.SetAsLastSibling();
+        }
         private RectTransform _feedback;
         private FruitLabGlyph _correctIcon, _misplacedIcon;
         private float _width, _height;
@@ -82,6 +91,7 @@ namespace Scripts
         public void ResetForReuse()
         {
             rectTransform.DOKill();
+            SetEvidenceHighlight(false);
             for (int i = 0; i < _cardPool.Count; i++)
             {
                 var card = _cardPool[i];

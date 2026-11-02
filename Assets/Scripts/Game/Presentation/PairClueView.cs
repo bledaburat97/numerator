@@ -28,6 +28,7 @@ namespace Scripts
         public PairRopeSimulation Simulation => _simulation;
         public bool IsGroupDragging => _presenter != null && _presenter.IsDragging;
         public PairRopeGraphic Graphic => rope;
+        public Func<Vector2, Camera, bool> AdditionalControlHitTest { get; set; }
         public bool CanDragGroup => _presenter != null && _presenter.CanDrag(_clue);
 
         public void Configure(PairDragPresenter presenter)
@@ -135,6 +136,7 @@ namespace Scripts
         }
         public bool IsOverControls(Vector2 screen,Camera camera)
         {
+            if (AdditionalControlHitTest?.Invoke(screen, camera) == true) return true;
             if (_powerArea != null && _powerArea.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(_powerArea,screen,camera)) return true;
             foreach (var control in _controls)
                 if (control != null && control.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(control.GetButtonRectTransform(),screen,camera)) return true;

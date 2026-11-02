@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -12,6 +13,17 @@ namespace Scripts
         private float _width = 3.2f;
         private PairRopeSimulation _simulation;
         private int _revision = -1;
+        private readonly List<Rect> _controlOccluders = new List<Rect>();
+        public void SetControlOccluders(IReadOnlyList<Rect> rectangles)
+        {
+            bool changed = _controlOccluders.Count != (rectangles?.Count ?? 0);
+            if (!changed && rectangles != null)
+                for (int i = 0; i < rectangles.Count; i++) if (_controlOccluders[i] != rectangles[i]) { changed = true; break; }
+            if (!changed) return;
+            _controlOccluders.Clear();
+            if (rectangles != null) for (int i = 0; i < rectangles.Count; i++) _controlOccluders.Add(rectangles[i]);
+            SetVerticesDirty();
+        }
         public void UpdateCurve(PairRopeSimulation simulation)
         {
             if (_simulation == simulation && _revision == simulation.Revision && _count > 0) return;
@@ -64,6 +76,9 @@ namespace Scripts
         { for (int i = 1; i < _count; i++) Line(mesh,_curve[i-1]+offset,_curve[i]+offset,width,tint); }
         private void Line(VertexHelper mesh, Vector2 a, Vector2 b, float width, Color tint)
         {
+            // The cord passes visually behind small controls without changing its physics or canvas sorting.
+            Vector2 middle = (a + b) * .5f;
+            for (int i = 0; i < _controlOccluders.Count; i++) if (_controlOccluders[i].Contains(middle)) return;
             Vector2 d = b-a; if (d.sqrMagnitude < .00001f) return;
             Vector2 n = new Vector2(-d.y,d.x).normalized * width * .5f;
             int index = mesh.currentVertCount;

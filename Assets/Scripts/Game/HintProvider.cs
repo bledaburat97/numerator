@@ -72,7 +72,13 @@ namespace Game
             }
 
             RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
-            if (_initialCardAreaController.TryGetCardItem(cardIndex, out var eliminated)) eliminated.GetCardMoveHandler().SetMovementLocked(true);
+            if (_initialCardAreaController.TryGetCardItem(cardIndex, out var eliminated))
+            {
+                eliminated.GetCardMoveHandler().SetMovementLocked(true);
+                // The elimination is already committed, so the normal wrong-guess reset skips this card.
+                // Start its return explicitly; the crystal follows it and impacts at its initial holder.
+                eliminated.GetCardViewHandler().MoveToInitialParent();
+            }
             Action destroyCardAction = () => { _initialCardAreaController.DestroyCard(cardIndex); };
             Track(rewardTokenView, new RewardTokenAnimationManager().DestroyCard(rewardTokenView, cardRectTransform, destroyCardAction));
             return true;

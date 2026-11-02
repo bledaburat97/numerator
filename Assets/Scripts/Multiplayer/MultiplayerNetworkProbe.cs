@@ -554,6 +554,11 @@ namespace Scripts
         private IEnumerator CheckAnnotationGestures(IInitialCardAreaController initial, MultiplayerGameController match)
         {
             var context = FindFirstObjectByType<GamePlayContext>(); var notes = context.Annotations;
+            if (notes == null)
+            {
+                Check(context.PositionAssistance != null, "Automatic positional assistance replaces the disabled manual annotation toolbar");
+                yield break;
+            }
             Check(notes != null && initial.TryGetCardItem(0, out _), "The real game provides its annotation controller");
             initial.TryGetCardItem(0, out var card); var move = card.GetCardMoveHandler(); var view = (NormalCardItemView)card.GetView();
             var layout = FindFirstObjectByType<FruitLabGameLayout>(); var ui = FindFirstObjectByType<GameUIView>();

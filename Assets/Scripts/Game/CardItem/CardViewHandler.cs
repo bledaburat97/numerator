@@ -122,7 +122,7 @@ namespace Scripts
             SetParent(_cardItemData.TempParent);
             _view.InitLocalScale();
             int version = _moveVersion;
-            DOTween.Sequence().SetId(_moveTweenId)
+            DOTween.Sequence().SetId(_moveTweenId).SetLink(_view.GetRectTransform().gameObject, LinkBehaviour.KillOnDestroy)
                 .Append(_view.ChangePosition(parentTransform.position, 0.3f))
                 .OnComplete(() =>
                 {

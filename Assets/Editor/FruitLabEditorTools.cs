@@ -56,7 +56,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "level-intro-review" || requested.operation == "split-review" || requested.operation == "dynamite-review" || requested.operation == "growing-review" || requested.operation == "powerup-polish-review" || requested.operation == "mobile-polish-review" || requested.operation == "playtest-review" || requested.operation == "pair-review" || requested.operation == "level-mechanics-review" || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation == "crystal-review" || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation == "position-assistance-review" || requested.operation == "level-intro-review" || requested.operation == "split-review" || requested.operation == "dynamite-review" || requested.operation == "growing-review" || requested.operation == "powerup-polish-review" || requested.operation == "mobile-polish-review" || requested.operation == "playtest-review" || requested.operation == "pair-review" || requested.operation == "level-mechanics-review" || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation.StartsWith("crystal-") || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -85,6 +85,10 @@ public static class FruitLabEditorTools
             {
                 case "session-bindings-review": reply.details = FruitLabTutorialEditorTools.ReviewSessionBindings(); break;
                 case "performance-review": reply.details = Render(5, 9, validation: FruitLabTutorialEditorTools.ReviewPerformance, validateBeforeRender: true); break;
+                case "position-assistance-review":
+                    reply.details = FruitLabTutorialEditorTools.BakePositionIndicators()
+                        + "\n" + Render(3, 7, validation: FruitLabTutorialEditorTools.ReviewPositionAssistance, validateBeforeRender: true);
+                    break;
                 case "inspect": reply.details = Inspect(); break;
                 case "menu-progression-review": reply.details = FruitLabRewardEditorTools.ReviewMenuProgression(); break;
                 case "telemetry-install":
@@ -190,6 +194,9 @@ public static class FruitLabEditorTools
                                 throw new Exception("A zero-crystal win must not display crystal energy.");
                         }, validateBeforeRender: true)
                         + "\nImmediate wrong/winning guesses, no duplicate after flight, earned-only crystal energy, retry input and first tutorial passed";
+                    break;
+                case "crystal-home-review":
+                    reply.details = Render(5, 9, validation: FruitLabTutorialEditorTools.ReviewCrystalHome, validateBeforeRender: true);
                     break;
                 case "crystal-review":
                     FruitLabCrystalFlightEditorTools.PreparePrefab();

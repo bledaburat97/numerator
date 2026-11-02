@@ -20,7 +20,13 @@ namespace Scripts
         private int _pairDragFirst = -1, _pairDragSecond = -1;
         private readonly TutorialInputGate _tutorialGate;
         private Func<int, bool> _longPressHandler;
-        public void SetLongPressHandler(Func<int, bool> handler) => _longPressHandler = handler;
+        public void SetLongPressHandler(Func<int, bool> handler)
+        {
+            _longPressHandler = handler;
+            for (int i = 0; i < _initialCardAreaController.GetCardCount(); i++)
+                if (_initialCardAreaController.TryGetCardItem(i, out var card))
+                    card.GetCardMoveHandler().SetOnLongPress(handler == null ? null : OnCardLongPressed);
+        }
         public event EventHandler<(int cardIndex, int boardIndex)> CardPlacedEvent;
         public event EventHandler<(int cardIndex, int boardIndex)> CardLockedEvent;
         public event EventHandler<int> OnCardClickedEvent;
@@ -66,7 +72,7 @@ namespace Scripts
 
                 ICardMoveHandler cardMoveHandler = cardItem.GetCardMoveHandler();
                 cardMoveHandler.SetOnClick(OnCardClicked);
-                cardMoveHandler.SetOnLongPress(OnCardLongPressed);
+                cardMoveHandler.SetOnLongPress(_longPressHandler == null ? null : OnCardLongPressed);
                 cardMoveHandler.SetOnDragContinue(_cardItemLocator.OnDragContinue);
                 cardMoveHandler.SetOnDragStart(OnCardDragStarted);
                 cardMoveHandler.SetOnDragComplete(_cardItemLocator.OnDragComplete);

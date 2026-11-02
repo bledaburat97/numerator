@@ -35,7 +35,10 @@ namespace Scripts
             Sequence sequence = DOTween.Sequence().AppendCallback(() =>
             {
                 foreach (ICardViewHandler card in cardViewHandlerList)
+                {
+                    if (card.GetView() is NormalCardItemView view) view.BeginAnswerPresentation();
                     card.SetProbability(ProbabilityType.Certain, true);
+                }
             });
             for (int i = 0; i < cardViewHandlerList.Count; i++)
             {

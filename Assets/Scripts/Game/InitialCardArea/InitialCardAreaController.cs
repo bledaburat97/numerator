@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using Game;
@@ -6,7 +7,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class InitialCardAreaController : IInitialCardAreaController
+    public class InitialCardAreaController : IInitialCardAreaController, IInitialCardAreaEvents
     {
         private IBoardAreaController _boardAreaController;
         private IBoardHolderCountManager _boardHolderCountManager;
@@ -38,6 +39,13 @@ namespace Scripts
             _initialCardAreaFactory = initialCardAreaFactory;
         }
         
+        public event Action Rebuilt;
+        public InitialHolderView GetHolderView(int index) => TryGetCardHolder(index, out var holder) ? holder.GetView() as InitialHolderView : null;
+        public void SetPositionIndicators(bool enabled)
+        {
+            if (_view is InitialCardAreaView view) view.SetPositionIndicators(enabled);
+        }
+
         public void Initialize(bool isNewGame)
         {
             List<CardItemInfo> cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
@@ -56,6 +64,7 @@ namespace Scripts
                 }
                 _view.GetCanvasGroup().alpha = 0f;
             }
+            Rebuilt?.Invoke();
         }
 
         public Sequence FallToInitialHolders(float duration)
@@ -239,6 +248,8 @@ namespace Scripts
         
     }
     
+    public interface IInitialCardAreaEvents { event Action Rebuilt; }
+
     public interface IInitialCardAreaController
     {
         void RefreshLayout();

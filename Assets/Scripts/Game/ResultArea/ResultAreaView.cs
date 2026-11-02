@@ -18,6 +18,27 @@ namespace Scripts
         private readonly Dictionary<int, ResultBlockView> _visible = new Dictionary<int, ResultBlockView>();
         private readonly Stack<ResultBlockView> _pool = new Stack<ResultBlockView>();
         private readonly List<int> _releasedIndexes = new List<int>();
+        private readonly HashSet<int> _evidence = new HashSet<int>();
+        private float _evidenceUntil;
+        public IReadOnlyCollection<int> EvidenceRows => _evidence;
+        public void FocusEvidence(IReadOnlyList<int> guessNumbers)
+        {
+            _evidence.Clear(); int focus = -1;
+            foreach (int number in guessNumbers)
+                if (number > 0 && number <= HistoryCount) { _evidence.Add(number - 1); focus = Mathf.Max(focus, number - 1); }
+            if (focus < 0) { ClearEvidence(); return; }
+            _evidenceUntil = Time.unscaledTime + 7;
+            _scrollPending = false; scrollRect.StopMovement();
+            float offset = verticalLayoutGroup.padding.top + focus * (GetRowHeight() + verticalLayoutGroup.spacing) - scrollRect.viewport.rect.height * .4f;
+            rectTransform.anchoredPosition = new Vector2(0, Mathf.Clamp(offset, 0, Mathf.Max(0, rectTransform.rect.height - scrollRect.viewport.rect.height)));
+            RefreshWindow(false);
+            foreach (var pair in _visible) if (pair.Value != null) pair.Value.SetEvidenceHighlight(_evidence.Contains(pair.Key));
+        }
+        public void ClearEvidence()
+        {
+            _evidence.Clear(); _evidenceUntil = 0;
+            foreach (var pair in _visible) if (pair.Value != null) pair.Value.SetEvidenceHighlight(false);
+        }
         private const int BufferRows = 2;
         private bool _listening, _scrollPending, _refreshing;
         private float _rowHeight, _rowWidth, _viewportHeight;
@@ -95,6 +116,7 @@ namespace Scripts
         private void OnScroll(Vector2 position) => RefreshWindow(false);
         private void LateUpdate()
         {
+            if (_evidenceUntil > 0 && Time.unscaledTime >= _evidenceUntil) ClearEvidence();
             if (_scrollPending)
             {
                 _scrollPending = false;
@@ -108,6 +130,7 @@ namespace Scripts
             SetEmptyState(HistoryCount == 0);
             if (HistoryCount == 0)
             {
+                ClearEvidence();
                 _scrollPending = false; scrollRect.StopMovement(); rectTransform.anchoredPosition = Vector2.zero;
             }
             RefreshWindow(false);
@@ -124,6 +147,7 @@ namespace Scripts
         {
             row.Bind(_history[index], _rowWidth, _rowHeight);
             row.HistoryIndex = index;
+            row.SetEvidenceHighlight(_evidence.Contains(index));
         }
         private void RefreshWindow(bool resize)
         {

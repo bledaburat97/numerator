@@ -30,6 +30,14 @@ namespace Scripts
             pairClue.Show(_multiplayerMode ? null : clue);
             pairClue.RefreshRope(0f);
         }
+        public bool HasPositionIndicators { get; private set; }
+        public void SetPositionIndicators(bool visible)
+        {
+            if (HasPositionIndicators == visible) return;
+            HasPositionIndicators = visible;
+            GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
+        }
+
         private bool _dynamiteFooter;
         public bool HasDynamiteFooter => _dynamiteFooter && !_multiplayerMode;
         public bool SetDynamiteLayout(bool visible)

@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Game;
 using Zenject;
 
 namespace Scripts
 {
-    public class CardItemInfoManager : ICardItemInfoManager
+    public class CardItemInfoManager : ICardItemInfoManager, ICardKnowledgeEvents
     {
+        public event Action Changed;
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
         private ILevelSaveDataManager _levelSaveDataManager;
         private IInitialCardAreaController _initialCardAreaController;
@@ -23,6 +25,7 @@ namespace Scripts
         public void Initialize()
         {
             _cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
+            Changed?.Invoke();
         }
 
         public void RemoveLastCardHolderIndicator()
@@ -32,6 +35,7 @@ namespace Scripts
             {
                 cardItemInfo.possibleCardHolderIndicatorIndexes.RemoveAll(index => index >= boardCount);
             }
+            Changed?.Invoke();
         }
 
         public List<CardItemInfo> GetCardItemInfoList()
@@ -43,6 +47,7 @@ namespace Scripts
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             cardItemInfo.isExisted = false;
+            Changed?.Invoke();
         }
         
         public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)
@@ -51,6 +56,7 @@ namespace Scripts
             cardItemInfo.isLocked = true;
             cardItemInfo.probabilityType = ProbabilityType.Certain;
             cardItemInfo.possibleCardHolderIndicatorIndexes = possibleCardHolderIndicatorIndexes;
+            Changed?.Invoke();
         }
 
         public void OnProbabilityButtonClicked(int activeCardIndex, ProbabilityType probabilityType)
@@ -144,6 +150,8 @@ namespace Scripts
             return cardItemInfo != null && cardItemInfo.isLocked;
         }
     }
+
+    public interface ICardKnowledgeEvents { event Action Changed; }
 
     public interface ICardItemInfoManager
     {

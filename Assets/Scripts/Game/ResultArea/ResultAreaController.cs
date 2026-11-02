@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -5,10 +6,13 @@ using Zenject;
 
 namespace Scripts
 {
-    public class ResultAreaController : IResultAreaController
+    public class ResultAreaController : IResultAreaController, IResultHistorySource
     {
         private IResultAreaView _view;
         private readonly List<ResultBlockModel> _history = new List<ResultBlockModel>();
+        public event Action Changed;
+        public event Action<int> DetailsChanged;
+        public int Generation { get; private set; }
         public int HistoryCount => _history.Count;
         public ResultBlockModel GetHistoryEntry(int index) => _history[index];
         
@@ -66,6 +70,7 @@ namespace Scripts
             if (guess.Number <= 0 || guess.Number > _history.Count) return;
             _history[guess.Number - 1].hintStates = guess.States;
             _view.RefreshRow(guess.Number - 1);
+            DetailsChanged?.Invoke(guess.Number - 1);
         }
 
         public void AddResultBlock(ResultBlockModel resultBlockModel)
@@ -74,6 +79,7 @@ namespace Scripts
             _view.HistoryChanged();
 
             _view.SetScrollPositionToBottom();
+            Changed?.Invoke();
         }
         // Compatibility for existing numeric callers; gameplay uses the card-list model directly.
         public void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
@@ -90,9 +96,18 @@ namespace Scripts
 
         public void RemoveResultBlocks()
         {
-            _history.Clear();
-            _view.HistoryChanged();
+            _history.Clear(); Generation++;
+            _view.HistoryChanged(); Changed?.Invoke();
         }
+    }
+
+    public interface IResultHistorySource
+    {
+        event Action Changed;
+        event Action<int> DetailsChanged;
+        int Generation { get; }
+        int HistoryCount { get; }
+        ResultBlockModel GetHistoryEntry(int index);
     }
 
     public interface IResultAreaController

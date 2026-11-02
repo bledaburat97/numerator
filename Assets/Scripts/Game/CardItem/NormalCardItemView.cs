@@ -16,14 +16,31 @@ namespace Scripts
         private FruitLabGlyph _lockedGlyph;
         private CardResultState _revealedResult;
         [SerializeField] private RectTransform _annotationCross;
-        private bool _fixedToBoard;
+        private bool _fixedToBoard, _answerPresentation;
+        public FruitPresence DeducedPresence { get; private set; }
+        protected override float ContentOpacityMultiplier => DeducedPresence == FruitPresence.Absent && !_answerPresentation && _revealedResult == CardResultState.Unrevealed ? .32f : 1f;
+        public void BeginAnswerPresentation()
+        {
+            _answerPresentation = true;
+            RefreshAnnotation(); RefreshContentOpacity();
+        }
+        public void SetPositionDeduction(FruitPresence presence)
+        {
+            DeducedPresence = presence;
+            if (presence == FruitPresence.Absent)
+            {
+                EnsureCross();
+                _annotationCross.GetComponentInChildren<FruitLabGlyph>(true).color = new Color(1f, .48f, .48f, 1f);
+            }
+            RefreshAnnotation(); RefreshContentOpacity();
+        }
         public CardAnnotation Annotation { get; private set; }
         public bool CanAnnotate => !_fixedToBoard && _revealedResult == CardResultState.Unrevealed;
 
         public override void Init(int cardNumber)
         {
             EnsureAnnotationVisuals();
-            Annotation = CardAnnotation.None; _fixedToBoard = false;
+            Annotation = CardAnnotation.None; _fixedToBoard = false; DeducedPresence = FruitPresence.Unknown; _answerPresentation = false;
             base.Init(cardNumber);
             innerImage.rectTransform.sizeDelta = Vector2.zero;
             if (ribbonImage != null)
@@ -90,36 +107,39 @@ namespace Scripts
         {
             _revealedResult = state;
             if (state != CardResultState.Unrevealed) Annotation = CardAnnotation.None;
-            RefreshAnnotation();
+            RefreshAnnotation(); RefreshContentOpacity();
         }
 
         public void SetAnnotation(CardAnnotation annotation)
         {
             Annotation = CanAnnotate ? annotation : CardAnnotation.None;
-            if (Annotation == CardAnnotation.Excluded)
-            {
-                if (_annotationCross == null)
-                {
-                    _annotationCross = new GameObject("AnnotationCross", typeof(RectTransform)).GetComponent<RectTransform>();
-                    _annotationCross.SetParent(transform.Find("AnimationProvider") ?? transform, false);
-                }
-                // Also update existing prefab instances that still have the old dark plate.
-                var plate = _annotationCross.GetComponent<Image>();
-                if (plate != null) { plate.enabled = false; plate.raycastTarget = false; }
-                FruitLabStyle.Stretch(_annotationCross);
-                var cross = _annotationCross.GetComponentInChildren<FruitLabGlyph>(true)
-                    ?? FruitLabGlyph.Create(_annotationCross, FruitLabGlyph.Symbol.Cross, AnnotationCrossColor);
-                cross.Type = FruitLabGlyph.Symbol.Cross; cross.color = AnnotationCrossColor;
-                FruitLabStyle.Stretch(cross.rectTransform);
-            }
+            if (Annotation == CardAnnotation.Excluded) EnsureCross();
             RefreshAnnotation();
         }
 
+        private void EnsureCross()
+        {
+            if (_annotationCross == null)
+            {
+                _annotationCross = new GameObject("AnnotationCross", typeof(RectTransform)).GetComponent<RectTransform>();
+                _annotationCross.SetParent(transform.Find("AnimationProvider") ?? transform, false);
+            }
+            // Also update existing prefab instances that still have the old dark plate.
+            var plate = _annotationCross.GetComponent<Image>();
+            if (plate != null) { plate.enabled = false; plate.raycastTarget = false; }
+            FruitLabStyle.Stretch(_annotationCross);
+            var cross = _annotationCross.GetComponentInChildren<FruitLabGlyph>(true)
+                ?? FruitLabGlyph.Create(_annotationCross, FruitLabGlyph.Symbol.Cross, AnnotationCrossColor);
+            cross.Type = FruitLabGlyph.Symbol.Cross; cross.color = AnnotationCrossColor;
+            FruitLabStyle.Stretch(cross.rectTransform);
+        }
+
+
         private void RefreshAnnotation()
         {
-            base.SetResultOutline(_revealedResult == CardResultState.Unrevealed && Annotation == CardAnnotation.Candidate
+            base.SetResultOutline(_revealedResult == CardResultState.Unrevealed && (!_answerPresentation && (Annotation == CardAnnotation.Candidate || DeducedPresence == FruitPresence.Present))
                 ? CardResultState.Correct : _revealedResult);
-            if (_annotationCross != null) _annotationCross.gameObject.SetActive(Annotation == CardAnnotation.Excluded);
+            if (_annotationCross != null) _annotationCross.gameObject.SetActive(Annotation == CardAnnotation.Excluded || (DeducedPresence == FruitPresence.Absent && !_answerPresentation && _revealedResult == CardResultState.Unrevealed));
         }
 
         public RectTransform GetRectTransform()

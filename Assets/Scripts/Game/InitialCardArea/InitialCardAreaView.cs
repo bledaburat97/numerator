@@ -13,6 +13,8 @@ namespace Scripts
         [SerializeField] private RectTransform lowerHolder;
         [SerializeField] private CanvasGroup canvasGroup;
         
+        public bool HasPositionIndicators { get; private set; }
+        public void SetPositionIndicators(bool visible) => HasPositionIndicators = visible;
         public CanvasGroup GetCanvasGroup() => canvasGroup;
         public RectTransform GetRectTransform() => (RectTransform)transform;
         
@@ -26,6 +28,7 @@ namespace Scripts
             return invisibleClickHandler;
         }
 
+        public Color GetFruitColor(int number) => normalCardItemPrefab.GetFruitColor(number);
         public Sprite GetFruitSprite(int number) => normalCardItemPrefab.GetFruitSprite(number);
         
         public IInitialHolderView CreateCardHolderView()
@@ -78,6 +81,7 @@ namespace Scripts
         INormalCardItemView CreateCardItemView(Transform parent);
         RectTransform GetTempRectTransform();
         IInvisibleClickHandler GetInvisibleClickHandler();
+        Color GetFruitColor(int number);
         Sprite GetFruitSprite(int number);
         Camera GetCamera();
         Vector2 GetSizeOfInitialHolderPrefab();
