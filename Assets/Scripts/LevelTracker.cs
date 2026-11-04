@@ -1,4 +1,7 @@
 using Game;
+using System;
+using System.Collections.Generic;
+using Scripts.Economy;
 using UnityEngine;
 namespace Scripts
 {
@@ -17,6 +20,8 @@ namespace Scripts
         private int _splitPowerUpCount;
         private int _levelId;
         private RewardType _currentRewardType;
+        private HashSet<RewardType> _introductionGrants = new HashSet<RewardType>();
+        private IPlayerProfileRepository _profiles;
         
         private GameOption _gameOption;
         private Difficulty _multiplayerLevelDifficulty;
@@ -26,46 +31,19 @@ namespace Scripts
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (MultiplayerNetworkProbe.IsRunning) { _levelId = MenuProgression.MultiplayerUnlockLevel - 1; _gameOption = GameOption.MultiPlayer; return; }
 #endif
-            _levelId = PlayerPrefs.GetInt("level_id", 0);
+            ConnectProfile();
+            var profile = _profiles.Snapshot();
+            ApplyProfile(profile);
             TutorialProgress.RepairIncompleteFirstLevel(_levelId);
-            _starCount = PlayerPrefs.GetInt("star_count", 0);
-            _giftStarCount = PlayerPrefs.GetInt("gift_star_count", 0);
-            _revealingPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("revealing_power_up_count", 0));
-            _lifePowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("life_power_up_count", 0));
-            _bombPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("bomb_power_up_count", 0));
-            _helperPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("helper_power_up_count", 0));
-            _pairPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("pair_power_up_count", 0));
-            _splitPowerUpCount = Mathf.Max(0, PlayerPrefs.GetInt("split_power_up_count", 0));
-            _currentRewardType = (RewardType)PlayerPrefs.GetInt("reward_type", 0);
-
-            if (!System.Enum.IsDefined(typeof(RewardType), _currentRewardType)) _currentRewardType = RewardType.Revealing;
-
-            bool shouldSaveSanitizedCounts =
-                _revealingPowerUpCount != PlayerPrefs.GetInt("revealing_power_up_count", 0) ||
-                _lifePowerUpCount != PlayerPrefs.GetInt("life_power_up_count", 0) ||
-                _bombPowerUpCount != PlayerPrefs.GetInt("bomb_power_up_count", 0) ||
-                _helperPowerUpCount != PlayerPrefs.GetInt("helper_power_up_count", 0) ||
-                _pairPowerUpCount != PlayerPrefs.GetInt("pair_power_up_count", 0) ||
-                _splitPowerUpCount != PlayerPrefs.GetInt("split_power_up_count", 0);
-
-            if (shouldSaveSanitizedCounts)
-            {
-                SavePlayerPrefs();
-            }
+            PlayerProfileRuntime.MirrorLegacy(profile);
         }
         
         public void ClearPlayerPrefs()
         {
-            PlayerPrefs.DeleteKey("star_count");
-            PlayerPrefs.DeleteKey("gift_star_count");
-            PlayerPrefs.DeleteKey("revealing_power_up_count");
-            PlayerPrefs.DeleteKey("life_power_up_count");
-            PlayerPrefs.DeleteKey("bomb_power_up_count");
-            PlayerPrefs.DeleteKey("hint_power_up_count");
-            PlayerPrefs.DeleteKey("helper_power_up_count");
-            PlayerPrefs.DeleteKey("pair_power_up_count");
-            PlayerPrefs.DeleteKey("split_power_up_count");
-            PlayerPrefs.DeleteKey("reward_type");
+            _starCount=_giftStarCount=_revealingPowerUpCount=_lifePowerUpCount=_bombPowerUpCount=0;
+            _helperPowerUpCount=_pairPowerUpCount=_splitPowerUpCount=0;
+            _currentRewardType=RewardType.Revealing;
+            SavePlayerPrefs();
         }
         
         public void SavePlayerPrefs()
@@ -76,18 +54,31 @@ namespace Scripts
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (MultiplayerNetworkProbe.IsRunning) return;
 #endif
-            PlayerPrefs.SetInt("level_id", _levelId);
-            PlayerPrefs.SetInt("star_count", _starCount);
-            PlayerPrefs.SetInt("gift_star_count", _giftStarCount);
-            PlayerPrefs.SetInt("revealing_power_up_count", _revealingPowerUpCount);
-            PlayerPrefs.SetInt("life_power_up_count", _lifePowerUpCount);
-            PlayerPrefs.SetInt("bomb_power_up_count", _bombPowerUpCount);
-            PlayerPrefs.SetInt("helper_power_up_count", _helperPowerUpCount);
-            PlayerPrefs.SetInt("pair_power_up_count", _pairPowerUpCount);
-            PlayerPrefs.SetInt("split_power_up_count", _splitPowerUpCount);
-            PlayerPrefs.DeleteKey("hint_power_up_count");
-            PlayerPrefs.SetInt("reward_type", (int)_currentRewardType);
-            PlayerPrefs.Save();
+            ConnectProfile();
+            var wallet=new PlayerWalletData {Coins=_starCount,CrystalProgress=_giftStarCount,NextReward=_currentRewardType,
+                IntroductionGrants=new HashSet<RewardType>(_introductionGrants)};
+            foreach(RewardType type in Enum.GetValues(typeof(RewardType)))wallet.PowerUps[type]=GetPowerUpCount(type);
+            int level=_levelId;
+            try { _profiles.Update(profile=>{profile.Progress.LevelId=level;profile.Wallet=wallet;}); }
+            catch { ApplyProfile(_profiles.Snapshot());throw; }
+        }
+
+        private void ConnectProfile()
+        {
+            if(_profiles!=null)return;
+            _profiles=PlayerProfileRuntime.Current;
+            _profiles.Changed+=OnProfileChanged;
+        }
+        private void OnProfileChanged()=>ApplyProfile(_profiles.Snapshot());
+        private void OnDestroy() { if(_profiles!=null)_profiles.Changed-=OnProfileChanged; }
+        private void ApplyProfile(PlayerProfileData profile)
+        {
+            _levelId=profile.Progress.LevelId;_starCount=profile.Wallet.Coins;_giftStarCount=profile.Wallet.CrystalProgress;
+            _currentRewardType=profile.Wallet.NextReward;
+            _revealingPowerUpCount=profile.Wallet.PowerUps[RewardType.Revealing];_lifePowerUpCount=profile.Wallet.PowerUps[RewardType.Life];
+            _bombPowerUpCount=profile.Wallet.PowerUps[RewardType.Bomb];_helperPowerUpCount=profile.Wallet.PowerUps[RewardType.Helper];
+            _pairPowerUpCount=profile.Wallet.PowerUps[RewardType.Pair];_splitPowerUpCount=profile.Wallet.PowerUps[RewardType.Split];
+            _introductionGrants=new HashSet<RewardType>(profile.Wallet.IntroductionGrants);
         }
 
         public void SetGameOption(GameOption gameOption)
@@ -318,10 +309,9 @@ namespace Scripts
 #endif
             foreach (var type in PowerUpTypeUtility.OrderedRewardTypes)
             {
-                string key = "powerup_intro_granted_" + (int)type;
-                if (!PowerUpTypeUtility.IsUnlocked(type, _levelId) || PlayerPrefs.GetInt(key, 0) != 0) continue;
+                if (!PowerUpTypeUtility.IsUnlocked(type, _levelId) || _introductionGrants.Contains(type)) continue;
                 IncreasePowerUpCount(type, "introduction");
-                PlayerPrefs.SetInt(key, 1);
+                _introductionGrants.Add(type);
             }
             SavePlayerPrefs();
         }

@@ -1,0 +1,13 @@
+<linker>
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="Scripts.Economy.PlayerProfileData" preserve="all" />
+    <type fullname="Scripts.Economy.PlayerProgressData" preserve="all" />
+    <type fullname="Scripts.Economy.PlayerWalletData" preserve="all" />
+    <type fullname="Scripts.Economy.FruitBalance" preserve="all" />
+    <type fullname="Scripts.Economy.PlantingBatch" preserve="all" />
+    <type fullname="Scripts.Economy.AchievementProgress" preserve="all" />
+    <type fullname="Scripts.Economy.ProfileTransactionRecord" preserve="all" />
+    <type fullname="Scripts.Economy.AtomicPlayerProfileStorage*" preserve="all" />
+    <type fullname="Scripts.Economy.EconomySettings" preserve="all" />
+  </assembly>
+</linker>

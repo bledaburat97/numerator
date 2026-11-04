@@ -864,16 +864,25 @@ public static partial class FruitLabTutorialEditorTools
     public static string ResetLocalProgress()
     {
         Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Stop Play mode before the requested profile reset");
+        var profiles=Scripts.Economy.PlayerProfileRuntime.Current;
+        var profileBefore=profiles.Snapshot();
         string[] ints = new[] { "level_id", "star_count", "gift_star_count", "revealing_power_up_count", "life_power_up_count", "bomb_power_up_count", "helper_power_up_count", "pair_power_up_count", "split_power_up_count", "reward_type" }.Concat(TutorialProgress.Keys).ToArray();
         string[] strings = { "saved_game_key", "star_count_of_levels" };
         string backup = Folder + "/PlayerPrefsBackups/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + ".json";
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backup));
         File.WriteAllText(backup, Newtonsoft.Json.JsonConvert.SerializeObject(new {
             company = PlayerSettings.companyName, product = PlayerSettings.productName,
+            profile = profileBefore,
             ints = ints.ToDictionary(key => key, key => new { exists = PlayerPrefs.HasKey(key), value = PlayerPrefs.GetInt(key) }),
             strings = strings.ToDictionary(key => key, key => new { exists = PlayerPrefs.HasKey(key), value = PlayerPrefs.GetString(key) })
         }, Newtonsoft.Json.Formatting.Indented));
-        int coins = PlayerPrefs.GetInt("star_count"), crystals = PlayerPrefs.GetInt("gift_star_count");
+        int coins = profileBefore.Wallet.Coins, crystals = profileBefore.Wallet.CrystalProgress;
+        profiles.Update(profile=>{
+            profile.Progress.LevelId=0;
+            foreach(var type in new[]{RewardType.Revealing,RewardType.Life,RewardType.Bomb})
+                profile.Wallet.PowerUps[type]=Mathf.Max(1,profile.Wallet.PowerUps[type]);
+        });
+        Scripts.Economy.PlayerProfileRuntime.MirrorLegacy(profiles.Snapshot());
         PlayerPrefs.SetInt("level_id", 0); foreach (string key in strings) PlayerPrefs.DeleteKey(key);
         foreach (string key in TutorialProgress.Keys) PlayerPrefs.DeleteKey(key);
         foreach (string key in new[] { "revealing_power_up_count", "life_power_up_count", "bomb_power_up_count" })
