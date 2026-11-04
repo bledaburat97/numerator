@@ -28,6 +28,7 @@ namespace Scripts
         {
             _view.GetBoardFadeImage().gameObject.SetActive(status);
         }
+        public void SetBoardDismiss(System.Action dismiss)=>_view.SetBoardDismiss(dismiss);
         
         public Sequence AnimateFade(float finalAlpha, float duration)
         {
@@ -61,6 +62,7 @@ namespace Scripts
 
     public interface IFadePanelController
     {
+        void SetBoardDismiss(System.Action dismiss);
         void SetFadeImageStatus(bool status);
         void SetTutorialFadeImageStatus(bool status);
         void SetBoardFadeImageStatus(bool status);

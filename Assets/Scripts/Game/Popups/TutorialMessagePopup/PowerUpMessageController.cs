@@ -25,7 +25,7 @@ namespace Scripts
         [Inject]
         public PowerUpMessageController(IGamePowerUpAreaController gamePowerUpAreaController,
             IFadePanelController fadePanelController, ILevelTracker levelTracker, IRoundStateManager roundStateManager,
-            ICardItemInfoManager cardItemInfoManager, IBoardHolderCountManager boardHolderCountManager)
+            ICardItemInfoManager cardItemInfoManager, IBoardHolderCountManager boardHolderCountManager,IGameUIController ui)
         {
             _fadePanelController = fadePanelController;
             gamePowerUpAreaController.PowerUpClickedEvent += OnPowerUpClicked;
@@ -34,69 +34,50 @@ namespace Scripts
             _roundStateManager = roundStateManager;
             _cardItemInfoManager = cardItemInfoManager;
             _boardHolderCountManager = boardHolderCountManager;
+            _fadePanelController.SetBoardDismiss(CloseActivePowerUp);
+            ui.ResetNumbers+=CancelOnAction;ui.CheckFinalNumbers+=CancelOnAction;ui.OpenSettings+=CancelOnAction;
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
         {
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) return;
             if (_tutorialGate != null && !_tutorialGate.AllowsButton(powerUpType)) return;
-            if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType, () => OnPowerUpClicked(sender, powerUpType))) return;
+            if(powerUpType!=GameUIButtonType.BombPowerUp && powerUpType!=GameUIButtonType.RevealingPowerUp
+                && powerUpType!=GameUIButtonType.LifePowerUp && powerUpType!=GameUIButtonType.HelperPowerUp
+                && powerUpType!=GameUIButtonType.PairPowerUp && powerUpType!=GameUIButtonType.SplitPowerUp)return;
+            if(_activePowerUpType==GameUIButtonType.RevealingPowerUp && powerUpType==_activePowerUpType){CloseActivePowerUp();return;}
+            var reward=PowerUpTypeUtility.ToRewardType(powerUpType);
+            if(!PowerUpAvailability.CanUse(reward,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split))return;
+            CloseActivePowerUp();
+            if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType)) return;
             switch (powerUpType)
             {
                 case GameUIButtonType.SplitPowerUp:
-                    if (_split == null || !_split.CanApply) return;
-                    CloseActivePowerUp();
                     _split.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Split));
                     _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.PairPowerUp:
-                    if (_pair == null || !_pair.CanApply) return;
-                    CloseActivePowerUp();
                     _pair.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Pair));
                     _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.HelperPowerUp:
-                    if (_helper == null || !_helper.CanApply) return;
-                    CloseActivePowerUp();
-                    if (!_levelTracker.TryConsumePowerUp(RewardType.Helper)) return;
-                    _helper.TryApply();
+                    _helper.TryApply(()=>_levelTracker.TryConsumePowerUp(RewardType.Helper));
                     _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.LifePowerUp:
-                    if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
-                    {
-                        CloseActivePowerUp();
-                    }
-                    if (!CanAddExtraLives()) return;
                     if (!_levelTracker.TryConsumePowerUp(RewardType.Life)) return;
                     AddLifeEvent?.Invoke(this, EventArgs.Empty);
                     _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.BombPowerUp:
-                    if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
-                    {
-                        CloseActivePowerUp();
-                    }
-                    if (!CanUseBomb()) return;
                     if (!_levelTracker.TryConsumePowerUp(RewardType.Bomb)) return;
                     RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
                     _gamePowerUpAreaController.Refresh();
                     break;
                 case GameUIButtonType.RevealingPowerUp:
-                    if (_activePowerUpType == GameUIButtonType.RevealingPowerUp)
-                    {
-                        CloseActivePowerUp();
-                    }
-                    else if (_levelTracker.GetPowerUpCount(RewardType.Revealing) <= 0)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        _activePowerUpType = GameUIButtonType.RevealingPowerUp;
-                        _fadePanelController.SetBoardFadeImageStatus(true);
-                        OpenPowerUpEvent?.Invoke(this, powerUpType);
-                    }
+                    _activePowerUpType = GameUIButtonType.RevealingPowerUp;
+                    _fadePanelController.SetBoardFadeImageStatus(true);
+                    OpenPowerUpEvent?.Invoke(this, powerUpType);
                     break;
             }
             
@@ -110,32 +91,7 @@ namespace Scripts
             _activePowerUpType = GameUIButtonType.Default;
         }
 
-        private bool CanAddExtraLives()
-        {
-            const int extraLifeCount = 3;
-            return _roundStateManager.GetRemainingGuessCount() > 0 && _roundStateManager.GetRemainingGuessCount() + extraLifeCount <= _roundStateManager.GetMaxGuessCount();
-        }
-
-        private bool CanUseBomb()
-        {
-            return _boardHolderCountManager.CanShrink && _boardHolderCountManager.GetBoardHolderCount() > 1 &&
-                   _roundStateManager.GetTriedCardsList().Count == 0 &&
-                   _boardHolderCountManager.GetRemovedBoardHolderCount() == 0 &&
-                   !HasRevealedCard();
-        }
-
-        private bool HasRevealedCard()
-        {
-            var cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
-            if (cardItemInfoList == null) return false;
-
-            foreach (CardItemInfo cardItemInfo in cardItemInfoList)
-            {
-                if (cardItemInfo != null && cardItemInfo.isLocked) return true;
-            }
-
-            return false;
-        }
+        private void CancelOnAction(object sender,EventArgs args)=>CloseActivePowerUp();
     }
 
     public interface IPowerUpMessageController

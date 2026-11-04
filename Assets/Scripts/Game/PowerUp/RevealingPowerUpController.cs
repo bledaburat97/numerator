@@ -12,6 +12,7 @@ namespace Scripts
         private readonly IGamePowerUpAreaController _gamePowerUpAreaController;
         private readonly IHapticController _hapticController;
         private readonly ITargetNumberCreator _targetNumberCreator;
+        private readonly ICardItemInfoManager _info;
         private bool _isActive;
 
         public bool IsActive => _isActive;
@@ -24,7 +25,7 @@ namespace Scripts
             ILevelTracker levelTracker,
             IGamePowerUpAreaController gamePowerUpAreaController,
             IHapticController hapticController,
-            ITargetNumberCreator targetNumberCreator)
+            ITargetNumberCreator targetNumberCreator,ICardItemInfoManager info)
         {
             _boardAreaController = boardAreaController;
             _powerUpMessageController = powerUpMessageController;
@@ -32,6 +33,7 @@ namespace Scripts
             _gamePowerUpAreaController = gamePowerUpAreaController;
             _hapticController = hapticController;
             _targetNumberCreator = targetNumberCreator;
+            _info=info;
 
             _powerUpMessageController.OpenPowerUpEvent += OnPowerUpOpened;
             _powerUpMessageController.ClosePowerUpEvent += OnPowerUpClosed;
@@ -42,7 +44,12 @@ namespace Scripts
             if (powerUpType != GameUIButtonType.RevealingPowerUp) return;
 
             _isActive = true;
-            _boardAreaController.SetupTutorialModeOnEmptyBoardHolders();
+            var eligible=new System.Collections.Generic.List<int>();
+            var target=_targetNumberCreator.GetTargetCardsList();
+            var cards=_info.GetCardItemInfoList();
+            for(int slot=0;slot<target.Count;slot++)
+                if(target[slot]>0 && target[slot]<=cards.Count && cards[target[slot]-1].isExisted && !cards[target[slot]-1].isLocked)eligible.Add(slot);
+            _boardAreaController.SetupTutorialModeOnBoardHolders(eligible);
         }
 
         private void OnPowerUpClosed(object sender, GameUIButtonType powerUpType)
@@ -79,10 +86,11 @@ namespace Scripts
         {
             cardIndex = -1;
             var targetCards = _targetNumberCreator.GetTargetCardsList();
-            if (boardHolderIndex < 0 || boardHolderIndex >= targetCards.Count) return false;
+            if (targetCards==null || boardHolderIndex < 0 || boardHolderIndex >= targetCards.Count) return false;
 
             cardIndex = targetCards[boardHolderIndex] - 1;
-            return true;
+            var info=_info.GetCardItemInfoList();
+            return cardIndex>=0 && cardIndex<info.Count && info[cardIndex].isExisted && !info[cardIndex].isLocked;
         }
     }
 

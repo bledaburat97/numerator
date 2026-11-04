@@ -282,7 +282,7 @@ public static class FruitLabFailureValidation
                         outlines[i] = (Image)new SerializedObject(card).FindProperty("resultOutline").objectReferenceValue;
                     }
                     Field(initial, "_normalCardItemControllerList", cards); Field(initial, "_numOfInitialHolders", cards.Length);
-                    var reveal = new RevealingPowerUpController(board, new PowerSource(), null, null, null, null);
+                    var reveal = new RevealingPowerUpController(board, new PowerSource(), null, null, null, null,info);
                     var placement = new CardPlacementCoordinator(board, null, new UiProbe(), indexes, indexes, reveal, initial, info);
                     Field(placement, "_numOfCards", cards.Length);
                     for (int i = 0; i < answer.Length; i++)
@@ -394,7 +394,7 @@ public static class FruitLabFailureValidation
             }
             Field(initial, "_normalCardItemControllerList", cards);
             Field(initial, "_numOfInitialHolders", fruitCount);
-            var reveal = new RevealingPowerUpController(board, powers, null, null, null, target);
+            var reveal = new RevealingPowerUpController(board, powers, null, null, null, target,info);
             var placement = new CardPlacementCoordinator(board, null, ui, indexes, indexes, reveal, initial, info);
             Field(placement, "_numOfCards", fruitCount);
             for (int i = 0; i < boardSize; i++)

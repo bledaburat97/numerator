@@ -18,6 +18,187 @@ using Object = UnityEngine.Object;
 
 public static partial class FruitLabTutorialEditorTools
 {
+    public static void ReviewPowerupTutorials(Canvas canvas,Camera camera)
+    {
+        var oldUpdate=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
+        var before=Profile();var flags=new Dictionary<string,int>();var errors=new List<string>();
+        Application.LogCallback collect=(message,stack,type)=>{if(type==LogType.Error || type==LogType.Exception || type==LogType.Assert || message.IndexOf("error inside a tween callback",StringComparison.OrdinalIgnoreCase)>=0)errors.Add(message);};
+        Application.logMessageReceived+=collect;
+        int optionalCases=0,uses=0,trials=0;
+        try
+        {
+            using(GameTelemetry.CaptureForTests(_=>{},()=>0))
+            using(TutorialProgress.UseTestValues(flags))
+            {
+                foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
+                for(int dismiss=0;dismiss<3;dismiss++)
+                {
+                    ClearPreviewActors(canvas);SeedPowerAuditFlags(flags,type);
+                    using(var game=new Fixture(canvas,camera,PowerAuditLevel()))
+                    {
+                        PreparePowerAudit(game,type);
+                        game.Bootstrap.StartRound();
+                        int stock=game.Tracker.GetPowerUpCount(type),lives=game.Round.GetRemainingGuessCount(),slots=game._counts.GetBoardHolderCount();
+                        var button=(BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(type);
+                        Click(button);
+                        Require(game.Message!=null && game.Gate.IsRestricted && game.Tracker.GetPowerUpCount(type)==stock,"An actual first powerup click opens a non-spending introduction: "+type);
+                        Require(((TMP_Text)Get(game.Message,"title")).text==PowerUpTypeUtility.Name(type)
+                            && ((TMP_Text)Get(game.Message,"text")).text==PowerUpTypeUtility.Description(type)
+                            && PowerUpTypeUtility.Description(type).Length<=75,"All six introductions use the same short source text");
+                        if(type==RewardType.Revealing && dismiss==0)
+                        {
+                            var stale=(Action)Get(canvas.GetComponentInChildren<TutorialSpotlightView>(true),"_dismiss");
+                            game.Bootstrap.Cancel();game.Bootstrap.StartRound();Click(button);
+                            var current=game.Message;stale();
+                            Require(current!=null && game.Message==current,"A cancelled introduction cannot dismiss a newer presentation through a stale callback");
+                        }
+                        if(dismiss==0){Tick(.4f);Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-powerup-intro-"+type+".png");}
+                        if(dismiss==0)game.Next();
+                        else DismissPowerAuditTip(game,dismiss==1?game.UI.GetButton(GameUIButtonType.Settings).GetView().GetButtonRectTransform():button.GetButtonRectTransform());
+                        Require(game.Message==null && !game.Gate.IsRestricted && !game.Reveal.IsActive && TutorialProgress.Seen(PowerUpTypeUtility.TutorialKey(type)),"Tamam and outside/spotlight touches close optional education without activating a powerup");
+                        Require(game.Tracker.GetPowerUpCount(type)==stock && game.Round.GetRemainingGuessCount()==lives && game._counts.GetBoardHolderCount()==slots,
+                            "Dismissing cannot consume stock, add lives or shrink a board");
+                        SubmitPowerAuditWrongGuess(game);
+                        Require(game.Tracker.GetPowerUpCount(type)==stock && game.Round.GetTriedCardsList().Count>0,"The player can keep guessing without using the introduced item");
+                        optionalCases++;
+                    }
+                }
+                foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
+                {
+                    ClearPreviewActors(canvas);SeedPowerAuditFlags(flags,null);
+                    using(var game=new Fixture(canvas,camera,PowerAuditLevel()))
+                    {
+                        PreparePowerAudit(game,type);game.Bootstrap.StartRound();
+                        int stock=game.Tracker.GetPowerUpCount(type),remaining=game.Round.GetRemainingGuessCount(),count=game._counts.GetBoardHolderCount();
+                        var button=(BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(type);
+                        if(type==RewardType.Revealing)
+                        {
+                            // Both free and occupied slots must work, but cancellation must spend nothing.
+                            for(int slot=0;slot<4;slot++)game.Placement.TryPlaceCardOnBoard(slot+4,slot);Tick(.4f);
+                            Click(button);Require(game.Reveal.IsActive && game.Tracker.GetPowerUpCount(type)==stock,"Reveal waits for a target before spending");
+                            var shade=canvas.GetComponentInChildren<FadePanelView>(true).GetBoardFadeImage();
+                            TapPowerAuditTarget(game,game.UI.GetButton(GameUIButtonType.Settings).GetView().GetButtonRectTransform(),shade.transform);
+                            Require(!game.Reveal.IsActive && !shade.gameObject.activeSelf && game.Tracker.GetPowerUpCount(type)==stock,"Touching outside Reveal cancels without spending");
+                            Click(button);game.UI.TriggerResetNumbers();Tick(.4f);Require(!game.Reveal.IsActive,"Clear cancels a pending Reveal");
+                            game.Placement.TryPlaceCardOnBoard(4,0);Tick(.4f);Click(button);
+                            game.Initial.TryGetCardItem(4,out var occupied);TapPowerAuditTarget(game,occupied.GetRectTransform(),occupied.GetRectTransform());Tick(.4f);
+                            Require(game._info.GetCardItemInfoList()[0].isLocked && !game.Reveal.IsActive,"An occupied slot reveals its real fruit and closes selection");
+                            Require(game.Tracker.GetPowerUpCount(type)==stock-1,"A successful Reveal spends exactly one item");
+                            Click(button);Require(!game.Reveal.TryRequestRevealCard(0) && game.Tracker.GetPowerUpCount(type)==stock-1,"An already fixed slot cannot spend a second Reveal");
+                            Click(button);Require(!game.Reveal.TryRequestRevealCard(-1) && game.Tracker.GetPowerUpCount(type)==stock-1,"Invalid Reveal targets close safely without spending");
+                            Click(button);
+                            Click((BaseButtonView)game.View.GetSettingsButton());Require(!game.Reveal.IsActive,"Settings cancels a pending Reveal");
+                        }
+                        else
+                        {
+                            Click(button);Tick(.7f);Require(game.Tracker.GetPowerUpCount(type)==stock-1,"Explicit use spends one item: "+type);
+                            if(type==RewardType.Bomb)Require(game._counts.GetBoardHolderCount()==count-1 && game.Target.GetTargetCardsList().Count==count-1,"Bomb shortens both board and hidden answer");
+                            if(type==RewardType.Life)Require(game.Round.GetRemainingGuessCount()==remaining+3,"Life visibly corresponds to exactly three added guesses");
+                            if(type==RewardType.Helper)Require(game._saves.GetLevelSaveData().RevealedGuessNumbers.Contains(game.Round.GetTriedCardsList().Count),"Helper reveals only the latest submitted guess");
+                            if(type==RewardType.Pair)Require(game._saves.GetLevelSaveData().PairClue?.Matches(game.Target.GetTargetCardsList())==true,"Pair returns a real unordered adjacency clue");
+                            if(type==RewardType.Split)Require(game._saves.GetLevelSaveData().BoardSplitApplied,"Split commits its partition");
+                            Click(button);Tick(.2f);Require(game.Tracker.GetPowerUpCount(type)==stock-1,"Unavailable/repeated use cannot consume more inventory");
+                        }
+                        uses++;
+                    }
+                }
+                // Every trial can be won with its gifted powerup left untouched.
+                for(int index=0;index<LevelPlaytestSchedule.Settings.Cycle.Count;index++)
+                {
+                    int id=LevelPlaytestSchedule.Settings.StartLevel-1+index;
+                    LevelPlaytestSchedule.TryCreate(id,out var level);if(!level.TrialPowerUp.HasValue)continue;
+                    ClearPreviewActors(canvas);var type=level.TrialPowerUp.Value;SeedPowerAuditFlags(flags,type);
+                    using(var game=new Fixture(canvas,camera,level))
+                    {
+                        Field(game.Tracker,"_levelId",id);LevelPlaytestSchedule.PrepareTrialStock(game.Tracker,game._saves,level);
+                        game.BuildActors();game.Gate.Clear();Field(game.Bootstrap,"_levels",new TestLevel(level));game.Bootstrap.StartRound();
+                        Require(game.Message!=null && ((TMP_Text)Get(game.Message,"title")).text==PowerUpTypeUtility.Name(type),"Trial start introduces the gifted powerup");
+                        int stock=game.Tracker.GetPowerUpCount(type);game.Next();int wins=0;game.Results.LevelSuccessEvent+=(s,e)=>wins++;
+                        var answer=game.Target.GetTargetCardsList().ToArray();for(int slot=0;slot<answer.Length;slot++)Require(game.Placement.TryPlaceCardOnBoard(answer[slot]-1,slot),"Unused trial remains playable");
+                        Tick(.4f);game.Check();Require(wins==1 && game.Tracker.GetPowerUpCount(type)==stock,"A trial can finish without using the gifted powerup");trials++;
+                    }
+                }
+                ValidatePowerTutorialLayouts(canvas,camera);
+            }
+            Require(errors.Count==0,"No Unity/tween errors in powerup audit: "+string.Join(" | ",errors));
+            Require(Profile()==before,"Powerup auditing cannot modify the player's real profile");
+            File.WriteAllText(Folder+"/powerup-tutorial-review.json",JsonConvert.SerializeObject(new{passed=true,optionalCases,uses,trials,realProfileUnchanged=true},Formatting.Indented));
+        }
+        finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=oldUpdate;}
+    }
+
+    private static LevelData PowerAuditLevel()=>new LevelData {NumOfBoardHolders=4,NumOfCards=8,MaxNumOfTries=10,Mechanic=LevelMechanic.Normal};
+    private static void SeedPowerAuditFlags(Dictionary<string,int> flags,RewardType? unseen)
+    {flags.Clear();foreach(string key in TutorialProgress.Keys)flags[key]=1;if(unseen.HasValue)flags.Remove(PowerUpTypeUtility.TutorialKey(unseen.Value));}
+    private static void PreparePowerAudit(Fixture game,RewardType type)
+    {
+        Field(game.Tracker,"_levelId",20);
+        foreach(string field in new[]{"_bombPowerUpCount","_revealingPowerUpCount","_lifePowerUpCount","_helperPowerUpCount","_pairPowerUpCount","_splitPowerUpCount"})Field(game.Tracker,field,2);
+        game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
+        var helper=new HelperEffect(game.Round,game.Target,game._saves);Field(helper,"_split",Get(game.Results,"_split"));
+        helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
+        var pair=new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);pair.Changed+=(sender,clue)=>game.View.SetPairClue(clue);
+        Field(game._powers,"_helper",helper);Field(game._powers,"_pair",pair);Field(game.PowerMessages,"_helper",helper);Field(game.PowerMessages,"_pair",pair);
+        new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+        if(type==RewardType.Helper)SubmitPowerAuditWrongGuess(game);
+        if(type==RewardType.Life)for(int i=0;i<3;i++)SubmitPowerAuditWrongGuess(game);
+        game._powers.Refresh();
+    }
+    private static void SubmitPowerAuditWrongGuess(Fixture game)
+    {
+        game.UI.TriggerResetNumbers();Tick(.4f);
+        for(int slot=0;slot<game._counts.GetBoardHolderCount();slot++)Require(game.Placement.TryPlaceCardOnBoard(slot+1,slot),"Wrong audit guess placement");
+        Tick(.4f);game.Check();Tick(1.1f);
+    }
+    private static void DismissPowerAuditTip(Fixture game,RectTransform target)
+    {
+        Layer(game.Canvas.transform);Draw(game.Camera);
+        var pointer=new PointerEventData(((GameObject)Get(game,"_events")).GetComponent<EventSystem>()) {position=RectTransformUtility.WorldToScreenPoint(game.Camera,target.TransformPoint(target.rect.center))};
+        var hits=new List<RaycastResult>();game.Canvas.GetComponent<GraphicRaycaster>().Raycast(pointer,hits);
+        Require(hits.Count>0 && hits[0].gameObject.GetComponent<TutorialSpotlightView>()!=null,"Optional tips consume outside/spotlight touches before underlying controls");
+        ExecuteEvents.Execute(hits[0].gameObject,pointer,ExecuteEvents.pointerDownHandler);
+    }
+    private static void TapPowerAuditTarget(Fixture game,RectTransform target,Transform expected)
+    {
+        Layer(game.Canvas.transform);Draw(game.Camera);
+        var events=((GameObject)Get(game,"_events")).GetComponent<EventSystem>();
+        var pointer=new PointerEventData(events) {position=RectTransformUtility.WorldToScreenPoint(game.Camera,target.TransformPoint(target.rect.center))};
+        // Edit-mode previews do not register raycasters with the player event loop.
+        var hits=new List<RaycastResult>();
+        foreach(var raycaster in game.Canvas.GetComponentsInChildren<GraphicRaycaster>())
+            if(raycaster.isActiveAndEnabled)raycaster.Raycast(pointer,hits);
+        hits=hits.OrderByDescending(hit=>hit.sortingOrder).ThenByDescending(hit=>hit.depth).ThenBy(hit=>hit.distance).ToList();
+        Require(hits.Count>0 && hits[0].gameObject.transform.IsChildOf(expected),"Reveal raycast reaches the expected target: "+expected.name+"; hits="+string.Join(",",hits.Take(5).Select(hit=>hit.gameObject.name+"/"+hit.sortingOrder)));
+        ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,pointer,ExecuteEvents.pointerDownHandler);
+        ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,pointer,ExecuteEvents.pointerUpHandler);
+        ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,pointer,ExecuteEvents.pointerClickHandler);
+    }
+    private static void ValidatePowerTutorialLayouts(Canvas canvas,Camera camera)
+    {
+        var samples=PowerUpTypeUtility.OrderedRewardTypes.Select(type=>(PowerUpTypeUtility.Name(type),PowerUpTypeUtility.Description(type))).Concat(new[]{
+            ("Ardışık Bağlı Meyveler","Cevapta bulunan yan yana iki meyveyi gösterir."),
+            ("Bölünmüş Tahta","İki grubun sonuçları ayrı hesaplanır, yerleştirilen meyveler kendi grubunda değerlendirilir.")});
+        foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
+        {
+            ((RectTransform)canvas.transform).sizeDelta=size;canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
+            foreach(var sample in samples)
+            {
+                var message=Object.Instantiate(AssetDatabase.LoadAssetAtPath<TutorialMessagePopupView>(MessagePath),canvas.transform,false);
+                try
+                {
+                    message.Init();message.ShowAt(sample.Item1,sample.Item2,true,TutorialMessagePlacement.Center);
+                    Layer(canvas.transform);Draw(camera);
+                    foreach(var label in message.GetComponentsInChildren<TMP_Text>(true)){label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Tutorial text fits: "+sample.Item1);}
+                    var rect=(RectTransform)message.transform;Require(rect.rect.width<=size.x-23 && rect.rect.height<size.y-24,"Shared tutorial fits compact and tall phones");
+                    Require(((TMP_Text)Get(message,"title")).fontSize==21 && ((TMP_Text)Get(message,"text")).fontSize==19,"All tutorial text keeps the shared readable sizes");
+                    if(size.x==375 && size.y==812)Capture(camera,Folder+"/preview-powerup-"+sample.Item1.Replace(" ","-")+".png");
+                }
+                finally{Object.DestroyImmediate(message.gameObject);}
+            }
+        }
+        ((RectTransform)canvas.transform).sizeDelta=new Vector2(375,812);canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
+    }
+
     public static void ReviewLevelIntros(Canvas canvas, Camera camera)
     {
         var update = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
@@ -75,10 +256,11 @@ public static partial class FruitLabTutorialEditorTools
                         }
                         ((RectTransform)canvas.transform).sizeDelta = new Vector2(375,812);
                         canvas.GetComponent<FruitLabGameLayout>().ApplyLayout(); Canvas.ForceUpdateCanvases(); message.ApplyLayout();
-                        // Reusing the view for a guided step must restore its original placement and colors.
+                        // Guided steps keep their top position and share the optional-intro appearance.
                         message.Show(heading,copy,true);
                         Require(((RectTransform)message.transform).anchoredPosition.y == -90f
-                            && message.GetComponent<Image>().color == FruitLabStyle.Panel,"Guided steps retain their top placement and dark style");
+                            && message.GetComponent<Image>().color.grayscale > .8f && body.color.grayscale < .3f,
+                            "Guided steps retain their top placement and shared readable style");
                         message.ShowAt(heading,copy,true,TutorialMessagePlacement.Center);
                         Layer(canvas.transform); Draw(camera);
                         Capture(camera,Folder+"/preview-level-intro-"+mechanic.ToString().ToLowerInvariant()+".png");

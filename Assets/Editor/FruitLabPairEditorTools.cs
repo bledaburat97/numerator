@@ -156,7 +156,7 @@ public static partial class FruitLabTutorialEditorTools
                 game.Bootstrap.StartRound(); Require(game.Message != null, "Pair level has a contextual explanation");
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.PairLevel), "Pair-level explanation is acknowledged once");
                 Field(game.Tracker, "_levelId", 45);
-                Require(game.Gate.TryExplain(GameUIButtonType.PairPowerUp, () => { }), "Pair inventory use has a separate explanation");
+                Require(game.Gate.TryExplain(GameUIButtonType.PairPowerUp), "Pair inventory use has a separate explanation");
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.Pair), "Pair-powerup explanation is acknowledged once");
                 Layer(canvas.transform); Draw(camera); Capture(camera, Folder + "/preview-pair-level.png");
                 game.View.SetPairClue(null);

@@ -117,6 +117,16 @@ namespace Scripts
 
             _shinyBoardCardHolderControllers.Clear();
         }
+        public void SetupTutorialModeOnBoardHolders(IReadOnlyList<int> indexes)
+        {
+            CleanupTutorialModeOnShinyBoardHolders();
+            foreach(int index in indexes)
+            {
+                if(index<0 || index>=_boardHolderControllerList.Count)continue;
+                var holder=_boardHolderControllerList[index];
+                _shinyBoardCardHolderControllers.Add(holder);holder.GetView().SetupTutorialMode();
+            }
+        }
 
         
         public Sequence MoveBoardHoldersToOutsideScene(float duration)
@@ -147,7 +157,6 @@ namespace Scripts
         
         private void BoardHolderClickCallBack(int boardHolderIndex)
         {
-            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(boardHolderIndex, out int boardHolderCardIndex)) return;
             BoardHolderClickedEvent?.Invoke(this, boardHolderIndex);
         }
 
@@ -298,6 +307,7 @@ namespace Scripts
 
     public interface IBoardAreaController
     {
+        void SetupTutorialModeOnBoardHolders(IReadOnlyList<int> indexes);
         void ShowDynamite(DynamiteRoundState state);
         void RefreshLayout();
         event EventHandler<int> BoardHolderClickedEvent;

@@ -65,7 +65,7 @@ namespace Scripts
             foreach (RewardType rewardType in PowerUpTypeUtility.OrderedRewardTypes)
             {
                 int count = _levelTracker.GetPowerUpCount(rewardType);
-                bool isAvailable = IsPowerUpAvailable(rewardType, count);
+                bool isAvailable = IsPowerUpAvailable(rewardType);
                 _view.SetPowerUpCount(rewardType, count);
                 _view.SetPowerUpAlpha(rewardType, isAvailable ? EnabledAlpha : DisabledAlpha);
                 _buttonControllers[rewardType].SetButtonClickable(_buttonsClickable && isAvailable);
@@ -89,41 +89,34 @@ namespace Scripts
             _buttonControllers.Add(rewardType, buttonController);
         }
 
-        private bool IsPowerUpAvailable(RewardType rewardType, int count)
+        private bool IsPowerUpAvailable(RewardType rewardType)
+            => PowerUpAvailability.CanUse(rewardType,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split);
+    }
+
+    // UI availability and execution share the same eligibility rules.
+    public static class PowerUpAvailability
+    {
+        public static bool CanUse(RewardType type,ILevelTracker tracker,IRoundStateManager round,
+            ICardItemInfoManager info,IBoardHolderCountManager counts,HelperEffect helper,PairEffect pair,BoardSplitService split)
         {
-            if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) return false;
-            if (_roundStateManager.GetRemainingGuessCount() <= 0) return false;
-            if (count <= 0 || !PowerUpTypeUtility.IsUnlocked(rewardType, _levelTracker.GetLevelId())) return false;
-            if (rewardType == RewardType.Pair) return _pair != null && _pair.CanApply;
-            if (rewardType == RewardType.Split) return _split != null && _split.CanApply;
-            if (rewardType == RewardType.Helper) return _helper != null && _helper.CanApply;
-            if (rewardType == RewardType.Life) return _roundStateManager.GetRemainingGuessCount() > 0 &&
-                _roundStateManager.GetRemainingGuessCount() + 3 <= _roundStateManager.GetMaxGuessCount();
-            if (rewardType != RewardType.Bomb) return true;
-
-            return CanUseBombPowerUp();
-        }
-
-        private bool CanUseBombPowerUp()
-        {
-            if (!_boardHolderCountManager.CanShrink || _boardHolderCountManager.GetBoardHolderCount() <= 1) return false;
-            if (_roundStateManager.GetTriedCardsList().Count > 0) return false;
-            if (_boardHolderCountManager.GetRemovedBoardHolderCount() > 0) return false;
-
-            return !HasRevealedCard();
-        }
-
-        private bool HasRevealedCard()
-        {
-            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
-            if (cardItemInfoList == null) return false;
-
-            foreach (CardItemInfo cardItemInfo in cardItemInfoList)
+            if(tracker.GetGameOption()!=GameOption.SinglePlayer || round.GetRemainingGuessCount()<=0
+                || tracker.GetPowerUpCount(type)<=0 || !PowerUpTypeUtility.IsUnlocked(type,tracker.GetLevelId()))return false;
+            switch(type)
             {
-                if (cardItemInfo != null && cardItemInfo.isLocked) return true;
+                case RewardType.Helper:return helper!=null && helper.CanApply;
+                case RewardType.Pair:return pair!=null && pair.CanApply;
+                case RewardType.Split:return split!=null && split.CanApply;
+                case RewardType.Life:return round.GetRemainingGuessCount()+3<=round.GetMaxGuessCount();
+                case RewardType.Bomb:
+                    if(!counts.CanShrink || counts.GetBoardHolderCount()<=1 || round.GetTriedCardsList().Count>0 || counts.GetRemovedBoardHolderCount()>0)return false;
+                    foreach(var card in info.GetCardItemInfoList())if(card!=null && card.isLocked)return false;
+                    return true;
+                case RewardType.Revealing:
+                    int locked=0;
+                    foreach(var card in info.GetCardItemInfoList())if(card!=null && card.isLocked)locked++;
+                    return locked<counts.GetBoardHolderCount();
+                default:return false;
             }
-
-            return false;
         }
     }
 

@@ -159,7 +159,7 @@ public static partial class FruitLabTutorialEditorTools
                 Field(game.Bootstrap, "_levels", levels);
                 game.Bootstrap.StartRound(); Require(game.Message != null, "First special level explains its rule");
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.HelperLevel), "Rule introduction acknowledges once");
-                Require(game.Gate.TryExplain(GameUIButtonType.HelperPowerUp, () => { }), "First Helper inventory use explains its feedback");
+                Require(game.Gate.TryExplain(GameUIButtonType.HelperPowerUp), "First Helper inventory use explains its feedback");
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.Helper), "Helper explanation has its own flag");
             }
             File.WriteAllText(Folder + "/level-mechanics-review.json", JsonConvert.SerializeObject(new {

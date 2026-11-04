@@ -16,6 +16,7 @@ namespace Scripts
         [Inject] private IGameUIController _gameUIController;
         [Inject] private ITutorialBootstrapper _tutorialBootstrapper;
         [Inject] private IPositionNotesSettings _notes;
+        [Inject] private IPowerUpMessageController _powerMessages;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -84,9 +85,9 @@ namespace Scripts
             return safeAreaRectTransform;
         }
 
-        public void PrepareTutorials() => _tutorialBootstrapper.PrepareRound();
+        public void PrepareTutorials() { _powerMessages.CloseActivePowerUp(); _tutorialBootstrapper.PrepareRound(); }
         public void StartTutorials() => _tutorialBootstrapper.StartRound();
-        public void EndTutorials(bool success) => _tutorialBootstrapper.RoundEnded(success);
+        public void EndTutorials(bool success) { _powerMessages.CloseActivePowerUp(); _tutorialBootstrapper.RoundEnded(success); }
         public void ShowRewardTutorials(int coins, int crystals) => _tutorialBootstrapper.ShowRewards(coins, crystals);
         private void OnDestroy() => _tutorialBootstrapper?.Dispose();
 

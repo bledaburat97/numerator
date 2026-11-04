@@ -541,18 +541,17 @@ public static partial class FruitLabTutorialEditorTools
                 var view = root.GetComponent<TutorialMessagePopupView>();
                 Image surface = FruitLabStyle.AddSurface(root, FruitLabStyle.Panel); surface.raycastTarget = true;
                 FruitLabStyle.Rim((RectTransform)root.transform, .8f);
-                var title = FruitLabStyle.CreateText("Title", root.transform, 18, FruitLabStyle.Mint);
-                title.fontStyle = FontStyles.Bold; title.alignment = TextAlignmentOptions.MidlineLeft;
-                var body = FruitLabStyle.CreateText("Body", root.transform, 13, FruitLabStyle.Text);
+                var title = FruitLabStyle.CreateText("Title", root.transform, 21, FruitLabStyle.Background);
+                title.fontStyle = FontStyles.Bold; title.alignment = TextAlignmentOptions.Midline;
+                var body = FruitLabStyle.CreateText("Body", root.transform, 19, FruitLabStyle.Background);
                 body.fontStyle = FontStyles.Normal;
-                title.enableAutoSizing = true; title.fontSizeMin = 15; title.fontSizeMax = 18;
+                title.enableAutoSizing = false;
                 body.alignment = TextAlignmentOptions.TopLeft; body.textWrappingMode = TextWrappingModes.Normal;
                 body.overflowMode = TextOverflowModes.Overflow;
-                var next = Button(root.transform, "NextButton", true); next.SetText("Devam et");
-                var secondary = Button(root.transform, "SecondaryButton", false); secondary.SetText("Kapat"); secondary.SetButtonStatus(false);
+                var next = Button(root.transform, "NextButton", true); next.SetText("Tamam");
                 Set(view, "rectTransform", root.transform); Set(view, "text", body); Set(view, "title", title);
-                Set(view, "nextButton", next); Set(view, "secondaryButton", secondary);
-                view.Show("Meyvelerin yerini bul", "İki meyveyi doğru sıraya yerleştir.", false);
+                Set(view, "nextButton", next);
+                view.ShowAt(PowerUpTypeUtility.Name(RewardType.Bomb), PowerUpTypeUtility.Description(RewardType.Bomb), true, TutorialMessagePlacement.Center);
                 Dirty(root); PrefabUtility.SaveAsPrefabAsset(root, MessagePath);
             }
             finally { Object.DestroyImmediate(root); }
@@ -641,17 +640,19 @@ public static partial class FruitLabTutorialEditorTools
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.CrystalHints), "Crystal hint explanation is acknowledged separately");
                 foreach (var type in new[] { GameUIButtonType.BombPowerUp, GameUIButtonType.RevealingPowerUp, GameUIButtonType.LifePowerUp })
                 {
-                    int uses = 0;
-                    Require(game.Gate.TryExplain(type, () => uses++), "First powerup encounter must show an explanation: " + type);
-                    Require(uses == 0 && game.Message != null, "Explanation cannot spend stock or use a powerup early");
-                    game.Next(); Require(uses == 1 && game.Message == null, "Continue resumes the original powerup action exactly once");
-                    Require(!game.Gate.TryExplain(type, () => uses++), "Acknowledged powerup intro must not repeat");
+                    int stock = game.Tracker.GetPowerUpCount(PowerUpTypeUtility.ToRewardType(type));
+                    Require(game.Gate.TryExplain(type), "First powerup encounter must show an explanation: " + type);
+                    Require(game.Tracker.GetPowerUpCount(PowerUpTypeUtility.ToRewardType(type)) == stock && game.Message != null, "Explanation cannot spend stock early");
+                    game.Next(); Require(game.Tracker.GetPowerUpCount(PowerUpTypeUtility.ToRewardType(type)) == stock && game.Message == null,
+                        "Continue only dismisses the introduction without spending inventory");
+                    Require(!game.Gate.TryExplain(type), "Acknowledged powerup intro must not repeat");
                 }
-                flags.Remove(TutorialProgress.Reveal); int cancelledUses = 0;
-                Require(game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp, () => cancelledUses++), "Unseen reveal can be explained");
-                game.Next(); Require(cancelledUses == 1 && !game.Gate.IsRestricted, "Tamam acknowledges the first-use tip and continues the action");
+                flags.Remove(TutorialProgress.Reveal); int revealStock = game.Tracker.GetPowerUpCount(RewardType.Revealing);
+                Require(game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp), "Unseen reveal can be explained");
+                game.Next(); Require(game.Tracker.GetPowerUpCount(RewardType.Revealing) == revealStock && !game.Gate.IsRestricted,
+                    "Tamam acknowledges the introduction without forcing its use");
                 flags.Remove(TutorialProgress.Reveal); Field(game.Tracker, "_revealingPowerUpCount", 0);
-                Require(!game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp, () => cancelledUses++), "No-stock powerups do not open a use tutorial");
+                Require(!game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp), "No-stock powerups do not open a use tutorial");
                 game.Bootstrap.ShowRewards(2, 1); Require(game.Message != null, "First earned currencies are explained");
                 Capture(camera, Folder + "/preview-tutorial-currency.png");
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.Currency), "Currency intro remembers acknowledgment");
@@ -724,9 +725,9 @@ public static partial class FruitLabTutorialEditorTools
             View = canvas.GetComponentInChildren<GameUIView>(true);
             UI = new GameUIController(_buttons, Tracker, null, haptic, View, _powers); Field(UI, "_tutorialGate", Gate);
             var fade = new FadePanelController(canvas.GetComponentInChildren<FadePanelView>(true));
-            var powerMessages = PowerMessages = new PowerUpMessageController(_powers, fade, Tracker, Round, _info, counts); Field(powerMessages, "_tutorialGate", Gate);
+            var powerMessages = PowerMessages = new PowerUpMessageController(_powers, fade, Tracker, Round, _info, counts,UI); Field(powerMessages, "_tutorialGate", Gate);
             Field(powerMessages,"_split",split);
-            var reveal = Reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target);
+            var reveal = Reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target,_info);
             var locator = new CardItemLocator(Board, UI); locator.Initialize();
             Placement = new CardPlacementCoordinator(Board, locator, UI, indexes, indexes, reveal, Initial, _info, Gate);
             _area = new ResultAreaController(canvas.GetComponentInChildren<ResultAreaView>(true));

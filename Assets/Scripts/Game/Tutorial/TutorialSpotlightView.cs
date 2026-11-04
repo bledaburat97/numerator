@@ -1,21 +1,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System;
 
 namespace Scripts
 {
-    public class TutorialSpotlightView : MaskableGraphic, ICanvasRaycastFilter
+    public class TutorialSpotlightView : MaskableGraphic, ICanvasRaycastFilter, IPointerDownHandler
     {
         private readonly List<RectTransform> _holes = new List<RectTransform>();
         private readonly List<Rect> _rects = new List<Rect>(4);
         private readonly List<float> _xs = new List<float>(10), _ys = new List<float>(10);
         private readonly Vector3[] _corners = new Vector3[4];
+        private Action _dismiss;
+        public void SetDismiss(Action dismiss)=>_dismiss=dismiss;
+        public void OnPointerDown(PointerEventData data)=>_dismiss?.Invoke();
         public void SetHoles(IEnumerable<RectTransform> holes)
         {
             _holes.Clear(); _holes.AddRange(holes); SetVerticesDirty();
         }
         public bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
         {
+            // Optional introductions consume the dismissing touch, including highlighted controls.
+            if(_dismiss!=null)return true;
             foreach (RectTransform hole in _holes)
                 if (hole != null && hole.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(hole, screenPoint, eventCamera)) return false;
             return true;

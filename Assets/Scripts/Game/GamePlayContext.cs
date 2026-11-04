@@ -24,6 +24,7 @@ namespace Scripts
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private IInitialCardAreaPresentation _initialPresentation;
         [Inject] private IGuessManager _guessManager;
+        [Inject] private IPowerUpMessageController _powerMessages;
         [Inject] private IRoundStateManager _roundStateManager;
         [Inject] private IGameUIController _gameUi;
         [Inject] private IMultiplayerHudPresentation _multiplayerHud;
@@ -133,6 +134,7 @@ namespace Scripts
         
         private void CancelCardGestures()
         {
+            _powerMessages?.CloseActivePowerUp();
             Annotations?.CancelAllGestures();
             _positionAssistance?.Suspend();
             if (_initialCardAreaController == null) return;

@@ -63,11 +63,12 @@ namespace Scripts
                     });
                 _first.Start();
             }
+            else if (_levels?.GetLevelData()?.TrialPowerUp is RewardType trial && ExplainPowerUp(PowerUpTypeUtility.ToGameButtonType(trial))) { }
             else if (_levels != null && ExplainLevelMechanic()) { }
             else if (!TutorialProgress.Seen(TutorialProgress.CrystalHints) && _round.GetLifeBarRewardInfoList().Any(token => token.IsCrystal))
             {
                 ShowTip("Kristal İpuçları", "Kazanamadığın kristaller oyun içinde sana yardım eder.",
-                    TutorialProgress.CrystalHints, TutorialMessagePlacement.Center, null, Find<LifeBarView>()?.GetRectTransform());
+                    TutorialProgress.CrystalHints, Find<LifeBarView>()?.GetRectTransform());
             }
         }
         private bool ExplainLevelMechanic()
@@ -78,33 +79,33 @@ namespace Scripts
             {
                 if (TutorialProgress.Seen(TutorialProgress.DynamiteLevel)) return false;
                 ShowTip("Dinamitli Tahta", "İlk 4 hamlede dinamitli alan için doğru meyveyi bulmalısın yoksa oyun kaybedilir.",
-                    TutorialProgress.DynamiteLevel,TutorialMessagePlacement.Center,null,Find<BoardAreaView>()?.GetRectTransform());
+                    TutorialProgress.DynamiteLevel,Find<BoardAreaView>()?.GetRectTransform());
                 return true;
             }
             if (mechanic == LevelMechanic.Growing)
             {
                 if (TutorialProgress.Seen(TutorialProgress.GrowingLevel)) return false;
                 ShowTip("Büyüyen Tahta", "2 alanla başlarsın. Her 2 yanlışta bir alan açılır. 4 alana ulaşınca 4 ek hak kazanırsın.",
-                    TutorialProgress.GrowingLevel,TutorialMessagePlacement.Center,null,Find<BoardAreaView>()?.GetRectTransform());
+                    TutorialProgress.GrowingLevel,Find<BoardAreaView>()?.GetRectTransform());
                 return true;
             }
             if (mechanic == LevelMechanic.Split)
             {
                 if (TutorialProgress.Seen(TutorialProgress.SplitLevel)) return false;
                 ShowTip("Bölünmüş Tahta", "İki grubun sonuçları ayrı hesaplanır, yerleştirilen meyveler kendi grubunda değerlendirilir.",
-                    TutorialProgress.SplitLevel,TutorialMessagePlacement.Center,null,Find<BoardAreaView>()?.GetRectTransform());
+                    TutorialProgress.SplitLevel,Find<BoardAreaView>()?.GetRectTransform());
                 return true;
             }
             if (mechanic == LevelMechanic.Pair)
             {
                 if (TutorialProgress.Seen(TutorialProgress.PairLevel)) return false;
                 ShowTip("Ardışık Bağlı Meyveler", "Cevapta bulunan yan yana iki meyveyi gösterir.",
-                    TutorialProgress.PairLevel, TutorialMessagePlacement.Center, null, PairTargets());
+                    TutorialProgress.PairLevel, PairTargets());
                 return true;
             }
             if (TutorialProgress.Seen(TutorialProgress.HelperLevel)) return false;
             ShowTip("Bonus İpucu", "Her 3 yanlış tahminde bir tahmindeki meyvelerin detaylı bilgisi verilir",
-                TutorialProgress.HelperLevel, TutorialMessagePlacement.Center, null, LatestResult());
+                TutorialProgress.HelperLevel, LatestResult());
             return true;
         }
         public void RoundEnded(bool success)
@@ -122,59 +123,41 @@ namespace Scripts
             if ((coins <= 0 && crystals <= 0) || TutorialProgress.Seen(TutorialProgress.Currency)) return;
             RectTransform bar = Find<VerticalCrystalProgressView>()?.GetRectTransform();
             if (bar != null && !bar.gameObject.activeInHierarchy) bar = null;
-            ShowTip("Coin ve kristal enerjisi", "Sarı coin'leri biriktirebilir, pembe kristaller ile powerup kazanabilirsin.",
-                TutorialProgress.Currency, TutorialMessagePlacement.Top, null, _ui.GetCoinImageRectTransform(), bar);
+            ShowTip("Coin ve güçlendiriciler", "Coin biriktir. Pembe kristallerle güçlendirici kazan.",
+                TutorialProgress.Currency, _ui.GetCoinImageRectTransform(), bar);
         }
-        private bool ExplainPowerUp(GameUIButtonType type, Action use)
+        private bool ExplainPowerUp(GameUIButtonType type)
         {
             if (!_ready || _roundEnded || _message != null || _tracker.GetGameOption() != GameOption.SinglePlayer) return false;
-            string key, title, body;
-            RewardType reward;
-            switch (type)
-            {
-                case GameUIButtonType.BombPowerUp:
-                    key = TutorialProgress.Bomb; title = "Bomba"; reward = RewardType.Bomb;
-                    body = "Bir alan eksiltmek için kullanıp tahminini kolaylaştırabilirsin. Hiç tahmin yapmadan kullanman gerekir.";
-                    break;
-                case GameUIButtonType.RevealingPowerUp:
-                    key = TutorialProgress.Reveal; title = "Göster"; reward = RewardType.Revealing;
-                    body = "Hangi alandaki meyveyi öğrenmek istiyorsan o alana dokun. Doğru meyve o alana yerleşir ve kilitlenir.";
-                    break;
-                case GameUIButtonType.PairPowerUp:
-                    key = TutorialProgress.Pair; title = "Bağlı"; reward = RewardType.Pair;
-                    body = "Cevapta bulunan yan yana iki meyveyi gösterir.";
-                    break;
-                case GameUIButtonType.SplitPowerUp:
-                    key = TutorialProgress.Split; title = "Bölme"; reward = RewardType.Split;
-                    body = "Tahtayı iki gruba böler. Her grubun sonuçları ayrı gösterilir.";
-                    break;
-                case GameUIButtonType.HelperPowerUp:
-                    key = TutorialProgress.Helper; title = "İpucu güçlendiricisi"; reward = RewardType.Helper;
-                    body = "Son tahmininin detaylı bilgisi verilir.";
-                    break;
-                case GameUIButtonType.LifePowerUp:
-                    key = TutorialProgress.Life; title = "Can"; reward = RewardType.Life;
-                    body = "3 ek tahmin hakkı verir. En az 3 hak harcadığında kullanabilirsin.";
-                    break;
-                default: return false;
-            }
+            if (type != GameUIButtonType.BombPowerUp && type != GameUIButtonType.RevealingPowerUp
+                && type != GameUIButtonType.LifePowerUp && type != GameUIButtonType.HelperPowerUp
+                && type != GameUIButtonType.PairPowerUp && type != GameUIButtonType.SplitPowerUp) return false;
+            var reward=PowerUpTypeUtility.ToRewardType(type);
+            string key=PowerUpTypeUtility.TutorialKey(reward);
             if (TutorialProgress.Seen(key) || _tracker.GetPowerUpCount(reward) <= 0) return false;
             var button = Find<PowerUpListHolderView>()?.GetPowerUpButton(reward)?.GetButtonRectTransform();
-            ShowTip(title, body, key, TutorialMessagePlacement.Top, use, button);
+            ShowTip(PowerUpTypeUtility.Name(reward),PowerUpTypeUtility.Description(reward),key,button);
             return true;
         }
-        private void ShowTip(string title, string text, string key, TutorialMessagePlacement placement, Action use, params RectTransform[] targets)
+        private void ShowTip(string title, string text, string key, params RectTransform[] targets)
         {
             if (_message != null) return;
             GameTelemetry.Tutorial("tutorial_started", key);
             CreatePresentation(); _gate.Block(); LockCards(-1);
             foreach (var target in targets) _mask.Highlight(target);
-            _message.ShowAt(title, text, true, placement, "Tamam");
-            _message.Bind(_buttons, () => {
+            _message.ShowAt(title, text, true, TutorialMessagePlacement.Center, "Tamam");
+            var presentation=_message;
+            bool closed=false;
+            void Dismiss()
+            {
+                if(closed || _message==null || _message!=presentation)return;
+                closed=true;
                 GameTelemetry.Tutorial("tutorial_completed", key);
                 TutorialProgress.Mark(key); ClosePresentation(!_roundEnded);
-                use?.Invoke();
-            });
+                // Acknowledging an introduction never activates or spends a powerup.
+            }
+            _message.Bind(_buttons,Dismiss);
+            _mask.SetDismiss(Dismiss);
         }
         private RectTransform[] PairTargets()
         {
@@ -212,7 +195,7 @@ namespace Scripts
             if (!restoreCards) return;
             var info = _info.GetCardItemInfoList();
             for (int i = 0; i < _initial.GetCardCount(); i++)
-                if (_initial.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().SetMovementLocked(info != null && i < info.Count && info[i].isLocked);
+                if (_initial.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().SetMovementLocked(info != null && i < info.Count && (info[i].isLocked || !info[i].isExisted));
         }
         public void Cancel()
         {

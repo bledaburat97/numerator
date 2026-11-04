@@ -56,7 +56,7 @@ public static class FruitLabEditorTools
         string request = Folder + "/request-v5.json";
         if (!File.Exists(request)) return;
         Job requested = JsonUtility.FromJson<Job>(File.ReadAllText(request));
-        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation.StartsWith("session-") || requested.operation == "manual-notes-review" || requested.operation == "position-assistance-review" || requested.operation == "level-intro-review" || requested.operation == "split-review" || requested.operation == "dynamite-review" || requested.operation == "growing-review" || requested.operation == "powerup-polish-review" || requested.operation == "mobile-polish-review" || requested.operation == "playtest-review" || requested.operation == "pair-review" || requested.operation == "level-mechanics-review" || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation.StartsWith("crystal-") || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
+        if ((requested.operation.StartsWith("multiplayer-") || requested.operation.StartsWith("telemetry-") || requested.operation.StartsWith("session-") || requested.operation == "manual-notes-review" || requested.operation == "position-assistance-review" || requested.operation == "level-intro-review" || requested.operation == "split-review" || requested.operation == "dynamite-review" || requested.operation == "growing-review" || requested.operation == "powerup-polish-review" || requested.operation == "powerup-tutorial-review" || requested.operation == "mobile-polish-review" || requested.operation == "playtest-review" || requested.operation == "pair-review" || requested.operation == "level-mechanics-review" || requested.operation == "menu-progression-review" || requested.operation == "single-input-review" || requested.operation == "card-annotations-review" || requested.operation == "tutorial-review" || requested.operation == "tutorial-reset" || requested.operation == "fail-review" || requested.operation == "settings-navigation-review" || requested.operation == "settings-review" || requested.operation == "success-order-review" || requested.operation == "bomb-review" || requested.operation == "cards" || requested.operation.StartsWith("crystal-") || requested.operation == "retry-review" || requested.operation == "success-review") && EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorApplication.isPlaying = false;
             _nextCheck = EditorApplication.timeSinceStartup + 1d;
@@ -148,6 +148,9 @@ public static class FruitLabEditorTools
                 case "growing-review":
                     FruitLabTutorialEditorTools.RefreshPlaytestSettings();
                     reply.details = Render(2,9,validation: FruitLabTutorialEditorTools.ReviewGrowingBoard,validateBeforeRender: true);
+                    break;
+                case "powerup-tutorial-review":
+                    reply.details=Render(4,8,validation:FruitLabTutorialEditorTools.ReviewPowerupTutorials,validateBeforeRender:true);
                     break;
                 case "powerup-polish-review":
                     FruitLabTutorialEditorTools.RefreshPlaytestSettings();

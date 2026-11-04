@@ -170,6 +170,8 @@ namespace Scripts
         private void OnCardClicked(int cardIndex)
         {
             if (!CanMoveCard(cardIndex) || (_tutorialGate != null && !_tutorialGate.AllowsCard(cardIndex))) return;
+            if(_revealingPowerUpController.IsActive && _boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(cardIndex,out int slot))
+            { _revealingPowerUpController.TryRequestRevealCard(slot);return; }
 
             OnCardClickedEvent?.Invoke(this, cardIndex);
         }
