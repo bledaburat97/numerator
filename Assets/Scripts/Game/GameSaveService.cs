@@ -77,6 +77,7 @@ namespace Scripts
         public GrowingBoardState GrowingBoard;
         public DynamiteRoundState Dynamite;
         public List<bool> ActiveRewardTokens;
+        public PositionNotesSnapshot PositionNotes;
     }
     
     // Round state belongs to the existing checkpoint, including unopened fruit.

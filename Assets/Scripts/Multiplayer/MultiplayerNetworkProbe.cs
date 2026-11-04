@@ -188,7 +188,7 @@ namespace Scripts
                 yield return WaitFor(() => File.Exists(Path.Combine(Path.GetDirectoryName(_output), "host.annotations-ready"))
                     && File.Exists(Path.Combine(Path.GetDirectoryName(_output), "client.annotations-ready")), 25, "Both peers finish their independent annotations");
                 initial.TryGetCardItem(0, out var localCard);
-                Check(((NormalCardItemView)localCard.GetView()).Annotation == (host ? CardAnnotation.Excluded : CardAnnotation.Candidate),
+                Check(((NormalCardItemView)localCard.GetView()).DeducedPresence == (host ? FruitPresence.Absent : FruitPresence.Present),
                     "A peer's pencil marks never overwrite the local player's marks");
             }
             if (Scenario == "planning")
@@ -217,7 +217,7 @@ namespace Scripts
                 for (int i = 0; i < initial.GetCardCount(); i++)
                 {
                     Check(initial.TryGetCardItem(i, out var card) && card.GetCardMoveHandler().IsMovementLocked(), "Finished matches lock card movement again");
-                    if (Scenario == "annotations") Check(((NormalCardItemView)card.GetView()).Annotation == CardAnnotation.None || !Answer(1).Contains(i + 1),
+                    if (Scenario == "annotations") Check(card.GetView().GetImage().color.a > .9f || !Answer(1).Contains(i + 1),
                         "The final answer clears conflicting annotations on its cards");
                 }
                 if (host) yield return new WaitForSecondsRealtime(1);
@@ -554,11 +554,6 @@ namespace Scripts
         private IEnumerator CheckAnnotationGestures(IInitialCardAreaController initial, MultiplayerGameController match)
         {
             var context = FindFirstObjectByType<GamePlayContext>(); var notes = context.Annotations;
-            if (notes == null)
-            {
-                Check(context.PositionAssistance != null, "Automatic positional assistance replaces the disabled manual annotation toolbar");
-                yield break;
-            }
             Check(notes != null && initial.TryGetCardItem(0, out _), "The real game provides its annotation controller");
             initial.TryGetCardItem(0, out var card); var move = card.GetCardMoveHandler(); var view = (NormalCardItemView)card.GetView();
             var layout = FindFirstObjectByType<FruitLabGameLayout>(); var ui = FindFirstObjectByType<GameUIView>();
@@ -580,19 +575,19 @@ namespace Scripts
             Check(hits.Count > 0 && UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IPointerClickHandler>(hits[0].gameObject) == notes.GetButton(0).gameObject,
                 "The red annotation button receives actual UI raycasts above the dismissal layer");
             notes.GetButton(0).onClick.Invoke();
-            Check(view.Annotation == CardAnnotation.Excluded && !notes.IsSelecting && !view.GetCardAnimator().GetBool("IsSelected"), "Red marks the card and stops its animation");
+            Check(view.DeducedPresence == FruitPresence.Absent && notes.IsSelecting && view.GetCardAnimator().GetBool("IsSelected"), "Red edits the shared notebook while retaining selection");
+            notes.Cancel();
             Check(!layout.PowerUpArea.gameObject.activeSelf && Mathf.Approximately(layout.PowerUpArea.rect.height, closedHeight), "Closing notes restores the hidden multiplayer powerup row");
             move.OnPointerDown(null); move.OnPointerUp(null); yield return new WaitForSecondsRealtime(.4f);
-            Check(ProbeBoard().TryGetPlacedBoardHolderIndexOfCard(0, out int slot) && slot == 0 && view.Annotation == CardAnnotation.Excluded,
+            Check(ProbeBoard().TryGetPlacedBoardHolderIndexOfCard(0, out int slot) && slot == 0 && view.DeducedPresence == FruitPresence.Absent,
                 "A marked card can still be placed normally");
             move.OnPointerDown(null); yield return WaitFor(() => notes.IsSelecting, 2, "Board cards support long holds too"); move.OnPointerUp(null);
             notes.GetButton(2).onClick.Invoke();
-            Check(view.Annotation == CardAnnotation.Candidate && !move.IsMovementLocked(), "Green changes the outline without fixing the card");
-            move.OnPointerDown(null); yield return WaitFor(() => notes.IsSelecting, 2, "A marked board card can be annotated again"); move.OnPointerUp(null);
-            notes.GetButton(1).onClick.Invoke(); Check(view.Annotation == CardAnnotation.None, "Yellow returns the card to its normal appearance");
-            view.SetAnnotation(CardAnnotation.Excluded); notes.TrySelect(0);
+            Check(view.DeducedPresence == FruitPresence.Present && notes.IsSelecting && !move.IsMovementLocked(), "Green changes membership without fixing the card or closing editing");
+            notes.GetButton(1).onClick.Invoke(); Check(view.DeducedPresence == FruitPresence.Unknown && notes.IsSelecting, "Yellow clears only the selected fruit notes");
+            notes.Apply(CardAnnotation.Excluded);
             UnityEngine.EventSystems.ExecuteEvents.Execute(notes.Toolbar.parent.gameObject, pointer, UnityEngine.EventSystems.ExecuteEvents.pointerDownHandler);
-            Check(!notes.IsSelecting && view.Annotation == CardAnnotation.Excluded, "Outside presses dismiss while preserving previous marks");
+            Check(!notes.IsSelecting && view.DeducedPresence == FruitPresence.Absent, "Outside presses dismiss while preserving previous marks");
             Click((BaseButtonView)ui.GetResetButton()); yield return new WaitForSecondsRealtime(.4f);
             var board = (IBoardAreaController)typeof(GamePlayContext).GetField("_boardAreaController", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(context);
             move.OnPointerDown(null); yield return new WaitForSecondsRealtime(.2f);

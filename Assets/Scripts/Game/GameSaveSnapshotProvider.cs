@@ -39,7 +39,8 @@ namespace Scripts
             bool mutatedBeforeGuess = _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
                 || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || (info != null && info.Any(card => card.isLocked || !card.isExisted));
-            if (_roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess) return false;
+            bool hasNotes = _saveData?.GetLevelSaveData().PositionNotes?.Edited == true;
+            if (_roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess && !hasNotes) return false;
             if (_roundStateManager.GetRemainingGuessCount() <= 0 || _session.IsGameOver) return false;
             if (_session.State != LevelFlowState.Idle && _session.State != LevelFlowState.Playing) return false;
 
@@ -63,7 +64,8 @@ namespace Scripts
                 PairClue = _saveData?.GetLevelSaveData().PairClue,
                 GrowingBoard = _saveData?.GetLevelSaveData().GrowingBoard?.Copy(),
                 Dynamite = _saveData?.GetLevelSaveData().Dynamite?.Copy(),
-                ActiveRewardTokens = _roundStateManager.GetLifeBarRewardInfoList().Select(reward => reward.IsActive).ToList()
+                ActiveRewardTokens = _roundStateManager.GetLifeBarRewardInfoList().Select(reward => reward.IsActive).ToList(),
+                PositionNotes = _saveData?.GetLevelSaveData().PositionNotes?.Copy()
             };
 
             return true;

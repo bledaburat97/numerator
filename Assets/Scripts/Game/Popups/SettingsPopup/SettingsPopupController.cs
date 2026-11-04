@@ -23,13 +23,16 @@ namespace Scripts
             _loadScene = loadScene;
             _shutdownNetwork = shutdownNetwork;
         }
-        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory)
+        public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory,IPositionNotesSettings notes=null)
         {
             _view = view;
             _levelTracker = levelTracker;
             _isNavigating = false;
             _view.Init();
             _view.SetSinglePlayer(_levelTracker.GetGameOption() == GameOption.SinglePlayer);
+            void RefreshNotes()=>_view.ConfigureNotes(notes!=null,notes?.AssistanceEnabled??true,
+                enabled=>{notes?.SetAssistanceEnabled(enabled);RefreshNotes();},()=>{notes?.ResetNotes();RefreshNotes();});
+            RefreshNotes();
             IBaseButtonController closeButtonController =
                 baseButtonControllerFactory.Create(_view.GetCloseButton(), () => OnCloseButtonClick(onCloseAction));
             closeButtonController.SetText("Oyuna dön");
@@ -82,6 +85,6 @@ namespace Scripts
 
     public interface ISettingsPopupController
     {
-        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory);
+        void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory,IPositionNotesSettings notes=null);
     }
 }

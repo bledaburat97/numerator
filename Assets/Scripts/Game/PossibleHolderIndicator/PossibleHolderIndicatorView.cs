@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Scripts
 {
-    public class PossibleHolderIndicatorView : MonoBehaviour, IPossibleHolderIndicatorView, IPointerClickHandler
+    public class PossibleHolderIndicatorView : MonoBehaviour, IPossibleHolderIndicatorView, IPointerClickHandler, IPointerDownHandler
     {
         [SerializeField] private TMP_Text imageText;
         [SerializeField] private Image crossImage;
@@ -49,6 +49,7 @@ namespace Scripts
         {
             if (data == null || data.button == PointerEventData.InputButton.Left) _clicked?.Invoke();
         }
+        public void OnPointerDown(PointerEventData data) { } // Keep notebook clicks inside the editing overlay.
         public void SetLocalScale() => transform.localScale = Vector3.one;
         public void SetLocalPosition(Vector2 position) => transform.localPosition = position;
         public void SetText(string value) => imageText.text = value;

@@ -22,6 +22,7 @@ namespace Scripts
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private IBoardPlacementQuery _boardQuery;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
+        [Inject] private IInitialCardAreaPresentation _initialPresentation;
         [Inject] private IGuessManager _guessManager;
         [Inject] private IRoundStateManager _roundStateManager;
         [Inject] private IGameUIController _gameUi;
@@ -30,16 +31,19 @@ namespace Scripts
         [Inject] private LevelMechanicsController _mechanics;
         [Inject] private PositionAssistanceController _positionAssistance;
         public PositionAssistanceController PositionAssistance => _positionAssistance;
-        public CardAnnotationController Annotations => null;
+        public CardAnnotationController Annotations { get; private set; }
         private FruitLabGameLayout _presentation;
         private bool _layoutRefreshPending;
+        private bool _refreshLifeLayout;
+        private Vector2 _layoutSize;
 
         void Start()
         {
             _presentation = GetComponentInChildren<FruitLabGameLayout>(true);
             if (_presentation != null) _presentation.LayoutChanged += OnLayoutChanged;
-            // Manual red/yellow/green marking is retained in code but disabled for this version.
-            _cardPlacementCoordinator.SetLongPressHandler(null);
+            _layoutSize=_presentation!=null?_presentation.LayoutSize:Vector2.zero;
+            Annotations=new CardAnnotationController(_initialCardAreaController,_cardPlacementCoordinator,_gameUi,_presentation,_tutorialGate,
+                _hapticController,()=>!_session.IsGameOver && _session.State==LevelFlowState.Playing,_positionAssistance,_initialPresentation,_boardAreaController);
             var view = GetComponentInChildren<GameUIView>(true);
             view?.GetPairView()?.Configure(new PairDragPresenter(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
                 _tutorialGate, _gameUi, () => !_session.IsGameOver
@@ -53,10 +57,17 @@ namespace Scripts
             _positionAssistance.Refresh();
         }
 
-        private void OnLayoutChanged() => _layoutRefreshPending = true;
+        private void OnLayoutChanged()
+        {
+            _layoutRefreshPending=true;
+            if(_presentation==null)return;
+            _refreshLifeLayout|=(_layoutSize-_presentation.LayoutSize).sqrMagnitude>.01f;
+            _layoutSize=_presentation.LayoutSize;
+        }
         private void Update()
         {
             _positionAssistance?.Tick();
+            Annotations?.Tick();
             _multiplayerHud?.TickPresentation();
         }
 
@@ -67,7 +78,8 @@ namespace Scripts
             _layoutRefreshPending = false;
             _boardAreaController.RefreshLayout();
             _initialCardAreaController.RefreshLayout();
-            if (_levelTracker.GetGameOption() == GameOption.SinglePlayer) _guessManager.Initialize();
+            if (_refreshLifeLayout && _levelTracker.GetGameOption() == GameOption.SinglePlayer) _guessManager.Initialize();
+            _refreshLifeLayout=false;
         }
 
         private void InitializeHapticController() //TODO: set in global installer
@@ -108,6 +120,7 @@ namespace Scripts
 
         private void OnDestroy()
         {
+            Annotations?.Dispose();
             _positionAssistance?.Dispose();            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
             _mechanics?.Dispose();
             (_guessManager as System.IDisposable)?.Dispose();
@@ -120,6 +133,7 @@ namespace Scripts
         
         private void CancelCardGestures()
         {
+            Annotations?.CancelAllGestures();
             _positionAssistance?.Suspend();
             if (_initialCardAreaController == null) return;
             for (int i = 0; i < _initialCardAreaController.GetCardCount(); i++)

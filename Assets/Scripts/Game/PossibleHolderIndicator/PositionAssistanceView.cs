@@ -157,6 +157,7 @@ namespace Scripts
             switch (reason.Kind)
             {
                 case PositionDeductionKind.NoCorrect: message = prefix + "doğru yerde meyve yoktu."; break;
+                case PositionDeductionKind.Manual: message = "Bu konumu sen işaretledin."; break;
                 case PositionDeductionKind.NoMisplaced: message = prefix + "yanlış yer yoktu; bu meyve başka alanda olamaz."; break;
                 case PositionDeductionKind.NoMatches: message = prefix + "hiçbir meyve cevapta yoktu."; break;
                 case PositionDeductionKind.CompleteSet: message = prefix + "cevaptaki tüm meyveler bulundu; diğerleri elendi."; break;

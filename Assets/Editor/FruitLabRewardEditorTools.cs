@@ -518,6 +518,7 @@ public static class FruitLabSettingsEditorTools
 
     private sealed class ImmediateCloseView : ISettingsPopupView
     {
+        public void ConfigureNotes(bool visible,bool enabled,Action<bool> toggle,Action reset)=>_view.ConfigureNotes(visible,enabled,toggle,reset);
         private readonly SettingsPopupView _view;
         public ImmediateCloseView(SettingsPopupView view) => _view = view;
         public void Init() => _view.Init();

@@ -212,6 +212,7 @@ namespace Scripts
 
     public interface INormalCardItemView : IDraggableCardItemView
     {
+        bool CanAnnotate { get; }
         void SetPositionDeduction(FruitPresence presence);
         void SetFrameStatus(bool status);
         void SetLockImageStatus(bool status);

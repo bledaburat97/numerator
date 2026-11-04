@@ -15,6 +15,7 @@ namespace Scripts
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private IGameUIController _gameUIController;
         [Inject] private ITutorialBootstrapper _tutorialBootstrapper;
+        [Inject] private IPositionNotesSettings _notes;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -180,7 +181,7 @@ namespace Scripts
             _fadePanelController.SetFadeImageStatus(true);
             ISettingsPopupController settingsPopupController = _settingsPopupControllerFactory.Spawn();
             ISettingsPopupView settingsPopupView = _settingsPopupViewFactory.Spawn(transform, settingsPopupPrefab);
-            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction, _levelTracker, _baseButtonControllerFactory);
+            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction, _levelTracker, _baseButtonControllerFactory,_notes);
         }
 
         private void OnClosePopup()

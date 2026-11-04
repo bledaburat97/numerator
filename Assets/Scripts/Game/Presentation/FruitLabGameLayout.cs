@@ -30,13 +30,15 @@ namespace Scripts
             if (gameView.IsMultiplayer) { ApplyLayout(); LayoutChanged?.Invoke(); }
         }
         public RectTransform PowerUpArea => powerUpArea;
+        public RectTransform BoardArea => boardArea;
+        public Vector2 LayoutSize => _lastSize;
         public PowerUpListHolderView PowerUpView => powerUpView;
         public void SetCardAnnotationMode(bool active)
         {
             if (_cardAnnotationMode == active) return;
             _cardAnnotationMode = active;
-            // The single-player row already has room; do not rebuild its life/reward UI.
-            if (gameView.IsMultiplayer) { ApplyLayout(); LayoutChanged?.Invoke(); }
+            // Reserve one compact row for editing positions below the board.
+            ApplyLayout(); LayoutChanged?.Invoke();
         }
         public event Action LayoutChanged;
 
@@ -80,7 +82,7 @@ namespace Scripts
             PrepareSceneVisuals();
             safeArea.ForceUpdateRectTransforms();
             _lastSize = safeArea.rect.size;
-            FruitLabLayoutMetrics layout = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y, !gameView.IsMultiplayer && gameView.HasMechanicStatus,gameView.HasDynamiteFooter, gameView.HasPositionIndicators);
+            FruitLabLayoutMetrics layout = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y, !gameView.IsMultiplayer && gameView.HasMechanicStatus,gameView.HasDynamiteFooter, gameView.HasPositionIndicators,_cardAnnotationMode);
             float width = layout.Width - layout.Padding * 2f;
 
             FruitLabStyle.Stretch(middleArea);
@@ -119,7 +121,16 @@ namespace Scripts
             gameView.ApplyLabLayout(header, actionArea, width, layout.HeaderHeight, layout.ActionWidth, layout.ChoicesHeight);
             powerUpView.ApplyLabLayout(width, powerHeight);
             lifeBar.ApplyLabLayout(header, width, layout.HeaderHeight);
-            results.ApplyLabLayout(layout.HistorySpacing);
+            // Editing clips the bottom of history; rows retain their ordinary size.
+            float clippedHistoryHeight = 0f;
+            if (_cardAnnotationMode)
+            {
+                var ordinary = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y,
+                    !multiplayer && gameView.HasMechanicStatus, gameView.HasDynamiteFooter, gameView.HasPositionIndicators);
+                float ordinaryReclaimed = multiplayer && !_evidenceReasonMode ? ordinary.PowerUpHeight : 0f;
+                clippedHistoryHeight = ordinary.HistoryHeight + ordinaryReclaimed - layout.HistoryHeight - reclaimed;
+            }
+            results.ApplyLabLayout(layout.HistorySpacing, clippedHistoryHeight);
         }
 
         private void PrepareSceneVisuals()

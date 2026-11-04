@@ -42,13 +42,15 @@ namespace Scripts
         private const int BufferRows = 2;
         private bool _listening, _scrollPending, _refreshing;
         private float _rowHeight, _rowWidth, _viewportHeight;
+        private float _clippedHeight;
         public int VisibleRowCount => _visible.Count;
         public int AllocatedRowCount => _visible.Count + _pool.Count;
         public int HistoryCount => _history?.Count ?? 0;
         public ResultBlockView GetVisibleRow(int index) => _visible.TryGetValue(index, out var row) ? row : null;
 
-        public void ApplyLabLayout(float spacing)
+        public void ApplyLabLayout(float spacing, float clippedHeight = 0f)
         {
+            _clippedHeight = Mathf.Max(0f, clippedHeight);
             FruitLabStyle.Stretch(scrollRect.viewport, 6f);
             Image oldBackground = scrollRect.GetComponent<Image>();
             Mask mask = scrollRect.GetComponent<Mask>();
@@ -81,6 +83,14 @@ namespace Scripts
             {
                 SetEmptyState(_history.Count == 0);
                 RefreshWindow(true);
+                // Closing a shorter viewport must not leave the content beyond its new end.
+                float offset = Mathf.Clamp(rectTransform.anchoredPosition.y, 0f,
+                    Mathf.Max(0f, rectTransform.rect.height - scrollRect.viewport.rect.height));
+                if (Mathf.Abs(rectTransform.anchoredPosition.y - offset) > .01f)
+                {
+                    rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, offset);
+                    RefreshWindow(false);
+                }
             }
             else foreach (ResultBlockView row in rectTransform.GetComponentsInChildren<ResultBlockView>()) row.Resize(GetWidth(), GetRowHeight());
         }
@@ -210,7 +220,7 @@ namespace Scripts
             Image hitArea = scrollRect.GetComponent<Image>();
             if (hitArea != null) hitArea.raycastTarget = true;
         }
-        public float GetRowHeight() => FruitLabLayoutMetrics.GetHistoryRowHeight(scrollRect.viewport.rect.height,
+        public float GetRowHeight() => FruitLabLayoutMetrics.GetHistoryRowHeight(scrollRect.viewport.rect.height + _clippedHeight,
             Mathf.Ceil(verticalLayoutGroup.spacing), rectTransform.rect.width / 331f);
         public CanvasGroup GetCanvasGroup() => canvasGroup;
         public float GetWidth() => rectTransform.rect.width;

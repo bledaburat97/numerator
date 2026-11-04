@@ -9,7 +9,7 @@ namespace Scripts
     {
         NoCorrect, NoMisplaced, NoMatches, CompleteSet, AllPositionsEliminated,
         OnlyPosition, OnlyCandidate, Occupied, FixedElsewhere, RevealedPosition, EliminatedFruit,
-        DetailedCorrect, DetailedMisplaced, DetailedAbsent
+        DetailedCorrect, DetailedMisplaced, DetailedAbsent, Manual
     }
 
     public sealed class PositionDeductionReason
@@ -42,6 +42,7 @@ namespace Scripts
         public int FruitCount { get; }
         public int SlotCount { get; }
         public bool IsConsistent { get; private set; } = true;
+        public bool HasManualChanges { get; private set; }
 
         public PositionDeductionService(int fruits, int slots)
         {
@@ -65,7 +66,7 @@ namespace Scripts
 
         public bool ApplyGuess(int number, IReadOnlyList<int> cards, int correct, int misplaced)
         {
-            if (!IsConsistent || number < 1 || cards == null || cards.Count != SlotCount || correct < 0 || misplaced < 0
+            if ((!IsConsistent && !HasManualChanges) || number < 1 || cards == null || cards.Count != SlotCount || correct < 0 || misplaced < 0
                 || correct + misplaced > SlotCount || cards.Distinct().Count() != cards.Count
                 || cards.Any(fruit => fruit < 1 || fruit > FruitCount)) return false;
             if (correct == 0 && misplaced == 0)
@@ -97,10 +98,88 @@ namespace Scripts
             Propagate(); return true;
         }
 
+        public void TogglePosition(int fruit, int slot)
+        {
+            if (fruit < 1 || fruit > FruitCount || slot < 0 || slot >= SlotCount) return;
+            HasManualChanges = true;
+            int index = fruit - 1;
+            _possible[index,slot] = !_possible[index,slot];
+            _exclusions[index,slot] = _possible[index,slot] ? null : new PositionDeductionReason(PositionDeductionKind.Manual,slot);
+            _fixedSlots[index] = -1; _fixedReasons[index] = null;
+            RefreshEditedPresence(index);
+            // Editing changes only the requested note. Previously derived notes stay put.
+        }
+
+        public void SetManualPresence(int fruit, FruitPresence presence)
+        {
+            if (fruit < 1 || fruit > FruitCount) return;
+            HasManualChanges = true; int index = fruit - 1;
+            var reason = new PositionDeductionReason(PositionDeductionKind.Manual);
+            bool reopen = presence == FruitPresence.Unknown || _presence[index] == FruitPresence.Absent;
+            for (int slot = 0; slot < SlotCount; slot++)
+                if (presence == FruitPresence.Absent || reopen)
+                { _possible[index,slot] = presence != FruitPresence.Absent; _exclusions[index,slot] = presence == FruitPresence.Absent ? reason : null; }
+            _presence[index] = presence; _presenceReasons[index] = reason;
+            _fixedSlots[index] = -1; _fixedReasons[index] = null;
+        }
+
+        private void RefreshEditedPresence(int fruit)
+        {
+            bool any = false;
+            for (int slot = 0; slot < SlotCount; slot++) any |= _possible[fruit,slot];
+            if (!any) _presence[fruit] = FruitPresence.Absent;
+            else if (_presence[fruit] == FruitPresence.Absent) _presence[fruit] = FruitPresence.Unknown;
+            _presenceReasons[fruit] = new PositionDeductionReason(PositionDeductionKind.Manual);
+        }
+
+        public PositionNotesSnapshot Capture(int historyCount, bool automaticEnabled)
+        {
+            var snapshot = new PositionNotesSnapshot {
+                Fruits=FruitCount, Slots=SlotCount, HistoryCount=historyCount, AutomaticEnabled=automaticEnabled,
+                Manual=HasManualChanges, Consistent=IsConsistent, Possible=new bool[FruitCount*SlotCount],
+                Presence=(FruitPresence[])_presence.Clone(), Fixed=(int[])_fixedSlots.Clone(),
+                Exclusions=new PositionNoteReason[FruitCount*SlotCount],
+                PresenceReasons=_presenceReasons.Select(PositionNoteReason.From).ToArray(), FixedReasons=_fixedReasons.Select(PositionNoteReason.From).ToArray()
+            };
+            for(int fruit=0;fruit<FruitCount;fruit++)for(int slot=0;slot<SlotCount;slot++)
+            {int i=fruit*SlotCount+slot;snapshot.Possible[i]=_possible[fruit,slot];snapshot.Exclusions[i]=PositionNoteReason.From(_exclusions[fruit,slot]);}
+            return snapshot;
+        }
+
+        public static PositionDeductionService Restore(PositionNotesSnapshot snapshot)
+        {
+            if (snapshot == null || !snapshot.IsValid()) return null;
+            var state=new PositionDeductionService(snapshot.Fruits,snapshot.Slots) {HasManualChanges=snapshot.Manual,IsConsistent=snapshot.Consistent};
+            for(int fruit=0;fruit<state.FruitCount;fruit++)
+            {
+                state._presence[fruit]=snapshot.Presence[fruit]; state._fixedSlots[fruit]=snapshot.Fixed[fruit];
+                state._presenceReasons[fruit]=snapshot.PresenceReasons?[fruit]?.ToReason();state._fixedReasons[fruit]=snapshot.FixedReasons?[fruit]?.ToReason();
+                for(int slot=0;slot<state.SlotCount;slot++)
+                {int i=fruit*state.SlotCount+slot;state._possible[fruit,slot]=snapshot.Possible[i];state._exclusions[fruit,slot]=snapshot.Exclusions?[i]?.ToReason();}
+            }
+            return state;
+        }
+
+        public PositionDeductionService Resize(int slots)
+        {
+            var resized=new PositionDeductionService(FruitCount,slots) {HasManualChanges=HasManualChanges};
+            for(int fruit=0;fruit<FruitCount;fruit++)
+            {
+                resized._presence[fruit]=_presence[fruit];resized._presenceReasons[fruit]=_presenceReasons[fruit];
+                for(int slot=0;slot<Math.Min(slots,SlotCount);slot++)
+                {resized._possible[fruit,slot]=_possible[fruit,slot];resized._exclusions[fruit,slot]=_exclusions[fruit,slot];}
+                if(_fixedSlots[fruit]>=0 && _fixedSlots[fruit]<slots)
+                {resized._fixedSlots[fruit]=_fixedSlots[fruit];resized._fixedReasons[fruit]=_fixedReasons[fruit];}
+                else resized.RefreshEditedPresence(fruit);
+                if(slots>SlotCount && resized._presence[fruit]==FruitPresence.Absent)resized._presence[fruit]=FruitPresence.Unknown;
+            }
+            return resized;
+        }
+
         public void RevealPosition(int fruit, int slot)
         {
             if (fruit < 1 || fruit > FruitCount || slot < 0 || slot >= SlotCount) return;
-            Assign(fruit - 1, slot, new PositionDeductionReason(PositionDeductionKind.RevealedPosition, slot)); Propagate();
+            AssignVisiblePosition(fruit - 1, slot, new PositionDeductionReason(PositionDeductionKind.RevealedPosition, slot)); Propagate();
         }
         public void RevealAbsent(int fruit)
         {
@@ -111,7 +190,7 @@ namespace Scripts
         {
             if (fruit < 1 || fruit > FruitCount || slot < 0 || slot >= SlotCount) return;
             if (detail == CardResultState.Correct)
-                Assign(fruit - 1, slot, new PositionDeductionReason(PositionDeductionKind.DetailedCorrect, slot, number));
+                AssignVisiblePosition(fruit - 1, slot, new PositionDeductionReason(PositionDeductionKind.DetailedCorrect, slot, number));
             else if (detail == CardResultState.Misplaced)
             {
                 var reason = new PositionDeductionReason(PositionDeductionKind.DetailedMisplaced, slot, number);
@@ -122,16 +201,29 @@ namespace Scripts
             Propagate();
         }
 
+        private void AssignVisiblePosition(int fruit,int slot,PositionDeductionReason reason)
+        {
+            if(HasManualChanges)
+            {
+                // A genuinely revealed position supersedes a conflicting pencil mark.
+                _possible[fruit,slot]=true;_exclusions[fruit,slot]=null;
+                if(_presence[fruit]==FruitPresence.Absent)_presence[fruit]=FruitPresence.Unknown;
+                _fixedSlots[fruit]=-1;_fixedReasons[fruit]=null;
+            }
+            Assign(fruit,slot,reason);
+        }
+
         private bool Exclude(int fruit, int slot, PositionDeductionReason reason)
         {
             if (!_possible[fruit, slot]) return false;
             if (_fixedSlots[fruit] == slot) IsConsistent = false;
+            if (HasManualChanges && _fixedSlots[fruit] == slot) { _fixedSlots[fruit] = -1; _fixedReasons[fruit] = null; }
             _possible[fruit, slot] = false; _exclusions[fruit, slot] = reason; return true;
         }
         private bool MarkPresent(int fruit, PositionDeductionReason reason)
         {
             if (_presence[fruit] == FruitPresence.Present) return false;
-            if (_presence[fruit] == FruitPresence.Absent) IsConsistent = false;
+            if (_presence[fruit] == FruitPresence.Absent) { IsConsistent = false; if (HasManualChanges) return false; }
             _presence[fruit] = FruitPresence.Present; _presenceReasons[fruit] = reason; return true;
         }
         private bool EliminateFruit(int fruit, PositionDeductionReason reason)
@@ -139,6 +231,7 @@ namespace Scripts
             bool changed = false;
             for (int slot = 0; slot < SlotCount; slot++) changed |= Exclude(fruit, slot, reason);
             if (_presence[fruit] == FruitPresence.Present) IsConsistent = false;
+            if (HasManualChanges) { _fixedSlots[fruit] = -1; _fixedReasons[fruit] = null; }
             if (_presence[fruit] != FruitPresence.Absent)
             { _presence[fruit] = FruitPresence.Absent; _presenceReasons[fruit] = reason; changed = true; }
             return changed;
@@ -160,7 +253,7 @@ namespace Scripts
             do
             {
                 changed = false;
-                for (int fruit = 0; fruit < FruitCount && IsConsistent; fruit++)
+                for (int fruit = 0; fruit < FruitCount && (IsConsistent || HasManualChanges); fruit++)
                 {
                     int count = 0, remaining = -1;
                     var reasons = new List<PositionDeductionReason> { _presenceReasons[fruit] };
@@ -170,7 +263,7 @@ namespace Scripts
                     else if (count == 1 && _presence[fruit] == FruitPresence.Present && _fixedSlots[fruit] < 0)
                         changed |= Assign(fruit, remaining, new PositionDeductionReason(PositionDeductionKind.OnlyPosition, remaining, dependencies: reasons));
                 }
-                for (int slot = 0; slot < SlotCount && IsConsistent; slot++)
+                for (int slot = 0; slot < SlotCount && (IsConsistent || HasManualChanges); slot++)
                 {
                     int count = 0, remaining = -1;
                     var reasons = new List<PositionDeductionReason>();
@@ -180,7 +273,34 @@ namespace Scripts
                     else if (count == 1 && _fixedSlots[remaining] < 0)
                         changed |= Assign(remaining, slot, new PositionDeductionReason(PositionDeductionKind.OnlyCandidate, slot, dependencies: reasons));
                 }
-            } while (changed && IsConsistent);
+            } while (changed && (IsConsistent || HasManualChanges));
         }
+    }
+
+    // A single visible notebook, including sticky consequences of manual changes.
+    public sealed class PositionNotesSnapshot
+    {
+        public int Fruits,Slots,HistoryCount;
+        public bool AutomaticEnabled,Manual,Edited,Consistent=true;
+        public bool[] Possible;
+        public FruitPresence[] Presence;
+        public int[] Fixed;
+        public PositionNoteReason[] Exclusions,PresenceReasons,FixedReasons;
+        public bool IsValid() => Slots>=1 && Slots<=5 && Fruits>=Slots && Fruits<=9 && HistoryCount>=0
+            && Possible?.Length==Fruits*Slots && Presence?.Length==Fruits && Fixed?.Length==Fruits
+            && (Exclusions==null || Exclusions.Length==Fruits*Slots) && (PresenceReasons==null || PresenceReasons.Length==Fruits)
+            && (FixedReasons==null || FixedReasons.Length==Fruits) && Fixed.All(slot=>slot>=-1 && slot<Slots);
+        public PositionNotesSnapshot Copy()
+        {
+            var copy=PositionDeductionService.Restore(this)?.Capture(HistoryCount,AutomaticEnabled);
+            if(copy!=null)copy.Edited=Edited;
+            return copy;
+        }
+    }
+    public sealed class PositionNoteReason
+    {
+        public PositionDeductionKind Kind; public int Slot; public int[] Guesses;
+        public static PositionNoteReason From(PositionDeductionReason reason)=>reason==null?null:new PositionNoteReason {Kind=reason.Kind,Slot=reason.Slot,Guesses=reason.Guesses.ToArray()};
+        public PositionDeductionReason ToReason()=>new PositionDeductionReason(Kind,Slot,dependencies:Guesses?.Select(guess=>new PositionDeductionReason(Kind,guess:guess)));
     }
 }
