@@ -212,6 +212,7 @@ namespace Scripts
 
     public interface INormalCardItemView : IDraggableCardItemView
     {
+        void SetPositionDeduction(FruitPresence presence);
         void SetFrameStatus(bool status);
         void SetLockImageStatus(bool status);
         void SetCardAnimation(bool isSelected);

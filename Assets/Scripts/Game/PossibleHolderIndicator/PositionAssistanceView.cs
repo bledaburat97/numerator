@@ -9,7 +9,7 @@ namespace Scripts
 {
     public sealed class PositionAssistanceView : IPositionAssistanceView
     {
-        private readonly InitialCardAreaController _cards;
+        private readonly IInitialCardAreaPresentation _cards;
         private readonly GameUIView _game;
         private readonly FruitLabGameLayout _layout;
         private readonly ResultAreaView _history;
@@ -28,10 +28,10 @@ namespace Scripts
         public bool IsReasonVisible => _reason != null && _reason.gameObject.activeSelf;
         public string ReasonText => _reasonText != null ? _reasonText.text : "";
 
-        public PositionAssistanceView(IInitialCardAreaController cards, GameUIView game, ResultAreaView history,
+        public PositionAssistanceView(IInitialCardAreaPresentation cards, GameUIView game, ResultAreaView history,
             IGameUIController ui, IHapticController haptics)
         {
-            _cards = cards as InitialCardAreaController; _game = game; _history = history; _ui = ui; _haptics = haptics;
+            _cards = cards ?? throw new ArgumentNullException(nameof(cards)); _game = game; _history = history; _ui = ui; _haptics = haptics;
             _layout = game != null ? game.GetComponentInParent<FruitLabGameLayout>() : null;
             _indicatorHitTest = HitTestIndicators;
             if (_game != null && _game.GetPairView() != null) _game.GetPairView().AdditionalControlHitTest = _indicatorHitTest;
@@ -92,8 +92,7 @@ namespace Scripts
                 if (state != null)
                     for (int slot = 0; slot < state.SlotCount; slot++)
                         holder.Indicators[slot].SetDeduction(!state.IsPossible(fruit, slot), state.FixedSlot(fruit) == slot);
-                if (_cards.TryGetCardItem(fruit - 1, out var card) && card.GetView() is NormalCardItemView view)
-                    view.SetPositionDeduction(state?.Presence(fruit) ?? FruitPresence.Unknown);
+                _cards.SetCardPresence(fruit - 1, state?.Presence(fruit) ?? FruitPresence.Unknown);
             }
             UpdateOccluders();
         }

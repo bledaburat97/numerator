@@ -52,7 +52,7 @@ namespace Scripts
             return GetTraySizeRatio() * _view.GetSizeOfBoxPrefab();
         }
 
-        private bool HasIndicators => _view is InitialCardAreaView view && view.HasPositionIndicators;
+        private bool HasIndicators => _view.HasPositionIndicators;
 
         private float GetTraySizeRatio()
         {

@@ -339,7 +339,7 @@ public static partial class FruitLabTutorialEditorTools
                         {
                             var lifecycle = lifecycleRoot.AddComponent<GamePlayContext>();
                             Field(lifecycle,"_gameSaveService",memory); Field(lifecycle,"_gameSaveSnapshotProvider",GrowingSnapshot(game,capacity));
-                            Field(lifecycle,"_levelTracker",game.Tracker); Field(lifecycle,"_levelFlowOrchestrator",new PlayingFlow()); Field(lifecycle,"_roundStateManager",game.Round);
+                            Field(lifecycle,"_levelTracker",game.Tracker); Field(lifecycle,"_session",new PlayingFlow()); Field(lifecycle,"_roundStateManager",game.Round);
                             typeof(GamePlayContext).GetMethod("TrySave",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(lifecycle,null);
                             Require(!memory.HasSavedGame(),"Closing during the last-life animation cannot resurrect the previous checkpoint");
                         }

@@ -74,6 +74,8 @@ namespace Scripts
     
     public interface IInitialCardAreaView
     {
+        bool HasPositionIndicators { get; }
+        void SetPositionIndicators(bool visible);
         RectTransform GetRectTransform();
         IInitialHolderView CreateCardHolderViewOnUpperHolder();
         IInitialHolderView CreateCardHolderViewOnLowerHolder();

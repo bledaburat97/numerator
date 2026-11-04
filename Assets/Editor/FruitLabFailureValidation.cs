@@ -499,14 +499,12 @@ public static class FruitLabFailureValidation
         public void DeleteSave() => Data = null;
         public bool HasSavedGame() => Data != null;
     }
-    private sealed class BombFlow : ILevelFlowOrchestrator
+    private sealed class BombFlow : ILevelSession
     {
         public void Begin(LevelEntryMode mode) { }
-        public void Retry() { }
-        public void GoToNextLevel() { }
-        public bool IsGameOver() => false;
-        public bool IsTransitioning() => false;
-        public LevelFlowState GetState() => LevelFlowState.Playing;
+        public bool IsGameOver => false;
+        public LevelFlowState State => LevelFlowState.Playing;
+        public void Dispose() { }
     }
     private sealed class BombResults : IResultAreaController
     {

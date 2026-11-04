@@ -7,7 +7,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class InitialCardAreaController : IInitialCardAreaController, IInitialCardAreaEvents
+    public class InitialCardAreaController : IInitialCardAreaController, IInitialCardAreaEvents, IInitialCardAreaPresentation
     {
         private IBoardAreaController _boardAreaController;
         private IBoardHolderCountManager _boardHolderCountManager;
@@ -40,10 +40,11 @@ namespace Scripts
         }
         
         public event Action Rebuilt;
-        public InitialHolderView GetHolderView(int index) => TryGetCardHolder(index, out var holder) ? holder.GetView() as InitialHolderView : null;
-        public void SetPositionIndicators(bool enabled)
+        public IInitialHolderView GetHolderView(int index) => TryGetCardHolder(index, out var holder) ? holder.GetView() : null;
+        public void SetPositionIndicators(bool enabled) => _view.SetPositionIndicators(enabled);
+        public void SetCardPresence(int index, FruitPresence presence)
         {
-            if (_view is InitialCardAreaView view) view.SetPositionIndicators(enabled);
+            if (TryGetCardItem(index, out var card)) card.GetView().SetPositionDeduction(presence);
         }
 
         public void Initialize(bool isNewGame)
@@ -249,6 +250,15 @@ namespace Scripts
     }
     
     public interface IInitialCardAreaEvents { event Action Rebuilt; }
+
+    public interface IInitialCardAreaPresentation
+    {
+        int GetCardCount();
+        IInitialHolderView GetHolderView(int index);
+        void SetPositionIndicators(bool enabled);
+        void SetCardPresence(int index, FruitPresence presence);
+        void RefreshLayout();
+    }
 
     public interface IInitialCardAreaController
     {

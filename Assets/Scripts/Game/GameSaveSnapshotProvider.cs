@@ -12,7 +12,7 @@ namespace Scripts
         [InjectOptional] private ILevelTracker _tracker;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
-        private readonly ILevelFlowOrchestrator _levelFlowOrchestrator;
+        private readonly ILevelSession _session;
         private readonly IBoardHolderCountManager _boardHolderCountManager;
         private readonly IRoundStateManager _roundStateManager;
 
@@ -20,13 +20,13 @@ namespace Scripts
         public GameSaveSnapshotProvider(
             ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager,
-            ILevelFlowOrchestrator levelFlowOrchestrator,
+            ILevelSession session,
             IBoardHolderCountManager boardHolderCountManager,
             IRoundStateManager roundStateManager)
         {
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
-            _levelFlowOrchestrator = levelFlowOrchestrator;
+            _session = session;
             _boardHolderCountManager = boardHolderCountManager;
             _roundStateManager = roundStateManager;
         }
@@ -40,8 +40,8 @@ namespace Scripts
                 || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || (info != null && info.Any(card => card.isLocked || !card.isExisted));
             if (_roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess) return false;
-            if (_roundStateManager.GetRemainingGuessCount() <= 0 || _levelFlowOrchestrator.IsGameOver()) return false;
-            if (_levelFlowOrchestrator.IsTransitioning()) return false;
+            if (_roundStateManager.GetRemainingGuessCount() <= 0 || _session.IsGameOver) return false;
+            if (_session.State != LevelFlowState.Idle && _session.State != LevelFlowState.Playing) return false;
 
             levelSaveData = new LevelSaveData
             {

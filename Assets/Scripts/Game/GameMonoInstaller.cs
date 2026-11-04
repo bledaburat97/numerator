@@ -53,14 +53,18 @@ namespace Scripts
                 .WithArguments(cardItemInfoPopupView);
             Container.Bind<IInitialCardAreaLayoutManager>().To<InitialCardAreaLayoutManager>().AsSingle();
             Container.Bind<IInitialCardAreaFactory>().To<InitialCardAreaFactory>().AsSingle();
-            Container.Bind<IInitialCardAreaController>().To<InitialCardAreaController>().AsSingle();
+            Container.Bind<InitialCardAreaController>().AsSingle();
+            Container.Bind<IInitialCardAreaController>().To<InitialCardAreaController>().FromResolve();
+            Container.Bind<IInitialCardAreaPresentation>().To<InitialCardAreaController>().FromResolve();
             Container.Bind<ICardInteractionManager>().To<CardInteractionManager>().AsSingle();
             Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView);
             Container.Bind<IGamePopupCreator>().To<GamePopupCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ICardItemLocator>().To<CardItemLocator>().AsSingle();
             Container.Bind<ITargetNumberCreator>().To<TargetNumberCreator>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<IGameUIController>().To<GameUIController>().AsSingle()
+            Container.Bind<GameUIController>().AsSingle()
                 .WithArguments(gameUI);
+            Container.Bind<IGameUIController>().To<GameUIController>().FromResolve();
+            Container.Bind<IMultiplayerHudPresentation>().To<GameUIController>().FromResolve();
             Container.Bind<IGamePowerUpAreaController>().To<GamePowerUpAreaController>().AsSingle()
                 .WithArguments(ResolvePowerUpAreaView());
             Container.Bind<IVerticalCrystalProgressController>().To<VerticalCrystalProgressController>().AsSingle()
@@ -77,7 +81,9 @@ namespace Scripts
             Container.Bind<IHintProvider>().To<HintProvider>().AsSingle().NonLazy();
             Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
             Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();
-            Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);
+            Container.Bind<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);
+            Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().FromResolve();
+            Container.Bind<IMultiplayerResultPresentation>().To<LevelEndPopupController>().FromResolve();
             Container.Bind<ILevelSuccessBoardAnimationController>().To<LevelSuccessBoardAnimationController>().AsSingle();
             Container.Bind<ILevelSuccessCleanupAnimationController>().To<LevelSuccessCleanupAnimationController>().AsSingle();
             Container.Bind<ILevelSuccessRewardCollectionAnimationController>()
@@ -88,13 +94,15 @@ namespace Scripts
             Container.Bind<RoundBuilder>().AsSingle();
             Container.Bind<LevelPresentation>().AsSingle();
             Container.Bind<MultiplayerRoundPresenter>().AsSingle();
+            Container.Bind<SinglePlayerRoundCompletion>().AsSingle();
+            Container.Bind<SinglePlayerEndPresenter>().AsSingle();
             Container.Bind<SinglePlayerSession>().AsSingle();
+            Container.Bind<ISinglePlayerProgression>().To<SinglePlayerSession>().FromResolve();
             Container.Bind<MultiplayerSession>().AsSingle();
             Container.Bind<ILevelSession>().FromMethod(context =>
                 context.Container.Resolve<ILevelTracker>().GetGameOption() == GameOption.MultiPlayer
                     ? (ILevelSession)context.Container.Resolve<MultiplayerSession>()
                     : context.Container.Resolve<SinglePlayerSession>()).AsSingle();
-            Container.Bind<ILevelFlowOrchestrator>().To<LevelFlowOrchestrator>().AsSingle();
             Container.Bind<BoardCardIndexManager>().AsSingle();
             Container.Bind<IBoardPlacementQuery>().To<BoardCardIndexManager>().FromResolve();
             Container.Bind<IBoardPlacementCommands>().To<BoardCardIndexManager>().FromResolve();

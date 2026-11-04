@@ -5,7 +5,7 @@ using Zenject;
 
 namespace Game
 {
-    public class LevelEndPopupController : ILevelEndPopupController
+    public class LevelEndPopupController : ILevelEndPopupController, IMultiplayerResultPresentation
     {
         private LevelFinishPopupView _view;
 

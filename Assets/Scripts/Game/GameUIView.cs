@@ -253,6 +253,9 @@ namespace Scripts
 
     public interface IGameUIView
     {
+        void SetMultiplayerStatus(string text);
+        void SetMultiplayerTurn(string text, bool showTimer, bool localTurn);
+        void SetMultiplayerTimer(int remainingSeconds, bool visible);
         void SetUserText(string text);
         void SetOpponentText(string text);
         IBaseButtonView GetCheckButton();

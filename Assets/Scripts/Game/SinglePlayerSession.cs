@@ -1,30 +1,22 @@
 using System;
-using DG.Tweening;
 using Scripts;
-using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace Game
 {
-    public sealed class SinglePlayerSession : ILevelSession
+    public sealed class SinglePlayerSession : ILevelSession, ISinglePlayerProgression
     {
         private readonly ILevelTracker _levelTracker;
         private readonly ILevelDataCreator _levelDataCreator;
         private readonly IGameSaveService _gameSaveService;
         private readonly ILevelSaveDataManager _levelSaveDataManager;
         private readonly IBoardHolderCountManager _boardHolderCountManager;
-        private readonly ITargetNumberCreator _targetNumberCreator;
-        private readonly IResultAreaController _resultAreaController;
         private readonly IGamePopupCreator _gamePopupCreator;
-        private readonly IGameUIController _gameUIController;
-        private readonly IVerticalCrystalProgressController _verticalCrystalProgressController;
         private readonly IGuessManager _guessManager;
-        private readonly ICardItemInfoPopupController _cardItemInfoPopupController;
         private readonly IResultManager _resultManager;
         private readonly IRoundStateManager _roundStateManager;
-        private readonly ILevelEndPopupController _levelEndPopupController;
-        private readonly ILevelSuccessAnimationManager _levelSuccessAnimationManager;
-        private readonly ILevelFailAnimationManager _levelFailAnimationManager;
+        private readonly SinglePlayerRoundCompletion _completion;
+        private readonly SinglePlayerEndPresenter _endPresenter;
         private readonly LevelMechanicsController _mechanics;
         private readonly RoundBuilder _builder;
         private readonly LevelPresentation _presentation;
@@ -37,18 +29,12 @@ namespace Game
             IGameSaveService gameSaveService,
             ILevelSaveDataManager levelSaveDataManager,
             IBoardHolderCountManager boardHolderCountManager,
-            ITargetNumberCreator targetNumberCreator,
-            IResultAreaController resultAreaController,
             IGamePopupCreator gamePopupCreator,
-            IGameUIController gameUIController,
-            IVerticalCrystalProgressController verticalCrystalProgressController,
             IGuessManager guessManager,
-            ICardItemInfoPopupController cardItemInfoPopupController,
             IResultManager resultManager,
             IRoundStateManager roundStateManager,
-            ILevelEndPopupController levelEndPopupController,
-            ILevelSuccessAnimationManager levelSuccessAnimationManager,
-            ILevelFailAnimationManager levelFailAnimationManager,
+            SinglePlayerRoundCompletion completion,
+            SinglePlayerEndPresenter endPresenter,
             LevelMechanicsController mechanics,
             RoundBuilder builder,
             LevelPresentation presentation)
@@ -58,18 +44,12 @@ namespace Game
             _gameSaveService = gameSaveService;
             _levelSaveDataManager = levelSaveDataManager;
             _boardHolderCountManager = boardHolderCountManager;
-            _targetNumberCreator = targetNumberCreator;
-            _resultAreaController = resultAreaController;
             _gamePopupCreator = gamePopupCreator;
-            _gameUIController = gameUIController;
-            _verticalCrystalProgressController = verticalCrystalProgressController;
             _guessManager = guessManager;
-            _cardItemInfoPopupController = cardItemInfoPopupController;
             _resultManager = resultManager;
             _roundStateManager = roundStateManager;
-            _levelEndPopupController = levelEndPopupController;
-            _levelSuccessAnimationManager = levelSuccessAnimationManager;
-            _levelFailAnimationManager = levelFailAnimationManager;
+            _completion = completion;
+            _endPresenter = endPresenter;
             _mechanics = mechanics;
             _builder = builder;
             _presentation = presentation;
@@ -82,6 +62,8 @@ namespace Game
         public void Begin(LevelEntryMode mode)
         {
             if (_disposed) return;
+            _endPresenter.PrepareRound();
+            _completion.BeginRound();
             _presentation.PrepareRound(); _isGameOver = false; _state = LevelFlowState.Building;
             BeginSinglePlayer(mode);
         }
@@ -89,12 +71,14 @@ namespace Game
         {
             if (_disposed || _state == LevelFlowState.Transitioning) return;
             _state = LevelFlowState.Transitioning;
+            _endPresenter.PrepareRound();
             _presentation.Retry(() => Begin(LevelEntryMode.Retry));
         }
         public void GoToNextLevel()
         {
             if (_disposed || _state == LevelFlowState.Transitioning) return;
             _state = LevelFlowState.Transitioning;
+            _endPresenter.PrepareRound();
             _presentation.Next(() => Begin(LevelEntryMode.NextLevel));
         }
         private void BeginSinglePlayer(LevelEntryMode mode)
@@ -157,12 +141,7 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingSuccess;
-            _gamePopupCreator.EndTutorials(true);
-            _gameUIController.SetAllButtonsUnclickable();
-            _resultAreaController.RevealAnswer(_targetNumberCreator.GetHistoryTargetCards());
-            _gameSaveService.DeleteSave();
-            _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
-            StartSuccessFlow();
+            CompleteRound(true);
         }
         private void OnLevelFail(object sender, EventArgs args)
         {
@@ -170,64 +149,20 @@ namespace Game
 
             _isGameOver = true;
             _state = LevelFlowState.EndingFail;
-            GameTelemetry.Finish("fail", _roundStateManager.GetTriedCardsList().Count);
-            _gamePopupCreator.EndTutorials(false);
-            _gameUIController.SetAllButtonsUnclickable();
-            _resultAreaController.RevealAnswer(_targetNumberCreator.GetHistoryTargetCards());
-            _gameSaveService.DeleteSave();
-            _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
-            StartFailFlow();
+            CompleteRound(false);
         }
-        private void StartSuccessFlow()
+        private void CompleteRound(bool won)
         {
-            int previousCoinCount = _levelTracker.GetCoinCount();
-            int previousCrystalProgressCount = _levelTracker.GetCrystalProgressCount();
-            RewardType rewardTypeBeforeCollection = _levelTracker.GetCurrentRewardType();
-            _roundStateManager.GetActiveRewardCounts(out int earnedCoinCount, out int earnedCrystalCount);
-            GameTelemetry.Finish("win", _roundStateManager.GetTriedCardsList().Count, earnedCoinCount, earnedCrystalCount);
-            _levelTracker.IncrementLevelIdWithRewards(earnedCoinCount, earnedCrystalCount);
-
-            _levelEndPopupController.SetAllStatusFalse();
-            if (earnedCrystalCount > 0)
-                _verticalCrystalProgressController.PrepareForCollection(previousCrystalProgressCount, rewardTypeBeforeCollection);
-            _levelEndPopupController.SetOutcome(true, earnedCrystalCount);
-            _levelEndPopupController.SetPopupStatus(false);
-            _levelEndPopupController.InitButton(
-                LevelFinishButtonType.Game,
-                "Bölüm " + (_levelTracker.GetLevelId() + 1),
-                GoToNextLevel);
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menü", OnMenuButtonClicked);
-            _levelEndPopupController.InitText("Kazandın!");
-            _levelSuccessAnimationManager.SuccessLevelAnimation(
-                earnedCoinCount,
-                earnedCrystalCount,
-                previousCoinCount,
-                previousCrystalProgressCount,
-                rewardTypeBeforeCollection)
-                .OnComplete(() =>
-                {
-                    if (_state == LevelFlowState.EndingSuccess) _gamePopupCreator.ShowRewardTutorials(earnedCoinCount, earnedCrystalCount);
-                });
-        }
-        private void StartFailFlow()
-        {
-            _levelEndPopupController.SetAllStatusFalse();
-            _levelEndPopupController.SetOutcome(false);
-            _levelEndPopupController.SetPopupStatus(true);
-            _levelEndPopupController.InitText("Tekrar dene");
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Game, "Tekrar oyna", Retry);
-            _levelEndPopupController.InitButton(LevelFinishButtonType.Menu, "Menü", OnMenuButtonClicked);
-            _levelFailAnimationManager.FailLevelAnimation();
-        }
-        private void OnMenuButtonClicked()
-        {
-            SceneManager.LoadScene("Menu");
+            _gamePopupCreator.EndTutorials(won);
+            var result = _completion.Complete(won);
+            GameTelemetry.Finish(result.Won ? "win" : "fail", result.GuessCount, result.EarnedCoins, result.EarnedCrystals);
+            _endPresenter.Present(result, this);
         }
         public void Dispose()
         {
             if (_disposed) return; _disposed = true;
             _resultManager.LevelSuccessEvent -= OnLevelSuccess; _guessManager.LevelFailEvent -= OnLevelFail;
-            _presentation.Dispose(); GameTelemetry.Abandon("scene_exit");
+            _endPresenter.Dispose(); _presentation.Dispose(); GameTelemetry.Abandon("scene_exit");
         }
     }
 }

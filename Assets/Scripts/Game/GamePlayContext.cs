@@ -18,13 +18,14 @@ namespace Scripts
         [Inject] private IGameClockController _gameClockController;
         [Inject] private IHapticController _hapticController;
         [Inject] private IGamePowerUpAreaController _gamePowerUpAreaController;
-        [Inject] private ILevelFlowOrchestrator _levelFlowOrchestrator;
+        [Inject] private ILevelSession _session;
         [Inject] private IBoardAreaController _boardAreaController;
         [Inject] private IBoardPlacementQuery _boardQuery;
         [Inject] private IInitialCardAreaController _initialCardAreaController;
         [Inject] private IGuessManager _guessManager;
         [Inject] private IRoundStateManager _roundStateManager;
         [Inject] private IGameUIController _gameUi;
+        [Inject] private IMultiplayerHudPresentation _multiplayerHud;
         [Inject] private TutorialInputGate _tutorialGate;
         [Inject] private LevelMechanicsController _mechanics;
         [Inject] private PositionAssistanceController _positionAssistance;
@@ -41,7 +42,8 @@ namespace Scripts
             _cardPlacementCoordinator.SetLongPressHandler(null);
             var view = GetComponentInChildren<GameUIView>(true);
             view?.GetPairView()?.Configure(new PairDragPresenter(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
-                _tutorialGate, _gameUi, () => !_levelFlowOrchestrator.IsGameOver() && !_levelFlowOrchestrator.IsTransitioning()));
+                _tutorialGate, _gameUi, () => !_session.IsGameOver
+                    && (_session.State == LevelFlowState.Idle || _session.State == LevelFlowState.Playing)));
             _mechanics.Attach(new LevelMechanicsPresenter(view, _boardAreaController), TrySave);
             InitializeHapticController();
             InitializeGameClock();
@@ -55,12 +57,13 @@ namespace Scripts
         private void Update()
         {
             _positionAssistance?.Tick();
-            (_gameUi as GameUIController)?.TickPresentation();
+            _multiplayerHud?.TickPresentation();
         }
 
         private void LateUpdate()
         {
-            if (!_layoutRefreshPending || _levelFlowOrchestrator.IsTransitioning() || _levelFlowOrchestrator.IsGameOver()) return;
+            if (!_layoutRefreshPending || _session.IsGameOver
+                || (_session.State != LevelFlowState.Idle && _session.State != LevelFlowState.Playing)) return;
             _layoutRefreshPending = false;
             _boardAreaController.RefreshLayout();
             _initialCardAreaController.RefreshLayout();
@@ -95,7 +98,7 @@ namespace Scripts
                 entryMode = LevelEntryMode.Resume;
             }
 
-            _levelFlowOrchestrator.Begin(entryMode);
+            _session.Begin(entryMode);
         }
 
         private void InitializePowerUpUi()
@@ -112,7 +115,7 @@ namespace Scripts
             _cardPlacementCoordinator?.Unsubscribe();
             _cardInteractionManager?.Unsubscribe();
             _cardItemInfoPopupController?.Unsubscribe();
-            (_levelFlowOrchestrator as System.IDisposable)?.Dispose();
+            _session?.Dispose();
         }
         
         private void CancelCardGestures()
@@ -134,7 +137,7 @@ namespace Scripts
                 {
                     _gameSaveService.Save(levelSaveData);
                 }
-                else if (_levelFlowOrchestrator?.GetState() == LevelFlowState.Playing && _roundStateManager?.GetRemainingGuessCount() <= 0)
+                else if (_session?.State == LevelFlowState.Playing && _roundStateManager?.GetRemainingGuessCount() <= 0)
                 {
                     // The fail animation can still be running when the app closes.
                     // Do not leave the previous, still-alive turn available to resume.

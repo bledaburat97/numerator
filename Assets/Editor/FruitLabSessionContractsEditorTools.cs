@@ -1,0 +1,321 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using DG.Tweening;
+using Game;
+using Scripts;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Zenject;
+
+public static partial class FruitLabTutorialEditorTools
+{
+    public static void ReviewSessionContracts(Canvas canvas, Camera camera)
+    {
+        var previous = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
+        var errors = new List<string>();
+        Application.LogCallback collect = (message, stack, type) => {
+            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) errors.Add(message);
+        };
+        Application.logMessageReceived += collect;
+        try
+        {
+            ValidateSessionAliases();
+            int outcomes = 0;
+            for (int slots = 2; slots <= 5; slots++)
+            foreach (bool won in new[] {true,false})
+            foreach (bool rewardsActive in new[] {true,false})
+            {
+                ClearPreviewActors(canvas);
+                using (var game = new Fixture(canvas,camera,new LevelData {NumOfBoardHolders=slots,NumOfCards=9,MaxNumOfTries=9}))
+                {
+                    Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_starCount",11);
+                    Field(game.Tracker,"_giftStarCount",ConstantValues.NUM_OF_STARS_FOR_WILD-1);
+                    game.BuildActors();game.Gate.Clear();
+                    if (!rewardsActive)
+                        for(int i=0;i<game.Round.GetLifeBarRewardInfoList().Count;i++)game.Round.SetLifeBarRewardStatus(i,false);
+                    game.Round.AddTriedCards(Enumerable.Range(1,slots).ToList());
+                    game.Round.GetActiveRewardCounts(out int coins,out int crystals);
+                    var reward=game.Tracker.GetCurrentRewardType();int stock=game.Tracker.GetPowerUpCount(reward);
+                    var saves=(MemorySave)Get(game,"_memory");saves.Save(new LevelSaveData());
+                    var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves);
+                    var result=completion.Complete(won);
+                    Require(result.Won==won && result.PreviousCoins==11 && result.PreviousCrystalProgress==ConstantValues.NUM_OF_STARS_FOR_WILD-1
+                        && result.PreviousReward==reward && result.GuessCount==1,"Outcome captures the pre-award state independently of animations");
+                    Require(game.Tracker.GetLevelId()==(won?21:20) && game.Tracker.GetCoinCount()==11+(won?coins:0)
+                        && result.EarnedCoins==(won?coins:0) && result.EarnedCrystals==(won?crystals:0) && saves.Data==null,
+                        "Only success awards earned tokens and progress; both outcomes clear the checkpoint before presentation");
+                    Require(game.Tracker.GetPowerUpCount(reward)==stock+(won && crystals>0?1:0),"Crossing crystal capacity grants the powerup before any animation or claim button");
+                    int balance=game.Tracker.GetCoinCount(),progress=game.Tracker.GetCrystalProgressCount();
+                    Require(ReferenceEquals(result,completion.Complete(won)) && ReferenceEquals(result,completion.Complete(!won))
+                        && game.Tracker.GetLevelId()==(won?21:20) && game.Tracker.GetCoinCount()==balance && game.Tracker.GetCrystalProgressCount()==progress,
+                        "Duplicate or conflicting completion cannot award twice");
+
+                    var popupView=canvas.GetComponentInChildren<LevelFinishPopupView>(true);
+                    var popup=new LevelEndPopupController(popupView);
+                    var popups=new ContractPopups();var animations=new ContractEndAnimations();var progression=new ContractProgression();
+                    var bar=new VerticalCrystalProgressController(popupView.GetVerticalCrystalProgressView(),game.Tracker,new HapticController());
+                    using(var presenter=new SinglePlayerEndPresenter(popups,game.UI,game._area,game.Target,new ContractCardInfo(),bar,popup,animations,animations))
+                    {
+                        presenter.Present(result,progression);
+                        Require(popups.Ends==0 && animations.Success==won && (animations.Coins,animations.Crystals)==(result.EarnedCoins,result.EarnedCrystals),
+                            "Presenter consumes the captured outcome and passes exact earned counts to the animation");
+                        var crystalObject=(Component)popupView.GetVerticalCrystalProgressView();
+                        Require(crystalObject.gameObject.activeSelf==(won && crystals>0),"Result popup shows the powerup bar only when crystals were earned");
+                        popup.ChangeFadeButtons(0,1).Complete(true);
+                        var button=((Component)popupView.GetButton(LevelFinishButtonType.Game)).GetComponentInChildren<BaseButtonView>(true);
+                        Click(button);
+                        Require(won?progression.Next==1 && progression.Retries==0:progression.Retries==1 && progression.Next==0,
+                            "Real result button invokes the singleplayer progression contract");
+                        presenter.PrepareRound();Tick(.5f);
+                        Require(popups.RewardTips==0 && !animations.Sequence.IsActive(),"New rounds cancel pending end callbacks and animations");
+                        presenter.Present(result,progression);Tick(.5f);
+                        Require(popups.RewardTips==(won?1:0),"Reward explanation appears only after a completed success presentation");
+                        presenter.Present(result,progression);presenter.Dispose();Tick(.5f);
+                        Require(popups.RewardTips==(won?1:0) && game.Tracker.GetCoinCount()==balance && game.Tracker.GetCrystalProgressCount()==progress,
+                            "Disposed or replayed presentation cannot alter rewards or open late tutorials");
+                    }
+                    completion.BeginRound();completion.Complete(false);
+                    Require(game.Tracker.GetLevelId()==(won?21:20),"The next failed round starts a fresh completion without advancing progress");
+                    outcomes++;
+                }
+            }
+            ValidateSessionLifecycle(canvas,camera);
+            ValidateAlternatePresentations(canvas,camera);
+            Require(errors.Count==0,"No Unity errors in session contracts review: "+string.Join(" | ",errors));
+            Debug.Log("FRUIT_LAB_SESSION_CONTRACTS_PASS: "+outcomes+" outcomes; zero/full rewards, overflow, duplicate completion, real buttons, cancellation, alternate HUD/result/indicator implementations.");
+        }
+        finally {DOTween.defaultUpdateType=previous;Application.logMessageReceived-=collect;}
+    }
+
+    private static void ValidateSessionAliases()
+    {
+        var scene=EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
+        try
+        {
+            foreach(var mode in new[]{GameOption.SinglePlayer,GameOption.MultiPlayer})
+            {
+                var root=new GameObject("ContractBindingTracker");root.SetActive(false);SceneManager.MoveGameObjectToScene(root,scene);
+                ILevelSession session=null;PositionAssistanceController assistance=null;
+                try
+                {
+                    var tracker=root.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_gameOption",mode);
+                    var container=new DiContainer();
+                    container.Bind<Context>().FromInstance(Find<SceneContext>(scene));
+                    container.Bind<ILevelTracker>().FromInstance(tracker);container.Bind<IGameSaveService>().FromInstance(new MemorySave());
+                    container.Bind<IHapticController>().To<HapticController>().AsSingle();
+                    container.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
+                    var installer=Find<GameMonoInstaller>(scene);
+                    typeof(MonoInstallerBase).GetProperty("Container",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).SetValue(installer,container);
+                    installer.InstallBindings();container.Rebind<IGamePopupCreator>().FromInstance(new ContractPopups());
+                    session=container.Resolve<ILevelSession>();
+                    Require(mode==GameOption.SinglePlayer?session is SinglePlayerSession:session is MultiplayerSession,"Installer selects the session for the requested mode");
+                    Require(ReferenceEquals(container.Resolve<IGameUIController>(),container.Resolve<IMultiplayerHudPresentation>())
+                        && ReferenceEquals(container.Resolve<ILevelEndPopupController>(),container.Resolve<IMultiplayerResultPresentation>())
+                        && ReferenceEquals(container.Resolve<IInitialCardAreaController>(),container.Resolve<IInitialCardAreaPresentation>()),
+                        "Capabilities alias the same live UI, popup and card controller instances");
+                    if(mode==GameOption.SinglePlayer)Require(ReferenceEquals(session,container.Resolve<ISinglePlayerProgression>()),"Progression belongs to the active singleplayer session");
+                    else Require(!(session is ISinglePlayerProgression),"Multiplayer does not expose singleplayer progression");
+                    assistance=container.Resolve<PositionAssistanceController>();container.ResolveRoots();
+                }
+                finally {assistance?.Dispose();session?.Dispose();UnityEngine.Object.DestroyImmediate(root);}
+            }
+        }
+        finally {EditorSceneManager.ClosePreviewScene(scene);}
+    }
+
+    private static void ValidateSessionLifecycle(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);
+        var definition=new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9,Mechanic=LevelMechanic.Normal};
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",1);
+            var saves=(MemorySave)Get(game,"_memory");
+            LevelSaveData checkpoint;
+            using(var session=CreateContractSession(game,definition))
+            {
+                session.Begin(LevelEntryMode.New);Tick(.5f);game.Gate.Clear();
+                Require(session.State==LevelFlowState.Playing,"The selected singleplayer session starts without an orchestrator");
+                game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
+                for(int i=0;i<3;i++)Require(game.Placement.TryPlaceCardOnBoard(i,i),"Winning board placement");
+                Tick(.4f);game.Check();
+                var popups=(ContractPopups)Get(Get(session,"_endPresenter"),"_popups");
+                Require(popups.Ends==1 && popups.LastOutcome && popups.EndLevel==1,"The completed tutorial belongs to the old level before progress advances");
+                Require(session.IsGameOver && session.State==LevelFlowState.EndingSuccess && game.Tracker.GetLevelId()==2 && saves.Data==null,
+                    "Real winning guesses commit before the success animation completes");
+                for(int i=0;i<120;i++)Tick(.1f);
+                ClickContractGameButton(canvas);Require(session.State==LevelFlowState.Transitioning,"Next-level action enters the transition");
+                for(int i=0;i<15;i++)Tick(.1f);game.Gate.Clear();
+                Require(!session.IsGameOver && session.State==LevelFlowState.Playing && game.Tracker.GetLevelId()==2,"Next-level action builds a fresh playable round");
+                game._guess.FailRound();for(int i=0;i<35;i++)Tick(.1f);
+                Require(popups.Ends==2 && !popups.LastOutcome && popups.EndLevel==2,"Failure ends its tutorial once without advancing the level");
+                Require(session.State==LevelFlowState.EndingFail && saves.Data==null,"Failure clears the old checkpoint without advancing progress");
+                ClickContractGameButton(canvas);for(int i=0;i<20;i++)Tick(.1f);game.Gate.Clear();
+                Require(session.State==LevelFlowState.Playing && game.Tracker.GetLevelId()==2 && game.Round.GetTriedCardsList().Count==0,
+                    "Retry rebuilds the same level and resets its round state");
+                var answer=game.Target.GetTargetCardsList();
+                for(int i=0;i<3;i++)Require(game.Placement.TryPlaceCardOnBoard(answer[(i+1)%3]-1,i),"Resume checkpoint guess placement");
+                Tick(.4f);game.Check();Tick(1.5f);
+                var snapshots=new GameSaveSnapshotProvider(game.Target,game._info,session,game._counts,game.Round);
+                Field(snapshots,"_tracker",game.Tracker);Field(snapshots,"_levels",new TestLevel(definition));Field(snapshots,"_saveData",game._saves);
+                Require(snapshots.TryCreateSnapshot(out checkpoint),"Active sessions remain saveable through ILevelSession");
+                saves.Save(checkpoint);
+            }
+            game.Initial.ClearInitialCardHolders();game.Board.ClearBoardHolders();game._area.RemoveResultBlocks();
+            using(var resumed=CreateContractSession(game,definition))
+            {
+                resumed.Begin(LevelEntryMode.Resume);game.Gate.Clear();
+                Require(resumed.State==LevelFlowState.Playing && !resumed.IsGameOver
+                    && game.Round.GetRemainingGuessCount()==checkpoint.RemainingGuessCount
+                    && game.Target.GetTargetCardsList().SequenceEqual(checkpoint.TargetCards)
+                    && game.Round.GetTriedCardsList().Count==checkpoint.TriedCardsList.Count,
+                    "Resume restores the actual checkpoint after the session contract change");
+            }
+        }
+    }
+
+    private static SinglePlayerSession CreateContractSession(Fixture game,LevelData definition)
+    {
+        var popups=new ContractPopups {Level=game.Tracker.GetLevelId};var cardInfo=new ContractCardInfo();
+        var popup=new LevelEndPopupController(game.Canvas.GetComponentInChildren<LevelFinishPopupView>(true));
+        var life=new LifeBarController(game.Canvas.GetComponentInChildren<LifeBarView>(true));
+        var fade=new FadePanelController(game.Canvas.GetComponentInChildren<FadePanelView>(true));
+        var bar=new VerticalCrystalProgressController(game.Canvas.GetComponentInChildren<VerticalCrystalProgressView>(true),game.Tracker,new HapticController());
+        var failure=new LevelFailAnimationManager(popup,game.Initial,fade,game.UI,life,game._area,game.Board,game.Placement);
+        var success=new LevelSuccessAnimationManager(popup,fade,new LevelSuccessBoardAnimationController(game.Board,game.Placement),
+            new LevelSuccessCleanupAnimationController(game.Initial,game.UI,life,game._area,game.Placement),
+            new LevelSuccessRewardCollectionAnimationController(life,game.UI,bar,popup));
+        var builder=new RoundBuilder(new TestLevel(definition),game._saves,game.Board,game._counts,game.Target,game._area,life,game.Initial,game.UI,game._powers,
+            (ICardItemLocator)Get(game.Placement,"_cardItemLocator"),game._guess,game._info,cardInfo,game.Placement,(ICardInteractionManager)Get(game,"_interaction"),game.Results,game.Round);
+        var saves=(MemorySave)Get(game,"_memory");
+        return new SinglePlayerSession(game.Tracker,new TestLevel(definition),saves,game._saves,game._counts,popups,game._guess,game.Results,game.Round,
+            new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves),new SinglePlayerEndPresenter(popups,game.UI,game._area,game.Target,cardInfo,bar,popup,success,failure),
+            null,builder,new LevelPresentation(popups,game._powers,bar,new ContractStartAnimation(),popup,failure,fade));
+    }
+    private static void ClickContractGameButton(Canvas canvas)
+    {
+        var button=canvas.GetComponentInChildren<LevelFinishPopupView>(true).GetButton(LevelFinishButtonType.Game);
+        Click(((Component)button).GetComponentInChildren<BaseButtonView>(true));
+    }
+
+    private static void ValidateAlternatePresentations(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);
+        var level=new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9};
+        using(var game=new Fixture(canvas,camera,level))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();
+            var cards=new ContractInitialPresentation(game.Initial);
+            using(var view=new PositionAssistanceView(cards,game.View,canvas.GetComponentInChildren<ResultAreaView>(true),game.UI,null))
+            {
+                var state=new PositionDeductionService(7,3);state.ApplyGuess(1,new[]{1,2,3},0,3);
+                view.SetEnabled(true);view.Render(state,null);
+                Require(cards.Rendered==7 && cards.Layouts>0 && cards.GetHolderView(0).Indicators[0].IsExcluded,
+                    "A presentation implementation that is not InitialCardAreaController receives all indicators and fruit states");
+                view.SetEnabled(false);view.Render(null,null);
+                Require(!canvas.GetComponentInChildren<InitialCardAreaView>(true).HasPositionIndicators,"Disabling the alternate presentation resets its layout");
+            }
+
+            var popup=new LevelEndPopupController(canvas.GetComponentInChildren<LevelFinishPopupView>(true));
+            var hud=new ContractMultiplayerHud();var result=new ContractMultiplayerResult();var network=new ContractMultiplayer();
+            var presenter=new MultiplayerRoundPresenter(new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)),game.Initial,game.UI,popup,network,hud,result);
+            presenter.BeginWaiting();Require(hud.Text.Contains("bekleniyor"),"Waiting status is delivered through the HUD contract");
+            network.PublicState=new MultiplayerPublicState(1,1,MultiplayerPhase.Playing,1,0,60,0);
+            presenter.RefreshState(network.State);
+            Require(hud.LocalTurn && hud.Text=="Sıra sende" && hud.Deadline==60,"Local turn and timer reach an alternate HUD implementation");
+            network.PublicState=new MultiplayerPublicState(1,2,MultiplayerPhase.Playing,2,0,120,0);
+            presenter.RefreshState(network.State);
+            Require(!hud.LocalTurn && hud.Text=="Sıra: Oyuncu 2" && hud.Deadline==120 && game.Placement.TryPlaceCardOnBoard(0,0),
+                "Remote turns retain card arrangement and deliver the correct HUD deadline");
+            int guesses=game.Round.GetTriedCardsList().Count;game.Check();
+            Require(game.Round.GetTriedCardsList().Count==guesses,"Guess submission remains disabled on the remote turn");
+            presenter.ShowError("Deneme hatası");Require(hud.Text=="Deneme hatası","Request errors reach the alternate HUD");
+            network.PublicState=new MultiplayerPublicState(1,2,MultiplayerPhase.Finished,2,1,0,2);
+            presenter.RefreshState(network.State);Require(hud.Text=="Yeni oyun teklifi var","Rematch notice reaches the HUD contract");
+            presenter.ShowOutcome(new MultiplayerOutcome(1,1,new[]{1,2,3},false,RewardType.Bomb),true);
+            Require(result.Won && result.Reward==RewardType.Bomb,"Winner rewards reach the result contract without a concrete popup cast");
+            presenter.ShowOutcome(new MultiplayerOutcome(1,2,new[]{1,2,3},false,RewardType.Bomb),false);
+            Require(!result.Won && result.Reward==null,"A losing result does not show the opponent's reward as earned");
+            presenter.ShowDisconnected();Require(result.Disconnect==network.DisconnectMessage,"Disconnect details reach the result contract");
+        }
+    }
+
+    private sealed class ContractProgression : ISinglePlayerProgression
+    {
+        public int Retries,Next;
+        public void Retry()=>Retries++;
+        public void GoToNextLevel()=>Next++;
+    }
+    private sealed class ContractStartAnimation : ILevelStartAnimationManager
+    {
+        public Sequence StartLevelStartAnimation()=>DOTween.Sequence().AppendInterval(.2f);
+    }
+    private sealed class ContractEndAnimations : ILevelSuccessAnimationManager,ILevelFailAnimationManager
+    {
+        public bool Success;public int Coins,Crystals;public Sequence Sequence;
+        public Sequence SuccessLevelAnimation(int earnedCoinCount,int earnedCrystalCount,int previousCoinCount,int previousCrystalProgressCount,RewardType rewardTypeBeforeCollection)
+        {Success=true;Coins=earnedCoinCount;Crystals=earnedCrystalCount;return Sequence=DOTween.Sequence().AppendInterval(.25f);}
+        public Sequence FailLevelAnimation(){Success=false;Coins=Crystals=0;return Sequence=DOTween.Sequence().AppendInterval(.25f);}
+        public Sequence FadeOutResultArea(float duration)=>DOTween.Sequence().AppendInterval(duration);
+        public Sequence SendBoardHolders(float duration)=>DOTween.Sequence().AppendInterval(duration);
+    }
+    private sealed class ContractCardInfo : ICardItemInfoPopupController
+    {
+        public event EventHandler<ProbabilityButtonClickedEventArgs> ProbabilityButtonClickedEvent {add{} remove{}}
+        public event EventHandler<HolderIndicatorClickedEventArgs> HolderIndicatorClickedEvent {add{} remove{}}
+        public IBaseButtonController GetProbabilityButton(ProbabilityType type)=>null;
+        public IBaseButtonController GetHolderIndicatorButton(int index)=>null;
+        public void Initialize(){}public void Unsubscribe(){}public void ClearCardHolderIndicatorButtons(){}
+    }
+    private sealed class ContractPopups : IGamePopupCreator
+    {
+        public bool LastOutcome;public int RewardTips,Ends,EndLevel;public Func<int> Level;
+        public void EndTutorials(bool success){LastOutcome=success;Ends++;EndLevel=Level?.Invoke()??-1;}
+        public void ShowRewardTutorials(int coins,int crystals)=>RewardTips++;
+        public void Initialize(){}public void PrepareTutorials(){}public void StartTutorials(){}
+        public void CreateAbleToMovePopup(){}public void CreateWaitingOpponentPopup(Action action){}
+        public void CreateMultiplayerLevelEnd(bool success,IUserReady ready,Action action){}
+        public void CreateNewGameOfferPopup(){}public void CreateDisconnectionPopup(){}
+        public void CloseNotAbleToMovePopup(){}public void CloseAbleToMovePopup(){}public void CloseNewGameOfferPopup(){}
+        public RectTransform GetSafeAreaRectTransform()=>null;public RectTransform GetCanvasRectTransform()=>null;
+    }
+    private sealed class ContractInitialPresentation : IInitialCardAreaPresentation
+    {
+        private readonly IInitialCardAreaPresentation _inner;public int Rendered,Layouts;
+        public ContractInitialPresentation(IInitialCardAreaPresentation inner)=>_inner=inner;
+        public int GetCardCount()=>_inner.GetCardCount();
+        public IInitialHolderView GetHolderView(int index)=>_inner.GetHolderView(index);
+        public void SetPositionIndicators(bool enabled)=>_inner.SetPositionIndicators(enabled);
+        public void SetCardPresence(int index,FruitPresence presence){Rendered++;_inner.SetCardPresence(index,presence);}
+        public void RefreshLayout(){Layouts++;_inner.RefreshLayout();}
+    }
+    private sealed class ContractMultiplayerHud : IMultiplayerHudPresentation
+    {
+        public string Text;public double Deadline;public bool LocalTurn;
+        public void SetMultiplayerStatus(string text,double deadline){Text=text;Deadline=deadline;}
+        public void SetMultiplayerTurn(string text,double deadline,bool localTurn){Text=text;Deadline=deadline;LocalTurn=localTurn;}
+        public void TickPresentation(){}
+    }
+    private sealed class ContractMultiplayerResult : IMultiplayerResultPresentation
+    {
+        public bool Won;public RewardType? Reward;public string Disconnect;
+        public void SetMultiplayerResult(bool won,bool disconnected,RewardType? reward){Won=won;Reward=reward;}
+        public void SetMultiplayerOpponentLeft(string message=null)=>Disconnect=message;
+    }
+    private sealed class ContractMultiplayer : IMultiplayerGameController
+    {
+        public MultiplayerPublicState PublicState;
+        public ulong LocalPlayerId=>1;public double ServerTime=>0;public MultiplayerPublicState State=>PublicState;
+        public bool IsLocalTurn=>State.Phase==MultiplayerPhase.Playing && State.CurrentPlayer==LocalPlayerId;
+        public bool LocalRematchRequested=>false;public string StatusNotice=>"";public string DisconnectMessage=>"Kurucu ayrıldı";
+        public string GetPlayerName(ulong player)=>"Oyuncu "+player;
+        public void Initialize(){}public void BoardReady(int round){}public void SubmitGuess(int[] cards){}public void RequestRematch(){}public void Stop(){}
+        public event EventHandler<int> RoundPreparing {add{} remove{}}
+        public event EventHandler<MultiplayerFeedback> GuessAccepted {add{} remove{}}
+        public event EventHandler<MultiplayerPublicState> StateChanged {add{} remove{}}
+        public event EventHandler<MultiplayerOutcome> MatchEnded {add{} remove{}}
+        public event EventHandler<string> RequestRejected {add{} remove{}}
+    }
+}

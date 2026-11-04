@@ -98,7 +98,8 @@ namespace Scripts
         
         public void DestroyObject()
         {
-            Destroy(gameObject);
+            if (this == null) return;
+            if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
         }
         
         public void SetFruit(Sprite fruit)
@@ -135,6 +136,9 @@ namespace Scripts
 
     public interface IInitialHolderView : IBaseHolderView
     {
+        IReadOnlyList<PossibleHolderIndicatorView> Indicators { get; }
+        RectTransform IndicatorStrip { get; }
+        void ConfigureIndicators(int count, Action<int> clicked);
         void SetFruit(Sprite fruit);
         void SetIndicatorColor(Color fruitColor);
         IPossibleHolderIndicatorView CreatePossibleHolderIndicatorView();

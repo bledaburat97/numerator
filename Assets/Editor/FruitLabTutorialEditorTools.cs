@@ -401,7 +401,11 @@ public static partial class FruitLabTutorialEditorTools
                     var installer = Find<GameMonoInstaller>(scene);
                     typeof(MonoInstallerBase).GetProperty("Container", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(installer, container);
                     installer.InstallBindings();
-                    container.Resolve(typeof(ILevelFlowOrchestrator));
+                    container.Resolve(typeof(ILevelSession));
+                    container.Resolve(typeof(ISinglePlayerProgression));
+                    container.Resolve(typeof(IMultiplayerHudPresentation));
+                    container.Resolve(typeof(IMultiplayerResultPresentation));
+                    container.Resolve(typeof(IInitialCardAreaPresentation));
                     container.Resolve(typeof(SinglePlayerSession)); container.Resolve(typeof(MultiplayerSession));
                     container.Resolve(typeof(PositionAssistanceController));
                     container.ResolveRoots();
@@ -974,11 +978,12 @@ public static partial class FruitLabTutorialEditorTools
         public void DeleteSave() => Data = null;
         public void Save(LevelSaveData data) => Data = Newtonsoft.Json.JsonConvert.DeserializeObject<LevelSaveData>(Newtonsoft.Json.JsonConvert.SerializeObject(data));
     }
-    private sealed class PlayingFlow : ILevelFlowOrchestrator
+    private sealed class PlayingFlow : ILevelSession
     {
-        public void Begin(LevelEntryMode mode) { } public void Retry() { } public void GoToNextLevel() { }
-        public bool IsGameOver() => false; public bool IsTransitioning() => false;
-        public LevelFlowState GetState() => LevelFlowState.Playing;
+        public void Begin(LevelEntryMode mode) { }
+        public bool IsGameOver => false;
+        public LevelFlowState State => LevelFlowState.Playing;
+        public void Dispose() { }
     }
     private static void ClearPreviewActors(Canvas canvas)
     {
