@@ -281,7 +281,7 @@ namespace Scripts
     public sealed class PositionNotesSnapshot
     {
         public int Fruits,Slots,HistoryCount;
-        public bool AutomaticEnabled,Manual,Edited,Consistent=true;
+        public bool AutomaticEnabled,Manual,Edited,IndicatorsVisible,Consistent=true;
         public bool[] Possible;
         public FruitPresence[] Presence;
         public int[] Fixed;
@@ -293,7 +293,7 @@ namespace Scripts
         public PositionNotesSnapshot Copy()
         {
             var copy=PositionDeductionService.Restore(this)?.Capture(HistoryCount,AutomaticEnabled);
-            if(copy!=null)copy.Edited=Edited;
+            if(copy!=null){copy.Edited=Edited;copy.IndicatorsVisible=IndicatorsVisible;}
             return copy;
         }
     }

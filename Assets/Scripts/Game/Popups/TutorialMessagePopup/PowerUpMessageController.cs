@@ -9,6 +9,7 @@ namespace Scripts
         [InjectOptional] private HelperEffect _helper;
         [InjectOptional] private PairEffect _pair;
         [InjectOptional] private BoardSplitService _split;
+        [InjectOptional] private UltraPowerUpController _ultra;
         [InjectOptional] private TutorialInputGate _tutorialGate;
         private IFadePanelController _fadePanelController;
         private ILevelTracker _levelTracker;
@@ -35,7 +36,7 @@ namespace Scripts
             _cardItemInfoManager = cardItemInfoManager;
             _boardHolderCountManager = boardHolderCountManager;
             _fadePanelController.SetBoardDismiss(CloseActivePowerUp);
-            ui.ResetNumbers+=CancelOnAction;ui.CheckFinalNumbers+=CancelOnAction;ui.OpenSettings+=CancelOnAction;
+            ui.ResetNumbers+=CancelOnAction;ui.CheckFinalNumbers+=CancelOnAction;ui.OpenSettings+=CancelOnAction;ui.OpenInformation+=CancelOnAction;
         }
         
         private void OnPowerUpClicked(object sender, GameUIButtonType powerUpType)
@@ -44,14 +45,18 @@ namespace Scripts
             if (_tutorialGate != null && !_tutorialGate.AllowsButton(powerUpType)) return;
             if(powerUpType!=GameUIButtonType.BombPowerUp && powerUpType!=GameUIButtonType.RevealingPowerUp
                 && powerUpType!=GameUIButtonType.LifePowerUp && powerUpType!=GameUIButtonType.HelperPowerUp
-                && powerUpType!=GameUIButtonType.PairPowerUp && powerUpType!=GameUIButtonType.SplitPowerUp)return;
+                && powerUpType!=GameUIButtonType.PairPowerUp && powerUpType!=GameUIButtonType.SplitPowerUp && powerUpType!=GameUIButtonType.UltraPowerUp)return;
             if(_activePowerUpType==GameUIButtonType.RevealingPowerUp && powerUpType==_activePowerUpType){CloseActivePowerUp();return;}
             var reward=PowerUpTypeUtility.ToRewardType(powerUpType);
-            if(!PowerUpAvailability.CanUse(reward,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split))return;
+            if(!PowerUpAvailability.CanUse(reward,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra))return;
             CloseActivePowerUp();
             if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType)) return;
             switch (powerUpType)
             {
+                case GameUIButtonType.UltraPowerUp:
+                    _ultra.TryApply();
+                    _gamePowerUpAreaController.Refresh();
+                    break;
                 case GameUIButtonType.SplitPowerUp:
                     _split.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Split));
                     _gamePowerUpAreaController.Refresh();

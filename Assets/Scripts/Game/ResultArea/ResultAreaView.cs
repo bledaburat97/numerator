@@ -75,7 +75,7 @@ namespace Scripts
             if (_emptyState == null) _emptyState = scrollRect.viewport.Find("HistoryHint")?.GetComponent<TMP_Text>();
             if (_emptyState == null)
             {
-                _emptyState = FruitLabStyle.CreateText("HistoryHint", scrollRect.viewport, 12f, FruitLabStyle.Muted);
+                _emptyState = FruitLabStyle.CreateText("HistoryHint", scrollRect.viewport, 16f, FruitLabStyle.Muted);
                 _emptyState.text = "Tahminlerin burada görünecek";
             }
             FruitLabStyle.Stretch(_emptyState.rectTransform, 8f);

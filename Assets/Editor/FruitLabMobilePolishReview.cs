@@ -39,7 +39,7 @@ public static partial class FruitLabTutorialEditorTools
                         PreparePowerAudit(game,type);
                         game.Bootstrap.StartRound();
                         int stock=game.Tracker.GetPowerUpCount(type),lives=game.Round.GetRemainingGuessCount(),slots=game._counts.GetBoardHolderCount();
-                        var button=(BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(type);
+                        var button=PowerAuditButton(canvas,type);
                         Click(button);
                         Require(game.Message!=null && game.Gate.IsRestricted && game.Tracker.GetPowerUpCount(type)==stock,"An actual first powerup click opens a non-spending introduction: "+type);
                         Require(((TMP_Text)Get(game.Message,"title")).text==PowerUpTypeUtility.Name(type)
@@ -70,7 +70,7 @@ public static partial class FruitLabTutorialEditorTools
                     {
                         PreparePowerAudit(game,type);game.Bootstrap.StartRound();
                         int stock=game.Tracker.GetPowerUpCount(type),remaining=game.Round.GetRemainingGuessCount(),count=game._counts.GetBoardHolderCount();
-                        var button=(BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(type);
+                        var button=PowerAuditButton(canvas,type);
                         if(type==RewardType.Revealing)
                         {
                             // Both free and occupied slots must work, but cancellation must spend nothing.
@@ -127,19 +127,38 @@ public static partial class FruitLabTutorialEditorTools
         finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=oldUpdate;}
     }
 
+    private static BaseButtonView PowerAuditButton(Canvas canvas,RewardType type)
+    {
+        var view=canvas.GetComponentInChildren<PowerUpListHolderView>(true);
+        var button=(BaseButtonView)view.GetPowerUpButton(type);
+        Require(button.gameObject.activeInHierarchy,"Power is visible in the original strip");
+        return button;
+    }
     private static LevelData PowerAuditLevel()=>new LevelData {NumOfBoardHolders=4,NumOfCards=8,MaxNumOfTries=10,Mechanic=LevelMechanic.Normal};
     private static void SeedPowerAuditFlags(Dictionary<string,int> flags,RewardType? unseen)
     {flags.Clear();foreach(string key in TutorialProgress.Keys)flags[key]=1;if(unseen.HasValue)flags.Remove(PowerUpTypeUtility.TutorialKey(unseen.Value));}
     private static void PreparePowerAudit(Fixture game,RewardType type)
     {
         Field(game.Tracker,"_levelId",20);
-        foreach(string field in new[]{"_bombPowerUpCount","_revealingPowerUpCount","_lifePowerUpCount","_helperPowerUpCount","_pairPowerUpCount","_splitPowerUpCount"})Field(game.Tracker,field,2);
+        foreach(string field in new[]{"_bombPowerUpCount","_revealingPowerUpCount","_lifePowerUpCount","_helperPowerUpCount","_pairPowerUpCount","_splitPowerUpCount","_ultraPowerUpCount"})Field(game.Tracker,field,2);
         game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
         var helper=new HelperEffect(game.Round,game.Target,game._saves);Field(helper,"_split",Get(game.Results,"_split"));
         helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
         var pair=new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);pair.Changed+=(sender,clue)=>game.View.SetPairClue(clue);
         Field(game._powers,"_helper",helper);Field(game._powers,"_pair",pair);Field(game.PowerMessages,"_helper",helper);Field(game.PowerMessages,"_pair",pair);
         new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+        if(type==RewardType.Ultra)
+        {
+            var notes=AssistanceFor(game,PowerAuditLevel(),out _,false);notes.Refresh();game.ExtraDisposables.Add(notes);
+            var profile=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>{
+                var state=new Scripts.Economy.PlayerProfileData();state.Wallet.PowerUps[RewardType.Ultra]=2;return state;
+            });
+            profile.Changed+=()=>Field(game.Tracker,"_ultraPowerUpCount",profile.Snapshot().Wallet.PowerUps[RewardType.Ultra]);
+            var di=new Zenject.DiContainer();di.Bind<PositionAssistanceController>().FromInstance(notes);di.Bind<ILevelSaveDataManager>().FromInstance(game._saves);
+            di.Bind<Scripts.Economy.UltraActivationService>().FromInstance(new Scripts.Economy.UltraActivationService(profile));
+            var ultra=di.Instantiate<UltraPowerUpController>();ultra.Configure(()=>true);
+            Field(game._powers,"_ultra",ultra);Field(game.PowerMessages,"_ultra",ultra);
+        }
         if(type==RewardType.Helper)SubmitPowerAuditWrongGuess(game);
         if(type==RewardType.Life)for(int i=0;i<3;i++)SubmitPowerAuditWrongGuess(game);
         game._powers.Refresh();
@@ -155,7 +174,7 @@ public static partial class FruitLabTutorialEditorTools
         Layer(game.Canvas.transform);Draw(game.Camera);
         var pointer=new PointerEventData(((GameObject)Get(game,"_events")).GetComponent<EventSystem>()) {position=RectTransformUtility.WorldToScreenPoint(game.Camera,target.TransformPoint(target.rect.center))};
         var hits=new List<RaycastResult>();game.Canvas.GetComponent<GraphicRaycaster>().Raycast(pointer,hits);
-        Require(hits.Count>0 && hits[0].gameObject.GetComponent<TutorialSpotlightView>()!=null,"Optional tips consume outside/spotlight touches before underlying controls");
+        Require(hits.Count>0 && hits[0].gameObject.GetComponent<TutorialSpotlightView>()!=null,"Optional tips consume outside/spotlight touches before underlying controls: target="+target.name+" top="+hits.FirstOrDefault().gameObject?.name+" world="+target.position+" pointer="+pointer.position+" camera="+game.Camera.orthographicSize+" canvas="+((RectTransform)game.Canvas.transform).rect);
         ExecuteEvents.Execute(hits[0].gameObject,pointer,ExecuteEvents.pointerDownHandler);
     }
     private static void TapPowerAuditTarget(Fixture game,RectTransform target,Transform expected)

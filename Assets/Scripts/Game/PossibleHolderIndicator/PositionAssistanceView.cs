@@ -36,7 +36,7 @@ namespace Scripts
             _indicatorHitTest = HitTestIndicators;
             if (_game != null && _game.GetPairView() != null) _game.GetPairView().AdditionalControlHitTest = _indicatorHitTest;
             if (_layout != null) _layout.LayoutChanged += OnLayoutChanged;
-            _ui.CheckFinalNumbers += CloseFromUI; _ui.ResetNumbers += CloseFromUI; _ui.OpenSettings += CloseFromUI;
+            _ui.CheckFinalNumbers += CloseFromUI; _ui.ResetNumbers += CloseFromUI; _ui.OpenSettings += CloseFromUI;_ui.OpenInformation += CloseFromUI;
         }
         private void OnLayoutChanged() { PositionReason(); _occludersDirty = true; }
         private void UpdateOccluders()
@@ -92,6 +92,7 @@ namespace Scripts
                 if (state != null)
                     for (int slot = 0; slot < state.SlotCount; slot++)
                         holder.Indicators[slot].SetDeduction(!state.IsPossible(fruit, slot), state.FixedSlot(fruit) == slot);
+                holder.IndicatorStrip.gameObject.SetActive(_enabled==true);
                 _cards.SetCardPresence(fruit - 1, state?.Presence(fruit) ?? FruitPresence.Unknown);
             }
             UpdateOccluders();
@@ -187,7 +188,7 @@ namespace Scripts
                 _game.GetPairView().AdditionalControlHitTest = null;
                 if (_game.GetPairView().Graphic != null) _game.GetPairView().Graphic.SetControlOccluders(null);
             }
-            _ui.CheckFinalNumbers -= CloseFromUI; _ui.ResetNumbers -= CloseFromUI; _ui.OpenSettings -= CloseFromUI;
+            _ui.CheckFinalNumbers -= CloseFromUI; _ui.ResetNumbers -= CloseFromUI; _ui.OpenSettings -= CloseFromUI;_ui.OpenInformation -= CloseFromUI;
             if (_layout != null) _layout.LayoutChanged -= OnLayoutChanged;
             CloseReason();
             if (_reason != null)

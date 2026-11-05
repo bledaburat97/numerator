@@ -94,15 +94,16 @@ namespace Scripts
             for (int i = 0; i < 3; i++) FruitLabStyle.Place((RectTransform)_buttons[i].transform, _toolbar, i * (width + gap), 0, width, _toolbar.rect.height);
             if(_state==null || _boardHolder==null)return;
             _layout.BoardArea.GetWorldCorners(_corners);
-            float bottom=_overlay.InverseTransformPoint(_corners[0]).y-_overlay.rect.yMin+2;
+            float bottom=_overlay.InverseTransformPoint(_corners[0]).y-_overlay.rect.yMin;
+            float touchHeight=Mathf.Min(48f,new FruitLabLayoutMetrics(_layout.LayoutSize.x,_layout.LayoutSize.y).BoardFooterHeight);
             for(int slot=0;slot<_positions.Count && slot<_state.SlotCount;slot++)
             {
                 var holder=_boardHolder(slot);if(holder==null)continue;
                 holder.GetWorldCorners(_corners);
                 Vector2 left=_overlay.InverseTransformPoint(_corners[0]),right=_overlay.InverseTransformPoint(_corners[2]);
                 float cellWidth=Mathf.Max(12,right.x-left.x-4);
-                FruitLabStyle.Place(_positions[slot].GetRectTransform(),_overlay,left.x-_overlay.rect.xMin+2,bottom,cellWidth,16);
-                _positions[slot].SetSize(new Vector2(cellWidth,16));
+                FruitLabStyle.Place(_positions[slot].GetRectTransform(),_overlay,left.x-_overlay.rect.xMin+2,bottom,cellWidth,touchHeight);
+                _positions[slot].SetEditingSize(new Vector2(cellWidth,touchHeight));
             }
         }
 

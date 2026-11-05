@@ -4,7 +4,7 @@ namespace Scripts
 {
     public class MenuPowerUpCountHolderController : IMenuPowerUpCountHolderController
     {
-        private const float DisabledAlpha = 0.35f;
+        private const float DisabledAlpha = 0.55f;
         private const float EnabledAlpha = 1f;
 
         private readonly IPowerUpListHolderView _view;

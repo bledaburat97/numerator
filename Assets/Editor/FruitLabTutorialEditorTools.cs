@@ -122,11 +122,13 @@ public static partial class FruitLabTutorialEditorTools
             for (int slot = 0; slot < state.SlotCount; slot++) if (answer[slot] == fruit) Require(state.IsPossible(fruit, slot), "A true position is never excluded");
         }
     }
-    private static PositionAssistanceController AssistanceFor(Fixture game, LevelData definition, out PositionAssistanceView view,PositionAssistancePreferences preferences=null)
+    private static PositionAssistanceController AssistanceFor(Fixture game, LevelData definition, out PositionAssistanceView view,bool ultra=true)
     {
         view = new PositionAssistanceView(game.Initial, game.View, game.Canvas.GetComponentInChildren<ResultAreaView>(true), game.UI, null);
-        return new PositionAssistanceController(game._area, game.Initial, game._counts, new TestLevel(definition), game._info,
-            (BoardSplitService)Get(game.Results, "_split"), view,preferences??new PositionAssistancePreferences(true),game._saves);
+        var assistance=new PositionAssistanceController(game._area, game.Initial, game._counts, new TestLevel(definition), game._info,
+            (BoardSplitService)Get(game.Results, "_split"), view,game._saves);
+        if(ultra)assistance.ActivateUltra();
+        return assistance;
     }
     private static void SubmitAssistedGuess(Fixture game, int[] cards, PositionAssistanceController assistance)
     {
@@ -680,6 +682,7 @@ public static partial class FruitLabTutorialEditorTools
     {
         public readonly Canvas Canvas; public readonly Camera Camera;
         public readonly TutorialInputGate Gate = new TutorialInputGate();
+        public readonly List<IDisposable> ExtraDisposables=new List<IDisposable>();
         public readonly LevelTracker Tracker; public readonly TargetNumberCreator Target;
         public readonly RoundStateManager Round; public readonly BoardAreaController Board;
         public readonly InitialCardAreaController Initial; public readonly CardPlacementCoordinator Placement;
@@ -857,6 +860,7 @@ public static partial class FruitLabTutorialEditorTools
         public void Dispose()
         {
             View.GetPairView()?.Unbind(); _guess.Dispose();
+            foreach(var extra in ExtraDisposables)extra.Dispose();
             Bootstrap.Dispose(); _interaction.Unsubscribe(); Tick(2f);
             Object.DestroyImmediate(_events); Object.DestroyImmediate(_objects);
         }

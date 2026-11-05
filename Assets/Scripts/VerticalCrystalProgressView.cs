@@ -18,6 +18,7 @@ namespace Scripts
         [SerializeField] private PowerUpButtonView helperPowerUpButton;
         [SerializeField] private PowerUpButtonView pairPowerUpButton;
         [SerializeField] private PowerUpButtonView splitPowerUpButton;
+        [SerializeField] private PowerUpButtonView ultraPowerUpButton;
         [SerializeField] private ParticleSystem completedParticle;
         [SerializeField] private Image crystalIcon;
 
@@ -37,13 +38,13 @@ namespace Scripts
             FruitLabStyle.AddSurface(gameObject, FruitLabStyle.Tile);
             FruitLabStyle.Rim(rectTransform);
             TMP_Text title = GetLabel("CrystalTitle", 13f, FruitLabStyle.Text);
-            title.fontSize = 13f;
+            title.fontSize = 16f;
             title.gameObject.SetActive(true);
             title.text = "Güçlendirici Barı";
             title.alignment = TextAlignmentOptions.MidlineLeft;
             FruitLabStyle.Place(title.rectTransform, transform, 14f, 76f, width - 88f, 24f);
             _countLabel = GetLabel("CrystalCount", 14f, FruitLabStyle.Pink);
-            _countLabel.fontSize = 14f;
+            FruitLabStyle.TextStyle(_countLabel, 18f);
             _countLabel.alignment = TextAlignmentOptions.MidlineRight;
             FruitLabStyle.Place(_countLabel.rectTransform, transform, width - 70f, 76f, 56f, 24f);
             if (crystalIcon != null)
@@ -88,6 +89,8 @@ namespace Scripts
                 item.transform.SetParent(transform, false); holder = item.transform;
             }
             FruitLabStyle.Place((RectTransform)holder, transform, width - 60f, 27f, 44f, 44f);
+            if(ultraPowerUpButton==null && revealingPowerUpButton!=null)
+            {ultraPowerUpButton=Instantiate(revealingPowerUpButton,holder,false);ultraPowerUpButton.name="UltraRewardPreview";}
             // Older scenes serialized prefab assets here. Always animate local instances.
             if (helperPowerUpButton == null && revealingPowerUpButton != null)
             {
@@ -105,11 +108,16 @@ namespace Scripts
                 splitPowerUpButton.name = "SplitRewardPreview";
             }
             ResolvePreview(ref splitPowerUpButton,holder,"Split");
+            ResolvePreview(ref ultraPowerUpButton,holder,"Ultra");
             ResolvePreview(ref pairPowerUpButton, holder, "Pair");
             ResolvePreview(ref helperPowerUpButton, holder, "Helper");
             ResolvePreview(ref revealingPowerUpButton, holder, "Reveal");
             ResolvePreview(ref lifePowerUpButton, holder, "Life");
             ResolvePreview(ref bombPowerUpButton, holder, "Bomb");
+            var assigned = new System.Collections.Generic.HashSet<PowerUpButtonView> {
+                bombPowerUpButton,revealingPowerUpButton,lifePowerUpButton,helperPowerUpButton,pairPowerUpButton,splitPowerUpButton,ultraPowerUpButton };
+            foreach(var old in GetComponentsInChildren<PowerUpButtonView>(true))
+                if(!assigned.Contains(old))old.gameObject.SetActive(false);
             ShowRewardPreview(_rewardType);
             UpdateCountLabel();
             if (rectTransform.rect.height < 90f) ApplyCompactLayout(width, rectTransform.rect.height, title, holder);
@@ -120,9 +128,9 @@ namespace Scripts
             bool roomy = height >= 50f;
             bool shortBar = height < 40f;
             title.gameObject.SetActive(roomy);
-            title.fontSize = 10f;
+            title.fontSize = 14f;
             FruitLabStyle.Place(title.rectTransform, transform, 10f, height - 18f, width - 92f, 14f);
-            _countLabel.fontSize = 11f;
+            FruitLabStyle.TextStyle(_countLabel, 16f);
             FruitLabStyle.Place(_countLabel.rectTransform, transform, width - 94f, shortBar ? (height - 14f) * .5f : height - 18f, 46f, 14f);
             if (crystalIcon != null) FruitLabStyle.Place(crystalIcon.rectTransform, crystalIcon.transform.parent, 8f, roomy ? 6f : (height - 26f) * .5f, 26f, 26f);
             float trackY = shortBar ? (height - 8f) * .5f - 1f : roomy ? 21f : 9f;
@@ -141,6 +149,8 @@ namespace Scripts
         {
             if (preview == null) return;
             if (!preview.transform.IsChildOf(transform)) preview = Instantiate(preview, holder, false);
+            if(preview.GetButtonRectTransform()!=_presentedRewardPreview && preview.transform.parent!=holder)
+                preview.transform.SetParent(holder,false);
             FruitLabStyle.Stretch(preview.GetButtonRectTransform());
             preview.ApplyLabPreview(icon);
         }
@@ -323,6 +333,7 @@ namespace Scripts
             SetPowerUpButtonStatus(helperPowerUpButton, rewardType == RewardType.Helper);
             SetPowerUpButtonStatus(pairPowerUpButton, rewardType == RewardType.Pair);
             SetPowerUpButtonStatus(splitPowerUpButton,rewardType == RewardType.Split);
+            SetPowerUpButtonStatus(ultraPowerUpButton,rewardType == RewardType.Ultra);
         }
 
         public RectTransform GetRewardPreviewRectTransform(RewardType rewardType)
@@ -365,6 +376,7 @@ namespace Scripts
             switch (rewardType)
             {
                 case RewardType.Pair: return pairPowerUpButton;
+                case RewardType.Ultra:return ultraPowerUpButton;
                 case RewardType.Split: return splitPowerUpButton;
                 case RewardType.Helper: return helperPowerUpButton;
                 case RewardType.Revealing:

@@ -35,9 +35,9 @@ namespace Scripts
             FruitLabStyle.Surface(_trackFrame, FruitLabStyle.Border);
             FruitLabStyle.Surface(_track, FruitLabStyle.Recess);
             FruitLabStyle.Surface(_guessBackground, FruitLabStyle.Panel);
-            FruitLabStyle.Place(_trackFrame.rectTransform, transform, 0f, 4f, width - 82f, 16f);
-            FruitLabStyle.Place(_track.rectTransform, transform, 1f, 5f, width - 84f, 14f);
-            FruitLabStyle.Place(image.rectTransform, transform, 3f, 7f, width - 88f, 10f);
+            FruitLabStyle.Place(_trackFrame.rectTransform, transform, 0f, 4f, width - 94f, 16f);
+            FruitLabStyle.Place(_track.rectTransform, transform, 1f, 5f, width - 96f, 14f);
+            FruitLabStyle.Place(image.rectTransform, transform, 3f, 7f, width - 100f, 10f);
             // Keep the frame and recess behind the fill and its reward markers.
             _track.transform.SetAsFirstSibling();
             _trackFrame.transform.SetAsFirstSibling();
@@ -46,12 +46,12 @@ namespace Scripts
             image.color = FruitLabStyle.Mint;
             image.raycastTarget = false;
             if (_guessLabel == null) _guessLabel = transform.Find("GuessesRemaining")?.GetComponent<TMP_Text>();
-            if (_guessLabel == null) _guessLabel = FruitLabStyle.CreateText("GuessesRemaining", transform, 12f, FruitLabStyle.Text);
-            _guessLabel.fontSize = 12f;
+            if (_guessLabel == null) _guessLabel = FruitLabStyle.CreateText("GuessesRemaining", transform, 16f, FruitLabStyle.Text);
+            FruitLabStyle.TextStyle(_guessLabel, 16f);
             _guessLabel.fontStyle = FontStyles.Bold;
             _guessLabel.color = FruitLabStyle.Text;
-            FruitLabStyle.Place(_guessBackground.rectTransform, transform, width - 74f, 0f, 74f, 26f);
-            FruitLabStyle.Place(_guessLabel.rectTransform, transform, width - 74f, 0f, 74f, 26f);
+            FruitLabStyle.Place(_guessBackground.rectTransform, transform, width - 90f, 0f, 90f, 28f);
+            FruitLabStyle.Place(_guessLabel.rectTransform, transform, width - 90f, 0f, 90f, 28f);
             _guessLabel.transform.SetAsLastSibling();
             UpdateGuessLabel();
         }
@@ -135,7 +135,7 @@ namespace Scripts
             _gainLabel.fontStyle = FontStyles.Bold;
             _gainLabel.text = "+" + amount;
             _gainLabel.raycastTarget = false;
-            FruitLabStyle.Place(_gainLabel.rectTransform, transform, rectTransform.rect.width - 74f, 0f, 74f, 26f);
+            FruitLabStyle.Place(_gainLabel.rectTransform, transform, rectTransform.rect.width - 90f, 0f, 90f, 28f);
             _gainGlow = FruitLabStyle.Detail(transform, "LifeGainGlow", new Color(.55f, 1f, .86f, 0f), true);
             _gainGlow.sprite = FruitLabStyle.ResultFrame;
             FruitLabStyle.Place(_gainGlow.rectTransform, transform, 0f, 3f, rectTransform.rect.width - 81f, 18f);

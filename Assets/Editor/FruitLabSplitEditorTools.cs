@@ -168,14 +168,14 @@ public static partial class FruitLabTutorialEditorTools
         foreach (var card in cards)
         {
             var cardRect = (RectTransform)card.transform;
-            Require(cardRect.rect.width >= 23f,"Fruit cards remain legible on small screens");
+            Require(cardRect.rect.width >= 23f,"Fruit cards remain legible on small screens: "+cardRect.rect.size+"; row="+rect.rect.size+"; canvas="+((RectTransform)row.GetComponentInParent<Canvas>().transform).rect.size);
             var point = rect.InverseTransformPoint(cardRect.position);
             Require(rect.rect.Contains(point),"Every split fruit stays in its row");
         }
         foreach (var label in row.GetComponentsInChildren<TMP_Text>())
         {
             Require(label.fontSize >= 12f,"Split counters remain readable; font="+label.fontSize+"; row="+rect.rect.height);
-            label.ForceMeshUpdate(); Require(!label.isTextOverflowing,"Split counter does not clip");
+            label.ForceMeshUpdate(); Require(!label.isTextOverflowing,"Split counter does not clip: "+label.name+" font="+label.fontSize+" rect="+label.rectTransform.rect+" preferred="+label.preferredHeight);
         }
         var a = (RectTransform)row.transform.Find("SplitGroupA"); var b = (RectTransform)row.transform.Find("SplitGroupB");
         Require(a != null && b != null && a.position.x < b.position.x,"Both result groups are distinct and ordered");

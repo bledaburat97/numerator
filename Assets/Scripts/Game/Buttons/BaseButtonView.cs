@@ -77,7 +77,7 @@ namespace Scripts
                 if (image != null) image.gameObject.SetActive(false);
                 if (text == null) text = FruitLabStyle.CreateText("Label", transform, 15f, FruitLabStyle.Text);
                 text.color = primary ? FruitLabStyle.Background : FruitLabStyle.Text;
-                text.fontSize = 15f;
+                FruitLabStyle.TextStyle(text, 18f);
                 text.enableAutoSizing = false;
                 text.fontStyle = FontStyles.Bold;
                 text.alignment = TextAlignmentOptions.Midline;
@@ -85,31 +85,10 @@ namespace Scripts
                 FruitLabStyle.Stretch(text.rectTransform, 3f);
                 return;
             }
-            if (primary)
+            if (primary || gameObject.name.StartsWith("ResetButton"))
             {
-                if (image != null) image.gameObject.SetActive(false);
-                if (text == null) text = FruitLabStyle.CreateText("Label", transform, 14f, FruitLabStyle.Background);
-                text.gameObject.SetActive(true);
-                text.text = "Tahmin et";
-                text.color = FruitLabStyle.Background;
-                text.fontSize = 14f;
-                text.fontStyle = FontStyles.Bold;
-                text.alignment = TextAlignmentOptions.Midline;
-                FruitLabStyle.Stretch(text.rectTransform, 2f);
-                if (rectTransform.rect.height > rectTransform.rect.width)
-                    ApplyVerticalAction(FruitLabGlyph.Symbol.Check, "Tahmin\net", FruitLabStyle.Background);
-                else if (_labGlyph != null) _labGlyph.gameObject.SetActive(false);
-            }
-            else if (gameObject.name.StartsWith("ResetButton"))
-            {
-                if (text != null) text.gameObject.SetActive(false);
-                if (image != null) image.gameObject.SetActive(false);
-                if (_labGlyph == null) _labGlyph = transform.Find("Reset")?.GetComponent<FruitLabGlyph>();
-                if (_labGlyph == null) _labGlyph = FruitLabGlyph.Create(transform, FruitLabGlyph.Symbol.Reset, FruitLabStyle.Text);
-                _labGlyph.gameObject.SetActive(true);
-                FruitLabStyle.Stretch(_labGlyph.rectTransform, 8f);
-                if (rectTransform.rect.height > rectTransform.rect.width)
-                    ApplyVerticalAction(FruitLabGlyph.Symbol.Reset, "Temizle", FruitLabStyle.Text);
+                ApplyIconOnlyAction(primary ? FruitLabGlyph.Symbol.Check : FruitLabGlyph.Symbol.Eraser,
+                    primary ? FruitLabStyle.Background : FruitLabStyle.Text);
             }
             else if (gameObject.name.StartsWith("SettingsButton"))
             {
@@ -117,35 +96,27 @@ namespace Scripts
             }
         }
 
-        private void ApplyVerticalAction(FruitLabGlyph.Symbol symbol, string label, Color color)
+        private void ApplyIconOnlyAction(FruitLabGlyph.Symbol symbol, Color tint)
         {
-            if (_labGlyph == null) _labGlyph = transform.Find(symbol.ToString())?.GetComponent<FruitLabGlyph>();
-            if (_labGlyph == null) _labGlyph = FruitLabGlyph.Create(transform, symbol, color);
+            if (text != null) text.gameObject.SetActive(false);
+            if (image != null) image.gameObject.SetActive(false);
+            foreach (var label in GetComponentsInChildren<TMP_Text>(true)) label.gameObject.SetActive(false);
+            foreach (var old in GetComponentsInChildren<FruitLabGlyph>(true)) old.gameObject.SetActive(false);
+            if (_labGlyph == null) _labGlyph = transform.Find("ActionIcon")?.GetComponent<FruitLabGlyph>();
+            if (_labGlyph == null) { _labGlyph = FruitLabGlyph.Create(transform, symbol, tint); _labGlyph.name = "ActionIcon"; }
+            _labGlyph.Type = symbol; _labGlyph.color = tint; _labGlyph.SetAllDirty();
             _labGlyph.gameObject.SetActive(true);
-            float width = rectTransform.rect.width, height = rectTransform.rect.height;
-            float iconSize = Mathf.Min(24f, width - 12f);
+            float size = Mathf.Min(38f, Mathf.Min(rectTransform.rect.width - 10f, rectTransform.rect.height - 10f));
             FruitLabStyle.Place(_labGlyph.rectTransform, transform,
-                (width - iconSize) * .5f, height * .65f - iconSize * .5f, iconSize, iconSize);
-            if (text == null) text = FruitLabStyle.CreateText("Label", transform, 11f, color);
-            text.gameObject.SetActive(true);
-            text.text = label;
-            text.color = color;
-            text.fontSize = 11f;
-            text.enableAutoSizing = false;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.fontStyle = FontStyles.Bold;
-            text.alignment = TextAlignmentOptions.Midline;
-            // Existing prefab labels can belong to InnerBG; keep that hierarchy
-            // intact so the same layout can also be saved in the editor.
-            RectTransform labelParent = (RectTransform)text.transform.parent;
-            FruitLabStyle.Place(text.rectTransform, labelParent, 2f, labelParent.rect.height * .15f,
-                Mathf.Max(1f, labelParent.rect.width - 4f), labelParent.rect.height * .35f);
+                (rectTransform.rect.width-size)*.5f, (rectTransform.rect.height-size)*.5f, size, size);
         }
 
-        public void SetLabIconScale(float scale)
+        public void SetLabIconInset(float inset)
         {
             ResolveReferences();
-            if (image != null) image.rectTransform.localScale = Vector3.one * scale;
+            if (image == null) return;
+            FruitLabStyle.Place(image.rectTransform, transform, inset, inset,
+                rectTransform.rect.width - inset * 2f, rectTransform.rect.height - inset * 2f);
         }
 
         public void ApplyLabActionStyle(bool primary)

@@ -7,7 +7,6 @@ namespace Scripts
 {
     public class PowerUpButtonView : BaseButtonView
     {
-        private TMP_Text _labLabel;
 
         public void ApplyLabPreview(string icon)
         {
@@ -26,6 +25,7 @@ namespace Scripts
                 item.transform.SetParent(transform, false);
                 picture = item.transform;
             }
+            HideLegacyDecoration(picture);
             FruitLabStyle.Stretch((RectTransform)picture, 5f);
             ApplyIcon(picture, icon);
             picture.GetComponent<Image>().raycastTarget = false;
@@ -39,7 +39,6 @@ namespace Scripts
 
         public void ApplyLabLayout(string icon, string label, TMP_Text count, float width, float height)
         {
-            ApplyLabStyle();
             Transform background = transform.Find("Bg");
             if (background != null)
             {
@@ -48,60 +47,62 @@ namespace Scripts
                 SetLabBackground(background.GetComponent<Image>());
             }
             Transform picture = transform.Find("Picture");
+            HideLegacyDecoration(picture);
             if (picture != null)
             {
                 ApplyIcon(picture, icon);
-                FruitLabStyle.Place((RectTransform)picture, transform, 7f, (height - 28f) * 0.5f, 28f, 28f);
+                float size = Mathf.Min(40f, Mathf.Min(width - 10f, height - 10f));
+                FruitLabStyle.Place((RectTransform)picture, transform, (width - size) * .5f, (height - size) * .5f + 3f, size, size);
             }
-            if (_labLabel == null) _labLabel = transform.Find("PowerUpLabel")?.GetComponent<TMP_Text>();
-            if (_labLabel == null) _labLabel = FruitLabStyle.CreateText("PowerUpLabel", transform, 10f, FruitLabStyle.Text);
-            _labLabel.text = label;
-            _labLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            FruitLabStyle.Place(_labLabel.rectTransform, transform, 38f, 0f, Mathf.Max(20f, width - 61f), height);
-            Transform countHolder = transform.Find("CountHolder");
-            if (countHolder != null)
+            Transform holder = transform.Find("CountHolder");
+            float badgeWidth = Mathf.Min(width - 4f, 30f);
+            if (holder != null)
             {
-                // Keep the prefab's existing hierarchy editable in Game.unity.
-                countHolder.gameObject.SetActive(true);
-                FruitLabStyle.Place((RectTransform)countHolder, transform, width - 22f, 0f, 20f, height);
-                Image oldBackground = countHolder.GetComponent<Image>();
-                if (oldBackground != null) oldBackground.enabled = false;
+                holder.gameObject.SetActive(true);
+                FruitLabStyle.Place((RectTransform)holder, transform, width - badgeWidth - 1f, 0f, badgeWidth, 20f);
+                FruitLabStyle.Surface(holder.GetComponent<Image>(), FruitLabStyle.Recess);
                 FruitLabStyle.Stretch(count.rectTransform);
+                holder.SetAsLastSibling();
             }
-            else FruitLabStyle.Place(count.rectTransform, transform, width - 22f, 0f, 20f, height);
-            if (width < 110f)
-            {
-                if (picture != null) FruitLabStyle.Place((RectTransform)picture, transform, 8f, height - 27f, 22f, 22f);
-                FruitLabStyle.Place(_labLabel.rectTransform, transform, 5f, 0f, width - 10f, 17f);
-                _labLabel.alignment = TextAlignmentOptions.Midline;
-                _labLabel.fontSize = 10f;
-                if (countHolder != null) FruitLabStyle.Place((RectTransform)countHolder, transform, width - 24f, height - 26f, 20f, 23f);
-            }
-            count.fontSize = 11f;
-            count.enableAutoSizing = false;
-            count.color = FruitLabStyle.Muted;
+            else FruitLabStyle.Place(count.rectTransform, transform, width - badgeWidth, 0f, badgeWidth, 20f);
+            count.gameObject.SetActive(true);
+            FruitLabStyle.TextStyle(count, 16f);
+            count.color = FruitLabStyle.Text;
             count.alignment = TextAlignmentOptions.Midline;
+            count.raycastTarget = false;
+        }
+
+        private void HideLegacyDecoration(Transform picture)
+        {
+            // Extra powers are cloned from a serialized button. Do not inherit
+            // action arrows, labels or the original button's pressed image.
+            foreach (var glyph in GetComponentsInChildren<FruitLabGlyph>(true)) glyph.gameObject.SetActive(false);
+            foreach (var text in GetComponentsInChildren<TMP_Text>(true))
+                if (!text.transform.IsChildOf(transform.Find("CountHolder") ?? transform)) text.gameObject.SetActive(false);
+            foreach (string name in new[] { "PowerUpLabel", "Label", "Reset", "ActionGlyph", "InnerBG" })
+            {
+                var old = transform.Find(name);
+                if (old != null) old.gameObject.SetActive(false);
+            }
         }
 
         private static void ApplyIcon(Transform picture, string icon)
         {
             var image = picture.GetComponent<Image>();
-            FruitLabStyle.SetIcon(image, icon);
-            Glyph("HelperGlyph", "Helper", FruitLabGlyph.Symbol.Check, FruitLabStyle.Mint);
-            Glyph("PairGlyph", "Pair", FruitLabGlyph.Symbol.Pair, FruitLabStyle.Gold);
-            Glyph("SplitGlyph","Split",FruitLabGlyph.Symbol.Split,FruitLabStyle.SplitSecondGroup);
-            image.enabled = icon != "Helper" && icon != "Pair" && icon != "Split";
-            image.raycastTarget = false;
-            void Glyph(string name, string key, FruitLabGlyph.Symbol symbol, Color tint)
+            foreach (var old in picture.GetComponentsInChildren<FruitLabGlyph>(true)) old.gameObject.SetActive(false);
+            bool custom = icon == "Helper" || icon == "Pair" || icon == "Split" || icon == "Ultra";
+            if (image != null)
             {
-                var glyph = picture.Find(name)?.GetComponent<FruitLabGlyph>();
-                if (icon == key && glyph == null)
-                {
-                    glyph = FruitLabGlyph.Create(picture, symbol, tint); glyph.name = name;
-                    FruitLabStyle.Stretch(glyph.rectTransform, 2f);
-                }
-                if (glyph != null) glyph.gameObject.SetActive(icon == key);
+                FruitLabStyle.SetIcon(image, icon);
+                image.enabled = !custom; image.raycastTarget = false;
             }
+            if (!custom) return;
+            var symbol = icon == "Helper" ? FruitLabGlyph.Symbol.Helper : icon == "Pair" ? FruitLabGlyph.Symbol.Pair
+                : icon == "Split" ? FruitLabGlyph.Symbol.Split : FruitLabGlyph.Symbol.Ultra;
+            var glyph = picture.Find("PowerGlyph")?.GetComponent<FruitLabGlyph>();
+            if (glyph == null) { glyph = FruitLabGlyph.Create(picture, symbol, Color.white); glyph.name = "PowerGlyph"; }
+            glyph.Type = symbol; glyph.color = Color.white; glyph.gameObject.SetActive(true); glyph.SetAllDirty();
+            FruitLabStyle.Stretch(glyph.rectTransform);
         }
 
         public void SetImage(Sprite sprite)

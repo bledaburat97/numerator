@@ -49,6 +49,11 @@ namespace Scripts
                 if (sprites.Length == 0) sprites = Resources.LoadAll<Sprite>("Art/FruitLabIcons");
                 foreach (Sprite sprite in sprites)
                     _icons[sprite.name] = sprite;
+                foreach (string key in new[] { "Helper", "Ultra", "Pair", "Split", "Information", "Eraser", "Confirm", "Swap" })
+                {
+                    var artwork = Resources.Load<Sprite>("Art/UI/" + key);
+                    if (artwork != null) _icons[key] = artwork;
+                }
             }
             return _icons.TryGetValue(name, out Sprite icon) ? icon : null;
         }
@@ -156,10 +161,40 @@ namespace Scripts
             text.fontSize = size;
             text.color = color;
             text.alignment = TextAlignmentOptions.Midline;
-            text.fontStyle = FontStyles.Bold;
+            TextStyle(text, size);
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.NoWrap;
             return text;
+        }
+
+        // One family with a moderate emphasis weight. Preserve the established
+        // colours and surfaces; only text hierarchy and repeated marks are shared.
+        public static void TextStyle(TMP_Text text, float size, bool emphasized = true)
+        {
+            if (text == null) return;
+            var font = Font != null ? Font : TMP_Settings.defaultFontAsset;
+            if (font != null)
+            {
+                font.boldStyle = .45f;
+                if (font.material != null && font.material.HasProperty("_WeightBold")) font.material.SetFloat("_WeightBold", .45f);
+                text.font = font;
+            }
+            text.fontSize = size;
+            text.enableAutoSizing = false;
+            text.fontStyle = emphasized ? FontStyles.Bold : FontStyles.Normal;
+            text.raycastTarget = false;
+        }
+
+        public static void StyleAbsentMark(FruitLabGlyph mark)
+        {
+            mark.Type = FruitLabGlyph.Symbol.Cross;
+            mark.color = new Color32(48, 8, 12, 255);
+            mark.raycastTarget = false;
+            mark.rectTransform.anchorMin = Vector2.one * .04f;
+            mark.rectTransform.anchorMax = Vector2.one * .96f;
+            mark.rectTransform.offsetMin = mark.rectTransform.offsetMax = Vector2.zero;
+            mark.rectTransform.localScale = Vector3.one;
+            mark.SetVerticesDirty();
         }
 
         private static Color Hex(string value)

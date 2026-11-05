@@ -18,6 +18,7 @@ namespace Scripts
         private int _helperPowerUpCount;
         private int _pairPowerUpCount;
         private int _splitPowerUpCount;
+        private int _ultraPowerUpCount;
         private int _levelId;
         private RewardType _currentRewardType;
         private HashSet<RewardType> _introductionGrants = new HashSet<RewardType>();
@@ -41,7 +42,7 @@ namespace Scripts
         public void ClearPlayerPrefs()
         {
             _starCount=_giftStarCount=_revealingPowerUpCount=_lifePowerUpCount=_bombPowerUpCount=0;
-            _helperPowerUpCount=_pairPowerUpCount=_splitPowerUpCount=0;
+            _helperPowerUpCount=_pairPowerUpCount=_splitPowerUpCount=_ultraPowerUpCount=0;
             _currentRewardType=RewardType.Revealing;
             SavePlayerPrefs();
         }
@@ -78,6 +79,7 @@ namespace Scripts
             _revealingPowerUpCount=profile.Wallet.PowerUps[RewardType.Revealing];_lifePowerUpCount=profile.Wallet.PowerUps[RewardType.Life];
             _bombPowerUpCount=profile.Wallet.PowerUps[RewardType.Bomb];_helperPowerUpCount=profile.Wallet.PowerUps[RewardType.Helper];
             _pairPowerUpCount=profile.Wallet.PowerUps[RewardType.Pair];_splitPowerUpCount=profile.Wallet.PowerUps[RewardType.Split];
+            _ultraPowerUpCount=profile.Wallet.PowerUps[RewardType.Ultra];
             _introductionGrants=new HashSet<RewardType>(profile.Wallet.IntroductionGrants);
         }
 
@@ -213,6 +215,7 @@ namespace Scripts
                 case RewardType.Pair: return Mathf.Max(0, _pairPowerUpCount);
                 case RewardType.Split: return Mathf.Max(0, _splitPowerUpCount);
                 case RewardType.Helper: return Mathf.Max(0, _helperPowerUpCount);
+                case RewardType.Ultra: return Mathf.Max(0, _ultraPowerUpCount);
                 case RewardType.Bomb:
                     return GetBombPowerUpCount();
                 default:
@@ -240,6 +243,9 @@ namespace Scripts
                     break;
                 case RewardType.Helper:
                     _helperPowerUpCount = Mathf.Max(0, _helperPowerUpCount - 1); SavePlayerPrefs();
+                    break;
+                case RewardType.Ultra:
+                    _ultraPowerUpCount = Mathf.Max(0, _ultraPowerUpCount - 1); SavePlayerPrefs();
                     break;
                 case RewardType.Bomb:
                     DecreaseBombPowerUpCount();
@@ -274,6 +280,7 @@ namespace Scripts
                 case RewardType.Pair: _pairPowerUpCount++; break;
                 case RewardType.Split: _splitPowerUpCount++; break;
                 case RewardType.Helper: _helperPowerUpCount++; break;
+                case RewardType.Ultra: _ultraPowerUpCount++; break;
                 case RewardType.Bomb:
                     _bombPowerUpCount++;
                     break;

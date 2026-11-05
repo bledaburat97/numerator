@@ -10,7 +10,8 @@ namespace Scripts
         [InjectOptional] private HelperEffect _helper;
         [InjectOptional] private PairEffect _pair;
         [InjectOptional] private BoardSplitService _split;
-        private const float DisabledAlpha = 0.35f;
+        [InjectOptional] private UltraPowerUpController _ultra;
+        private const float DisabledAlpha = 0.55f;
         private const float EnabledAlpha = 1f;
 
         private readonly BaseButtonControllerFactory _baseButtonControllerFactory;
@@ -62,6 +63,7 @@ namespace Scripts
             if (_view == null || !_isInitialized) return;
 
             _view.SetProgression(_levelTracker.GetLevelId());
+            _view.SetUltraActive(_ultra?.Active??false);
             foreach (RewardType rewardType in PowerUpTypeUtility.OrderedRewardTypes)
             {
                 int count = _levelTracker.GetPowerUpCount(rewardType);
@@ -90,14 +92,14 @@ namespace Scripts
         }
 
         private bool IsPowerUpAvailable(RewardType rewardType)
-            => PowerUpAvailability.CanUse(rewardType,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split);
+            => PowerUpAvailability.CanUse(rewardType,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra);
     }
 
     // UI availability and execution share the same eligibility rules.
     public static class PowerUpAvailability
     {
         public static bool CanUse(RewardType type,ILevelTracker tracker,IRoundStateManager round,
-            ICardItemInfoManager info,IBoardHolderCountManager counts,HelperEffect helper,PairEffect pair,BoardSplitService split)
+            ICardItemInfoManager info,IBoardHolderCountManager counts,HelperEffect helper,PairEffect pair,BoardSplitService split,UltraPowerUpController ultra=null)
         {
             if(tracker.GetGameOption()!=GameOption.SinglePlayer || round.GetRemainingGuessCount()<=0
                 || tracker.GetPowerUpCount(type)<=0 || !PowerUpTypeUtility.IsUnlocked(type,tracker.GetLevelId()))return false;
@@ -105,7 +107,8 @@ namespace Scripts
             {
                 case RewardType.Helper:return helper!=null && helper.CanApply;
                 case RewardType.Pair:return pair!=null && pair.CanApply;
-                case RewardType.Split:return split!=null && split.CanApply;
+                case RewardType.Split:return split!=null && split.CanApply && !(ultra?.Active??false);
+                case RewardType.Ultra:return ultra!=null && ultra.CanApply;
                 case RewardType.Life:return round.GetRemainingGuessCount()+3<=round.GetMaxGuessCount();
                 case RewardType.Bomb:
                     if(!counts.CanShrink || counts.GetBoardHolderCount()<=1 || round.GetTriedCardsList().Count>0 || counts.GetRemovedBoardHolderCount()>0)return false;

@@ -31,8 +31,9 @@ namespace Scripts
             Container.Bind<IResultAreaController>().To<ResultAreaController>().FromResolve();
             Container.Bind<IResultHistorySource>().To<ResultAreaController>().FromResolve();
             Container.Bind<IPositionAssistanceView>().To<PositionAssistanceView>().AsSingle().WithArguments(gameUI, resultAreaView);
-            Container.Bind<PositionAssistancePreferences>().AsSingle();
             Container.Bind<PositionAssistanceController>().AsSingle();
+            Container.Bind<Economy.UltraActivationService>().FromMethod(context=>new Economy.UltraActivationService(context.Container.Resolve<Economy.IPlayerProfileRepository>())).AsSingle();
+            Container.Bind<UltraPowerUpController>().AsSingle();
             Container.Bind<IPositionNotesSettings>().To<PositionAssistanceController>().FromResolve();
             Container.Bind<PairEffect>().AsSingle();
             Container.Bind<BoardSplitService>().AsSingle();

@@ -152,7 +152,7 @@ public static partial class FruitLabTutorialEditorTools
         Require(reloaded.Snapshot().Collection[FruitId.Apple].Current==1 && new GameWinRewardService(reloaded,PlayerProfileRuntime.CreateRewardRules()).SinglePlayer(identity,20,new[]{1,2},1,1).IsReplay,"Atomic receipt survives a fresh disk load");
         var old=initial.Copy();old.Version=1;
         PlayerProfileValidation.Upgrade(old);PlayerProfileValidation.Validate(old);
-        Require(old.Version==2 && old.Wallet.Coins==10,"Version one upgrades without resetting balances");
+        Require(old.Version==PlayerProfileData.CurrentVersion && old.Wallet.Coins==10,"Version one upgrades without resetting balances");
     }
 
     private static void ReviewCollectionRounds(Canvas canvas,Camera camera)

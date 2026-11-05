@@ -74,6 +74,7 @@ namespace Scripts
         public bool TrialStockPrepared;
         public bool PairWasApplied;
         public bool BoardSplitApplied;
+        public bool UltraActive;
         public PairClue PairClue;
         public GrowingBoardState GrowingBoard;
         public DynamiteRoundState Dynamite;

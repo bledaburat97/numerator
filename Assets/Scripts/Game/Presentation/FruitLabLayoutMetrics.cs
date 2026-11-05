@@ -23,17 +23,17 @@ namespace Scripts
             Padding = 12f * scale * compact;
             TopPadding = BottomPadding = 4f * scale * compact;
             Gap = 6f * scale * compact;
-            HeaderHeight = (mechanicCaption ? 86f : 72f) * scale;
+            HeaderHeight = (mechanicCaption ? 86f : 72f) * Math.Min(1f,scale);
             BoardFooterHeight = boardFooter ? Math.Max(24f,24f*scale*compact) : 0f;
-            if(positionEditing)BoardFooterHeight+=20f;
+            BoardFooterHeight += Math.Max(18f, Math.Min(24f, 20f*scale*compact + (Height-580f*scale)*.45f));
             BoardHeight = 64f * scale * compact + BoardFooterHeight;
-            ActionWidth = 48f * scale * compact;
+            ActionWidth = Math.Max(44f,48f * scale * compact);
             ChoicesWidth = Width - Padding * 2f - (ActionWidth + Gap) * 2f;
-            ChoicesHeight = (116f + (positionIndicators ? 30f : 0f)) * scale * compact;
-            PowerUpHeight = 44f * scale * compact;
+            ChoicesHeight = 146f * scale * compact;
+            PowerUpHeight = Math.Max(48f, 48f * scale * compact);
             GameAreaHeight = BoardHeight + ChoicesHeight + PowerUpHeight + Gap * 2f;
             HistoryHeight = Height - TopPadding - BottomPadding - HeaderHeight - GameAreaHeight - Gap * 2f;
-            HistorySpacing = 4f * scale * compact;
+            HistorySpacing = (Height >= 667f*scale?4f:2f) * scale * compact;
             HistoryRowHeight = GetHistoryRowHeight(HistoryHeight, HistorySpacing, scale);
         }
 
@@ -49,7 +49,7 @@ namespace Scripts
         public static float GetHistoryCardSize(float width, float rowHeight, int boardCount)
         {
             float availableWidth = width - HistoryFeedbackReservation - Math.Max(0, boardCount - 1) * HistoryCardGap;
-            return Math.Max(1f, Math.Min(rowHeight - 6f, availableWidth / Math.Max(1, boardCount)));
+            return Math.Max(1f, Math.Min(rowHeight - 4f, availableWidth / Math.Max(1, boardCount)));
         }
 
         private static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));

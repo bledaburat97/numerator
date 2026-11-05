@@ -31,16 +31,16 @@ namespace Scripts
             _roundStateManager = roundStateManager;
         }
 
-        public bool TryCreateSnapshot(out LevelSaveData levelSaveData)
+        public bool TryCreateSnapshot(out LevelSaveData levelSaveData,bool includeUnchanged=false)
         {
             levelSaveData = null;
 
             var info = _cardItemInfoManager.GetCardItemInfoList();
             bool mutatedBeforeGuess = _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
-                || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
+                || (_saveData?.GetLevelSaveData().UltraActive ?? false) || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || (info != null && info.Any(card => card.isLocked || !card.isExisted));
             bool hasNotes = _saveData?.GetLevelSaveData().PositionNotes?.Edited == true;
-            if (_roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess && !hasNotes) return false;
+            if (!includeUnchanged && _roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess && !hasNotes) return false;
             if (_roundStateManager.GetRemainingGuessCount() <= 0 || _session.IsGameOver) return false;
             if (_session.State != LevelFlowState.Idle && _session.State != LevelFlowState.Playing) return false;
 
@@ -62,6 +62,7 @@ namespace Scripts
                 LastEliminationGuessNumber = _saveData?.GetLevelSaveData().LastEliminationGuessNumber ?? 0,
                 PairWasApplied = _saveData?.GetLevelSaveData().PairWasApplied ?? false,
                 BoardSplitApplied = _saveData?.GetLevelSaveData().BoardSplitApplied ?? false,
+                UltraActive = _saveData?.GetLevelSaveData().UltraActive ?? false,
                 PairClue = _saveData?.GetLevelSaveData().PairClue,
                 GrowingBoard = _saveData?.GetLevelSaveData().GrowingBoard?.Copy(),
                 Dynamite = _saveData?.GetLevelSaveData().Dynamite?.Copy(),
@@ -82,6 +83,6 @@ namespace Scripts
 
     public interface IGameSaveSnapshotProvider
     {
-        bool TryCreateSnapshot(out LevelSaveData levelSaveData);
+        bool TryCreateSnapshot(out LevelSaveData levelSaveData,bool includeUnchanged=false);
     }
 }

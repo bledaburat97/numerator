@@ -34,7 +34,7 @@ namespace Scripts
             List<Vector2> localPositions = new List<Vector2>();
             Vector2 initialHolderSize = GetInitialHolderSize();
             float spacing = initialHolderSize.x * SpacingToInitialHolderWidthRatio;
-            return localPositions.GetLocalPositionList(holderCount, spacing, initialHolderSize, HasIndicators ? InitialHolderView.IndicatorReserve * .5f : 0f);
+            return localPositions.GetLocalPositionList(holderCount, spacing, initialHolderSize, InitialHolderView.IndicatorReserve * .5f);
         }
 
         public Vector2 GetInitialHolderSize()
@@ -61,7 +61,7 @@ namespace Scripts
             float rowWidth = holder.x * (MaxCardsPerRow + SpacingToInitialHolderWidthRatio * (MaxCardsPerRow - 1));
             // Keep both fruit rows between the side buttons, including on short screens.
             return Mathf.Max(0.01f, Mathf.Min(_sizeManager.GetSizeRatio(),
-                Mathf.Min(available.x / rowWidth, Mathf.Max(1, available.y - (HasIndicators ? InitialHolderView.IndicatorReserve * 2 : 0)) / (holder.y * 2f))));
+                Mathf.Min(available.x / rowWidth, Mathf.Max(1, available.y - InitialHolderView.IndicatorReserve * 2) / (holder.y * 2f))));
         }
     }
 

@@ -131,6 +131,7 @@ namespace Game
         Bomb,
         Helper,
         Pair,
-        Split
+        Split,
+        Ultra
     }
 }

@@ -31,6 +31,7 @@ namespace Scripts
         [Inject] private TutorialInputGate _tutorialGate;
         [Inject] private LevelMechanicsController _mechanics;
         [Inject] private PositionAssistanceController _positionAssistance;
+        [Inject] private UltraPowerUpController _ultra;
         public PositionAssistanceController PositionAssistance => _positionAssistance;
         public CardAnnotationController Annotations { get; private set; }
         private FruitLabGameLayout _presentation;
@@ -54,8 +55,17 @@ namespace Scripts
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
             InitializePowerUpUi();
+            _ultra.Configure(SaveUltraCheckpoint);
             InitializeGame();
             _positionAssistance.Refresh();
+            _ultra.Restore();
+        }
+
+        private bool SaveUltraCheckpoint()
+        {
+            _positionAssistance.Refresh();
+            if(!_gameSaveSnapshotProvider.TryCreateSnapshot(out var snapshot,true))return false;
+            _gameSaveService.Save(snapshot);return true;
         }
 
         private void OnLayoutChanged()

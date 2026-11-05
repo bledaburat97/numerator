@@ -87,7 +87,7 @@ namespace Scripts
             image.raycastTarget = true;
             var button = rect.gameObject.AddComponent<Button>(); button.targetGraphic = image;
             button.onClick.AddListener(() => action());
-            var text = FruitLabStyle.CreateText("Label", rect, 12, primary ? FruitLabStyle.Background : FruitLabStyle.Text);
+            var text = FruitLabStyle.CreateText("Label", rect, 16, primary ? FruitLabStyle.Background : FruitLabStyle.Text);
             text.text = label; text.alignment = TextAlignmentOptions.Midline; text.raycastTarget = false;
             FruitLabStyle.Stretch(text.rectTransform, 3); return button;
         }

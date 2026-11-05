@@ -98,10 +98,10 @@ namespace Scripts
             FruitLabStyle.Rim(gameArea);
             bool multiplayer = gameView.IsMultiplayer;
             lifeBar.gameObject.SetActive(!multiplayer);
-            float powerHeight = multiplayer && !(_cardAnnotationMode || _evidenceReasonMode) ? 0f : layout.PowerUpHeight;
+            float powerHeight = layout.PowerUpHeight;
             float reclaimed = layout.PowerUpHeight - powerHeight;
             FruitLabStyle.Place(gameArea, middleArea, layout.Padding, layout.BottomPadding, width, layout.GameAreaHeight - reclaimed);
-            powerUpArea.gameObject.SetActive(!multiplayer || _cardAnnotationMode || _evidenceReasonMode);
+            powerUpArea.gameObject.SetActive(true);
             float y = 0f;
             FruitLabStyle.Place(powerUpArea, gameArea, 0f, y, width, powerHeight);
             y += powerHeight + layout.Gap;
@@ -123,13 +123,6 @@ namespace Scripts
             lifeBar.ApplyLabLayout(header, width, layout.HeaderHeight);
             // Editing clips the bottom of history; rows retain their ordinary size.
             float clippedHistoryHeight = 0f;
-            if (_cardAnnotationMode)
-            {
-                var ordinary = new FruitLabLayoutMetrics(_lastSize.x, _lastSize.y,
-                    !multiplayer && gameView.HasMechanicStatus, gameView.HasDynamiteFooter, gameView.HasPositionIndicators);
-                float ordinaryReclaimed = multiplayer && !_evidenceReasonMode ? ordinary.PowerUpHeight : 0f;
-                clippedHistoryHeight = ordinary.HistoryHeight + ordinaryReclaimed - layout.HistoryHeight - reclaimed;
-            }
             results.ApplyLabLayout(layout.HistorySpacing, clippedHistoryHeight);
         }
 

@@ -36,7 +36,10 @@ namespace Scripts
             // Callbacks can hold the interface after Unity destroys the component.
             if (this == null || _destroyRequested) return;
             _destroyRequested = true;
-            Destroy(gameObject);
+            // Destroy is deferred until frame end; hide immediately during a
+            // round transition so an interrupted flight cannot leave a frame behind.
+            gameObject.SetActive(false);
+            if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
         }
 
         public void TrackAnimation(Tween animation)

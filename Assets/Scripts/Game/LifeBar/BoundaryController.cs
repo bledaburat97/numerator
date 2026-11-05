@@ -36,6 +36,10 @@ namespace Scripts
 
         public void DestroyObject()
         {
+            // Flights temporarily reparent the token into the HUD. Its lifetime
+            // still belongs to this boundary, even after it leaves the hierarchy.
+            _rewardTokenView?.Destroy();
+            _rewardTokenView = null;
             _view.DestroyObject();
         }
 

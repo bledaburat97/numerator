@@ -15,6 +15,7 @@ namespace Scripts.Economy
                 case RewardType.Helper:return "helper_power_up_count";
                 case RewardType.Pair:return "pair_power_up_count";
                 case RewardType.Split:return "split_power_up_count";
+                case RewardType.Ultra:return "ultra_power_up_count";
                 default:throw new ArgumentOutOfRangeException(nameof(type));
             }
         }

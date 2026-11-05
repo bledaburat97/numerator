@@ -30,8 +30,8 @@ namespace Scripts
             _isNavigating = false;
             _view.Init();
             _view.SetSinglePlayer(_levelTracker.GetGameOption() == GameOption.SinglePlayer);
-            void RefreshNotes()=>_view.ConfigureNotes(notes!=null,notes?.AssistanceEnabled??true,
-                enabled=>{notes?.SetAssistanceEnabled(enabled);RefreshNotes();},()=>{notes?.ResetNotes();RefreshNotes();});
+            void RefreshNotes()=>_view.ConfigureNotes(notes?.CanResetNotes==true,
+                ()=>{notes.ResetNotes();RefreshNotes();saveGameAction?.Invoke();});
             RefreshNotes();
             IBaseButtonController closeButtonController =
                 baseButtonControllerFactory.Create(_view.GetCloseButton(), () => OnCloseButtonClick(onCloseAction));

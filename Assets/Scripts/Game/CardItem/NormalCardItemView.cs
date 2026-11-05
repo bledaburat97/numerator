@@ -30,7 +30,7 @@ namespace Scripts
             if (presence == FruitPresence.Absent)
             {
                 EnsureCross();
-                _annotationCross.GetComponentInChildren<FruitLabGlyph>(true).color = new Color(1f, .48f, .48f, 1f);
+                FruitLabStyle.StyleAbsentMark(_annotationCross.GetComponentInChildren<FruitLabGlyph>(true));
             }
             RefreshAnnotation(); RefreshContentOpacity();
         }
@@ -130,8 +130,7 @@ namespace Scripts
             FruitLabStyle.Stretch(_annotationCross);
             var cross = _annotationCross.GetComponentInChildren<FruitLabGlyph>(true)
                 ?? FruitLabGlyph.Create(_annotationCross, FruitLabGlyph.Symbol.Cross, AnnotationCrossColor);
-            cross.Type = FruitLabGlyph.Symbol.Cross; cross.color = AnnotationCrossColor;
-            FruitLabStyle.Stretch(cross.rectTransform);
+            FruitLabStyle.StyleAbsentMark(cross);
         }
 
 

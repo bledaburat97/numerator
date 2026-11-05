@@ -6,7 +6,7 @@ namespace Scripts
     // Small functional symbols stay sharp at every UI scale and don't need a font glyph.
     public class FruitLabGlyph : MaskableGraphic
     {
-        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite }
+        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16 }
         public Symbol Type;
         private Color _meshTint;
         private static readonly Vector2[] FirstPairCard = {
@@ -54,18 +54,65 @@ namespace Scripts
             return glyph;
         }
 
+        private Sprite Artwork
+        {
+            get
+            {
+                string name = Type == Symbol.Check ? "Confirm" : Type == Symbol.Swap ? "Swap"
+                    : Type == Symbol.Information ? "Information" : Type == Symbol.Eraser ? "Eraser"
+                    : Type == Symbol.Helper ? "Helper" : Type == Symbol.Pair ? "Pair"
+                    : Type == Symbol.Split ? "Split" : Type == Symbol.Ultra ? "Ultra" : null;
+                return name != null ? FruitLabStyle.Icon(name) : null;
+            }
+        }
+
+        public override Texture mainTexture => Artwork != null ? Artwork.texture : base.mainTexture;
+
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();
+            Sprite artwork = Artwork;
+            if (artwork != null)
+            {
+                Rect rect = GetPixelAdjustedRect();
+                float aspect = artwork.rect.width / artwork.rect.height;
+                float width = Mathf.Min(rect.width,rect.height*aspect), height = width/aspect;
+                Vector2 bottomLeft = rect.center - new Vector2(width,height) * .5f;
+                // Keep original artwork colours; functional checks can be tinted
+                // dark on the mint submit button, or green in result feedback.
+                Color tint = Type == Symbol.Check ? color : new Color(1, 1, 1, color.a);
+                mesh.AddVert(bottomLeft, tint, new Vector2(0, 0));
+                mesh.AddVert(bottomLeft + Vector2.up * height, tint, new Vector2(0, 1));
+                mesh.AddVert(bottomLeft + new Vector2(width,height), tint, new Vector2(1, 1));
+                mesh.AddVert(bottomLeft + Vector2.right * width, tint, new Vector2(1, 0));
+                mesh.AddTriangle(0, 1, 2); mesh.AddTriangle(0, 2, 3);
+                return;
+            }
             _meshTint = color;
             Rect r = GetPixelAdjustedRect();
             Vector2 center = r.center;
             float size = Mathf.Min(r.width, r.height);
             float stroke = size * 0.095f;
             if (size <= 0) return;
-            if (Type == Symbol.Check)
+            if (Type == Symbol.Check || Type == Symbol.Helper)
             {
                 RoundedStroke(mesh, CheckPath, center, size, stroke);
+            }
+            else if(Type==Symbol.Information)
+            {
+                var previous=center+Vector2.right*size*.39f;
+                for(int i=1;i<=32;i++)
+                {float angle=i*Mathf.PI*2/32;var point=center+new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*size*.39f;Line(mesh,previous,point,stroke*.7f);previous=point;}
+                Disc(mesh,center+Vector2.up*size*.19f,stroke*.55f);
+                Line(mesh,center+Vector2.down*size*.24f,center+Vector2.up*size*.04f,stroke);
+            }
+            else if(Type==Symbol.Ultra)
+            {
+                RoundedStroke(mesh,CheckPath,center,size*.78f,stroke);
+                Color original=_meshTint;_meshTint=FruitLabStyle.Pink;
+                var star=center+size*new Vector2(.28f,.30f);
+                for(int i=0;i<4;i++){float angle=i*Mathf.PI/4;var axis=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*size*.11f;Line(mesh,star-axis,star+axis,stroke*.5f);}
+                _meshTint=original;
             }
             else if (Type == Symbol.Dynamite) DrawDynamite(mesh,center,size);
             else if (Type == Symbol.Swap)
@@ -98,14 +145,24 @@ namespace Scripts
             }
             else if (Type == Symbol.Cross)
             {
-                RoundedStroke(mesh, CrossA, center, size, stroke);
-                RoundedStroke(mesh, CrossB, center, size, stroke);
+                RaisedStroke(mesh, CrossA, center, size, size * .13f, color);
+                RaisedStroke(mesh, CrossB, center, size, size * .13f, color);
             }
             else
             {
                 RoundedStroke(mesh, UndoCurve, center, size, stroke);
                 RoundedStroke(mesh, UndoHead, center, size, stroke);
             }
+        }
+
+        private void RaisedStroke(VertexHelper mesh, Vector2[] path, Vector2 center, float size, float stroke, Color tint)
+        {
+            _meshTint = new Color(.025f, .07f, .08f, tint.a * .5f);
+            RoundedStroke(mesh, path, center + Vector2.down * size * .035f, size, stroke * 1.14f);
+            _meshTint = tint;
+            RoundedStroke(mesh, path, center, size, stroke);
+            _meshTint = Color.Lerp(tint, Color.white, .22f); _meshTint.a = tint.a;
+            RoundedStroke(mesh, path, center + Vector2.up * size * .022f, size, stroke * .32f);
         }
 
         private static readonly Vector2[] DynamiteFuse = { new Vector2(0,.18f),new Vector2(.02f,.32f),new Vector2(.16f,.29f),new Vector2(.23f,.41f) };

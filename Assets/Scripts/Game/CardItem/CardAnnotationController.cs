@@ -41,12 +41,12 @@ namespace Scripts
             _placement.OnCardDragStartedEvent += CancelOnAction;
             _ui.ResetNumbers += CancelAllOnAction;
             _ui.CheckFinalNumbers += CancelAllOnAction;
-            _ui.OpenSettings += CancelAllOnAction;
+            _ui.OpenSettings += CancelAllOnAction;_ui.OpenInformation += CancelAllOnAction;
         }
 
         public bool TrySelect(int cardIndex)
         {
-            if (_notes==null || _layout == null || !_canInteract() || (_gate != null && _gate.IsRestricted)
+            if (_notes==null || !_notes.CanEditNotes || !_notes.CanEditFruit(cardIndex+1) || _layout == null || !_canInteract() || (_gate != null && _gate.IsRestricted)
                 || !_cards.TryGetCardItem(cardIndex, out var card) || card.GetCardMoveHandler().IsMovementLocked()
                 || !card.GetView().CanAnnotate || !card.GetView().GetRectTransform().gameObject.activeInHierarchy) return false;
             Cancel();
@@ -62,7 +62,7 @@ namespace Scripts
         public void Tick()
         {
             if (_selectedMove == null) return;
-            if (!IsSelecting || !_canInteract() || (_gate != null && _gate.IsRestricted)
+            if (!IsSelecting || !_notes.CanEditNotes || !_canInteract() || (_gate != null && _gate.IsRestricted)
                 || _selectedMove.IsMovementLocked() || !_selected.CanAnnotate || !_selected.GetRectTransform().gameObject.activeInHierarchy)
             { Cancel(); return; }
         }
@@ -100,7 +100,7 @@ namespace Scripts
             CancelAllGestures(); _placement.SetLongPressHandler(null);
             if(_notes!=null)_notes.Changed-=OnNotesChanged;
             _placement.OnCardDragStartedEvent -= CancelOnAction;
-            _ui.ResetNumbers -= CancelAllOnAction; _ui.CheckFinalNumbers -= CancelAllOnAction; _ui.OpenSettings -= CancelAllOnAction;
+            _ui.ResetNumbers -= CancelAllOnAction; _ui.CheckFinalNumbers -= CancelAllOnAction; _ui.OpenSettings -= CancelAllOnAction;_ui.OpenInformation -= CancelAllOnAction;
             _view.Dispose();
         }
     }

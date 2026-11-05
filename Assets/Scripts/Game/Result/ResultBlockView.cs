@@ -146,8 +146,8 @@ namespace Scripts
                 var mark = _absentMarks[i];
                 if (mark == null)
                 {
-                    mark = _absentMarks[i] = FruitLabGlyph.Create(((Component)_cards[i]).transform, FruitLabGlyph.Symbol.Cross, new Color(.30f, .025f, .045f, 1f));
-                    mark.name = "HelperAbsent"; FruitLabStyle.Stretch(mark.rectTransform, 4f);
+                    mark = _absentMarks[i] = FruitLabGlyph.Create(((Component)_cards[i]).transform, FruitLabGlyph.Symbol.Cross, new Color(.30f,.025f,.045f,1f));
+                    mark.name = "HelperAbsent"; FruitLabStyle.StyleAbsentMark(mark);
                 }
                 mark.gameObject.SetActive(true);
             }
@@ -202,7 +202,7 @@ namespace Scripts
             FruitLabStyle.Place(_misplacedIcon.rectTransform, _feedback, 48f, (feedbackHeight - iconSize) * 0.5f, iconSize, iconSize);
             FruitLabStyle.Place(_correctCount.rectTransform, _feedback, 25f, 0f, 18f, feedbackHeight);
             FruitLabStyle.Place(_misplacedCount.rectTransform, _feedback, 73f, 0f, 18f, feedbackHeight);
-            _correctCount.fontSize = _misplacedCount.fontSize = Mathf.Min(18f, height * 0.55f);
+            _correctCount.fontSize = _misplacedCount.fontSize = Mathf.Max(16f,Mathf.Min(18f, height * 0.55f));
             ArrangeCards();
         }
 
@@ -213,7 +213,7 @@ namespace Scripts
                 float groupWidth = (_width-12f)*.5f;
                 int maximum = Mathf.Max(_groups[0].Count,_groups[1].Count);
                 float cardArea = groupWidth-GroupFeedbackView.Reservation-8f;
-                float side = Mathf.Max(1f,Mathf.Min(_height-8f,(cardArea-(maximum-1)*FruitLabLayoutMetrics.HistoryCardGap)/maximum));
+                float side = Mathf.Max(1f,Mathf.Min(_height-6f,(cardArea-(maximum-1)*FruitLabLayoutMetrics.HistoryCardGap)/maximum));
                 for (int group = 0; group < 2; group++)
                 {
                     var feedback = _groups[group];
@@ -261,13 +261,17 @@ namespace Scripts
             { _correctCount.text = result.Correct.ToString(); _misplacedCount.text = result.Misplaced.ToString(); }
             public void Resize(float x,float width,float height)
             {
-                FruitLabStyle.Place(_panel.rectTransform,_panel.transform.parent,x,2f,width,height-4f);
-                float line = (height-4f)*.5f, icon = Mathf.Min(19f,line-1f), left = width-Reservation;
+                FruitLabStyle.Place(_panel.rectTransform,_panel.transform.parent,x,0f,width,height);
+                float line = height*.5f, icon = Mathf.Min(19f,line-1f), left = width-Reservation;
                 FruitLabStyle.Place(_correct.rectTransform,_panel.transform,left,line+(line-icon)*.5f,icon,icon);
                 FruitLabStyle.Place(_misplaced.rectTransform,_panel.transform,left,(line-icon)*.5f,icon,icon);
-                FruitLabStyle.Place(_correctCount.rectTransform,_panel.transform,left+20f,line,15f,line);
-                FruitLabStyle.Place(_misplacedCount.rectTransform,_panel.transform,left+20f,0f,15f,line);
-                _correctCount.fontSize = _misplacedCount.fontSize = Mathf.Clamp(line*.84f,12f,18f);
+                float fontSize = Mathf.Clamp(line*.85f,14f,18f);
+                // TMP line metrics include descenders even for a single digit.
+                // Keep the same baselines while allowing that invisible padding.
+                float textHeight = Mathf.Max(line,fontSize*1.2f), padding=(line-textHeight)*.5f;
+                FruitLabStyle.Place(_correctCount.rectTransform,_panel.transform,left+20f,line+padding,15f,textHeight);
+                FruitLabStyle.Place(_misplacedCount.rectTransform,_panel.transform,left+20f,padding,15f,textHeight);
+                FruitLabStyle.TextStyle(_correctCount,fontSize);FruitLabStyle.TextStyle(_misplacedCount,fontSize);
             }
         }
     }

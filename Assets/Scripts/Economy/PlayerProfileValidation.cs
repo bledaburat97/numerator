@@ -16,6 +16,12 @@ namespace Scripts.Economy
         {
             // v2 adds optional durable outcome data to transaction receipts; balances are unchanged.
             if(data?.Version==1)data.Version=2;
+            if(data?.Version==2)
+            {
+                if(data.Wallet?.PowerUps!=null && !data.Wallet.PowerUps.ContainsKey(RewardType.Ultra))
+                    data.Wallet.PowerUps.Add(RewardType.Ultra,0);
+                data.Version=3;
+            }
         }
         public static void Validate(PlayerProfileData data)
         {

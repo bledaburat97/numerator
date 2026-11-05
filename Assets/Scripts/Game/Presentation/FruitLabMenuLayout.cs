@@ -50,16 +50,16 @@ namespace Scripts
             header.ApplyLabLayout(width);
             FruitLabStyle.Place(crystals.GetRectTransform(), middleArea, 12f, height - 184f, width, 106f);
             crystals.ApplyLabStyle();
-            FruitLabStyle.Place(powers.GetRectTransform(), middleArea, 12f, height - 240f, width, 44f);
-            powers.ApplyLabLayout(width, 44f);
+            FruitLabStyle.Place(powers.GetRectTransform(), middleArea, 12f, height - 316f, width, 120f);
+            powers.ApplyLabLayout(width, 120f, 2);
             RectTransform actions = (RectTransform)menu.transform;
-            FruitLabStyle.Place(actions, middleArea, 24f, Mathf.Max(28f, (height - 352f) * .4f), width - 24f, 172f);
+            FruitLabStyle.Place(actions, middleArea, 24f, Mathf.Max(12f, (height - 500f) * .4f), width - 24f, 172f);
             BaseButtonView play = (BaseButtonView)menu.GetSinglePlayerButton();
             BaseButtonView multi = (BaseButtonView)menu.GetMultiplayerButton();
             FruitLabStyle.Place(play.GetButtonRectTransform(), actions, 0f, 116f, width - 24f, 56f);
-            FruitLabStyle.Place(multi.GetButtonRectTransform(), actions, 0f, 60f, width - 24f, 44f);
+            FruitLabStyle.Place(multi.GetButtonRectTransform(), actions, 0f, 60f, width - 24f, 48f);
             var collection=(BaseButtonView)menu.GetCollectionButton();
-            if(collection!=null){FruitLabStyle.Place(collection.GetButtonRectTransform(),actions,0,4,width-24f,44);collection.ApplyLabActionStyle(false);}
+            if(collection!=null){FruitLabStyle.Place(collection.GetButtonRectTransform(),actions,0,4,width-24f,48);collection.ApplyLabActionStyle(false);}
             play.ApplyLabActionStyle(true);
             multi.ApplyLabActionStyle(false);
         }

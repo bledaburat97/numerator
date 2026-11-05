@@ -15,27 +15,10 @@ namespace Scripts
     }
     public interface IPositionNotesSettings
     {
-        bool AssistanceEnabled { get; }
-        void SetAssistanceEnabled(bool enabled);
+        bool UltraActive { get; }
+        bool CanResetNotes { get; }
         void ResetNotes();
     }
-    public sealed class PositionAssistancePreferences
-    {
-        private const string Key="normal_assistance_enabled";
-        private readonly bool _persist;
-        public bool Enabled { get; private set; }
-        public event Action<bool> Changed;
-        [Zenject.Inject] public PositionAssistancePreferences() : this(PlayerPrefs.GetInt(Key,1)!=0,true) { }
-        public PositionAssistancePreferences(bool enabled,bool persist=false) {Enabled=enabled;_persist=persist;}
-        public void Set(bool enabled)
-        {
-            if(Enabled==enabled)return;
-            Enabled=enabled;
-            if(_persist){PlayerPrefs.SetInt(Key,enabled?1:0);PlayerPrefs.Save();}
-            Changed?.Invoke(enabled);
-        }
-    }
-
     public sealed class PositionAssistanceController : IDisposable,IPositionNotesSettings
     {
         private readonly IResultHistorySource _history;
@@ -47,7 +30,6 @@ namespace Scripts
         private readonly IPositionAssistanceView _view;
         private readonly IInitialCardAreaEvents _actors;
         private readonly ICardKnowledgeEvents _knowledge;
-        private readonly PositionAssistancePreferences _preferences;
         private readonly ILevelSaveDataManager _save;
         private readonly HashSet<int> _details=new HashSet<int>();
         private int _generation=-1,_processed;
@@ -56,19 +38,24 @@ namespace Scripts
         private int[] _knownLocks;
         private LevelSaveData _roundData;
         public PositionDeductionService State { get; private set; }
-        public bool AssistanceEnabled=>_preferences.Enabled;
-        public event Action Changed;
-        private bool CanDeduce=>AssistanceEnabled && _levels.GetLevelData()?.Mechanic!=LevelMechanic.Growing
+        private bool _ultraActive,_indicatorsVisible;
+        public bool UltraActive=>_ultraActive;
+        public bool IndicatorsVisible=>_indicatorsVisible || UltraActive;
+        public bool CanResetNotes=>!UltraActive;
+        public bool CanEditNotes=>!UltraActive;
+        public bool SupportsAutomatic=>_levels.GetLevelData()?.Mechanic!=LevelMechanic.Growing
             && _levels.GetLevelData()?.Mechanic!=LevelMechanic.Split && !(_split?.IsActive??false);
+        public event Action Changed;
+        private bool CanDeduce=>UltraActive && SupportsAutomatic;
 
         public PositionAssistanceController(IResultHistorySource history,IInitialCardAreaController cards,
             IBoardHolderCountManager counts,ILevelDataCreator levels,ICardItemInfoManager info,
-            BoardSplitService split,IPositionAssistanceView view,PositionAssistancePreferences preferences=null,ILevelSaveDataManager save=null)
+            BoardSplitService split,IPositionAssistanceView view,ILevelSaveDataManager save=null)
         {
             _history=history;_cards=cards;_counts=counts;_levels=levels;_info=info;_split=split;_view=view;
-            _preferences=preferences??new PositionAssistancePreferences(true);_save=save;
+            _save=save;
             _actors=cards as IInitialCardAreaEvents;_knowledge=info as ICardKnowledgeEvents;
-            _history.Changed+=Invalidate;_history.DetailsChanged+=OnDetails;_preferences.Changed+=OnPreferenceChanged;
+            _history.Changed+=Invalidate;_history.DetailsChanged+=OnDetails;
             if(_actors!=null)_actors.Rebuilt+=Invalidate;
             if(_knowledge!=null)_knowledge.Changed+=Invalidate;
             if(_split!=null)_split.Applied+=OnSplit;
@@ -76,8 +63,21 @@ namespace Scripts
         private void Invalidate()=>_dirty=true;
         private void OnDetails(int index){_details.Add(index);Invalidate();}
         private void OnSplit(object sender,EventArgs args)=>Invalidate();
-        private void OnPreferenceChanged(bool enabled){if(enabled)ResetNotes();else {Refresh();}}
-        public void SetAssistanceEnabled(bool enabled)=>_preferences.Set(enabled);
+        // Called only after the powerup transaction succeeds. Rebuild from public evidence;
+        // player notes never seed Ultra's calculation.
+        public void ActivateUltra()
+        {
+            if(_dirty || State==null)Refresh();
+            if(_disposed || UltraActive || !SupportsAutomatic || State==null)return;
+            _ultraActive=true;
+            if(_save!=null)_save.GetLevelSaveData().UltraActive=true;
+            RebuildEvidence();
+        }
+        private void RebuildEvidence()
+        {
+            State=new PositionDeductionService(State.FruitCount,State.SlotCount);
+            _processed=0;_details.Clear();ResetKnowledge();_dirty=true;Refresh();
+        }
         public void Tick(){if(_disposed)return;_view.Tick();if(_dirty)Refresh();}
 
         public void Refresh()
@@ -92,9 +92,12 @@ namespace Scripts
             if(newRound)
             {
                 _roundData=data;_generation=_history.Generation;_processed=0;_details.Clear();_view.CloseReason();
+                _ultraActive=data?.UltraActive??false;
                 var snapshot=data?.PositionNotes;
-                bool restore=snapshot!=null && snapshot.Fruits==fruits && snapshot.Slots==slots && snapshot.HistoryCount<=_history.HistoryCount
-                    && !(AssistanceEnabled && !snapshot.AutomaticEnabled);
+                // Pre-Ultra automatic notes do not enable a paid power or seed a manual notebook.
+                bool restore=!_ultraActive && snapshot!=null && !snapshot.AutomaticEnabled
+                    && snapshot.Fruits==fruits && snapshot.Slots==slots && snapshot.HistoryCount<=_history.HistoryCount;
+                _indicatorsVisible=restore && snapshot.IndicatorsVisible;
                 State=restore?PositionDeductionService.Restore(snapshot):null;
                 if(State!=null)_processed=snapshot.HistoryCount;
                 else State=new PositionDeductionService(fruits,slots);
@@ -116,6 +119,8 @@ namespace Scripts
                     if(row.finalNumbers.Count==State.SlotCount)State.ApplyGuess(index+1,row.finalNumbers,row.correctPosCount,row.wrongPosCount);
                     if(row.hintStates!=null)_details.Add(index);
                 }
+                for(int index=0;index<_history.HistoryCount;index++)
+                    if(_history.GetHistoryEntry(index).hintStates!=null)_details.Add(index);
                 foreach(int index in _details)
                 {
                     if(index<0 || index>=_history.HistoryCount)continue;
@@ -150,9 +155,17 @@ namespace Scripts
                 }
             }
         }
+        public bool CanEditFruit(int fruit){if(_dirty || State==null)Refresh();return CanEdit(fruit);}
         private bool CanEdit(int fruit)
         {
-            if(_disposed || State==null || fruit<1 || fruit>State.FruitCount)return false;
+            if(_disposed || UltraActive || State==null || fruit<1 || fruit>State.FruitCount)return false;
+            for(int index=0;index<_history.HistoryCount;index++)
+            {
+                var row=_history.GetHistoryEntry(index);
+                if(row.hintStates==null)continue;
+                for(int slot=0;slot<row.finalNumbers.Count && slot<row.hintStates.Count;slot++)
+                    if(row.finalNumbers[slot]==fruit && ((row.hintStates[slot]==CardResultState.Absent && (row.groups==null || row.groups.Count==0)) || row.hintStates[slot]==CardResultState.Correct))return false;
+            }
             var info=_info.GetCardItemInfoList();
             return info!=null && fruit<=info.Count && info[fruit-1].isExisted && !info[fruit-1].isLocked;
         }
@@ -160,6 +173,7 @@ namespace Scripts
         {
             if(_dirty)Refresh();
             if(!CanEdit(fruit) || slot<0 || slot>=State.SlotCount)return;
+            if(State.IsPossible(fruit,slot))_indicatorsVisible=true;
             State.TogglePosition(fruit,slot);Publish();
         }
         public void SetPresence(int fruit,FruitPresence presence)
@@ -169,20 +183,23 @@ namespace Scripts
         }
         public void ResetNotes()
         {
-            if(_disposed)return;
-            if(_save!=null)_save.GetLevelSaveData().PositionNotes=null;
-            State=null;Refresh();
+            if(_disposed || UltraActive)return;
+            if(_dirty || State==null)Refresh();
+            bool visible=_indicatorsVisible;
+            State=new PositionDeductionService(State.FruitCount,State.SlotCount);
+            _processed=_history.HistoryCount;_indicatorsVisible=visible;ResetKnowledge();Publish();
             if(_save!=null && _save.GetLevelSaveData().PositionNotes!=null)_save.GetLevelSaveData().PositionNotes.Edited=true;
         }
         private void Publish()
         {
             // Conflicting player notes remain visible and editable; they never invalidate a guess.
-            _view.SetEnabled(true);_view.Render(State,_view.Explain);
+            _view.SetEnabled(IndicatorsVisible);_view.Render(State,_view.Explain);
             if(_save!=null)
             {
                 bool edited=State.HasManualChanges || (_save.GetLevelSaveData().PositionNotes?.Edited??false);
-                _save.GetLevelSaveData().PositionNotes=State.Capture(_processed,AssistanceEnabled);
+                _save.GetLevelSaveData().PositionNotes=State.Capture(_processed,UltraActive);
                 _save.GetLevelSaveData().PositionNotes.Edited=edited;
+                _save.GetLevelSaveData().PositionNotes.IndicatorsVisible=_indicatorsVisible;
             }
             Changed?.Invoke();
         }
@@ -190,7 +207,7 @@ namespace Scripts
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;
-            _history.Changed-=Invalidate;_history.DetailsChanged-=OnDetails;_preferences.Changed-=OnPreferenceChanged;
+            _history.Changed-=Invalidate;_history.DetailsChanged-=OnDetails;
             if(_actors!=null)_actors.Rebuilt-=Invalidate;
             if(_knowledge!=null)_knowledge.Changed-=Invalidate;
             if(_split!=null)_split.Applied-=OnSplit;

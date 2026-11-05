@@ -11,125 +11,7 @@ using Zenject;
 
 public static partial class FruitLabTutorialEditorTools
 {
-    public static void ReviewManualNotes(Canvas canvas,Camera camera)
-    {
-        var previous=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
-        var errors=new List<string>();Application.LogCallback collect=(message,stack,type)=>{
-            if(type==LogType.Error || type==LogType.Exception || type==LogType.Assert || message.Contains("error inside a tween callback"))errors.Add(message);
-        };
-        Application.logMessageReceived+=collect;
-        try
-        {
-            var state=new PositionDeductionService(4,2);
-            state.SetManualPresence(1,FruitPresence.Present);state.TogglePosition(1,1);
-            Require(state.FixedSlot(1)==-1,"Editing alone does not replay inference");
-            state.ApplyGuess(1,new[]{2,3},0,0);
-            Require(state.FixedSlot(1)==0 && state.FixedSlot(4)==1,"Future inference uses the player's current notes");
-            state.TogglePosition(1,1);
-            Require(state.IsPossible(1,1) && state.FixedSlot(4)==1 && !state.IsPossible(4,0),"Undoing a note preserves its already-derived consequences");
-            var restored=PositionDeductionService.Restore(Newtonsoft.Json.JsonConvert.DeserializeObject<PositionNotesSnapshot>(Newtonsoft.Json.JsonConvert.SerializeObject(state.Capture(1,true))));
-            Require(restored.IsPossible(1,1) && restored.FixedSlot(4)==1,"Unified notes survive JSON round trips without replaying guesses");
-            for(int fruit=1;fruit<=4;fruit++)state.SetManualPresence(fruit,FruitPresence.Absent);
-            Require(state.ApplyGuess(2,new[]{1,2},0,1) && !state.IsConsistent,"Incorrect notes remain editable despite a contradictory inference");
-            state.TogglePosition(1,0);Require(state.Presence(1)!=FruitPresence.Absent,"Even a contradictory notebook allows a fruit to be restored");
-
-            var definition=new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9,Mechanic=LevelMechanic.Normal};
-            LevelSaveData saved=null;
-            ClearPreviewActors(canvas);
-            using(var game=new Fixture(canvas,camera,definition))
-            {
-                Field(game.Tracker,"_levelId",7);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{2,3,1});
-                var preferences=new PositionAssistancePreferences(true);
-                using(var assistance=AssistanceFor(game,definition,out var noteView,preferences))
-                using(var editor=new CardAnnotationController(game.Initial,game.Placement,game.UI,canvas.GetComponent<FruitLabGameLayout>(),game.Gate,null,()=>true,assistance,game.Initial,game.Board))
-                {
-                    assistance.Refresh();game.Initial.TryGetCardItem(0,out var card);
-                    card.GetCardMoveHandler().OnPointerDown(null);Tick(.4f);Require(!editor.IsSelecting,"Short holds remain ordinary card input");
-                    Tick(.12f);Require(editor.IsSelecting,"Half-second holds open editing");card.GetCardMoveHandler().OnPointerUp(null);
-                    Require(game.Placement.GetCardsOnBoard().Count==0,"Releasing a hold cannot place the selected fruit");
-                    var earlyProvider=new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
-                    Field(earlyProvider,"_saveData",game._saves);
-                    for(int slot=0;slot<3;slot++)
-                    {
-                        ClickPositionIndicator(game,editor.GetPositionButton(slot));
-                        Require(editor.IsSelecting && game.Initial.GetHolderView(0).Indicators[slot].IsExcluded,"Position edits remain selected and immediately update the initial holder");
-                    }
-                    Require(assistance.State.Presence(1)==FruitPresence.Absent && ((NormalCardItemView)card.GetView()).DeducedPresence==FruitPresence.Absent,"All crossed positions exclude the fruit without deleting it");
-                    Require(earlyProvider.TryCreateSnapshot(out var earlySave) && earlySave.TriedCardsList.Count==0 && earlySave.PositionNotes.Edited,"Notes save even before the first guess");
-                    ClickPositionIndicator(game,editor.GetPositionButton(1));
-                    Require(!earlySave.PositionNotes.Possible[1],"Saved notes are a copy and cannot change when the live notebook changes");
-                    Require(assistance.State.Presence(1)==FruitPresence.Unknown && ((NormalCardItemView)card.GetView()).GetImage().color.a>.9f,"Reopening a position restores the fruit");
-                    foreach(int index in new[]{0,1,2})
-                    {
-                        editor.GetButton(index).onClick.Invoke();Require(editor.IsSelecting,"Colour buttons keep the editor open");
-                        Require(assistance.State.Presence(1)==(index==0?FruitPresence.Absent:index==1?FruitPresence.Unknown:FruitPresence.Present),"Colour buttons edit the same notebook as positional controls");
-                    }
-                    editor.GetButton(1).onClick.Invoke();
-                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-manual-notes.png");
-                    var overlay=editor.Toolbar.parent.gameObject;
-                    UnityEngine.EventSystems.ExecuteEvents.Execute(overlay,new UnityEngine.EventSystems.PointerEventData(((GameObject)Get(game,"_events")).GetComponent<UnityEngine.EventSystems.EventSystem>()),UnityEngine.EventSystems.ExecuteEvents.pointerDownHandler);
-                    Require(!editor.IsSelecting,"An outside press dismisses both editor rows");
-                    Require(game.Placement.TryPlaceCardOnBoard(0,0),"A manually marked card remains playable");Tick(.4f);
-                    Require(editor.TrySelect(0),"A normal card on the board is editable");editor.Cancel();game.UI.TriggerResetNumbers();Tick(.4f);
-
-                    var settings=UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<SettingsPopupView>("Assets/Prefabs/SettingsPopup.prefab"),canvas.transform,false);
-                    try
-                    {
-                        var controller=new SettingsPopupController(_=>{},()=>{});
-                        controller.Initialize(settings,()=>{},()=>{},()=>{},game.Tracker,(BaseButtonControllerFactory)Get(game,"_buttons"),assistance);
-                        var toggle=settings.transform.Find("Content/NormalAssistance")?.GetComponent<UnityEngine.UI.Button>()
-                            ??settings.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(button=>button.name=="NormalAssistance");
-                        var reset=settings.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(button=>button.name=="ResetNotes");
-                        Layer(canvas.transform);Draw(camera);
-                        game.AssertHit((RectTransform)toggle.transform,typeof(UnityEngine.EventSystems.IPointerClickHandler));
-                        game.AssertHit((RectTransform)reset.transform,typeof(UnityEngine.EventSystems.IPointerClickHandler));
-                        toggle.onClick.Invoke();Require(!assistance.AssistanceEnabled,"Settings turns automatic assistance off");
-                        assistance.TogglePosition(1,0);var frozen=assistance.State.Capture(0,false);
-                        settings.gameObject.SetActive(false);
-                        SubmitAssistedGuess(game,new[]{1,2,3},assistance);
-                        Require(assistance.State.Capture(1,false).Possible.SequenceEqual(frozen.Possible) && assistance.State.Presence(1)==FruitPresence.Unknown,"Disabled assistance freezes notes while history continues");
-                        Require(editor.TrySelect(1),"Manual editing remains available with assistance off");editor.GetButton(0).onClick.Invoke();editor.Cancel();
-                        settings.gameObject.SetActive(true);reset.onClick.Invoke();
-                        Require(assistance.State.Capture(1,false).Possible.All(value=>value) && Enumerable.Range(1,7).All(fruit=>assistance.State.Presence(fruit)==FruitPresence.Unknown),"Reset with assistance off clears every note");
-                        assistance.TogglePosition(4,2);
-                        var provider=new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
-                        Field(provider,"_saveData",game._saves);Field(provider,"_levels",new TestLevel(definition));Field(provider,"_tracker",game.Tracker);
-                        Require(provider.TryCreateSnapshot(out saved) && saved.PositionNotes.Edited && !saved.PositionNotes.AutomaticEnabled,"Checkpoints contain private manual notes and their inference cursor");
-                        saved=Newtonsoft.Json.JsonConvert.DeserializeObject<LevelSaveData>(Newtonsoft.Json.JsonConvert.SerializeObject(saved));
-                        toggle.onClick.Invoke();
-                        Require(assistance.AssistanceEnabled && assistance.State.Presence(4)==FruitPresence.Absent && !assistance.State.HasManualChanges,"Re-enabling assistance rebuilds from public history and clears manual interventions");
-                        assistance.SetPresence(1,FruitPresence.Absent);reset.onClick.Invoke();
-                        Require(assistance.State.Presence(1)==FruitPresence.Present && !assistance.State.HasManualChanges,"Reset with assistance on keeps only legitimate recomputed evidence");
-                        Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-note-settings.png");
-                        settings.gameObject.SetActive(false);
-                        game.Placement.TryRevealAndLockCard(0,1,false);Tick(.4f);
-                        Require(!editor.TrySelect(1),"Real hint locks cannot be edited");
-                        assistance.SetPresence(2,FruitPresence.Absent);Require(assistance.State.Presence(2)==FruitPresence.Present,"Manual commands cannot change a genuinely fixed fruit");
-                    }
-                    finally {UnityEngine.Object.DestroyImmediate(settings.gameObject);}
-                    Require(game._info.GetCardItemInfoList().All(info=>info.isExisted),"Manual exclusion never removes real cards or spends powerups");
-                }
-            }
-            ClearPreviewActors(canvas);
-            using(var game=new Fixture(canvas,camera,definition))
-            {
-                Field(game.Tracker,"_levelId",7);((MemorySave)Get(game,"_memory")).Save(saved);game._saves.SetLevelSaveDataAsSaved(saved);game.Round.Initialize();game.BuildActors();game.Results.TryAddTriedCards();game.Gate.Clear();
-                using(var assistance=AssistanceFor(game,definition,out var view,new PositionAssistancePreferences(false)))
-                {
-                    assistance.Refresh();Require(!assistance.State.IsPossible(4,2) && assistance.State.IsPossible(4,0) && assistance.State.Presence(1)==FruitPresence.Unknown,"Resume restores the frozen notebook instead of replaying old inference");
-                    assistance.SetAssistanceEnabled(true);Require(assistance.State.Presence(4)==FruitPresence.Absent,"A resumed game can rebuild public inference on demand");
-                    assistance.SetPresence(1,FruitPresence.Absent);game.Initial.ClearInitialCardHolders();
-                    game._saves.CreateDefaultLevelSaveData();game.Round.Initialize();game._area.RemoveResultBlocks();game.BuildActors();assistance.Tick();
-                    Require(!assistance.State.HasManualChanges && assistance.State.Capture(0,true).Possible.All(value=>value),"A fresh round cannot inherit the previous notebook");
-                }
-            }
-            ValidateNoteLayouts(canvas,camera);
-            ValidateMultiplayerNotes(canvas,camera);
-            Require(errors.Count==0,"No Unity errors during notebook review: "+string.Join(" | ",errors));
-            System.IO.File.WriteAllText(Folder+"/manual-notes-review.json","{\"passed\":true,\"manual_propagation\":true,\"persistent_selection\":true,\"settings_reset\":true,\"save_resume\":true,\"layouts\":80}");
-        }
-        finally{DOTween.defaultUpdateType=previous;Application.logMessageReceived-=collect;}
-    }
+    public static void ReviewManualNotes(Canvas canvas,Camera camera)=>ReviewUltraNotes(canvas,camera);
 
     private static void ValidateMultiplayerNotes(Canvas canvas,Camera camera)
     {
@@ -463,6 +345,7 @@ public static partial class FruitLabTutorialEditorTools
     }
     private sealed class ContractEndAnimations : ILevelSuccessAnimationManager,ILevelFailAnimationManager
     {
+        public void Cancel() { }
         public bool Success;public int Coins,Crystals;public Sequence Sequence;
         public Sequence SuccessLevelAnimation(int earnedCoinCount,int earnedCrystalCount,int previousCoinCount,int previousCrystalProgressCount,RewardType rewardTypeBeforeCollection)
         {Success=true;Coins=earnedCoinCount;Crystals=earnedCrystalCount;return Sequence=DOTween.Sequence().AppendInterval(.25f);}

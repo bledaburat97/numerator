@@ -22,6 +22,18 @@ namespace Scripts
         [SerializeField] private TextHolderAdjustment coinCountHolder;
 
         [SerializeField] private PairClueView pairClue;
+        private Button _informationButton;
+        public Button GetInformationButton()
+        {
+            if(_informationButton!=null)return _informationButton;
+            var old=settingsButton.transform.parent.Find("InformationButton")??transform.Find("InformationButton");
+            var item=old!=null?old.gameObject:new GameObject("InformationButton",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image),typeof(Button));
+            if(old==null)item.transform.SetParent(transform,false);
+            _informationButton=item.GetComponent<Button>();FruitLabStyle.AddSurface(item,FruitLabStyle.Tile).raycastTarget=true;
+            var glyph=item.GetComponentInChildren<FruitLabGlyph>(true)??FruitLabGlyph.Create(item.transform,FruitLabGlyph.Symbol.Information,FruitLabStyle.Text);
+            glyph.Type=FruitLabGlyph.Symbol.Information;glyph.color=Color.white;glyph.SetAllDirty();
+            FruitLabStyle.Stretch(glyph.rectTransform,6);return _informationButton;
+        }
         public PairClueView GetPairView() => pairClue;
         public bool HasPairClue => pairClue != null && pairClue.gameObject.activeSelf && !_multiplayerMode;
         public void SetPairClue(PairClue clue)
@@ -56,10 +68,10 @@ namespace Scripts
             bool visible = !string.IsNullOrEmpty(text) && !_multiplayerMode;
             if (_mechanicLabel != null && _mechanicLabel.text == text && wasVisible == visible) return;
             if (_mechanicLabel == null) _mechanicLabel = userText.transform.parent.Find("MechanicStatus")?.GetComponent<TMP_Text>()
-                ?? FruitLabStyle.CreateText("MechanicStatus", userText.transform.parent, 10f, FruitLabStyle.Mint);
+                ?? FruitLabStyle.CreateText("MechanicStatus", userText.transform.parent, 14f, FruitLabStyle.Mint);
             _mechanicLabel.text = text;
             _mechanicLabel.raycastTarget = false;
-            _mechanicLabel.enableAutoSizing = true; _mechanicLabel.fontSizeMin = 8; _mechanicLabel.fontSizeMax = 10;
+            _mechanicLabel.enableAutoSizing = true; _mechanicLabel.fontSizeMin = 12; _mechanicLabel.fontSizeMax = 14;
             _mechanicLabel.gameObject.SetActive(visible);
             PlaceMechanicStatus();
             if (wasVisible != visible) GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
@@ -100,9 +112,9 @@ namespace Scripts
             if (_matchHud != null) return;
             _matchHud = new GameObject("MultiplayerStatus", typeof(RectTransform)).GetComponent<RectTransform>();
             _matchHud.SetParent(transform, false); FruitLabStyle.AddSurface(_matchHud.gameObject, FruitLabStyle.Panel);
-            _turnLabel = FruitLabStyle.CreateText("Turn", _matchHud, 13f, FruitLabStyle.Mint);
+            _turnLabel = FruitLabStyle.CreateText("Turn", _matchHud, 16f, FruitLabStyle.Mint);
             _turnLabel.richText = false;
-            _turnLabel.enableAutoSizing = true; _turnLabel.fontSizeMin = 10; _turnLabel.fontSizeMax = 13;
+            _turnLabel.enableAutoSizing = true; _turnLabel.fontSizeMin = 14; _turnLabel.fontSizeMax = 16;
             _timerChip = new GameObject("Timer", typeof(RectTransform)).GetComponent<RectTransform>();
             _timerChip.SetParent(_matchHud, false); FruitLabStyle.AddSurface(_timerChip.gameObject, FruitLabStyle.Recess);
             _timeLabel = FruitLabStyle.CreateText("Time", _timerChip, 16f, FruitLabStyle.Text);
@@ -121,19 +133,21 @@ namespace Scripts
                 FruitLabStyle.Stretch(_timeLabel.rectTransform, 1f);
             }
             if (_matchHud != null) _matchHud.gameObject.SetActive(_multiplayerMode);
-            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width - 64f : width - 180f, 30f);
+            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width - 102f : width - 227f, 30f);
             userText.fontSize = _multiplayerMode ? 15f : 19f;
             userText.enableAutoSizing = false;
             userText.fontStyle = FontStyles.Bold;
             userText.color = FruitLabStyle.Text;
             userText.alignment = TextAlignmentOptions.MidlineLeft;
-            FruitLabStyle.Place(settingsButton.GetButtonRectTransform(), header, width - 32f, headerHeight - 35f, 32f, 32f);
+            FruitLabStyle.Place(settingsButton.GetButtonRectTransform(), header, width - 48f, headerHeight - 48f, 48f, 48f);
+            var information=GetInformationButton();
+            FruitLabStyle.Place((RectTransform)information.transform,header,width-100f,headerHeight-48f,48f,48f);
             settingsButton.ApplyLabStyle();
-            settingsButton.SetLabIconScale(1.5f);
+            settingsButton.SetLabIconInset(6f);
             if (coinCountHolder != null)
             {
                 RectTransform counter = (RectTransform)coinCountHolder.transform;
-                FruitLabStyle.Place(counter, header, width - 169f, headerHeight - 37f, 124f, 36f);
+                FruitLabStyle.Place(counter, header, width - 219f, headerHeight - 39f, 111f, 36f);
                 FruitLabStyle.AddSurface(counter.gameObject, FruitLabStyle.Panel);
                 coinCountHolder.SetFixedWidth(124f);
                 foreach (Image background in counter.GetComponentsInChildren<Image>(true))
@@ -261,6 +275,7 @@ namespace Scripts
         IBaseButtonView GetCheckButton();
         IBaseButtonView GetResetButton();
         IBaseButtonView GetSettingsButton();
+        Button GetInformationButton();
         ICardInfoButtonView GetCardInfoButton();
         void SetOpponentInfoStatus(bool status);
         CanvasGroup GetTopButtonsCanvasGroup();

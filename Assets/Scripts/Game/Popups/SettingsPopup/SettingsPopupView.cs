@@ -14,37 +14,20 @@ namespace Scripts
         [SerializeField] private TMP_Text description;
         private bool _singlePlayer = true;
         private RectTransform _privacy;
-        private RectTransform _notesToggle,_notesReset;
-        private TMP_Text _notesLabel;
-        private FruitLabGlyph _notesCheck;
+        private RectTransform _notesReset;
         private bool _notesVisible;
 
-        public void ConfigureNotes(bool visible,bool assistanceEnabled,System.Action<bool> toggle,System.Action reset)
+        public void ConfigureNotes(bool visible,System.Action reset)
         {
             _notesVisible=visible;
-            if(visible && _notesToggle==null)
-            {
-                var button=TelemetryPrivacyPanel.AddButton(content,"NormalAssistance","Normal yardım",()=>{});
-                _notesToggle=(RectTransform)button.transform;_notesLabel=button.GetComponentInChildren<TMP_Text>();
-                _notesLabel.alignment=TextAlignmentOptions.MidlineLeft;
-                _notesLabel.fontSize=15;
-                _notesLabel.rectTransform.offsetMin=new Vector2(12,0);_notesLabel.rectTransform.offsetMax=new Vector2(-48,0);
-                _notesCheck=FruitLabGlyph.Create(_notesToggle,FruitLabGlyph.Symbol.Check,FruitLabStyle.Mint);
-                _notesCheck.rectTransform.anchorMin=_notesCheck.rectTransform.anchorMax=new Vector2(1,.5f);
-                _notesCheck.rectTransform.sizeDelta=Vector2.one*20;_notesCheck.rectTransform.anchoredPosition=new Vector2(-23,0);
-                var plate=FruitLabStyle.Detail(_notesToggle,"TogglePlate",FruitLabStyle.Recess);
-                plate.rectTransform.anchorMin=plate.rectTransform.anchorMax=new Vector2(1,.5f);
-                plate.rectTransform.sizeDelta=Vector2.one*28;plate.rectTransform.anchoredPosition=new Vector2(-23,0);
-                plate.transform.SetSiblingIndex(0);
+            var old=content.Find("NormalAssistance");
+            if(old!=null)old.gameObject.SetActive(false);
+            if(visible && _notesReset==null)
                 _notesReset=(RectTransform)TelemetryPrivacyPanel.AddButton(content,"ResetNotes","Notları Sıfırla",()=>{}).transform;
-                _notesReset.GetComponentInChildren<TMP_Text>().fontSize=14;
-            }
-            if(_notesToggle!=null)
+            if(_notesReset!=null)
             {
-                _notesToggle.gameObject.SetActive(visible);_notesReset.gameObject.SetActive(visible);
-                _notesCheck.gameObject.SetActive(assistanceEnabled);
-                _notesToggle.GetComponent<Button>().onClick.RemoveAllListeners();
-                _notesToggle.GetComponent<Button>().onClick.AddListener(()=>toggle?.Invoke(!assistanceEnabled));
+                _notesReset.gameObject.SetActive(visible);
+                _notesReset.GetComponentInChildren<TMP_Text>().fontSize=16;
                 _notesReset.GetComponent<Button>().onClick.RemoveAllListeners();
                 _notesReset.GetComponent<Button>().onClick.AddListener(()=>reset?.Invoke());
             }
@@ -83,8 +66,8 @@ namespace Scripts
             float availableWidth = parent != null && parent.rect.width > 1f ? parent.rect.width
                 : canvas != null ? ((RectTransform)canvas.rootCanvas.transform).rect.width : 375f;
             float width = Mathf.Min(335f, Mathf.Max(240f, availableWidth - 32f));
-            float height = _singlePlayer ? 360f : 300f;
-            if(_notesVisible)height+=100f;
+            float height = _singlePlayer ? 400f : 340f;
+            if(_notesVisible)height+=54f;
             rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(width, height);
@@ -96,12 +79,11 @@ namespace Scripts
             FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 17f, _singlePlayer ? 142f : 82f, innerWidth - 34f, 54f);
             FruitLabStyle.Place(retryButton.GetButtonRectTransform(), content, 17f, 82f, innerWidth - 34f, 48f);
             FruitLabStyle.Place(menuButton.GetButtonRectTransform(), content, 17f, 22f, innerWidth - 34f, 48f);
-            if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17f, height - 142f, innerWidth - 34f, 28f);
-            if(_notesVisible && _notesToggle!=null)
+            if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17f, height - 172f, innerWidth - 34f, 48f);
+            if(_notesVisible && _notesReset!=null)
             {
                 float closeY=_singlePlayer?142:82;
-                FruitLabStyle.Place(_notesToggle,content,17,closeY+112,innerWidth-34,38);
-                FruitLabStyle.Place(_notesReset,content,17,closeY+68,innerWidth-34,38);
+                FruitLabStyle.Place(_notesReset,content,17,closeY+66,innerWidth-34,46);
             }
         }
 
@@ -127,7 +109,7 @@ namespace Scripts
             title.fontSize = 25f;
             title.fontStyle = FontStyles.Bold;
             title.color = FruitLabStyle.Text;
-            description.fontSize = 13f;
+            description.fontSize = 16f;
             description.fontStyle = FontStyles.Normal;
             description.color = FruitLabStyle.Muted;
             description.textWrappingMode = TextWrappingModes.Normal;
@@ -158,7 +140,7 @@ namespace Scripts
 
     public interface ISettingsPopupView
     {
-        void ConfigureNotes(bool visible,bool assistanceEnabled,System.Action<bool> toggle,System.Action reset);
+        void ConfigureNotes(bool visible,System.Action reset);
         void Init();
         void SetSinglePlayer(bool singlePlayer);
         void Close();

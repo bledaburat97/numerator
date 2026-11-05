@@ -61,6 +61,26 @@ namespace Scripts
         public void SetParent(RectTransform parent) => transform.SetParent(parent, false);
         public void DestroyObject() { if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject); }
         public RectTransform GetRectTransform() => rectTransform;
+        public void SetEditingSize(Vector2 touchSize)
+        {
+            // A thin visible control inside a full-height, non-overlapping hit
+            // target. The board reserves this space before editing is opened.
+            rectTransform.sizeDelta = touchSize;
+            var hit = GetComponent<Image>(); hit.color = Color.clear; hit.raycastTarget = true;
+            _surface = FruitLabStyle.Detail(transform, "EditPlate", FruitLabStyle.Recess);
+            FruitLabStyle.Place(_surface.rectTransform, transform, 0, (touchSize.y-20)*.5f, touchSize.x, 20);
+            FruitLabStyle.Place(imageText.rectTransform, transform, 0, (touchSize.y-20)*.5f, touchSize.x, 20);
+            FruitLabStyle.TextStyle(imageText, 16);
+            if (_symbol != null)
+            {
+                _symbol.rectTransform.anchorMin = _symbol.rectTransform.anchorMax = Vector2.one*.5f;
+                _symbol.rectTransform.anchoredPosition=Vector2.zero;
+                _symbol.rectTransform.sizeDelta=Vector2.one*17;
+            }
+            SetDeduction(IsExcluded, IsConfirmed);
+            imageText.transform.SetAsLastSibling(); if(_symbol!=null)_symbol.transform.SetAsLastSibling();
+        }
+
         public void SetSize(Vector2 size)
         {
             rectTransform.sizeDelta = size;

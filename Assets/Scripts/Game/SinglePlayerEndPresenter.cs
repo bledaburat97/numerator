@@ -41,6 +41,7 @@ namespace Game
             _generation++;
             _ending?.Kill();
             _ending = null;
+            _success.Cancel();
         }
 
         public void Present(SinglePlayerRoundResult result, ISinglePlayerProgression progression)

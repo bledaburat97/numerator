@@ -228,6 +228,7 @@ public static class FruitLabFailureValidation
         public event EventHandler NotAbleToCheck;
         public event EventHandler ResetNumbers;
         public event EventHandler OpenSettings;
+        public event EventHandler OpenInformation;
         public event EventHandler<bool> CardInfoToggleChanged;
         public void Submit() => CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
         public void Initialize(bool isNewGame) { }

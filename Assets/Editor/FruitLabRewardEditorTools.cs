@@ -223,6 +223,18 @@ public static class FruitLabRewardEditorTools
             var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu,collection);
             new MenuPowerUpCountHolderController(powers, tracker).Initialize();
             new RewardProgressDisplayController(crystals, tracker).Initialize();
+            if(powers.gameObject.activeSelf)
+            {
+                var visible=PowerUpTypeUtility.OrderedRewardTypes.Where(type=>PowerUpTypeUtility.IsUnlocked(type,levelId)).Select(type=>powers.GetPowerUpButton(type).GetButtonRectTransform()).ToArray();
+                Require(powers.GetComponentsInChildren<PowerUpButtonView>(false).Length==visible.Length,"Only assigned powers are visible in the menu");
+                Require(visible.Select(item=>Mathf.RoundToInt(item.anchoredPosition.y)).Distinct().Count()==2,"Menu powers use exactly two rows");
+                foreach(var item in visible)
+                {
+                    Require(item.GetComponentsInChildren<TMPro.TMP_Text>(false).Length==1,"Menu power buttons contain only their count");
+                    Require(item.rect.width>=48 && item.rect.height>=48,"Menu power touch targets are at least 48 units");
+                }
+            }
+            File.WriteAllLines(Folder+"/menu-icon-inspection.txt",clone.GetComponentsInChildren<FruitLabGlyph>(false).Select(g=>g.Type+" "+string.Join("/",g.GetComponentsInParent<Transform>(true).Reverse().Select(t=>t.name))));
             Require(crystals.transform.Find("CrystalTitle").GetComponent<TMPro.TMP_Text>().text == "Güçlendirici Barı",
                 "Menu progress uses the powerup bar heading");
             Require(crystals.transform.Find("NextReward") == null || !crystals.transform.Find("NextReward").gameObject.activeSelf,
@@ -520,7 +532,7 @@ public static class FruitLabSettingsEditorTools
 
     private sealed class ImmediateCloseView : ISettingsPopupView
     {
-        public void ConfigureNotes(bool visible,bool enabled,Action<bool> toggle,Action reset)=>_view.ConfigureNotes(visible,enabled,toggle,reset);
+        public void ConfigureNotes(bool visible,Action reset)=>_view.ConfigureNotes(visible,reset);
         private readonly SettingsPopupView _view;
         public ImmediateCloseView(SettingsPopupView view) => _view = view;
         public void Init() => _view.Init();

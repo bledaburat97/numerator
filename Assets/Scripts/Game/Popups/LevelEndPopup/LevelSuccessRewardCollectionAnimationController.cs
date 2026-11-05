@@ -12,6 +12,7 @@ namespace Scripts
         private readonly IGameUIController _gameUIController;
         private readonly IVerticalCrystalProgressController _verticalCrystalProgressController;
         private readonly ILevelEndPopupController _levelEndPopupController;
+        private readonly List<IRewardTokenView> _presentationTokens = new List<IRewardTokenView>();
         private bool _hasCompletedReward;
         private RewardType _completedRewardType;
 
@@ -35,6 +36,7 @@ namespace Scripts
             int previousCrystalProgressCount,
             RewardType rewardTypeBeforeCollection)
         {
+            Cancel();
             Sequence sequence = DOTween.Sequence();
             _hasCompletedReward = TryGetFirstCompletedRewardType(
                 previousCrystalProgressCount,
@@ -45,6 +47,8 @@ namespace Scripts
                 _lifeBarController.GetActiveRewardTokens(LifeBarRewardType.Coin);
             IReadOnlyList<IRewardTokenView> crystalTokens =
                 _lifeBarController.GetActiveRewardTokens(LifeBarRewardType.Crystal);
+            if (coinTokens != null) _presentationTokens.AddRange(coinTokens);
+            if (crystalTokens != null) _presentationTokens.AddRange(crystalTokens);
 
             if (earnedCrystalCount > 0)
             {
@@ -74,7 +78,15 @@ namespace Scripts
                 }
             });
 
+            sequence.OnKill(Cancel);
+
             return sequence;
+        }
+
+        public void Cancel()
+        {
+            foreach (var token in _presentationTokens) token?.Destroy();
+            _presentationTokens.Clear();
         }
 
         public Sequence PlayPostCollectionFlow(float buttonFadeDuration)
@@ -85,12 +97,13 @@ namespace Scripts
             }
 
             RewardType completedRewardType = _completedRewardType;
-            return _levelEndPopupController.PresentRewardForClaim(
-                _verticalCrystalProgressController.PresentCompletedReward(completedRewardType, 0.42f),
-                () => DOTween.Sequence()
-                    .Append(_verticalCrystalProgressController.HidePresentedReward(0.24f))
-                    .AppendCallback(() => _verticalCrystalProgressController.Refresh()),
-                buttonFadeDuration);
+            // The award was already committed. Present it briefly without requiring
+            // a claim tap or taking away the already-visible continuation buttons.
+            return DOTween.Sequence()
+                .Append(_verticalCrystalProgressController.PresentCompletedReward(completedRewardType,0.24f))
+                .AppendInterval(0.12f)
+                .Append(_verticalCrystalProgressController.HidePresentedReward(0.16f))
+                .AppendCallback(()=>_verticalCrystalProgressController.Refresh());
         }
 
         private Sequence AnimateCoinsToCounter(
@@ -193,6 +206,7 @@ namespace Scripts
 
     public interface ILevelSuccessRewardCollectionAnimationController
     {
+        void Cancel();
         Sequence Play(
             int earnedCoinCount,
             int earnedCrystalCount,

@@ -27,6 +27,8 @@ namespace Game
             _rewardCollectionAnimationController = rewardCollectionAnimationController;
         }
         
+        public void Cancel() => _rewardCollectionAnimationController.Cancel();
+
         public Sequence SuccessLevelAnimation(
             int earnedCoinCount,
             int earnedCrystalCount,
@@ -48,6 +50,7 @@ namespace Game
                 .Insert(0.1f, DOTween.Sequence()
                     .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
                     .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText)))
+                .Insert(0.70f,_levelEndPopupController.ChangeFadeButtons(0.15f,1f))
                 .AppendInterval(0.05f)
                 .Append(_cleanupAnimationController.DismissCardsOnInitialHolders(cardDismissDuration))
                 .Append(_cleanupAnimationController.FadeOutObsoleteGameUi(buttonsFadeOutDuration))
@@ -58,12 +61,14 @@ namespace Game
                     previousCrystalProgressCount,
                     rewardTypeBeforeCollection))
                 .Append(_cleanupAnimationController.FadeOutLifeBar(buttonsFadeOutDuration))
-                .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f));
+                .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f))
+                .OnKill(_rewardCollectionAnimationController.Cancel);
         }
     }
 
     public interface ILevelSuccessAnimationManager
     {
+        void Cancel();
         Sequence SuccessLevelAnimation(
             int earnedCoinCount,
             int earnedCrystalCount,

@@ -63,6 +63,8 @@ namespace Scripts
                     });
                 _first.Start();
             }
+            else if (_tracker.GetPowerUpCount(RewardType.Ultra)>0 && !TutorialProgress.Seen(TutorialProgress.Ultra)
+                && _levels?.GetLevelData()?.Mechanic==LevelMechanic.Normal && ExplainPowerUp(GameUIButtonType.UltraPowerUp)) { }
             else if (_levels?.GetLevelData()?.TrialPowerUp is RewardType trial && ExplainPowerUp(PowerUpTypeUtility.ToGameButtonType(trial))) { }
             else if (_levels != null && ExplainLevelMechanic()) { }
             else if (!TutorialProgress.Seen(TutorialProgress.CrystalHints) && _round.GetLifeBarRewardInfoList().Any(token => token.IsCrystal))
@@ -131,11 +133,12 @@ namespace Scripts
             if (!_ready || _roundEnded || _message != null || _tracker.GetGameOption() != GameOption.SinglePlayer) return false;
             if (type != GameUIButtonType.BombPowerUp && type != GameUIButtonType.RevealingPowerUp
                 && type != GameUIButtonType.LifePowerUp && type != GameUIButtonType.HelperPowerUp
-                && type != GameUIButtonType.PairPowerUp && type != GameUIButtonType.SplitPowerUp) return false;
+                && type != GameUIButtonType.PairPowerUp && type != GameUIButtonType.SplitPowerUp && type != GameUIButtonType.UltraPowerUp) return false;
             var reward=PowerUpTypeUtility.ToRewardType(type);
             string key=PowerUpTypeUtility.TutorialKey(reward);
             if (TutorialProgress.Seen(key) || _tracker.GetPowerUpCount(reward) <= 0) return false;
             var button = Find<PowerUpListHolderView>()?.GetPowerUpButton(reward)?.GetButtonRectTransform();
+            if(button!=null && !button.gameObject.activeInHierarchy)button=null;
             ShowTip(PowerUpTypeUtility.Name(reward),PowerUpTypeUtility.Description(reward),key,button);
             return true;
         }

@@ -26,6 +26,7 @@ namespace Scripts
         public event EventHandler NotAbleToCheck;
         public event EventHandler ResetNumbers;
         public event EventHandler OpenSettings;
+        public event EventHandler OpenInformation;
         public event EventHandler<bool> CardInfoToggleChanged;
         
         [Inject]
@@ -149,6 +150,7 @@ namespace Scripts
             CreateButtonController(_view.GetCheckButton(), GameUIButtonType.Check, buttonClickAction);
             CreateButtonController(_view.GetResetButton(), GameUIButtonType.Reset, buttonClickAction);
             CreateButtonController(_view.GetSettingsButton(), GameUIButtonType.Settings, buttonClickAction);
+            _view.GetInformationButton().onClick.AddListener(()=>OnButtonClick(GameUIButtonType.Information));
         }
 
         private void InitializeCardInfoButton(Action<bool> onClickAction)
@@ -263,6 +265,8 @@ namespace Scripts
                 case GameUIButtonType.Reset:
                     TriggerResetNumbers();
                     break;
+                case GameUIButtonType.Information:
+                    _hapticController.Vibrate(HapticType.ButtonClick);OpenInformation?.Invoke(this,EventArgs.Empty);break;
                 case GameUIButtonType.Settings:
                     OpenSettings?.Invoke(this,  EventArgs.Empty);
                     break;
@@ -290,7 +294,9 @@ namespace Scripts
         Default,
         HelperPowerUp,
         PairPowerUp,
-        SplitPowerUp
+        SplitPowerUp,
+        UltraPowerUp,
+        Information
     }
 
     public interface IGameUIController
@@ -314,6 +320,7 @@ namespace Scripts
         event EventHandler NotAbleToCheck;
         event EventHandler ResetNumbers;
         event EventHandler OpenSettings;
+        event EventHandler OpenInformation;
         event EventHandler<bool> CardInfoToggleChanged;
     }
 }

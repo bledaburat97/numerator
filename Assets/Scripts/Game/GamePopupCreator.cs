@@ -17,6 +17,8 @@ namespace Scripts
         [Inject] private ITutorialBootstrapper _tutorialBootstrapper;
         [Inject] private IPositionNotesSettings _notes;
         [Inject] private IPowerUpMessageController _powerMessages;
+        [Inject] private ILevelDataCreator _levels;
+        private GameInformationPopup _information;
         
         [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
@@ -60,6 +62,7 @@ namespace Scripts
             _messagePopupViewFactory = new MessagePopupViewFactory();
     
             _gameUIController.OpenSettings += CreateSettingsPopup;
+            _gameUIController.OpenInformation += CreateInformationPopup;
             _gameUIController.NotAbleToCheck += CreateNotAbleToMovePopup;
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)
@@ -177,6 +180,13 @@ namespace Scripts
             }
         }
         
+        private void CreateInformationPopup(object sender,EventArgs args)
+        {
+            if(_information!=null)return;
+            _powerMessages.CloseActivePowerUp();
+            _information=GameInformationPopup.Open(safeAreaRectTransform,_levels.GetLevelData().Mechanic,()=>_information=null);
+        }
+
         private void CreateSettingsPopup(object sender, EventArgs args)
         {
             _fadePanelController.SetFadeImageStatus(true);
