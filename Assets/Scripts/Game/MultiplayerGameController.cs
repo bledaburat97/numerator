@@ -5,6 +5,7 @@ using Scripts;
 using Unity.Netcode;
 using UnityEngine;
 using Zenject;
+using Scripts.Economy;
 
 namespace Game
 {
@@ -12,6 +13,8 @@ namespace Game
     public class MultiplayerGameController : NetworkBehaviour, IMultiplayerGameController
     {
         [Inject] private ILevelTracker _tracker;
+        [Inject] private IGameWinRewardService _rewards;
+        private string _matchId;
         private readonly HashSet<ulong> _joined = new HashSet<ulong>();
         private MultiplayerMatchState _match;
         private bool _initialized, _registered, _helloSent, _pending;
@@ -76,12 +79,14 @@ namespace Game
             if (MultiplayerNetworkProbe.IsRunning) { answer = MultiplayerNetworkProbe.Answer(number); seconds = MultiplayerNetworkProbe.TestTurnSeconds; }
 #endif
             _match = new MultiplayerMatchState(players, number, answer, _difficulty, seconds);
-            BeginRoundClientRpc(number, players, (byte)_difficulty);
+            if(string.IsNullOrEmpty(_matchId))_matchId=Guid.NewGuid().ToString("N");
+            BeginRoundClientRpc(_matchId,number, players, (byte)_difficulty);
         }
         [ClientRpc]
-        private void BeginRoundClientRpc(int number, ulong[] players, byte difficulty)
+        private void BeginRoundClientRpc(string matchId,int number, ulong[] players, byte difficulty)
         {
-            if (number <= _announcedRound) return;
+            if (number <= _announcedRound || !Guid.TryParseExact(matchId,"N",out _) || (_matchId!=null && _matchId!=matchId)) return;
+            _matchId=matchId;
             _difficulty = MultiplayerRules.For((Difficulty)difficulty).Difficulty;
             _roundPlayers = players; _announcedRound = number; _lastFeedbackTurn = 0; _pending = false;
             StatusNotice = null; DisconnectMessage = null;
@@ -134,7 +139,7 @@ namespace Game
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (MultiplayerNetworkProbe.IsRunning) _roundReward = (RewardType)((round - 1) % 3);
 #endif
-                OutcomeClientRpc(round, sender, _match.RevealAnswer(), (byte)_roundReward);
+                OutcomeClientRpc(_matchId,round, sender, _match.RevealAnswer(), (byte)_roundReward);
             }
         }
         [ClientRpc]
@@ -161,28 +166,25 @@ namespace Game
             StateChanged?.Invoke(this, State);
         }
         [ClientRpc]
-        private void OutcomeClientRpc(int round, ulong winner, int[] answer, byte reward)
+        private void OutcomeClientRpc(string matchId,int round, ulong winner, int[] answer, byte reward)
         {
-            if (!_initialized || round != State.Round || round <= _lastOutcomeRound || State.Phase != MultiplayerPhase.Finished
+            if (!_initialized || matchId!=_matchId || round != State.Round || round <= _lastOutcomeRound || State.Phase != MultiplayerPhase.Finished
                 || State.Winner != winner || reward > (byte)RewardType.Bomb) return;
-            _lastOutcomeRound = round;
             var type = (RewardType)reward;
             if (winner == NetworkManager.LocalClientId)
             {
-                switch (type)
-                {
-                    case RewardType.Revealing: _tracker.IncreaseRevealingPowerUpCount(); break;
-                    case RewardType.Life: _tracker.IncreaseLifePowerUpCount(); break;
-                    case RewardType.Bomb: _tracker.IncreaseBombPowerUpCount(); break;
-                }
+                if(answer==null || answer.Length!=MultiplayerRules.For(_difficulty).BoardCount)return;
+                var award=_rewards.Duel(matchId,round,answer,type);
+                if(!award.IsReplay)GameTelemetry.Powerup(type,true,"duel");
             }
+            _lastOutcomeRound = round;
             _pending = false; MatchEnded?.Invoke(this, new MultiplayerOutcome(round, winner, answer, false, type));
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public void RepeatProbeOutcome()
         {
             if (MultiplayerNetworkProbe.IsRunning && IsServer && _match != null && _match.Phase == MultiplayerPhase.Finished)
-                OutcomeClientRpc(_match.Round, _match.Winner, _match.RevealAnswer(), (byte)_roundReward);
+                OutcomeClientRpc(_matchId,_match.Round, _match.Winner, _match.RevealAnswer(), (byte)_roundReward);
         }
 #endif
         public void RequestRematch()

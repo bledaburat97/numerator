@@ -46,6 +46,7 @@ namespace Scripts
 
             levelSaveData = new LevelSaveData
             {
+                RoundId = _saveData?.GetLevelSaveData().RoundId,
                 TriedCardsList = CreateTriedCardsSnapshot(),
                 TargetCards = new List<int>(_targetNumberCreator.GetTargetCardsList()),
                 RemainingGuessCount = _roundStateManager.GetRemainingGuessCount(),

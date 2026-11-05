@@ -12,7 +12,7 @@ namespace Scripts.Economy
 
     public sealed class PlayerProfileData
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
         [JsonProperty(Required=Required.Always)] public int Version = CurrentVersion;
         public long Revision;
         [JsonProperty(Required=Required.Always)] public PlayerProgressData Progress = new PlayerProgressData();
@@ -81,5 +81,6 @@ namespace Scripts.Economy
         public string Kind;
         public string Request;
         public DateTime AppliedAtUtc;
+        public string Result;
     }
 }

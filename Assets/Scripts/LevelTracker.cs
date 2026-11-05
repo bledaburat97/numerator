@@ -29,7 +29,7 @@ namespace Scripts
         private void Awake()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (MultiplayerNetworkProbe.IsRunning) { _levelId = MenuProgression.MultiplayerUnlockLevel - 1; _gameOption = GameOption.MultiPlayer; return; }
+            if (MultiplayerNetworkProbe.IsRunning) { ConnectProfile();ApplyProfile(_profiles.Snapshot());_gameOption = GameOption.MultiPlayer;return; }
 #endif
             ConnectProfile();
             var profile = _profiles.Snapshot();
@@ -108,21 +108,14 @@ namespace Scripts
 
         public void IncrementLevelIdWithRewards(int coinCount, int crystalCount)
         {
-            // Normalize legacy locked rewards before advancing across an unlock boundary.
-            // The first awarded item must match the preview shown in the completed level.
-            _currentRewardType = GetCurrentRewardType();
-            _levelId++;
-            _starCount += coinCount;
-            int totalCrystalCount = _giftStarCount + crystalCount;
-            while (totalCrystalCount >= ConstantValues.NUM_OF_STARS_FOR_WILD)
-            {
-                if (!PowerUpTypeUtility.IsUnlocked(_currentRewardType, _levelId)) _currentRewardType = GetNextRewardType(_currentRewardType);
-                IncreasePowerUpCount(_currentRewardType);
-                totalCrystalCount -= ConstantValues.NUM_OF_STARS_FOR_WILD;
-                _currentRewardType = GetNextRewardType(_currentRewardType);
-            }
-            _giftStarCount = totalCrystalCount;
+            var state=new PlayerProfileData();state.Progress.LevelId=_levelId;
+            state.Wallet.Coins=_starCount;state.Wallet.CrystalProgress=_giftStarCount;state.Wallet.NextReward=_currentRewardType;
+            state.Wallet.IntroductionGrants=new HashSet<RewardType>(_introductionGrants);
+            foreach(RewardType type in Enum.GetValues(typeof(RewardType)))state.Wallet.PowerUps[type]=GetPowerUpCount(type);
+            var grants=PlayerProfileRuntime.CreateRewardRules().ApplySingle(state,coinCount,crystalCount);
+            ApplyProfile(state);
             SavePlayerPrefs();
+            foreach(var type in grants)GameTelemetry.Powerup(type,true,"crystal");
         }
         
         public void IncreaseRevealingPowerUpCount()

@@ -396,6 +396,7 @@ public static partial class FruitLabTutorialEditorTools
                     var container = new DiContainer(true); container.Settings = new ZenjectSettings(ValidationErrorResponses.Throw);
                     container.Bind<Context>().FromInstance(Find<SceneContext>(scene));
                     container.Bind<ILevelTracker>().FromInstance(tracker);
+                    BindCollectionTestRewards(container);
                     container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
                     container.Bind<IHapticController>().To<HapticController>().AsSingle();
                     container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();

@@ -16,7 +16,7 @@ namespace Scripts.Economy
         event Action Changed;
         PlayerProfileData Snapshot();
         bool Update(Action<PlayerProfileData> update);
-        ProfileCommitResult Commit(string transactionId,string kind,string request,Func<PlayerProfileData,bool> update);
+        ProfileCommitResult Commit(string transactionId,string kind,string request,Func<PlayerProfileData,bool> update,Func<string> result=null);
     }
 
     // Copy-on-write: a caller sees a committed change only after the complete snapshot is durable.
@@ -61,7 +61,7 @@ namespace Scripts.Economy
             if(changed) Notify();return changed;
         }
 
-        public ProfileCommitResult Commit(string transactionId,string kind,string request,Func<PlayerProfileData,bool> update)
+        public ProfileCommitResult Commit(string transactionId,string kind,string request,Func<PlayerProfileData,bool> update,Func<string> result=null)
         {
             if(string.IsNullOrWhiteSpace(transactionId) || string.IsNullOrWhiteSpace(kind) || request==null || update==null)
                 throw new ArgumentException("A transaction requires an id, kind, request and update.");
@@ -78,7 +78,7 @@ namespace Scripts.Economy
                 {
                     var next=_current.Copy();
                     if(!update(next)) return ProfileCommitResult.Rejected;
-                    next.Transactions.Add(transactionId,new ProfileTransactionRecord {Kind=kind,Request=request,AppliedAtUtc=_utcNow()});
+                    next.Transactions.Add(transactionId,new ProfileTransactionRecord {Kind=kind,Request=request,AppliedAtUtc=_utcNow(),Result=result?.Invoke()});
                     Publish(next);
                 }
                 finally { _mutating=false; }
@@ -90,6 +90,7 @@ namespace Scripts.Economy
         {
             if(_current!=null)return;
             var loaded=_storage.Load();
+            PlayerProfileValidation.Upgrade(loaded);
             if(loaded==null)
             {
                 loaded=_initialProfile();loaded.Revision=1;

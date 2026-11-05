@@ -12,6 +12,11 @@ namespace Scripts.Economy
 
     public static class PlayerProfileValidation
     {
+        public static void Upgrade(PlayerProfileData data)
+        {
+            // v2 adds optional durable outcome data to transaction receipts; balances are unchanged.
+            if(data?.Version==1)data.Version=2;
+        }
         public static void Validate(PlayerProfileData data)
         {
             if(data == null) throw new InvalidDataException("Missing player profile.");

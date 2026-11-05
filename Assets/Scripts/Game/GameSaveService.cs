@@ -61,6 +61,7 @@ namespace Scripts
 
     public class LevelSaveData
     {
+        public string RoundId;
         public List<List<int>> TriedCardsList;
         public List<int> TargetCards;
         public List<CardItemInfo> CardItemInfoList;

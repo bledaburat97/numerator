@@ -12,14 +12,16 @@ namespace Menu
         private IMenuUIView _view;
         private IBaseButtonController _singlePlayerButtonController;
         private bool _navigating;
+        private readonly IFruitCollectionPresenter _collection;
         
         [Inject]
-        public MenuUIController(ILevelTracker levelTracker, IGameSaveService gameSaveService, BaseButtonControllerFactory baseButtonControllerFactory, IMenuUIView view)
+        public MenuUIController(ILevelTracker levelTracker, IGameSaveService gameSaveService, BaseButtonControllerFactory baseButtonControllerFactory, IMenuUIView view,IFruitCollectionPresenter collection)
         {
             _levelTracker = levelTracker;
             _baseButtonControllerFactory = baseButtonControllerFactory;
             _view = view;
             _gameSaveService = gameSaveService;
+            _collection=collection;
             CreateButtons();
         }
 
@@ -38,6 +40,8 @@ namespace Menu
             multiplayerButtonController.SetButtonClickable(multiplayerUnlocked);
             multiplayerButtonController.SetClickOnRelease(true);
             _view.SetMultiplayerAvailability(multiplayerUnlocked);
+            var collection=_baseButtonControllerFactory.Create(_view.GetCollectionButton(),()=>{if(!_navigating)_collection.Open();});
+            collection.SetText("Bahçem");collection.SetClickOnRelease(true);
         }
 
         private void OnSinglePlayerButtonClick()

@@ -17,6 +17,7 @@ namespace Scripts
                 .WithArguments(menuHeader);
             Container.Bind<IMenuUIController>().To<MenuUIController>().AsSingle()
                 .WithArguments(menuUI);
+            Container.BindInterfacesAndSelfTo<FruitCollectionPresenter>().AsSingle().WithArguments(menuUI.GetCollectionView());
             Container.Bind<IMenuPowerUpCountHolderController>().To<MenuPowerUpCountHolderController>().AsSingle()
                 .WithArguments(ResolvePowerUpListHolderView());
             Container.Bind<IRewardProgressDisplayController>().To<RewardProgressDisplayController>().AsSingle()

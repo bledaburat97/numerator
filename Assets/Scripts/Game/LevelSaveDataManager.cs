@@ -24,7 +24,7 @@ namespace Game
         public void CreateDefaultLevelSaveData()
         {
             LevelData levelData = _levelDataCreator.GetLevelData();
-            _levelSaveData = new LevelSaveData { Definition = levelData,
+            _levelSaveData = new LevelSaveData { Definition = levelData,RoundId=System.Guid.NewGuid().ToString("N"),
                 GrowingBoard = levelData.Mechanic == LevelMechanic.Growing ? new GrowingBoardState() : null,
                 Dynamite = levelData.Mechanic == LevelMechanic.Dynamite ? new DynamiteRoundState() : null };
             _levelSaveData.TriedCardsList = new List<List<int>>();

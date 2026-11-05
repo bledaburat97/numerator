@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using Game;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Utilities;
 using UnityEngine;
 
 namespace Scripts.Economy
@@ -8,7 +10,25 @@ namespace Scripts.Economy
     // Unity composition boundary; profile and inventory rules do not depend on Unity.
     public static class PlayerProfileRuntime
     {
+        // JSON creates these generic wrappers through reflection. Preserving the DTOs
+        // alone does not keep their constructors or generate the IL2CPP specializations.
+        // In particular, IntroductionGrants is a HashSet and needs CollectionWrapper<RewardType>.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void PreserveJsonCollections()
+        {
+            AotHelper.EnsureList<RewardType>();
+            AotHelper.EnsureDictionary<RewardType,int>();
+            AotHelper.EnsureDictionary<FruitId,FruitBalance>();
+            AotHelper.EnsureDictionary<FruitGainSource,long>();
+            AotHelper.EnsureDictionary<string,PlantingBatch>();
+            AotHelper.EnsureDictionary<string,AchievementProgress>();
+            AotHelper.EnsureDictionary<string,ProfileTransactionRecord>();
+        }
+
         private static IPlayerProfileRepository _persistent;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static IPlayerProfileRepository _probe;
+#endif
 #if UNITY_EDITOR
         private static IPlayerProfileRepository _test;
 #endif
@@ -18,6 +38,12 @@ namespace Scripts.Economy
             {
 #if UNITY_EDITOR
                 if(_test!=null)return _test;
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if(MultiplayerNetworkProbe.IsRunning)
+                    return _probe ?? (_probe=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>{
+                        var profile=new PlayerProfileData();profile.Progress.LevelId=MenuProgression.MultiplayerUnlockLevel-1;return profile;
+                    }));
 #endif
                 if(_persistent==null)
                 {
@@ -30,6 +56,7 @@ namespace Scripts.Economy
             }
         }
         public static PlayerProfileData ReadLegacy()=>LegacyProfileMigration.Create(PlayerPrefs.GetInt);
+        public static WalletRewardRules CreateRewardRules()=>new WalletRewardRules(ConstantValues.NUM_OF_STARS_FOR_WILD,PowerUpTypeUtility.IsUnlocked,PowerUpTypeUtility.NextReward);
         public static EconomySettings LoadSettings()
         {
             var asset=Resources.Load<TextAsset>("EconomyConfig");
@@ -43,6 +70,9 @@ namespace Scripts.Economy
         {
 #if UNITY_EDITOR
             if(_test!=null)return;
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if(MultiplayerNetworkProbe.IsRunning)return;
 #endif
             // Compatibility mirror only. The committed profile is always authoritative.
             try

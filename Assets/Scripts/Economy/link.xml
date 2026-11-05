@@ -9,5 +9,9 @@
     <type fullname="Scripts.Economy.ProfileTransactionRecord" preserve="all" />
     <type fullname="Scripts.Economy.AtomicPlayerProfileStorage*" preserve="all" />
     <type fullname="Scripts.Economy.EconomySettings" preserve="all" />
+    <type fullname="Scripts.Economy.GameWinAward" preserve="all" />
+    <type fullname="Scripts.Economy.GameWinRewardService" preserve="all" />
+    <type fullname="Scripts.Economy.FruitInventoryService" preserve="all" />
+    <type fullname="Menu.FruitCollectionPresenter" preserve="all" />
   </assembly>
 </linker>

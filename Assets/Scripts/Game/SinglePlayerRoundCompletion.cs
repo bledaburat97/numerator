@@ -1,4 +1,6 @@
 using Scripts;
+using Scripts.Economy;
+using System;
 
 namespace Game
 {
@@ -8,16 +10,27 @@ namespace Game
         private readonly ILevelTracker _tracker;
         private readonly IRoundStateManager _round;
         private readonly IGameSaveService _saves;
+        private readonly ILevelSaveDataManager _checkpoint;
+        private readonly ITargetNumberCreator _target;
+        private readonly IGameWinRewardService _rewards;
         private SinglePlayerRoundResult _completed;
 
-        public SinglePlayerRoundCompletion(ILevelTracker tracker, IRoundStateManager round, IGameSaveService saves)
+        public SinglePlayerRoundCompletion(ILevelTracker tracker, IRoundStateManager round, IGameSaveService saves,
+            ILevelSaveDataManager checkpoint,ITargetNumberCreator target,IGameWinRewardService rewards)
         {
             _tracker = tracker;
             _round = round;
             _saves = saves;
+            _checkpoint=checkpoint;_target=target;_rewards=rewards;
         }
 
-        public void BeginRound() => _completed = null;
+        public void BeginRound() { _completed=null;EnsureIdentity(); }
+        private void EnsureIdentity()
+        {
+            var checkpoint=_checkpoint.GetLevelSaveData();
+            if(string.IsNullOrEmpty(checkpoint.RoundId))checkpoint.RoundId=Guid.NewGuid().ToString("N");
+            if(checkpoint.LevelId<0)checkpoint.LevelId=_tracker.GetLevelId();
+        }
 
         public SinglePlayerRoundResult Complete(bool won)
         {
@@ -27,17 +40,24 @@ namespace Game
             int previousCoins = _tracker.GetCoinCount();
             int previousProgress = _tracker.GetCrystalProgressCount();
             RewardType previousReward = _tracker.GetCurrentRewardType();
+            int nextLevelNumber=_tracker.GetLevelId()+1;
             if (won)
             {
+                EnsureIdentity();
                 _round.GetActiveRewardCounts(out coins, out crystals);
-                // Persist progress before deleting the old checkpoint. A stale checkpoint
-                // is rejected on resume by its level id if deletion is interrupted.
-                _tracker.IncrementLevelIdWithRewards(coins, crystals);
+                var state=_checkpoint.GetLevelSaveData();
+                var award=_rewards.SinglePlayer(state.RoundId,state.LevelId,_target.GetTargetCardsList(),coins,crystals);
+                previousCoins=award.PreviousCoins;previousProgress=award.PreviousCrystalProgress;
+                nextLevelNumber=award.NextLevelNumber;
+                // Match the reward preview when an old locked reward is normalized at an unlock boundary.
+                previousReward=PowerUpTypeUtility.IsUnlocked(award.PreviousReward,state.LevelId)?award.PreviousReward:PowerUpTypeUtility.NextReward(award.PreviousReward,state.LevelId);
+                if(!award.IsReplay)foreach(var type in award.PowerUps)GameTelemetry.Powerup(type,true,"crystal");
             }
 
             _completed = new SinglePlayerRoundResult(won, _round.GetTriedCardsList().Count,
-                coins, crystals, previousCoins, previousProgress, previousReward, _tracker.GetLevelId() + 1);
-            _saves.DeleteSave();
+                coins, crystals, previousCoins, previousProgress, previousReward, nextLevelNumber);
+            var saved=_saves.GetSavedLevel();
+            if(saved==null || string.IsNullOrEmpty(saved.RoundId) || saved.RoundId==_checkpoint.GetLevelSaveData().RoundId)_saves.DeleteSave();
             return _completed;
         }
     }

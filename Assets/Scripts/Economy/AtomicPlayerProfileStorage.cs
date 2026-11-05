@@ -28,6 +28,7 @@ namespace Scripts.Economy
                     var envelope=JsonConvert.DeserializeObject<Envelope>(File.ReadAllText(candidate));
                     if(envelope?.Payload==null || envelope.Checksum!=Hash(envelope.Payload)) throw new InvalidDataException("Profile checksum mismatch.");
                     var profile=JsonConvert.DeserializeObject<PlayerProfileData>(envelope.Payload);
+                    PlayerProfileValidation.Upgrade(profile);
                     PlayerProfileValidation.Validate(profile);
                     if(candidate!=_path)_recovered?.Invoke("Player profile recovered from its last committed backup.");
                     return profile;

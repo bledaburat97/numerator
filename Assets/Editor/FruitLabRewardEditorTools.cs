@@ -218,7 +218,9 @@ public static class FruitLabRewardEditorTools
             var bindings = new Zenject.DiContainer();
             bindings.Bind<IHapticController>().FromInstance(new HapticController());
             bindings.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
-            var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu);
+            using var collection = new FruitCollectionPresenter(new Scripts.Economy.FruitInventoryService(Scripts.Economy.PlayerProfileRuntime.Current),
+                Scripts.Economy.PlayerProfileRuntime.Current,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>());
+            var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu,collection);
             new MenuPowerUpCountHolderController(powers, tracker).Initialize();
             new RewardProgressDisplayController(crystals, tracker).Initialize();
             Require(crystals.transform.Find("CrystalTitle").GetComponent<TMPro.TMP_Text>().text == "Güçlendirici Barı",

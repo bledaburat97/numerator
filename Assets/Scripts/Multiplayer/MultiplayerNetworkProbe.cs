@@ -39,6 +39,7 @@ namespace Scripts
         private int _rounds, _wins, _completedOutcomes;
         private MultiplayerOutcome _lastOutcome;
         private readonly int[] _expectedRewards = new int[3];
+        private readonly long[] _expectedFruits = new long[9];
         private readonly List<string> _checks = new List<string>();
         private static string Option(string name)
         {
@@ -389,6 +390,8 @@ namespace Scripts
                 yield return new WaitForSecondsRealtime(1);
                 bool won = match.State.Winner == network.LocalClientId;
                 if (won) { _wins++; _expectedRewards[(int)_lastOutcome.Reward.Value]++; }
+                if(won)foreach(int fruit in _lastOutcome.Answer)_expectedFruits[fruit-1]++;
+                CheckCollectionTotals();
                 _rounds++;
                 var tracker = FindFirstObjectByType<LevelTracker>();
                 foreach (RewardType type in PowerUpTypeUtility.MultiplayerRewardTypes)
@@ -657,6 +660,8 @@ namespace Scripts
             CheckMultiplayerHud(FindFirstObjectByType<GameUIView>());
             Check(_completedOutcomes == round && _lastOutcome.Reward.HasValue, "The host announces one validated win and reward per round");
             if (won) { _wins++; _expectedRewards[(int)_lastOutcome.Reward.Value]++; }
+                if(won)foreach(int fruit in _lastOutcome.Answer)_expectedFruits[fruit-1]++;
+                CheckCollectionTotals();
             var tracker = FindFirstObjectByType<LevelTracker>();
             foreach (RewardType type in PowerUpTypeUtility.MultiplayerRewardTypes)
                 Check(tracker.GetPowerUpCount(type) == _expectedRewards[(int)type], "Only the winner receives exactly one of the announced powerups");
@@ -672,7 +677,19 @@ namespace Scripts
             yield return new WaitForSecondsRealtime(.2f);
             Check(_completedOutcomes == round && PowerUpTypeUtility.MultiplayerRewardTypes.Sum(tracker.GetPowerUpCount) == _wins,
                 "Replayed finish packets cannot grant a second reward or show a second outcome");
+            CheckCollectionTotals();
             _rounds++;
+        }
+        private void CheckCollectionTotals()
+        {
+            var profile=Economy.PlayerProfileRuntime.Current.Snapshot();
+            foreach(Economy.FruitId fruit in Enum.GetValues(typeof(Economy.FruitId)))
+            {
+                long expected=_expectedFruits[(int)fruit-1];var balance=profile.Collection[fruit];
+                balance.EarnedBySource.TryGetValue(Economy.FruitGainSource.Duel,out long duel);
+                Check(balance.Current==expected && balance.LifetimeEarned==expected && duel==expected,"Only local winning answers enter the duel collection, once per match round");
+            }
+            Check(profile.Transactions.Count==_wins,"Powerup and fruit use one durable outcome receipt per victory");
         }
         private IEnumerator Rematch(MultiplayerGameController match, int next)
         {
@@ -731,7 +748,7 @@ namespace Scripts
                 services_ready = PlayerLobby.Instance != null && PlayerLobby.Instance.IsReady,
                 connection_error = PlayerLobby.Instance != null ? PlayerLobby.Instance.LastError : null };
             if (!string.IsNullOrEmpty(_output))
-                File.WriteAllText(_output, Newtonsoft.Json.JsonConvert.SerializeObject(new { success, relay = UseRelay, scenario = Scenario, difficulty = SelectedDifficulty.ToString(), slots = Settings.BoardCount, fruits = Settings.FruitCount, role = Role, rounds = _rounds, wins = _wins, reward_counts = _expectedRewards, checks = _checks, error, diagnostic }, Newtonsoft.Json.Formatting.Indented));
+                File.WriteAllText(_output, Newtonsoft.Json.JsonConvert.SerializeObject(new { success, relay = UseRelay, scenario = Scenario, difficulty = SelectedDifficulty.ToString(), slots = Settings.BoardCount, fruits = Settings.FruitCount, role = Role, rounds = _rounds, wins = _wins, reward_counts = _expectedRewards, fruit_counts = _expectedFruits, checks = _checks, error, diagnostic }, Newtonsoft.Json.Formatting.Indented));
             StartCoroutine(FinishCleanup(success));
         }
         private IEnumerator FinishCleanup(bool success)

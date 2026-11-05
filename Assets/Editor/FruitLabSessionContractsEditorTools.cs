@@ -247,7 +247,7 @@ public static partial class FruitLabTutorialEditorTools
                     game.Round.GetActiveRewardCounts(out int coins,out int crystals);
                     var reward=game.Tracker.GetCurrentRewardType();int stock=game.Tracker.GetPowerUpCount(reward);
                     var saves=(MemorySave)Get(game,"_memory");saves.Save(new LevelSaveData());
-                    var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves);
+                    var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves,game._saves,game.Target,CollectionTestRewards(game));
                     var result=completion.Complete(won);
                     Require(result.Won==won && result.PreviousCoins==11 && result.PreviousCrystalProgress==ConstantValues.NUM_OF_STARS_FOR_WILD-1
                         && result.PreviousReward==reward && result.GuessCount==1,"Outcome captures the pre-award state independently of animations");
@@ -312,6 +312,7 @@ public static partial class FruitLabTutorialEditorTools
                     var container=new DiContainer();
                     container.Bind<Context>().FromInstance(Find<SceneContext>(scene));
                     container.Bind<ILevelTracker>().FromInstance(tracker);container.Bind<IGameSaveService>().FromInstance(new MemorySave());
+                    BindCollectionTestRewards(container);
                     container.Bind<IHapticController>().To<HapticController>().AsSingle();
                     container.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
                     var installer=Find<GameMonoInstaller>(scene);
@@ -399,7 +400,7 @@ public static partial class FruitLabTutorialEditorTools
             (ICardItemLocator)Get(game.Placement,"_cardItemLocator"),game._guess,game._info,cardInfo,game.Placement,(ICardInteractionManager)Get(game,"_interaction"),game.Results,game.Round);
         var saves=(MemorySave)Get(game,"_memory");
         return new SinglePlayerSession(game.Tracker,new TestLevel(definition),saves,game._saves,game._counts,popups,game._guess,game.Results,game.Round,
-            new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves),new SinglePlayerEndPresenter(popups,game.UI,game._area,game.Target,cardInfo,bar,popup,success,failure),
+            new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves,game._saves,game.Target,CollectionTestRewards(game)),new SinglePlayerEndPresenter(popups,game.UI,game._area,game.Target,cardInfo,bar,popup,success,failure),
             null,builder,new LevelPresentation(popups,game._powers,bar,new ContractStartAnimation(),popup,failure,fade));
     }
     private static void ClickContractGameButton(Canvas canvas)

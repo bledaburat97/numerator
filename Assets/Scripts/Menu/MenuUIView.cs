@@ -7,6 +7,10 @@ namespace Menu
     {
         [SerializeField] private BaseButtonView singlePlayerButton;
         [SerializeField] private BaseButtonView multiplayerButton;
+        [SerializeField] private BaseButtonView collectionButton;
+        [SerializeField] private FruitCollectionView collectionView;
+        public IBaseButtonView GetCollectionButton()=>collectionButton;
+        public FruitCollectionView GetCollectionView()=>collectionView;
 
         public IBaseButtonView GetSinglePlayerButton()
         {
@@ -37,6 +41,7 @@ namespace Menu
     {
         IBaseButtonView GetSinglePlayerButton();
         IBaseButtonView GetMultiplayerButton();
+        IBaseButtonView GetCollectionButton();
         void SetSinglePlayerButtonText(string text);
         void SetMultiplayerAvailability(bool unlocked);
     }

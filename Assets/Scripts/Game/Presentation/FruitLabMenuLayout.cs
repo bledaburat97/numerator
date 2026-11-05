@@ -53,11 +53,13 @@ namespace Scripts
             FruitLabStyle.Place(powers.GetRectTransform(), middleArea, 12f, height - 240f, width, 44f);
             powers.ApplyLabLayout(width, 44f);
             RectTransform actions = (RectTransform)menu.transform;
-            FruitLabStyle.Place(actions, middleArea, 24f, Mathf.Max(28f, (height - 352f) * .4f), width - 24f, 112f);
+            FruitLabStyle.Place(actions, middleArea, 24f, Mathf.Max(28f, (height - 352f) * .4f), width - 24f, 172f);
             BaseButtonView play = (BaseButtonView)menu.GetSinglePlayerButton();
             BaseButtonView multi = (BaseButtonView)menu.GetMultiplayerButton();
-            FruitLabStyle.Place(play.GetButtonRectTransform(), actions, 0f, 56f, width - 24f, 56f);
-            FruitLabStyle.Place(multi.GetButtonRectTransform(), actions, 0f, 0f, width - 24f, 44f);
+            FruitLabStyle.Place(play.GetButtonRectTransform(), actions, 0f, 116f, width - 24f, 56f);
+            FruitLabStyle.Place(multi.GetButtonRectTransform(), actions, 0f, 60f, width - 24f, 44f);
+            var collection=(BaseButtonView)menu.GetCollectionButton();
+            if(collection!=null){FruitLabStyle.Place(collection.GetButtonRectTransform(),actions,0,4,width-24f,44);collection.ApplyLabActionStyle(false);}
             play.ApplyLabActionStyle(true);
             multi.ApplyLabActionStyle(false);
         }

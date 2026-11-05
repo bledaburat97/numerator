@@ -63,7 +63,6 @@ namespace Game
         {
             if (_disposed) return;
             _endPresenter.PrepareRound();
-            _completion.BeginRound();
             _presentation.PrepareRound(); _isGameOver = false; _state = LevelFlowState.Building;
             BeginSinglePlayer(mode);
         }
@@ -87,6 +86,7 @@ namespace Game
             bool isResumeFlow = TryPrepareSinglePlayerSaveData(mode);
 
             _builder.BuildSingle(isResumeFlow);
+            _completion.BeginRound();
 
             _levelTracker.GrantIntroducedPowerUps();
             LevelPlaytestSchedule.PrepareTrialStock(_levelTracker, _levelSaveDataManager, _levelDataCreator.GetLevelData());
@@ -125,6 +125,12 @@ namespace Game
                         || (savedLevel.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(savedLevel)))
                     { _gameSaveService.DeleteSave(); _levelSaveDataManager.CreateDefaultLevelSaveData(); return false; }
                     if (savedLevel.Definition != null) (_levelDataCreator as LevelDataCreator)?.RestoreDefinition(savedLevel.Definition);
+                    if(string.IsNullOrEmpty(savedLevel.RoundId) || savedLevel.LevelId<0)
+                    {
+                        savedLevel.RoundId=string.IsNullOrEmpty(savedLevel.RoundId)?Guid.NewGuid().ToString("N"):savedLevel.RoundId;
+                        savedLevel.LevelId=_levelTracker.GetLevelId();
+                        _gameSaveService.Save(savedLevel);
+                    }
                     savedLevel.RevealedGuessNumbers ??= new System.Collections.Generic.List<int>();
                     _levelSaveDataManager.SetLevelSaveDataAsSaved(savedLevel);
                     return true;
