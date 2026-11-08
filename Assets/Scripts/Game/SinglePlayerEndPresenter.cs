@@ -55,6 +55,8 @@ namespace Game
             if (result.EarnedCrystals > 0)
                 _crystals.PrepareForCollection(result.PreviousCrystalProgress, result.PreviousReward);
             _popup.SetOutcome(result.Won, result.EarnedCrystals);
+            var goal=result.AchievementTarget;
+            _popup.SetAchievementTarget(goal==null?null:string.Format(System.Globalization.CultureInfo.GetCultureInfo("tr-TR"),"{0}: {1:N0}/{2:N0}",goal.Title,goal.Progress,goal.Target));
             _popup.SetPopupStatus(!result.Won);
             _popup.InitButton(LevelFinishButtonType.Game,
                 result.Won ? "Bölüm " + result.NextLevelNumber : "Tekrar oyna",

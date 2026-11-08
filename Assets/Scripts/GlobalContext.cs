@@ -8,8 +8,11 @@ namespace Scripts
     {
         [Inject] private ILevelTracker _levelTracker;
         [Inject] private Economy.GardenVisitCoordinator _gardenVisits;
+        [Inject] private Economy.IAchievementService _achievements;
         private void Start()
         {
+            try {_achievements.Reconcile();}
+            catch(System.Exception error){Debug.LogWarning("Achievement reconciliation deferred: "+error.GetType().Name);}
             _gardenVisits.Failed+=OnGardenFailure;
             _gardenVisits.Initialize();
         }

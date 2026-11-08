@@ -1,4 +1,32 @@
 {
   "SeedUnitCoinPrice": 1,
-  "RequiredGrowthVisits": 4
+  "RequiredGrowthVisits": 4,
+  "Achievements": [
+    {
+      "Id": "first-harvest",
+      "Title": "İlk Hasat",
+      "Description": "Bahçende ilk meyveni yetiştir.",
+      "Target": 1,
+      "Source": 2,
+      "Reward": 1,
+      "RewardCount": 1
+    },
+    {
+      "Id": "strawberry-10",
+      "Title": "Çilek Aşığı",
+      "Description": "10 çilek topla.",
+      "Target": 10,
+      "Fruit": 3,
+      "Reward": 0,
+      "RewardCount": 1
+    },
+    {
+      "Id": "collector-50",
+      "Title": "Meyve Koleksiyoncusu",
+      "Description": "Toplam 50 meyve topla.",
+      "Target": 50,
+      "Reward": 3,
+      "RewardCount": 1
+    }
+  ]
 }

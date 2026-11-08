@@ -41,9 +41,9 @@ public static partial class FruitLabTutorialEditorTools
                 var profile=new PlayerProfileData();profile.Progress.LevelId=17;profile.Wallet.Coins=50;profile.Wallet.CrystalProgress=5;
                 foreach(RewardType type in Enum.GetValues(typeof(RewardType)))profile.Wallet.PowerUps[type]=2;return profile;
             });
-            var garden=new GardenService(profiles,new EconomySettings(),clock);var visits=new GardenVisitCoordinator(garden);
+            var garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));var visits=new GardenVisitCoordinator(garden);
             var menu=clone.GetComponentInChildren<MenuUIView>(true);var view=menu.GetCollectionView();
-            var notice=menu.GetGardenNoticeView();var inventory=new FruitInventoryService(profiles);
+            var notice=menu.GetGardenNoticeView();var inventory=new FruitInventoryService(profiles,new AchievementRules(new EconomySettings()));
             var bindings=new DiContainer();bindings.Bind<IHapticController>().To<HapticController>().AsSingle();
             bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
             var buttons=bindings.Resolve<BaseButtonControllerFactory>();
@@ -55,7 +55,7 @@ public static partial class FruitLabTutorialEditorTools
                 new MenuUIController(tracker,new MemorySave(),buttons,menu,presenter);header.Initialize(tracker);
                 applicationRoot=new GameObject("GardenApplicationEvents");applicationRoot.SetActive(false);
                 SceneManager.MoveGameObjectToScene(applicationRoot,camera.gameObject.scene);
-                var app=applicationRoot.AddComponent<GlobalContext>();Field(app,"_gardenVisits",visits);GardenApp(app,"Start");
+                var app=applicationRoot.AddComponent<GlobalContext>();Field(app,"_gardenVisits",visits);Field(app,"_achievements",new AchievementService(profiles,new AchievementRules(new EconomySettings())));GardenApp(app,"Start");
                 presenter.ShowPendingNotice();Require(!notice.IsVisible,"Empty startup has no growth announcement");
                 TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)menu.GetCollectionButton());
                 var panel=(GardenPanelView)view.Garden;var popup=(SeedPurchasePopupView)view.Purchase;

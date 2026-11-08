@@ -27,7 +27,8 @@ namespace Scripts.Economy
     {
         private readonly IPlayerProfileRepository _profiles;
         private readonly WalletRewardRules _rules;
-        public GameWinRewardService(IPlayerProfileRepository profiles,WalletRewardRules rules) { _profiles=profiles;_rules=rules; }
+        private readonly AchievementRules _achievements;
+        public GameWinRewardService(IPlayerProfileRepository profiles,WalletRewardRules rules,AchievementRules achievements) { _profiles=profiles;_rules=rules;_achievements=achievements; }
 
         public GameWinAward SinglePlayer(string roundId,int levelId,IReadOnlyList<int> answer,int coins,int crystals)
         {
@@ -39,7 +40,7 @@ namespace Scripts.Economy
                 var result=Before(profile);
                 result.PowerUps=_rules.ApplySingle(profile,coins,crystals);
                 result.NextLevelNumber=checked(profile.Progress.LevelId+1);
-                FruitInventoryService.ApplyGrant(profile,FruitGainSource.SinglePlayer,fruits);
+                FruitInventoryService.ApplyGrant(profile,FruitGainSource.SinglePlayer,fruits,_achievements);
                 return result;
             });
         }
@@ -52,7 +53,7 @@ namespace Scripts.Economy
             return Commit("duel:"+matchId+":"+round,"duel_win",request,profile=>{
                 var result=Before(profile);
                 profile.Wallet.PowerUps[reward]=checked(profile.Wallet.PowerUps[reward]+1);result.PowerUps.Add(reward);
-                FruitInventoryService.ApplyGrant(profile,FruitGainSource.Duel,fruits);
+                FruitInventoryService.ApplyGrant(profile,FruitGainSource.Duel,fruits,_achievements);
                 return result;
             });
         }

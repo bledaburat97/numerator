@@ -10,6 +10,10 @@ namespace Menu
         [SerializeField] private BaseButtonView collectionButton;
         [SerializeField] private FruitCollectionView collectionView;
         [SerializeField] private GardenNoticeView gardenNotice;
+        [SerializeField] private BaseButtonView achievementsButton;
+        [SerializeField] private AchievementsView achievementsView;
+        public IBaseButtonView GetAchievementsButton()=>achievementsButton;
+        public AchievementsView GetAchievementsView()=>achievementsView;
         public IBaseButtonView GetCollectionButton()=>collectionButton;
         public FruitCollectionView GetCollectionView()=>collectionView;
         public GardenNoticeView GetGardenNoticeView()
@@ -52,6 +56,7 @@ namespace Menu
         IBaseButtonView GetSinglePlayerButton();
         IBaseButtonView GetMultiplayerButton();
         IBaseButtonView GetCollectionButton();
+        IBaseButtonView GetAchievementsButton();
         void SetSinglePlayerButtonText(string text);
         void SetMultiplayerAvailability(bool unlocked);
     }

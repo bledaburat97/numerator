@@ -59,7 +59,10 @@ namespace Scripts
             FruitLabStyle.Place(play.GetButtonRectTransform(), actions, 0f, 116f, width - 24f, 56f);
             FruitLabStyle.Place(multi.GetButtonRectTransform(), actions, 0f, 60f, width - 24f, 48f);
             var collection=(BaseButtonView)menu.GetCollectionButton();
-            if(collection!=null){FruitLabStyle.Place(collection.GetButtonRectTransform(),actions,0,4,width-24f,48);collection.ApplyLabActionStyle(false);}
+            var achievements=(BaseButtonView)menu.GetAchievementsButton();
+            float secondaryWidth=achievements!=null?(width-32f)*.5f:width-24f;
+            if(collection!=null){FruitLabStyle.Place(collection.GetButtonRectTransform(),actions,0,4,secondaryWidth,48);collection.ApplyLabActionStyle(false);}
+            if(achievements!=null){FruitLabStyle.Place(achievements.GetButtonRectTransform(),actions,secondaryWidth+8,4,secondaryWidth,48);achievements.ApplyLabActionStyle(false);}
             play.ApplyLabActionStyle(true);
             multi.ApplyLabActionStyle(false);
         }

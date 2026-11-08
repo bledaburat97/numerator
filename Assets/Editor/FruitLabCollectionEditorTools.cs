@@ -81,6 +81,8 @@ public static partial class FruitLabTutorialEditorTools
     {
         container.Bind<IPlayerProfileRepository>().FromInstance(PlayerProfileRuntime.Current);
         container.Bind<WalletRewardRules>().FromInstance(PlayerProfileRuntime.CreateRewardRules());
+        container.Bind<AchievementRules>().FromInstance(new AchievementRules(new EconomySettings()));
+        container.Bind<IAchievementService>().To<AchievementService>().AsSingle();
         container.Bind<IGameWinRewardService>().To<GameWinRewardService>().AsSingle();
     }
     private static IGameWinRewardService CollectionTestRewards(Fixture game)=>CollectionFixtureRewards(game,out _);
@@ -93,7 +95,7 @@ public static partial class FruitLabTutorialEditorTools
             return data;
         });
         profile.Changed+=()=>typeof(LevelTracker).GetMethod("ApplyProfile",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(game.Tracker,new object[]{profile.Snapshot()});
-        repository=profile;return new GameWinRewardService(profile,PlayerProfileRuntime.CreateRewardRules());
+        repository=profile;return new GameWinRewardService(profile,PlayerProfileRuntime.CreateRewardRules(),new AchievementRules(new EconomySettings()));
     }
 
     public static void ReviewCollection(Canvas canvas,Camera camera)
@@ -121,14 +123,14 @@ public static partial class FruitLabTutorialEditorTools
     {
         var initial=new PlayerProfileData();initial.Progress.LevelId=20;initial.Wallet.Coins=10;initial.Wallet.CrystalProgress=5;
         var storage=new MemoryPlayerProfileStorage();var profiles=new PlayerProfileRepository(storage,()=>initial.Copy());
-        var rewards=new GameWinRewardService(profiles,PlayerProfileRuntime.CreateRewardRules());
+        var rewards=new GameWinRewardService(profiles,PlayerProfileRuntime.CreateRewardRules(),new AchievementRules(new EconomySettings()));
         string single=Guid.NewGuid().ToString("N"),match=Guid.NewGuid().ToString("N");
         var result=rewards.SinglePlayer(single,20,new[]{1,3,4},2,1);
         var data=profiles.Snapshot();
         Require(data.Progress.LevelId==21 && data.Wallet.Coins==12 && data.Wallet.CrystalProgress==0
             && data.Collection[FruitId.Apple].Current==1 && data.Collection[FruitId.Strawberry].Current==1 && data.Collection[FruitId.Banana].Current==0
             && data.Wallet.PowerUps.Values.Sum()==1,"Success commits wallet, crystals, progression and only answer fruit together");
-        var fresh=new GameWinRewardService(new PlayerProfileRepository(storage,()=>throw new Exception("No remigration")),PlayerProfileRuntime.CreateRewardRules());
+        var fresh=new GameWinRewardService(new PlayerProfileRepository(storage,()=>throw new Exception("No remigration")),PlayerProfileRuntime.CreateRewardRules(),new AchievementRules(new EconomySettings()));
         var repeated=fresh.SinglePlayer(single,20,new[]{1,3,4},2,1);
         Require(repeated.IsReplay && repeated.PreviousCoins==10 && repeated.NextLevelNumber==22,"A fresh service returns the original durable outcome");
         bool conflict=false;try {fresh.SinglePlayer(single,20,new[]{2,3,4},2,1);}catch(InvalidOperationException){conflict=true;}
@@ -144,13 +146,13 @@ public static partial class FruitLabTutorialEditorTools
         string path=Folder+"/CollectionTests/"+Guid.NewGuid().ToString("N")+".json";bool fail=false;
         var atomic=new AtomicPlayerProfileStorage(path,beforePublish:()=>{if(fail)throw new IOException("Interrupted collection write");});
         var disk=new PlayerProfileRepository(atomic,()=>initial.Copy());disk.Snapshot();
-        var diskRewards=new GameWinRewardService(disk,PlayerProfileRuntime.CreateRewardRules());string identity=Guid.NewGuid().ToString("N");
+        var diskRewards=new GameWinRewardService(disk,PlayerProfileRuntime.CreateRewardRules(),new AchievementRules(new EconomySettings()));string identity=Guid.NewGuid().ToString("N");
         fail=true;bool failed=false;
         try {diskRewards.SinglePlayer(identity,20,new[]{1,2},1,1);}catch(IOException){failed=true;}
         Require(failed && disk.Snapshot().Wallet.Coins==10 && disk.Snapshot().Collection[FruitId.Apple].Current==0 && disk.Snapshot().Transactions.Count==0,"Failed writes cannot partially grant fruit or currency");
         fail=false;diskRewards.SinglePlayer(identity,20,new[]{1,2},1,1);
         var reloaded=new PlayerProfileRepository(new AtomicPlayerProfileStorage(path),()=>throw new Exception("No reset"));
-        Require(reloaded.Snapshot().Collection[FruitId.Apple].Current==1 && new GameWinRewardService(reloaded,PlayerProfileRuntime.CreateRewardRules()).SinglePlayer(identity,20,new[]{1,2},1,1).IsReplay,"Atomic receipt survives a fresh disk load");
+        Require(reloaded.Snapshot().Collection[FruitId.Apple].Current==1 && new GameWinRewardService(reloaded,PlayerProfileRuntime.CreateRewardRules(),new AchievementRules(new EconomySettings())).SinglePlayer(identity,20,new[]{1,2},1,1).IsReplay,"Atomic receipt survives a fresh disk load");
         var old=initial.Copy();old.Version=1;
         PlayerProfileValidation.Upgrade(old);PlayerProfileValidation.Validate(old);
         Require(old.Version==PlayerProfileData.CurrentVersion && old.Wallet.Coins==10,"Version one upgrades without resetting balances");
@@ -167,7 +169,7 @@ public static partial class FruitLabTutorialEditorTools
             {
                 Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_bombPowerUpCount",1);game.BuildActors();game.Gate.Clear();
                 var award=CollectionFixtureRewards(game,out var profiles);
-                var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,(MemorySave)Get(game,"_memory"),game._saves,game.Target,award);
+                var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,(MemorySave)Get(game,"_memory"),game._saves,game.Target,award,new Scripts.Economy.AchievementService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())));
                 game.Results.LevelSuccessEvent+=(s,e)=>completion.Complete(true);
                 if(mode=="bomb")
                 {
@@ -218,10 +220,10 @@ public static partial class FruitLabTutorialEditorTools
             var rect=(RectTransform)clone.transform;rect.localScale=Vector3.one;rect.position=Vector3.zero;
             events=new GameObject("CollectionTestEvents",typeof(EventSystem));SceneManager.MoveGameObjectToScene(events,camera.gameObject.scene);
             var menu=clone.GetComponentInChildren<MenuUIView>(true);var view=menu.GetCollectionView();
-            var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>new PlayerProfileData());var inventory=new FruitInventoryService(profiles);
+            var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>new PlayerProfileData());var inventory=new FruitInventoryService(profiles,new AchievementRules(new EconomySettings()));
             var bindings=new DiContainer();bindings.Bind<IHapticController>().To<HapticController>().AsSingle();
             bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
-            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,bindings.Resolve<BaseButtonControllerFactory>(),new GardenService(profiles,new EconomySettings(),new SystemGardenClock()),new GardenVisitCoordinator(new GardenService(profiles,new EconomySettings(),new SystemGardenClock())),menu.GetGardenNoticeView()))
+            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,bindings.Resolve<BaseButtonControllerFactory>(),new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),new AchievementRules(new EconomySettings())),new GardenVisitCoordinator(new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),new AchievementRules(new EconomySettings()))),menu.GetGardenNoticeView()))
             {
                 var trackerRoot=new GameObject("CollectionMenuTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
                 var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;

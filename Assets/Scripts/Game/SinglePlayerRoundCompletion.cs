@@ -13,15 +13,16 @@ namespace Game
         private readonly ILevelSaveDataManager _checkpoint;
         private readonly ITargetNumberCreator _target;
         private readonly IGameWinRewardService _rewards;
+        private readonly IAchievementService _achievements;
         private SinglePlayerRoundResult _completed;
 
         public SinglePlayerRoundCompletion(ILevelTracker tracker, IRoundStateManager round, IGameSaveService saves,
-            ILevelSaveDataManager checkpoint,ITargetNumberCreator target,IGameWinRewardService rewards)
+            ILevelSaveDataManager checkpoint,ITargetNumberCreator target,IGameWinRewardService rewards,IAchievementService achievements)
         {
             _tracker = tracker;
             _round = round;
             _saves = saves;
-            _checkpoint=checkpoint;_target=target;_rewards=rewards;
+            _checkpoint=checkpoint;_target=target;_rewards=rewards;_achievements=achievements;
         }
 
         public void BeginRound() { _completed=null;EnsureIdentity(); }
@@ -55,7 +56,8 @@ namespace Game
             }
 
             _completed = new SinglePlayerRoundResult(won, _round.GetTriedCardsList().Count,
-                coins, crystals, previousCoins, previousProgress, previousReward, nextLevelNumber);
+                coins, crystals, previousCoins, previousProgress, previousReward, nextLevelNumber,
+                won?_achievements.ClosestFor(_target.GetTargetCardsList()):null);
             var saved=_saves.GetSavedLevel();
             if(saved==null || string.IsNullOrEmpty(saved.RoundId) || saved.RoundId==_checkpoint.GetLevelSaveData().RoundId)_saves.DeleteSave();
             return _completed;
@@ -72,9 +74,10 @@ namespace Game
         public int PreviousCrystalProgress { get; }
         public RewardType PreviousReward { get; }
         public int NextLevelNumber { get; }
+        public AchievementStatus AchievementTarget {get;}
 
         public SinglePlayerRoundResult(bool won, int guessCount, int earnedCoins, int earnedCrystals,
-            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber)
+            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null)
         {
             Won = won;
             GuessCount = guessCount;
@@ -84,6 +87,7 @@ namespace Game
             PreviousCrystalProgress = previousCrystalProgress;
             PreviousReward = previousReward;
             NextLevelNumber = nextLevelNumber;
+            AchievementTarget=achievementTarget;
         }
     }
 }

@@ -18,6 +18,7 @@ namespace Scripts.Economy
         {
             AotHelper.EnsureList<RewardType>();
             AotHelper.EnsureList<GardenBatchChange>();
+            AotHelper.EnsureList<AchievementDefinition>();
             AotHelper.EnsureDictionary<FruitId,long>();
             AotHelper.EnsureDictionary<RewardType,int>();
             AotHelper.EnsureDictionary<FruitId,FruitBalance>();

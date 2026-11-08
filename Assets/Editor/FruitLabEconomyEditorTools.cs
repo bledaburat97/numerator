@@ -59,7 +59,7 @@ public static class FruitLabEconomyEditorTools
         Require(sanitized.Wallet.Coins==0 && sanitized.Wallet.PowerUps.Values.All(amount=>amount==0) && sanitized.Wallet.NextReward==RewardType.Revealing,"Invalid legacy values are sanitized");
         checks.Add("One-time legacy migration preserves progress, all six powerups, crystals, reward order and introduction flags; nine zero fruit balances");
 
-        var inventory=new FruitInventoryService(repository);
+        var inventory=new FruitInventoryService(repository,new AchievementRules(new EconomySettings()));
         Require(inventory.Grant("single:round-a",FruitGainSource.SinglePlayer,Amounts(2,3))==ProfileCommitResult.Applied,"Game grant");
         Require(inventory.Grant("harvest:batch-a",FruitGainSource.Garden,Amounts(3,4))==ProfileCommitResult.Applied,"Garden grant");
         Require(inventory.Grant("duel:match-a:round-1",FruitGainSource.Duel,Amounts(1,0))==ProfileCommitResult.Applied,"Duel grant");
@@ -79,19 +79,19 @@ public static class FruitLabEconomyEditorTools
         var external=repository.Snapshot();external.Wallet.Coins=0;external.Collection[FruitId.Apple].Current=0;
         Require(repository.Snapshot().Wallet.Coins==137 && inventory.GetCollection()[FruitId.Apple].Current==4,"Readers cannot mutate committed data through snapshots");
         var reloaded=new PlayerProfileRepository(new AtomicPlayerProfileStorage(path),()=>throw new Exception("Must not migrate twice"));
-        var again=new FruitInventoryService(reloaded);
+        var again=new FruitInventoryService(reloaded,new AchievementRules(new EconomySettings()));
         Require(again.GetCollection()[FruitId.Apple].Current==4 && again.Grant("single:round-a",FruitGainSource.SinglePlayer,Amounts(2,3))==ProfileCommitResult.AlreadyApplied,"Balances and duplicate protection survive a fresh repository");
         checks.Add("Shared fruit inventory: game/duel/garden sources, current/lifetime totals, spend, rejection, snapshot isolation, duplicate ids and restart");
 
         repository.Commit("batch-data","foundation_test","batch-and-achievement",profile=>{
             profile.Garden.Add("strawberry-yesterday",new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=1000,PlantedUtcDay=20000,LastGrowthUtcDay=20001,Stage=GardenGrowthStage.Sprout});
             profile.Garden.Add("strawberry-today",new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=10,PlantedUtcDay=20001,LastGrowthUtcDay=20001,Stage=GardenGrowthStage.Seed});
-            profile.Achievements.Add("first-harvest",new AchievementProgress {Progress=1,Unlocked=true,UnlockedAtUtc=DateTime.UtcNow,RewardGranted=true,RewardTransactionId="batch-data"});
+            profile.Achievements.Add("foundation-badge",new AchievementProgress {Progress=1,Unlocked=true,UnlockedAtUtc=DateTime.UtcNow,RewardGranted=true,RewardTransactionId="batch-data"});
             return true;
         });
         var saved=new AtomicPlayerProfileStorage(path).Load();
         Require(saved.Garden.Count==2 && saved.Garden["strawberry-yesterday"].Quantity==1000
-            && saved.Garden["strawberry-today"].Stage==GardenGrowthStage.Seed && saved.Achievements["first-harvest"].RewardGranted,"Quantity batches and achievement reward receipts persist");
+            && saved.Garden["strawberry-today"].Stage==GardenGrowthStage.Seed && saved.Achievements["foundation-badge"].RewardGranted,"Quantity batches and achievement reward receipts persist");
         Expect<InvalidOperationException>(()=>repository.Update(_=>repository.Update(profile=>profile.Wallet.Coins++)));
         var notifications=new List<Exception>();
         var notificationRepository=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>seed.Copy(),observerError:notifications.Add);
@@ -155,7 +155,7 @@ public static class FruitLabEconomyEditorTools
                 var tracker=root.AddComponent<LevelTracker>();
                 typeof(LevelTracker).GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(tracker,null);
                 Require(tracker.GetCoinCount()==50 && tracker.GetCrystalProgressCount()==5 && tracker.GetLevelId()==24,"Tracker reads migrated profile");
-                var inventory=new FruitInventoryService(repository);inventory.Grant("collection-before-win",FruitGainSource.Garden,Amounts(3,0));
+                var inventory=new FruitInventoryService(repository,new AchievementRules(new EconomySettings()));inventory.Grant("collection-before-win",FruitGainSource.Garden,Amounts(3,0));
                 tracker.IncrementLevelIdWithRewards(2,1);
                 Require(repository.Snapshot().Progress.LevelId==25 && tracker.GetCoinCount()==52 && tracker.GetCrystalProgressCount()==0
                     && repository.Snapshot().Collection[FruitId.Apple].Current==3,"Existing win/crystal conversion preserves collection");

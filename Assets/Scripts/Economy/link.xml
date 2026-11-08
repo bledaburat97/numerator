@@ -9,6 +9,11 @@
     <type fullname="Scripts.Economy.ProfileTransactionRecord" preserve="all" />
     <type fullname="Scripts.Economy.AtomicPlayerProfileStorage*" preserve="all" />
     <type fullname="Scripts.Economy.EconomySettings" preserve="all" />
+    <type fullname="Scripts.Economy.AchievementDefinition" preserve="all" />
+    <type fullname="Scripts.Economy.AchievementRewardRecord" preserve="all" />
+    <type fullname="Scripts.Economy.AchievementRules" preserve="all" />
+    <type fullname="Scripts.Economy.AchievementService" preserve="all" />
+    <type fullname="Menu.AchievementsPresenter" preserve="all" />
     <type fullname="Scripts.Economy.GameWinAward" preserve="all" />
     <type fullname="Scripts.Economy.GameWinRewardService" preserve="all" />
     <type fullname="Scripts.Economy.FruitInventoryService" preserve="all" />

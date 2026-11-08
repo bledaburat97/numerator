@@ -21,12 +21,14 @@ namespace Scripts.Economy
         private readonly IPlayerProfileRepository _profiles;
         private readonly EconomySettings _settings;
         private readonly IGardenClock _clock;
+        private readonly AchievementRules _achievements;
 
-        public GardenService(IPlayerProfileRepository profiles,EconomySettings settings,IGardenClock clock)
+        public GardenService(IPlayerProfileRepository profiles,EconomySettings settings,IGardenClock clock,AchievementRules achievements)
         {
             _profiles=profiles ?? throw new ArgumentNullException(nameof(profiles));
             _settings=settings ?? throw new ArgumentNullException(nameof(settings));
             _clock=clock ?? throw new ArgumentNullException(nameof(clock));
+            _achievements=achievements ?? throw new ArgumentNullException(nameof(achievements));
             _settings.Validate();
         }
 
@@ -96,7 +98,7 @@ namespace Scripts.Economy
                 if(result.Changes.Count==0)return false;
                 // Same inventory accounting as game wins, in the same commit as
                 // removing mature batches and recording this visit's receipt.
-                if(result.Harvested.Count>0)FruitInventoryService.ApplyGrant(profile,FruitGainSource.Garden,result.Harvested);
+                if(result.Harvested.Count>0)FruitInventoryService.ApplyGrant(profile,FruitGainSource.Garden,result.Harvested,_achievements);
                 return true;
             },()=>JsonConvert.SerializeObject(result));
             if(status==ProfileCommitResult.AlreadyApplied)

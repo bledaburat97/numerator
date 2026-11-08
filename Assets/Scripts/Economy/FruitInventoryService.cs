@@ -15,7 +15,8 @@ namespace Scripts.Economy
     public sealed class FruitInventoryService : IFruitInventoryService
     {
         private readonly IPlayerProfileRepository _profiles;
-        public FruitInventoryService(IPlayerProfileRepository profiles) { _profiles=profiles; }
+        private readonly AchievementRules _achievements;
+        public FruitInventoryService(IPlayerProfileRepository profiles,AchievementRules achievements) { _profiles=profiles;_achievements=achievements; }
         public IReadOnlyDictionary<FruitId,FruitBalance> GetCollection()=>_profiles.Snapshot().Collection;
 
         public ProfileCommitResult Grant(string transactionId,FruitGainSource source,IReadOnlyDictionary<FruitId,long> amounts)
@@ -23,7 +24,7 @@ namespace Scripts.Economy
             if(!Enum.IsDefined(typeof(FruitGainSource),source)) throw new ArgumentOutOfRangeException(nameof(source));
             var copy=Amounts(amounts);
             string request=JsonConvert.SerializeObject(new {source,amounts=copy});
-            return _profiles.Commit(transactionId,"fruit_grant",request,profile=>{ApplyGrant(profile,source,copy);return true;});
+            return _profiles.Commit(transactionId,"fruit_grant",request,profile=>{ApplyGrant(profile,source,copy,_achievements);return true;});
         }
 
         public ProfileCommitResult Spend(string transactionId,IReadOnlyDictionary<FruitId,long> amounts)
@@ -36,8 +37,8 @@ namespace Scripts.Economy
             });
         }
 
-        // Future game rewards and harvests call this inside their complete wallet/inventory transaction.
-        internal static void ApplyGrant(PlayerProfileData profile,FruitGainSource source,IReadOnlyDictionary<FruitId,long> amounts)
+        // Wins, harvests and badge awards share this complete transaction boundary.
+        internal static void ApplyGrant(PlayerProfileData profile,FruitGainSource source,IReadOnlyDictionary<FruitId,long> amounts,AchievementRules achievements)
         {
             foreach(var amount in amounts)
             {
@@ -47,6 +48,7 @@ namespace Scripts.Economy
                 fruit.EarnedBySource.TryGetValue(source,out long previous);
                 fruit.EarnedBySource[source]=checked(previous+amount.Value);
             }
+            achievements.Apply(profile);
         }
 
         private static SortedDictionary<FruitId,long> Amounts(IReadOnlyDictionary<FruitId,long> amounts)

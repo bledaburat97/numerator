@@ -218,12 +218,13 @@ public static class FruitLabRewardEditorTools
             var bindings = new Zenject.DiContainer();
             bindings.Bind<IHapticController>().FromInstance(new HapticController());
             bindings.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
-            using var collection = new FruitCollectionPresenter(new Scripts.Economy.FruitInventoryService(Scripts.Economy.PlayerProfileRuntime.Current),
+            using var collection = new FruitCollectionPresenter(new Scripts.Economy.FruitInventoryService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),
                 Scripts.Economy.PlayerProfileRuntime.Current,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>(),
-                new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock()),
-                new Scripts.Economy.GardenVisitCoordinator(new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock())),menu.GetGardenNoticeView());
+                new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),
+                new Scripts.Economy.GardenVisitCoordinator(new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))),menu.GetGardenNoticeView());
             var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu,collection);
-            new MenuPowerUpCountHolderController(powers, tracker).Initialize();
+            using var menuPowers=new MenuPowerUpCountHolderController(powers,tracker,Scripts.Economy.PlayerProfileRuntime.Current);
+            menuPowers.Initialize();
             new RewardProgressDisplayController(crystals, tracker).Initialize();
             if(powers.gameObject.activeSelf)
             {

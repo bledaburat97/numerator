@@ -18,6 +18,8 @@ namespace Scripts
         private bool _multiplayer;
         private string _multiplayerSubtitle;
         private Game.RewardType? _multiplayerReward;
+        private string _achievementTarget;
+        public void SetAchievementTarget(string value){_achievementTarget=value;ApplyLabLayout();}
 
         public void SetMultiplayerResult(bool won, bool disconnected, Game.RewardType? reward)
         {
@@ -83,11 +85,13 @@ namespace Scripts
             text.alignment = _success ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Midline;
             TMP_Text subtitle = transform.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
             if (subtitle == null) subtitle = FruitLabStyle.CreateText("ResultSubtitle", transform, 12f, FruitLabStyle.Muted);
-            subtitle.text = _multiplayer ? _multiplayerSubtitle : _success ? "Bölüm tamamlandı." : "Sonucu incele, tekrar dene.";
-            subtitle.gameObject.SetActive(_multiplayer ? height >= 90f : _success ? height >= 144f : height >= 100f);
-            subtitle.fontSize = _success ? 11f : 10f;
+            bool hasTarget=_success && !_multiplayer && !string.IsNullOrEmpty(_achievementTarget);
+            subtitle.text = _multiplayer ? _multiplayerSubtitle : hasTarget?_achievementTarget : _success ? "Bölüm tamamlandı." : "Sonucu incele, tekrar dene.";
+            subtitle.gameObject.SetActive(_multiplayer ? height >= 90f : _success ? hasTarget || height >= 144f : height >= 100f);
+            subtitle.fontSize = hasTarget?16f:_success ? 11f : 10f;
             subtitle.alignment = _success ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Midline;
-            FruitLabStyle.Place(subtitle.rectTransform, transform, 12f, height - (_success ? 52f : 48f), width - (_success ? 72f : 24f), 14f);
+            subtitle.enableAutoSizing=false;
+            FruitLabStyle.Place(subtitle.rectTransform, transform, 12f, height - (hasTarget?70f:_success ? 52f : 48f), width - (hasTarget?24f:_success ? 72f : 24f), hasTarget?20f:14f);
             if (_multiplayer) { subtitle.enableAutoSizing = true; subtitle.fontSizeMin = 9f; subtitle.fontSizeMax = 11f; }
             RectTransform stage = transform.Find("RewardStage") as RectTransform;
             if (stage == null)
@@ -118,7 +122,7 @@ namespace Scripts
             if (rewardIcon != null) rewardIcon.gameObject.SetActive(_multiplayerReward.HasValue);
             if (verticalCrystalProgressView != null)
             {
-                float crystalHeight = height - 104f;
+                float crystalHeight = height - (hasTarget?120f:104f);
                 FruitLabStyle.Place(verticalCrystalProgressView.GetRectTransform(), transform, 12f, 44f, width - 24f, Mathf.Max(28f, crystalHeight));
                 verticalCrystalProgressView.SetPresentationTarget(stage);
                 verticalCrystalProgressView.ApplyLabStyle();
@@ -174,6 +178,7 @@ namespace Scripts
 
         public void SetOutcome(bool success, int earnedCrystalCount = 0)
         {
+            _achievementTarget=null;
             _multiplayer = false; _multiplayerReward = null;
             _success = success;
             _hasCrystalReward = success && earnedCrystalCount > 0;
@@ -192,7 +197,7 @@ namespace Scripts
             Transform mark = transform.Find("RewardStage/Outcome");
             if (mark != null) mark.gameObject.SetActive(false);
             TMP_Text subtitle = transform.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
-            if (subtitle != null) subtitle.text = "Yeni powerup kazandın!";
+            if (subtitle != null && string.IsNullOrEmpty(_achievementTarget)) subtitle.text = "Yeni powerup kazandın!";
         }
 
         public void SetStatus(bool status)

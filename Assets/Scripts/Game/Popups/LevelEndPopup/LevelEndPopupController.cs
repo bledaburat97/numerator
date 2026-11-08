@@ -46,6 +46,7 @@ namespace Game
             _view.SetMultiplayerOpponentLeft(message);
         }
         public void SetOutcome(bool success, int earnedCrystalCount = 0) => _view.SetOutcome(success, earnedCrystalCount);
+        public void SetAchievementTarget(string text)=>_view.SetAchievementTarget(text);
         public void SetMultiplayerResult(bool won, bool disconnected, RewardType? reward) => _view.SetMultiplayerResult(won, disconnected, reward);
         
         public Sequence PresentRewardForClaim(
@@ -116,6 +117,7 @@ namespace Game
         void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);
         void SetOutcome(bool success, int earnedCrystalCount = 0);
+        void SetAchievementTarget(string text);
         void SetPopupStatus(bool status);
         Sequence ScaleUpText(float duration);
         Sequence PresentRewardForClaim(Sequence rewardPresentationSequence, Func<Sequence> hideRewardSequenceFactory,
