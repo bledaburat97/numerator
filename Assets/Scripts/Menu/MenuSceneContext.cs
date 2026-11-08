@@ -32,12 +32,14 @@ namespace Scripts
         [Inject] private IMenuPowerUpCountHolderController _menuPowerUpCountHolderController;
         [Inject] private IRewardProgressDisplayController _rewardProgressDisplayController;
         [Inject] private IHapticController _hapticController;
+        [Inject] private IFruitCollectionPresenter _collection;
 
         void Start()
         {
             InitializeHapticController();
             //CreateActiveLevelIdController();
             CreateMenuHeader();
+            _collection.ShowPendingNotice();
         }
         
         private void InitializeHapticController() //TODO: set in global installer

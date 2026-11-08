@@ -15,6 +15,9 @@ namespace Scripts
             Container.Bind<Economy.WalletRewardRules>().FromMethod(_=>Economy.PlayerProfileRuntime.CreateRewardRules()).AsSingle();
             Container.Bind<Economy.IGameWinRewardService>().To<Economy.GameWinRewardService>().AsSingle();
             Container.Bind<Economy.EconomySettings>().FromMethod(_=>Economy.PlayerProfileRuntime.LoadSettings()).AsSingle();
+            Container.Bind<Economy.IGardenClock>().To<Economy.SystemGardenClock>().AsSingle();
+            Container.Bind<Economy.IGardenService>().To<Economy.GardenService>().AsSingle();
+            Container.Bind<Economy.GardenVisitCoordinator>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentsInHierarchy().AsSingle();
             Container.Bind<IHapticController>().To<HapticController>().AsSingle();
         }

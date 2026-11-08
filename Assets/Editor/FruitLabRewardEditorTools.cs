@@ -219,7 +219,9 @@ public static class FruitLabRewardEditorTools
             bindings.Bind<IHapticController>().FromInstance(new HapticController());
             bindings.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             using var collection = new FruitCollectionPresenter(new Scripts.Economy.FruitInventoryService(Scripts.Economy.PlayerProfileRuntime.Current),
-                Scripts.Economy.PlayerProfileRuntime.Current,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>());
+                Scripts.Economy.PlayerProfileRuntime.Current,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>(),
+                new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock()),
+                new Scripts.Economy.GardenVisitCoordinator(new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock())),menu.GetGardenNoticeView());
             var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu,collection);
             new MenuPowerUpCountHolderController(powers, tracker).Initialize();
             new RewardProgressDisplayController(crystals, tracker).Initialize();

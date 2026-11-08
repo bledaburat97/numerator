@@ -31,7 +31,7 @@ public static class FruitLabEconomyEditorTools
             var settings=PlayerProfileRuntime.LoadSettings();
             Require(settings.SeedUnitCoinPrice==1 && settings.RequiredGrowthVisits==4,"Central initial economy settings");
             Expect<InvalidOperationException>(()=>new EconomySettings {SeedUnitCoinPrice=0}.Validate());
-            checks.Add("Central settings validated; no seed purchase or growth behaviour enabled");
+            checks.Add("Central settings validated; automatic garden processing is not connected");
         }
         Require(before==LegacySnapshot(),"Real PlayerPrefs are unchanged");
         Require(persistentBefore==PersistentFiles(),"Real profile files are unchanged");

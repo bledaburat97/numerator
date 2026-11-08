@@ -17,6 +17,8 @@ namespace Scripts.Economy
         private static void PreserveJsonCollections()
         {
             AotHelper.EnsureList<RewardType>();
+            AotHelper.EnsureList<GardenBatchChange>();
+            AotHelper.EnsureDictionary<FruitId,long>();
             AotHelper.EnsureDictionary<RewardType,int>();
             AotHelper.EnsureDictionary<FruitId,FruitBalance>();
             AotHelper.EnsureDictionary<FruitGainSource,long>();

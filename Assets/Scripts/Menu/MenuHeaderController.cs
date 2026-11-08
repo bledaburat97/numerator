@@ -1,20 +1,21 @@
-﻿namespace Scripts
+using System;
+using Scripts.Economy;
+
+namespace Scripts
 {
-    public class MenuHeaderController : IMenuHeaderController
+    public class MenuHeaderController : IMenuHeaderController,IDisposable
     {
-        private IMenuHeaderView _view;
-
-        public MenuHeaderController(IMenuHeaderView view)
+        private readonly IMenuHeaderView _view;
+        private readonly IPlayerProfileRepository _profiles;
+        private bool _initialized;
+        public MenuHeaderController(IMenuHeaderView view,IPlayerProfileRepository profiles)
         {
-            _view = view;
+            _view=view;_profiles=profiles;_profiles.Changed+=Refresh;
         }
-
-        public void Initialize(ILevelTracker levelTracker)
-        {
-            _view.Init(levelTracker.GetStarCount());
-        }
+        public void Initialize(ILevelTracker levelTracker){_initialized=true;Refresh();}
+        private void Refresh(){if(_initialized)_view.Init(_profiles.Snapshot().Wallet.Coins);}
+        public void Dispose()=>_profiles.Changed-=Refresh;
     }
-
     public interface IMenuHeaderController
     {
         void Initialize(ILevelTracker levelTracker);

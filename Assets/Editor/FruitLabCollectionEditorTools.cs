@@ -67,6 +67,7 @@ public static partial class FruitLabTutorialEditorTools
             if(entry==null)entry=Button(menu.transform,"CollectionButton",false);
             entry.SetText("Bahçem");
             Set(menu,"collectionButton",entry);Set(menu,"collectionView",collection.GetComponent<FruitCollectionView>());
+            menu.GetGardenNoticeView().ApplyLayout();menu.GetGardenNoticeView().Hide();
             Find<FruitLabMenuLayout>(source).ApplyLayout();
             foreach(var component in source.GetRootGameObjects().SelectMany(go=>go.GetComponentsInChildren<Component>(true)))
                 if(component!=null){EditorUtility.SetDirty(component);if(PrefabUtility.IsPartOfPrefabInstance(component))PrefabUtility.RecordPrefabInstancePropertyModifications(component);}
@@ -220,7 +221,7 @@ public static partial class FruitLabTutorialEditorTools
             var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>new PlayerProfileData());var inventory=new FruitInventoryService(profiles);
             var bindings=new DiContainer();bindings.Bind<IHapticController>().To<HapticController>().AsSingle();
             bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
-            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,bindings.Resolve<BaseButtonControllerFactory>()))
+            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,bindings.Resolve<BaseButtonControllerFactory>(),new GardenService(profiles,new EconomySettings(),new SystemGardenClock()),new GardenVisitCoordinator(new GardenService(profiles,new EconomySettings(),new SystemGardenClock())),menu.GetGardenNoticeView()))
             {
                 var trackerRoot=new GameObject("CollectionMenuTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
                 var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;
@@ -229,22 +230,30 @@ public static partial class FruitLabTutorialEditorTools
                 {
                     camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2f*camera.aspect));
                     rect.sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();Layer(clone.transform);Draw(camera);
-                    TapCollectionButton(canvas,camera,events.GetComponent<EventSystem>(),(BaseButtonView)menu.GetCollectionButton());Require(view.IsVisible,"Bahçem opens the collection");
+                    TapCollectionButton(canvas,camera,events.GetComponent<EventSystem>(),(BaseButtonView)menu.GetCollectionButton());Require(view.IsVisible,"Bahçem opens the garden screen");view.SelectTab(GardenTab.Collection);
                     view.ApplyLayout();Layer(clone.transform);Draw(camera);
-                    var cells=(FruitCollectionCell[])Get(view,"cells");Require(cells.Length==9,"All nine fruits are visible");
+                    var cells=(FruitCollectionCell[])Get(view,"cells");Require(cells.Length==9,"All nine fruits are available in the scrollable collection");
                     foreach(var cell in cells)
                     {
                         var points=new Vector3[4];cell.Root.GetWorldCorners(points);
-                        Require(points.All(point=>((RectTransform)view.transform).rect.Contains(view.transform.InverseTransformPoint(point))),"Collection cells fit mobile bounds");
+                        var content=cell.Root.parent as RectTransform;var contentBounds=content.rect;
+                        contentBounds.xMin-=.1f;contentBounds.yMin-=.1f;contentBounds.xMax+=.1f;contentBounds.yMax+=.1f;
+                        Require(points.All(point=>contentBounds.Contains(content.InverseTransformPoint(point))),"Collection cells fit their scroll content");
                         foreach(var label in new[]{cell.Name,cell.Amount}){label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Fruit name and quantity stay readable: "+label.text);}
                     }
+                    var collectionScroll=view.GetComponentsInChildren<ScrollRect>().Single();
+                    collectionScroll.verticalNormalizedPosition=0;Layer(clone.transform);Draw(camera);
+                    var lastCorners=new Vector3[4];cells.Last().Root.GetWorldCorners(lastCorners);var visibleBounds=collectionScroll.viewport.rect;
+                    visibleBounds.xMin-=.2f;visibleBounds.yMin-=.2f;visibleBounds.xMax+=.2f;visibleBounds.yMax+=.2f;
+                    Require(lastCorners.All(point=>visibleBounds.Contains(collectionScroll.viewport.InverseTransformPoint(point))),"Last fruit row is fully reachable by scrolling");
+                    collectionScroll.verticalNormalizedPosition=1;Draw(camera);
                     if(size.x==375 && size.y==812)Capture(camera,Folder+"/preview-collection-empty.png");
                     var data=new PointerEventData(events.GetComponent<EventSystem>()) {position=RectTransformUtility.WorldToScreenPoint(camera,menu.GetSinglePlayerButton().GetButtonRectTransform().position)};
                     var hits=new List<RaycastResult>();canvas.GetComponent<GraphicRaycaster>().Raycast(data,hits);
                     Require(hits.Count>0 && hits[0].gameObject.transform.IsChildOf(view.transform),"Collection consumes taps before underlying play buttons");
                     TapCollectionButton(canvas,camera,events.GetComponent<EventSystem>(),(BaseButtonView)view.CloseButton);Require(!view.IsVisible,"Close restores the menu without loading another scene");
                 }
-                rect.sizeDelta=new Vector2(375,812);camera.orthographicSize=Mathf.Max(406,375/(2f*camera.aspect));clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();presenter.Open();
+                rect.sizeDelta=new Vector2(375,812);camera.orthographicSize=Mathf.Max(406,375/(2f*camera.aspect));clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();presenter.Open();view.SelectTab(GardenTab.Collection);
                 inventory.Grant("ui-grant",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,1000},{FruitId.Apple,2}});
                 var updated=(FruitCollectionCell[])Get(view,"cells");
                 Require(updated.Single(cell=>cell.Fruit==FruitId.Strawberry).Amount.text=="1.000","Open collection refreshes from the common inventory");

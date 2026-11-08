@@ -18,11 +18,17 @@ namespace Menu
         public TMP_Text Amount;
     }
 
+    public enum GardenTab { Garden, Collection }
+
     public interface IFruitCollectionView
     {
         IBaseButtonView CloseButton {get;}
         bool IsVisible {get;}
+        event Action<GardenTab> TabChanged;
+        IGardenPanelView Garden {get;}
+        ISeedPurchasePopupView Purchase {get;}
         void SetVisible(bool visible);
+        void SelectTab(GardenTab tab);
         void Render(IReadOnlyDictionary<FruitId,FruitBalance> fruits);
     }
 
@@ -34,24 +40,55 @@ namespace Menu
         [SerializeField] private FruitCollectionCell[] cells;
         private bool _initialized;
         private Vector2 _lastSize;
+        private UnityEngine.UI.Button _gardenTab,_collectionTab;
+        private UnityEngine.UI.ScrollRect _collectionScroll;
+        private GardenPanelView _garden;
+        private SeedPurchasePopupView _purchase;
+        private GardenTab _tab;
         private static readonly CultureInfo Turkish=CultureInfo.GetCultureInfo("tr-TR");
+        public event Action<GardenTab> TabChanged;
         public IBaseButtonView CloseButton=>closeButton;
         public bool IsVisible=>gameObject.activeSelf;
+        public IGardenPanelView Garden {get {Initialize();return _garden;}}
+        public ISeedPurchasePopupView Purchase {get {Initialize();return _purchase;}}
+        public UnityEngine.UI.Button GetTabButton(GardenTab tab) {Initialize();return tab==GardenTab.Garden?_gardenTab:_collectionTab;}
         public void SetVisible(bool visible)
         {
-            gameObject.SetActive(visible);
-            if(!visible)return;
-            transform.SetAsLastSibling();Initialize();ApplyLayout();
+            if(!visible){if(_purchase!=null)_purchase.SetVisible(false);gameObject.SetActive(false);return;}
+            gameObject.SetActive(true);transform.SetAsLastSibling();Initialize();ApplyLayout();
         }
         private void Initialize()
         {
             if(_initialized)return;
+            _initialized=true;
+            _gardenTab=GardenUi.Button(transform,"GardenTab","Bahçe");
+            _collectionTab=GardenUi.Button(transform,"CollectionTab","Koleksiyon");
+            _gardenTab.onClick.AddListener(()=>Choose(GardenTab.Garden));
+            _collectionTab.onClick.AddListener(()=>Choose(GardenTab.Collection));
+            _collectionScroll=GardenUi.Scroll(transform,"CollectionScroll");
             foreach(var cell in cells)
             {
+                if(cell.Root.parent!=_collectionScroll.content)cell.Root.SetParent(_collectionScroll.content,false);
                 cell.Card.Init((int)cell.Fruit);cell.Name.text=FruitName(cell.Fruit);
+                FruitLabStyle.TextStyle(cell.Name,16,false);FruitLabStyle.TextStyle(cell.Amount,22);
                 foreach(var graphic in cell.Card.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))graphic.raycastTarget=false;
             }
-            _initialized=true;
+            var garden=GardenUi.Rect(transform,"Garden");_garden=garden.GetComponent<GardenPanelView>() ?? garden.gameObject.AddComponent<GardenPanelView>();_garden.EnsureUi();
+            var popup=GardenUi.Rect(transform,"SeedPurchase");_purchase=popup.GetComponent<SeedPurchasePopupView>() ?? popup.gameObject.AddComponent<SeedPurchasePopupView>();
+            FruitLabStyle.Stretch(popup);_purchase.EnsureUi();_purchase.SetVisible(false);
+            section.gameObject.SetActive(false);SelectTab(_tab);
+        }
+        private void Choose(GardenTab tab){SelectTab(tab);TabChanged?.Invoke(tab);}
+        public void SelectTab(GardenTab tab)
+        {
+            Initialize();_tab=tab;
+            _garden.gameObject.SetActive(tab==GardenTab.Garden);
+            _collectionScroll.gameObject.SetActive(tab==GardenTab.Collection);summary.gameObject.SetActive(tab==GardenTab.Collection);
+            var selected=FruitLabStyle.Mint;var normal=FruitLabStyle.Tile;
+            FruitLabStyle.Surface(_gardenTab.transform.Find("Face").GetComponent<UnityEngine.UI.Image>(),tab==GardenTab.Garden?selected:normal);
+            FruitLabStyle.Surface(_collectionTab.transform.Find("Face").GetComponent<UnityEngine.UI.Image>(),tab==GardenTab.Collection?selected:normal);
+            _gardenTab.GetComponentInChildren<TMP_Text>().color=tab==GardenTab.Garden?FruitLabStyle.Background:FruitLabStyle.Text;
+            _collectionTab.GetComponentInChildren<TMP_Text>().color=tab==GardenTab.Collection?FruitLabStyle.Background:FruitLabStyle.Text;
         }
         public void Render(IReadOnlyDictionary<FruitId,FruitBalance> fruits)
         {
@@ -63,28 +100,34 @@ namespace Menu
             }
             summary.text="Toplam "+FormatCount(total)+" meyve";
         }
-        private void LateUpdate() { if((rect.rect.size-_lastSize).sqrMagnitude>.01f)ApplyLayout(); }
+        private void LateUpdate() {if((rect.rect.size-_lastSize).sqrMagnitude>.01f)ApplyLayout();}
         public void ApplyLayout()
         {
-            _lastSize=rect.rect.size;float width=rect.rect.width,height=rect.rect.height;
+            Initialize();_lastSize=rect.rect.size;float width=rect.rect.width,height=rect.rect.height;
             FruitLabStyle.Place(title.rectTransform,rect,20,height-62,width-40,32);
-            FruitLabStyle.Place(section.rectTransform,rect,20,height-96,width-40,24);
-            FruitLabStyle.Place(summary.rectTransform,rect,20,height-128,width-40,24);
+            FruitLabStyle.Place((RectTransform)_gardenTab.transform,rect,20,height-118,(width-48)*.5f,44);
+            FruitLabStyle.Place((RectTransform)_collectionTab.transform,rect,28+(width-48)*.5f,height-118,(width-48)*.5f,44);
+            FruitLabStyle.Place(summary.rectTransform,rect,20,height-154,width-40,26);
+            FruitLabStyle.Place((RectTransform)_garden.transform,rect,20,80,width-40,Mathf.Max(1,height-214));_garden.ApplyLayout();
+            float viewportHeight=Mathf.Max(1,height-244);
+            FruitLabStyle.Place((RectTransform)_collectionScroll.transform,rect,20,80,width-40,viewportHeight);
             float cellWidth=(width-56f)/3f;
-            float cellHeight=Mathf.Min(cellWidth+44f,(height-244f)/3f);
-            float top=height-148f;
+            float cellHeight=Mathf.Max(132,Mathf.Min(cellWidth+66,(viewportHeight-16)/3f));
+            GardenUi.Content(_collectionScroll,cellHeight*3+16);
             for(int index=0;index<cells.Length;index++)
             {
                 var cell=cells[index];
-                FruitLabStyle.Place(cell.Root,rect,20+(index%3)*(cellWidth+8),top-(index/3+1)*cellHeight-(index/3)*8,cellWidth,cellHeight);
-                float cardSize=Mathf.Min(cellWidth-20,cellHeight-66);
-                FruitLabStyle.Place((RectTransform)cell.Card.transform,cell.Root,(cellWidth-cardSize)*.5f,cellHeight-cardSize-10,cardSize,cardSize);
-                FruitLabStyle.Place(cell.Name.rectTransform,cell.Root,4,31,cellWidth-8,30);
-                FruitLabStyle.Place(cell.Amount.rectTransform,cell.Root,4,6,cellWidth-8,25);
+                cell.Root.anchorMin=cell.Root.anchorMax=new Vector2(0,1);cell.Root.pivot=new Vector2(0,1);
+                cell.Root.anchoredPosition=new Vector2((index%3)*(cellWidth+8),-(index/3)*(cellHeight+8));cell.Root.sizeDelta=new Vector2(cellWidth,cellHeight);
+                float cardSize=Mathf.Min(cellWidth-20,cellHeight-78);
+                FruitLabStyle.Place((RectTransform)cell.Card.transform,cell.Root,(cellWidth-cardSize)*.5f,cellHeight-cardSize-6,cardSize,cardSize);
+                FruitLabStyle.Place(cell.Name.rectTransform,cell.Root,4,32,cellWidth-8,38);
+                FruitLabStyle.Place(cell.Amount.rectTransform,cell.Root,4,4,cellWidth-8,26);
             }
             FruitLabStyle.Place(closeButton.GetButtonRectTransform(),rect,20,18,width-40,46);
+            FruitLabStyle.Stretch((RectTransform)_purchase.transform);_purchase.ApplyLayout();
         }
-        private static string FormatCount(decimal count)
+        public static string FormatCount(decimal count)
         {
             if(count<1000000m)return count.ToString("N0",Turkish);
             foreach(var unit in new[]{(1000000000000000000m," Kent."),(1000000000000000m," Katr."),(1000000000000m," Tr."),(1000000000m," Mr."),(1000000m," Mn")})

@@ -13,11 +13,11 @@ namespace Scripts
         [SerializeField] private VerticalCrystalProgressView crystalProgressView;
         public override void InstallBindings()
         {
-            Container.Bind<IMenuHeaderController>().To<MenuHeaderController>().AsSingle()
+            Container.BindInterfacesAndSelfTo<MenuHeaderController>().AsSingle()
                 .WithArguments(menuHeader);
             Container.Bind<IMenuUIController>().To<MenuUIController>().AsSingle()
                 .WithArguments(menuUI);
-            Container.BindInterfacesAndSelfTo<FruitCollectionPresenter>().AsSingle().WithArguments(menuUI.GetCollectionView());
+            Container.BindInterfacesAndSelfTo<FruitCollectionPresenter>().AsSingle().WithArguments(menuUI.GetCollectionView(),menuUI.GetGardenNoticeView());
             Container.Bind<IMenuPowerUpCountHolderController>().To<MenuPowerUpCountHolderController>().AsSingle()
                 .WithArguments(ResolvePowerUpListHolderView());
             Container.Bind<IRewardProgressDisplayController>().To<RewardProgressDisplayController>().AsSingle()

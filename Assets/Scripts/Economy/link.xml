@@ -12,6 +12,15 @@
     <type fullname="Scripts.Economy.GameWinAward" preserve="all" />
     <type fullname="Scripts.Economy.GameWinRewardService" preserve="all" />
     <type fullname="Scripts.Economy.FruitInventoryService" preserve="all" />
+    <type fullname="Scripts.Economy.GardenService" preserve="all" />
+    <type fullname="Scripts.Economy.SystemGardenClock" preserve="all" />
+    <type fullname="Scripts.Economy.SeedPurchaseQuote" preserve="all" />
+    <type fullname="Scripts.Economy.SeedPurchaseResult" preserve="all" />
+    <type fullname="Scripts.Economy.GardenBatchChange" preserve="all" />
+    <type fullname="Scripts.Economy.GardenVisitResult" preserve="all" />
     <type fullname="Menu.FruitCollectionPresenter" preserve="all" />
+    <type fullname="Scripts.Economy.GardenVisitCoordinator" preserve="all" />
+    <type fullname="Scripts.Economy.GardenVisitNotice" preserve="all" />
+    <type fullname="Scripts.MenuHeaderController" preserve="all" />
   </assembly>
 </linker>

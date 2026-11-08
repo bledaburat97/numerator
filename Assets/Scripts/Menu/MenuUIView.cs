@@ -9,8 +9,18 @@ namespace Menu
         [SerializeField] private BaseButtonView multiplayerButton;
         [SerializeField] private BaseButtonView collectionButton;
         [SerializeField] private FruitCollectionView collectionView;
+        [SerializeField] private GardenNoticeView gardenNotice;
         public IBaseButtonView GetCollectionButton()=>collectionButton;
         public FruitCollectionView GetCollectionView()=>collectionView;
+        public GardenNoticeView GetGardenNoticeView()
+        {
+            if(gardenNotice!=null)return gardenNotice;
+            var canvas=GetComponentInParent<Canvas>();
+            var parent=canvas.transform.Find("SafeArea") ?? canvas.transform;
+            var rect=GardenUi.Rect(parent,"GardenNotice");
+            gardenNotice=rect.GetComponent<GardenNoticeView>() ?? rect.gameObject.AddComponent<GardenNoticeView>();
+            gardenNotice.ApplyLayout();gardenNotice.Hide();return gardenNotice;
+        }
 
         public IBaseButtonView GetSinglePlayerButton()
         {
