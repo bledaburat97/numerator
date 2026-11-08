@@ -23,6 +23,12 @@ public static class FruitLabTelemetryEditorTools
         ["flTutorial"] = "STRING", ["flStep"] = "INTEGER", ["flPowerup"] = "STRING", ["flSource"] = "STRING",
         ["flOperation"] = "STRING"
     };
+    public static readonly Dictionary<string,string> EconomyParameters=new Dictionary<string,string> {
+        ["flAction"]="STRING",["flBuildChannel"]="STRING",["flVersion"]="STRING",["flBuild"]="STRING",
+        ["flEventId"]="STRING",["flUtcDay"]="INTEGER",["flFruit"]="STRING",["flAmount"]="INTEGER",
+        ["flCoinCost"]="INTEGER",["flBalance"]="INTEGER",["flFirst"]="BOOLEAN",["flBatches"]="INTEGER",
+        ["flAchievement"]="STRING",["flPowerup"]="STRING",["flSource"]="STRING"
+    };
 
     [MenuItem("Fruit Lab/Telemetry/Open Unity Dashboard")]
     public static void Dashboard() => Application.OpenURL("https://cloud.unity.com/home/organizations/" + CloudProjectSettings.organizationKey + "/projects/" + CloudProjectSettings.projectId);
@@ -62,6 +68,10 @@ public static class FruitLabTelemetryEditorTools
             GameTelemetry.Tutorial("tutorial_completed", "first_level", 10);
             GameTelemetry.Powerup(RewardType.Bomb, false, "single"); GameTelemetry.Powerup(RewardType.Life, true, "duel");
             GameTelemetry.Connection("join", "failed", Difficulty.Medium);
+            GameTelemetry.Pause(true);now=200;
+            GameTelemetry.BeginDuel(3,MultiplayerRules.For(Difficulty.Easy));now=300;
+            GameTelemetry.Pause(false);now=305;GameTelemetry.Finish("win",1);
+            Require((double)events.Last()["flDuration"]==5,"A round initialized while already in the background excludes that time");
         }
         foreach (var ev in events)
         {

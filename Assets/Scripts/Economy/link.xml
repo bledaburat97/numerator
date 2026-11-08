@@ -7,6 +7,8 @@
     <type fullname="Scripts.Economy.PlantingBatch" preserve="all" />
     <type fullname="Scripts.Economy.AchievementProgress" preserve="all" />
     <type fullname="Scripts.Economy.ProfileTransactionRecord" preserve="all" />
+    <type fullname="Scripts.Economy.EconomyTelemetryEvent" preserve="all" />
+    <type fullname="Scripts.Economy.PlayerEngagementData" preserve="all" />
     <type fullname="Scripts.Economy.AtomicPlayerProfileStorage*" preserve="all" />
     <type fullname="Scripts.Economy.EconomySettings" preserve="all" />
     <type fullname="Scripts.Economy.AchievementDefinition" preserve="all" />

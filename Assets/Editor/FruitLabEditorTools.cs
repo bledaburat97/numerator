@@ -94,6 +94,9 @@ public static class FruitLabEditorTools
                 case "garden-ui-review": reply.details=FruitLabTutorialEditorTools.BakeCollection()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewGardenUi,validateBeforeRender:true);break;
                 case "garden-lifecycle-review": reply.details=FruitLabGardenEditorTools.ReviewLifecycle();break;
                 case "garden-review": reply.details=FruitLabGardenEditorTools.Review();break;
+                case "economy-release-review": reply.details=FruitLabReleaseEditorTools.Review();break;
+                case "economy-telemetry-provision": FruitLabTelemetryCloudTools.ProvisionEconomy();reply.details="Economy event schema setup started; existing schemas are preserved";break;
+                case "economy-telemetry-smoke": reply.details=FruitLabTelemetrySmokeTools.Start(true);break;
                 case "economy-foundation-review": reply.details=FruitLabEconomyEditorTools.ReviewFoundation();break;
                 case "session-bindings-review": reply.details = FruitLabTutorialEditorTools.ReviewSessionBindings(); break;
                 case "session-contracts-review":

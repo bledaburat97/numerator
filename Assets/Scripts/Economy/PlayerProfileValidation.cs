@@ -22,6 +22,12 @@ namespace Scripts.Economy
                     data.Wallet.PowerUps.Add(RewardType.Ultra,0);
                 data.Version=3;
             }
+            if(data?.Version==3)
+            {
+                if(data.TelemetryOutbox==null)data.TelemetryOutbox=new System.Collections.Generic.Dictionary<string,EconomyTelemetryEvent>();
+                if(data.TelemetryEngagement==null)data.TelemetryEngagement=new PlayerEngagementData();
+                data.Version=4;
+            }
         }
         public static void Validate(PlayerProfileData data)
         {
@@ -49,6 +55,22 @@ namespace Scripts.Economy
                 Require(total == balance.LifetimeEarned,"fruit lifetime total");
             }
             Require(data.Garden != null && data.Achievements != null && data.Transactions != null,"profile sections");
+            Require(data.TelemetryOutbox!=null && data.TelemetryOutbox.Count<=ProfileTelemetryJournal.Capacity,"telemetry outbox");
+            Require(data.TelemetryEngagement!=null && (string.IsNullOrEmpty(data.TelemetryEngagement.ConsentScope) || Guid.TryParseExact(data.TelemetryEngagement.ConsentScope,"N",out _)),"telemetry activity scope");
+            foreach(PlayerActivity activity in Enum.GetValues(typeof(PlayerActivity)))Require(data.TelemetryEngagement.Get(activity)>=-1,"telemetry activity day");
+            foreach(var entry in data.TelemetryOutbox)
+            {
+                var item=entry.Value;
+                Require(!string.IsNullOrWhiteSpace(entry.Key) && item!=null && Guid.TryParseExact(item.EventId,"N",out _)
+                    && Guid.TryParseExact(item.ConsentScope,"N",out _) && item.UtcDay>=0 && item.Amount>=0 && item.CoinCost>=0 && item.Balance>=0 && item.Batches>=0
+                    && !string.IsNullOrEmpty(item.BuildChannel) && item.Version!=null && item.Build!=null,"telemetry event");
+                Require(item.Action=="seed_purchased" || item.Action=="garden_grown" || item.Action=="garden_harvested" || item.Action=="achievement_unlocked"
+                    || item.Action=="active_day" || item.Action=="single_started_day" || item.Action=="duel_started_day" || item.Action=="single_played_day" || item.Action=="duel_played_day","telemetry action");
+                Require(!item.Fruit.HasValue || Enum.IsDefined(typeof(FruitId),item.Fruit.Value),"telemetry fruit");
+                Require(!item.Powerup.HasValue || Enum.IsDefined(typeof(RewardType),item.Powerup.Value),"telemetry powerup");
+                Require((item.Action!="seed_purchased" && item.Action!="garden_harvested") || (item.Fruit.HasValue && item.Amount>0),"telemetry fruit amount");
+                Require(item.Action!="achievement_unlocked" || (item.Powerup.HasValue && item.Amount>0 && !string.IsNullOrWhiteSpace(item.AchievementId) && !string.IsNullOrWhiteSpace(item.Source)),"telemetry achievement");
+            }
             foreach(var entry in data.Garden)
             {
                 var batch = entry.Value;

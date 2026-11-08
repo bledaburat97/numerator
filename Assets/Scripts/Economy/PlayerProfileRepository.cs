@@ -26,17 +26,19 @@ namespace Scripts.Economy
         private readonly Func<PlayerProfileData> _initialProfile;
         private readonly Func<DateTime> _utcNow;
         private readonly Action<Exception> _observerError;
+        private readonly IProfileCommitPolicy _commitPolicy;
         private readonly object _sync = new object();
         private PlayerProfileData _current;
         private bool _mutating;
         public event Action Changed;
 
         public PlayerProfileRepository(IPlayerProfileStorage storage,Func<PlayerProfileData> initialProfile,
-            Func<DateTime> utcNow=null,Action<Exception> observerError=null)
+            Func<DateTime> utcNow=null,Action<Exception> observerError=null,IProfileCommitPolicy commitPolicy=null)
         {
             _storage=storage ?? throw new ArgumentNullException(nameof(storage));
             _initialProfile=initialProfile ?? throw new ArgumentNullException(nameof(initialProfile));
             _utcNow=utcNow ?? (()=>DateTime.UtcNow);_observerError=observerError;
+            _commitPolicy=commitPolicy;
         }
 
         public PlayerProfileData Snapshot()
@@ -102,6 +104,7 @@ namespace Scripts.Economy
         { if(_mutating) throw new InvalidOperationException("Nested profile transactions are not allowed.");_mutating=true; }
         private void Publish(PlayerProfileData next)
         {
+            _commitPolicy?.Prepare(_current,next);
             next.Revision=checked(_current.Revision+1);
             PlayerProfileValidation.Validate(next);_storage.Save(next);_current=next.Copy();
         }

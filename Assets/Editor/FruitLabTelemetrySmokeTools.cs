@@ -13,14 +13,14 @@ public static class FruitLabTelemetrySmokeTools
     [Serializable] private class Scenes { public Entry[] entries; }
     [Serializable] private class Entry { public string path; public bool loaded, active; }
     static FruitLabTelemetrySmokeTools() => EditorApplication.playModeStateChanged += Restore;
-    public static string Start()
+    public static string Start(bool economy=false)
     {
         var scenes = EditorSceneManager.GetSceneManagerSetup();
         if (Enumerable.Range(0, UnityEngine.SceneManagement.SceneManager.sceneCount)
             .Any(i => UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty))
             throw new Exception("Unsaved scene edits exist; SDK smoke test did not change the open scenes.");
         SessionState.SetString(RestoreKey, JsonUtility.ToJson(new Scenes { entries = scenes.Select(s => new Entry { path = s.path, loaded = s.isLoaded, active = s.isActive }).ToArray() }));
-        File.WriteAllText(TelemetrySmokeProbe.RequestPath, "sdk-upload");
+        File.WriteAllText(TelemetrySmokeProbe.RequestPath, economy?"economy":"sdk-upload");
         EditorSceneManager.OpenScene("Assets/Scenes/Menu.unity");
         EditorApplication.isPlaying = true;
         return "One explicitly tagged SDK test event will be uploaded; previous scene setup is restored on exit";

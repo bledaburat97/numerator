@@ -16,27 +16,36 @@ namespace Scripts
             public double Started, PausedAt = -1, PausedSeconds;
         }
         private static Attempt _attempt;
+        private static bool _isPaused;
         private static Action<Dictionary<string, object>> _testRecorder;
         private static Func<double> _clock = () => Time.realtimeSinceStartupAsDouble;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset() { _attempt = null; _testRecorder = null; _clock = () => Time.realtimeSinceStartupAsDouble; }
+        private static void Reset() { _attempt = null;_isPaused=false; _testRecorder = null; _clock = () => Time.realtimeSinceStartupAsDouble; }
 
         public static void BeginSingle(int level, int slots, int fruits, LevelEntryMode entry, int guesses, LevelMechanic mechanic = LevelMechanic.Normal)
         {
             Abandon("restart");
             _attempt = new Attempt { Mode = "single", Level = level, Slots = slots, Fruits = fruits,
                 Mechanic = mechanic.ToString().ToLowerInvariant(), Entry = entry.ToString().ToLowerInvariant(), Guesses = guesses, Started = _clock() };
+            if(_isPaused)_attempt.PausedAt=_attempt.Started;
             EmitAttempt("level_started");
+            TelemetryRuntime.Instance?.RecordEngagement(Scripts.Economy.PlayerActivity.SingleStarted);
         }
         public static void BeginDuel(int round, MultiplayerSettings settings)
         {
             Abandon("rematch");
             _attempt = new Attempt { Mode = "duel", Slots = settings.BoardCount, Fruits = settings.FruitCount,
                 Difficulty = settings.Difficulty.ToString().ToLowerInvariant(), Round = round, Started = _clock() };
+            if(_isPaused)_attempt.PausedAt=_attempt.Started;
             EmitAttempt("duel_started");
+            TelemetryRuntime.Instance?.RecordEngagement(Scripts.Economy.PlayerActivity.DuelStarted);
         }
-        public static void GuessAccepted(int guesses) { if (_attempt != null) _attempt.Guesses = guesses; }
+        public static void GuessAccepted(int guesses,bool local=true)
+        {
+            if (_attempt == null)return;_attempt.Guesses = guesses;
+            if(local)TelemetryRuntime.Instance?.RecordEngagement(_attempt.Mode=="single"?Scripts.Economy.PlayerActivity.SinglePlayed:Scripts.Economy.PlayerActivity.DuelPlayed);
+        }
         public static void Finish(string outcome, int guesses, int coins = 0, int crystals = 0)
         {
             if (_attempt == null) return;
@@ -52,6 +61,7 @@ namespace Scripts
         }
         public static void Pause(bool paused)
         {
+            _isPaused=paused;
             if (_attempt == null) return;
             if (paused && _attempt.PausedAt < 0) _attempt.PausedAt = _clock();
             else if (!paused && _attempt.PausedAt >= 0)
@@ -114,9 +124,9 @@ namespace Scripts
 #if UNITY_EDITOR
         public static IDisposable CaptureForTests(Action<Dictionary<string, object>> recorder, Func<double> clock)
         {
-            var previous = _testRecorder; var previousClock = _clock; var previousAttempt = _attempt;
-            _testRecorder = recorder; _clock = clock; _attempt = null;
-            return new Restore(() => { _testRecorder = previous; _clock = previousClock; _attempt = previousAttempt; });
+            var previous = _testRecorder; var previousClock = _clock; var previousAttempt = _attempt;bool previousPause=_isPaused;
+            _testRecorder = recorder; _clock = clock; _attempt = null;_isPaused=false;
+            return new Restore(() => { _testRecorder = previous; _clock = previousClock; _attempt = previousAttempt;_isPaused=previousPause; });
         }
         private sealed class Restore : IDisposable
         {

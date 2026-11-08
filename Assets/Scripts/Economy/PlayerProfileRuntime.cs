@@ -26,6 +26,7 @@ namespace Scripts.Economy
             AotHelper.EnsureDictionary<string,PlantingBatch>();
             AotHelper.EnsureDictionary<string,AchievementProgress>();
             AotHelper.EnsureDictionary<string,ProfileTransactionRecord>();
+            AotHelper.EnsureDictionary<string,EconomyTelemetryEvent>();
         }
 
         private static IPlayerProfileRepository _persistent;
@@ -51,7 +52,8 @@ namespace Scripts.Economy
                 if(_persistent==null)
                 {
                     var storage=new AtomicPlayerProfileStorage(Path.Combine(Application.persistentDataPath,"player-profile.json"),Debug.LogWarning);
-                    var repository=new PlayerProfileRepository(storage,ReadLegacy,observerError:Debug.LogException);
+                    var repository=new PlayerProfileRepository(storage,ReadLegacy,observerError:Debug.LogException,
+                        commitPolicy:new ProfileTelemetryJournal(TelemetryRuntime.EconomyContext,error=>Debug.LogWarning("Economy telemetry deferred: "+error.GetType().Name)));
                     repository.Changed+=()=>MirrorLegacy(repository.Snapshot());
                     _persistent=repository;
                 }

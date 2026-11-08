@@ -28,7 +28,9 @@ public static class FruitLabTelemetryCloudTools
         Directory.CreateDirectory("Library/FruitLabEditor");
         File.WriteAllText("Library/FruitLabEditor/telemetry-cloud-inspect.json", JsonConvert.SerializeObject(report, Formatting.Indented));
     }
-    public static async void Provision()
+    public static async void Provision()=>await ProvisionSchema(Scripts.GameTelemetry.EventName,FruitLabTelemetryEditorTools.Parameters,"docs/design/telemetry-cloud-setup.json");
+    public static async void ProvisionEconomy()=>await ProvisionSchema(Scripts.Economy.ProfileTelemetryJournal.EventName,FruitLabTelemetryEditorTools.EconomyParameters,"docs/design/economy-telemetry-cloud-setup.json");
+    private static async Task ProvisionSchema(string eventName,System.Collections.Generic.Dictionary<string,string> fields,string reportPath)
     {
         object report;
         try
@@ -43,44 +45,44 @@ public static class FruitLabTelemetryCloudTools
             string env = (string)environment["unityId"];
             string prefix = $"/api/live-ops/events/v3/organizations/{org}/projects/{project}/environments/{env}";
             var schemas = (JArray)await Request("GET", prefix + "/schemas");
-            var existing = schemas.FirstOrDefault(e => (string)e["name"] == Scripts.GameTelemetry.EventName);
+            var existing = schemas.FirstOrDefault(e => (string)e["name"] == eventName);
             int created = 0;
             if (existing == null)
             {
                 var standard = await Request("GET", prefix + "/schemas/gameStarted");
                 var parameters = (JArray)await Request("GET", prefix + "/parameters");
                 // Fetch/diff before writes; only add our names, never edit an existing definition.
-                foreach (var field in FruitLabTelemetryEditorTools.Parameters)
+                foreach (var field in fields)
                 {
                     var parameter = parameters.FirstOrDefault(p => (string)p["name"] == field.Key);
                     if (parameter != null && (string)parameter["type"] != field.Value)
                         throw new Exception("Existing analytics parameter type differs: " + field.Key + ". No definition was overwritten.");
                 }
-                foreach (var field in FruitLabTelemetryEditorTools.Parameters)
+                foreach (var field in fields)
                 {
                     if (parameters.Any(p => (string)p["name"] == field.Key)) continue;
                     await Request("POST", prefix + "/parameters", new { name = field.Key,
-                        description = "Fruit Lab gameplay " + field.Key, type = field.Value, isRestricted = false });
+                        description = "Game analytics " + field.Key, type = field.Value, isRestricted = false });
                     created++;
                 }
                 var roots = new JArray(standard["parameters"].Select(Reference));
                 var children = (JArray)roots.First(p => (string)p["name"] == "eventParams")["children"];
-                foreach (string name in FruitLabTelemetryEditorTools.Parameters.Keys)
-                    children.Add(new JObject { ["name"] = name, ["isRequired"] = name == "flAction" || name == "flBuildChannel" || name == "flVersion" || name == "flBuild", ["children"] = new JArray() });
-                await Request("POST", prefix + "/schemas", new { name = Scripts.GameTelemetry.EventName,
-                    description = "Tutorial, level, powerup and duel gameplay; no names or room codes.", parameters = roots, isEnabled = true });
+                foreach (string name in fields.Keys)
+                    children.Add(new JObject { ["name"] = name, ["isRequired"] = name == "flAction" || name == "flBuildChannel" || name == "flVersion" || name == "flBuild" || name == "flEventId" || name == "flUtcDay", ["children"] = new JArray() });
+                await Request("POST", prefix + "/schemas", new { name = eventName,
+                    description = "Game analytics; no names, room codes or answers.", parameters = roots, isEnabled = true });
             }
-            var verified = await Request("GET", prefix + "/schemas/" + Scripts.GameTelemetry.EventName);
+            var verified = await Request("GET", prefix + "/schemas/" + eventName);
             var leaves = verified["parameters"].SelectMany(p => p["children"] ?? new JArray()).Select(p => (string)p["name"]).ToArray();
-            if (!FruitLabTelemetryEditorTools.Parameters.Keys.All(leaves.Contains) || (bool?)verified["isEnabled"] != true)
+            if (!fields.Keys.All(leaves.Contains) || (bool?)verified["isEnabled"] != true)
                 throw new Exception("An existing event is incomplete or disabled. No existing schema was overwritten.");
             report = new { passed = true, project = (string)metadata["name"], environment = "production",
-                event_name = Scripts.GameTelemetry.EventName, parameters_created = created, already_existed = existing != null,
+                event_name = eventName, parameters_created = created, already_existed = existing != null,
                 schema_verified = true, existing_definitions_preserved = true };
         }
         catch (Exception error) { report = new { passed = false, error = error.Message }; }
         Directory.CreateDirectory("docs/design");
-        File.WriteAllText("docs/design/telemetry-cloud-setup.json", JsonConvert.SerializeObject(report, Formatting.Indented));
+        File.WriteAllText(reportPath, JsonConvert.SerializeObject(report, Formatting.Indented));
     }
     private static JObject Reference(JToken parameter) => new JObject {
         ["name"] = parameter["name"], ["isRequired"] = parameter["isRequired"] ?? false,

@@ -12,7 +12,7 @@ namespace Scripts.Economy
 
     public sealed class PlayerProfileData
     {
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
         [JsonProperty(Required=Required.Always)] public int Version = CurrentVersion;
         public long Revision;
         [JsonProperty(Required=Required.Always)] public PlayerProgressData Progress = new PlayerProgressData();
@@ -21,6 +21,8 @@ namespace Scripts.Economy
         [JsonProperty(Required=Required.Always)] public Dictionary<string,PlantingBatch> Garden = new Dictionary<string,PlantingBatch>();
         [JsonProperty(Required=Required.Always)] public Dictionary<string,AchievementProgress> Achievements = new Dictionary<string,AchievementProgress>();
         [JsonProperty(Required=Required.Always)] public Dictionary<string,ProfileTransactionRecord> Transactions = new Dictionary<string,ProfileTransactionRecord>();
+        public Dictionary<string,EconomyTelemetryEvent> TelemetryOutbox=new Dictionary<string,EconomyTelemetryEvent>();
+        public PlayerEngagementData TelemetryEngagement=new PlayerEngagementData();
 
         public PlayerProfileData Copy() => JsonConvert.DeserializeObject<PlayerProfileData>(JsonConvert.SerializeObject(this));
 

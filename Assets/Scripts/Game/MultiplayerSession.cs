@@ -93,7 +93,7 @@ namespace Game
         {
             bool isLocalGuess = feedback.Player == _multiplayer.LocalPlayerId;
             _roundStateManager.AddTriedCards(new System.Collections.Generic.List<int>(feedback.Cards));
-            GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
+            GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count,isLocalGuess);
             _resultAreaController.AddResultBlock(new ResultBlockModel { finalNumbers = new System.Collections.Generic.List<int>(feedback.Cards),
                 correctPosCount = feedback.Correct, wrongPosCount = feedback.Misplaced,
                 isLocalGuess = isLocalGuess, playerName = _multiplayer.GetPlayerName(feedback.Player) });

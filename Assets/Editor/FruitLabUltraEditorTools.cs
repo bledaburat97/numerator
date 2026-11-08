@@ -255,7 +255,7 @@ public static partial class FruitLabTutorialEditorTools
     {
         var old=new PlayerProfileData {Version=2};old.Wallet.PowerUps.Remove(RewardType.Ultra);old.Wallet.Coins=123;old.Progress.LevelId=17;
         PlayerProfileValidation.Upgrade(old);PlayerProfileValidation.Validate(old);
-        Require(old.Version==3 && old.Wallet.PowerUps[RewardType.Ultra]==0 && old.Wallet.Coins==123 && old.Progress.LevelId==17,"Adding Ultra preserves existing balances/progression");
+        Require(old.Version==PlayerProfileData.CurrentVersion && old.Wallet.PowerUps[RewardType.Ultra]==0 && old.Wallet.Coins==123 && old.Progress.LevelId==17,"Adding Ultra preserves existing balances/progression");
         var storage=new MemoryPlayerProfileStorage();
         var repository=new PlayerProfileRepository(storage,()=>{var state=new PlayerProfileData();state.Wallet.PowerUps[RewardType.Ultra]=1;return state;});
         var activation=new UltraActivationService(repository);string id=Guid.NewGuid().ToString("N");
