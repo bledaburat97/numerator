@@ -125,7 +125,7 @@ namespace Scripts
             if ((coins <= 0 && crystals <= 0) || TutorialProgress.Seen(TutorialProgress.Currency)) return;
             RectTransform bar = Find<VerticalCrystalProgressView>()?.GetRectTransform();
             if (bar != null && !bar.gameObject.activeInHierarchy) bar = null;
-            ShowTip("Coin ve güçlendiriciler", "Coin biriktir. Pembe kristallerle güçlendirici kazan.",
+            ShowTip("Coin ve güçlendiriciler", "Coinlerle tohum al.\nKristallerle güçlendirici kazan.",
                 TutorialProgress.Currency, _ui.GetCoinImageRectTransform(), bar);
         }
         private bool ExplainPowerUp(GameUIButtonType type)

@@ -50,7 +50,7 @@ namespace Menu
                 Show("Hasadın hazır!",FruitCollectionView.FormatCount(total)+" meyve koleksiyonuna eklendi.",null);
             }
         }
-        public void ShowPurchase(FruitId fruit,long amount) {Show("Tohumların ekildi",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" tohumu bahçende.",fruit);_dismissAt=Time.unscaledTime+3f;}
+        public void ShowPurchase(FruitId fruit,long amount) {Show("Ekim tamam!",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" tohumu bahçende.",fruit);_dismissAt=Time.unscaledTime+3f;}
         private void Show(string title,string body,FruitId? fruit)
         {
             EnsureUi();_title.text=title;_body.text=body;_fruit.gameObject.SetActive(fruit.HasValue);

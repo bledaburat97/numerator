@@ -1,6 +1,7 @@
 using Scripts;
 using Scripts.Economy;
 using System;
+using System.Collections.Generic;
 
 namespace Game
 {
@@ -57,7 +58,8 @@ namespace Game
 
             _completed = new SinglePlayerRoundResult(won, _round.GetTriedCardsList().Count,
                 coins, crystals, previousCoins, previousProgress, previousReward, nextLevelNumber,
-                won?_achievements.ClosestFor(_target.GetTargetCardsList()):null);
+                won?_achievements.ClosestFor(_target.GetTargetCardsList()):null,
+                won?_target.GetTargetCardsList():null);
             var saved=_saves.GetSavedLevel();
             if(saved==null || string.IsNullOrEmpty(saved.RoundId) || saved.RoundId==_checkpoint.GetLevelSaveData().RoundId)_saves.DeleteSave();
             return _completed;
@@ -75,9 +77,10 @@ namespace Game
         public RewardType PreviousReward { get; }
         public int NextLevelNumber { get; }
         public AchievementStatus AchievementTarget {get;}
+        public IReadOnlyList<int> EarnedFruits {get;}
 
         public SinglePlayerRoundResult(bool won, int guessCount, int earnedCoins, int earnedCrystals,
-            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null)
+            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null,IReadOnlyList<int> earnedFruits=null)
         {
             Won = won;
             GuessCount = guessCount;
@@ -88,6 +91,7 @@ namespace Game
             PreviousReward = previousReward;
             NextLevelNumber = nextLevelNumber;
             AchievementTarget=achievementTarget;
+            EarnedFruits=new List<int>(won && earnedFruits!=null?earnedFruits:Array.Empty<int>()).AsReadOnly();
         }
     }
 }

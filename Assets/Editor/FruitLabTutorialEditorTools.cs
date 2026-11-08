@@ -466,7 +466,7 @@ public static partial class FruitLabTutorialEditorTools
                 for (int i = 0; i < 8; i++) game._area.AddResultBlock(new ResultBlockModel { finalNumbers = new List<int> { 2, 1 } });
                 Require(area.GetComponentsInChildren<ResultBlockView>().All(row => !row.IsSplit && row.IsLocalGuess == null
                     && !row.GetComponentsInChildren<Transform>().Any(t => t.name == "HelperAbsent")), "New rounds clear old groups, players, hints and review frames");
-                using (var assistance=AssistanceFor(game,new TestLevel().GetLevelData(),out var noteView))
+                using (var assistance=AssistanceFor(game,new TestLevel().GetLevelData(),out var noteView,ultra:false))
                 using (var notes = new CardAnnotationController(game.Initial, game.Placement, game.UI, canvas.GetComponent<FruitLabGameLayout>(), game.Gate, null, () => true,assistance,game.Initial,game.Board))
                 {
                     Require(notes.TrySelect(0), "Performance fixture can open marking");

@@ -41,7 +41,7 @@ namespace Scripts
             foreach (List<int> triedCards in _roundStateManager.GetTriedCardsList())
             {
                 var evaluation = Evaluate(0,triedCards);
-                _resultAreaController.AddResultBlock(CreateRow(triedCards,evaluation));
+                _resultAreaController.AddResultBlock(CreateRow(triedCards,evaluation),false);
             }
         }
 

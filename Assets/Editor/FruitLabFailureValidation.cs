@@ -511,7 +511,7 @@ public static class FruitLabFailureValidation
     {
         public void RevealGuess(GuessEvaluation guess) { }
         public ResultBlockModel Last;
-        public void AddResultBlock(ResultBlockModel model) => Last = model;
+        public void AddResultBlock(ResultBlockModel model,bool animate=true) => Last = model;
         public void AddNewResultBlock(int number, int correct, int wrong) { }
         public void Initialize(bool isNew) { }
         public void RemoveResultBlocks() { }
@@ -691,6 +691,7 @@ public static class FruitLabCompletionValidation
         }
         public void RefreshVisibleRows() { for (int i = 0; i < Rows.Count; i++) RefreshRow(i); }
         public void SetScrollPositionToBottom() { }
+        public void PlayFeedbackForRow(int index) { }
         public CanvasGroup GetCanvasGroup() => Group;
         public float GetWidth() => 331f;
         public float GetRowHeight() => 64f;

@@ -42,16 +42,16 @@ namespace Game
             float cardDelayDuration = 0.1f;
             float cardColorChangingDuration = 0.24f;
             float ribbonImageDuration = 0.2f;
-            float cardDismissDuration = 0.22f;
+            float cardDismissDuration = 0.18f;
             float scalingUpDurationOfText = 0.22f;
-            float buttonsFadeOutDuration = 0.2f;
+            float buttonsFadeOutDuration = 0.16f;
             return DOTween.Sequence()
                 .Append(_boardAnimationController.Play(cardDelayDuration, cardColorChangingDuration, ribbonImageDuration))
                 .Insert(0.1f, DOTween.Sequence()
                     .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
                     .Append(_levelEndPopupController.ScaleUpText(scalingUpDurationOfText)))
-                .Insert(0.70f,_levelEndPopupController.ChangeFadeButtons(0.15f,1f))
-                .AppendInterval(0.05f)
+                .AppendInterval(0.10f)
+                .Append(_levelEndPopupController.RevealRewardDetails(0.18f))
                 .Append(_cleanupAnimationController.DismissCardsOnInitialHolders(cardDismissDuration))
                 .Append(_cleanupAnimationController.FadeOutObsoleteGameUi(buttonsFadeOutDuration))
                 .Append(_rewardCollectionAnimationController.Play(
@@ -62,6 +62,7 @@ namespace Game
                     rewardTypeBeforeCollection))
                 .Append(_cleanupAnimationController.FadeOutLifeBar(buttonsFadeOutDuration))
                 .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f))
+                .Insert(0.70f,_levelEndPopupController.ChangeFadeButtons(0.15f,1f))
                 .OnKill(_rewardCollectionAnimationController.Cancel);
         }
     }

@@ -2,6 +2,7 @@ using System;
 using DG.Tweening;
 using Scripts;
 using Zenject;
+using System.Collections.Generic;
 
 namespace Game
 {
@@ -47,6 +48,8 @@ namespace Game
         }
         public void SetOutcome(bool success, int earnedCrystalCount = 0) => _view.SetOutcome(success, earnedCrystalCount);
         public void SetAchievementTarget(string text)=>_view.SetAchievementTarget(text);
+        public void PrepareRewardDetails(IReadOnlyList<int> fruits)=>_view.PrepareRewardDetails(fruits);
+        public Sequence RevealRewardDetails(float duration)=>_view.RevealRewardDetails(duration);
         public void SetMultiplayerResult(bool won, bool disconnected, RewardType? reward) => _view.SetMultiplayerResult(won, disconnected, reward);
         
         public Sequence PresentRewardForClaim(
@@ -118,6 +121,8 @@ namespace Game
         void InitText(string text);
         void SetOutcome(bool success, int earnedCrystalCount = 0);
         void SetAchievementTarget(string text);
+        void PrepareRewardDetails(IReadOnlyList<int> fruits);
+        Sequence RevealRewardDetails(float duration);
         void SetPopupStatus(bool status);
         Sequence ScaleUpText(float duration);
         Sequence PresentRewardForClaim(Sequence rewardPresentationSequence, Func<Sequence> hideRewardSequenceFactory,

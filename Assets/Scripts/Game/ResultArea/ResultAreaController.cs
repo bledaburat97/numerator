@@ -73,12 +73,13 @@ namespace Scripts
             DetailsChanged?.Invoke(guess.Number - 1);
         }
 
-        public void AddResultBlock(ResultBlockModel resultBlockModel)
+        public void AddResultBlock(ResultBlockModel resultBlockModel,bool animate=true)
         {
             _history.Add(resultBlockModel.Snapshot());
             _view.HistoryChanged();
 
             _view.SetScrollPositionToBottom();
+            if(animate)_view.PlayFeedbackForRow(_history.Count-1);
             Changed?.Invoke();
         }
         // Compatibility for existing numeric callers; gameplay uses the card-list model directly.
@@ -115,7 +116,7 @@ namespace Scripts
         ResultAreaInfo GetResultAreaInfo();
         void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount);
         void Initialize(bool isNewGame);
-        void AddResultBlock(ResultBlockModel resultBlockModel);
+        void AddResultBlock(ResultBlockModel resultBlockModel,bool animate=true);
         Sequence ChangeFade(float duration, float finalAlpha);
         void RemoveResultBlocks();
         void EnableReview();

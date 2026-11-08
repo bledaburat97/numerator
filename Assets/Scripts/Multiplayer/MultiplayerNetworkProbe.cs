@@ -665,7 +665,7 @@ namespace Scripts
             var tracker = FindFirstObjectByType<LevelTracker>();
             foreach (RewardType type in PowerUpTypeUtility.MultiplayerRewardTypes)
                 Check(tracker.GetPowerUpCount(type) == _expectedRewards[(int)type], "Only the winner receives exactly one of the announced powerups");
-            if (won) Check(popup.transform.Find("ResultSubtitle").GetComponent<TMPro.TMP_Text>().text.Contains(PowerUpTypeUtility.Name(_lastOutcome.Reward.Value)), "The victory panel names the granted powerup");
+            if (won) Check(popup.GetSubtitle().text.Contains(PowerUpTypeUtility.Name(_lastOutcome.Reward.Value)), "The victory panel names the granted powerup");
             foreach (var row in FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>())
             {
                 bool local = round == 3 ? won : (row.transform.GetSiblingIndex() == 0 ? !won : won);

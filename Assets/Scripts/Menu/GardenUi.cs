@@ -7,6 +7,19 @@ namespace Menu
 {
     internal static class GardenUi
     {
+        public const string Purpose="Çöz, meyve biriktir.\nCoinlerinle bahçeni büyüt.";
+        public const string GardenRule="1 tohum, 1 meyve.\nEkimden sonra 4 farklı gün oyunu aç.";
+        public const string PurchaseRule="Bugün sayılmaz.\nSonraki 4 farklı gün oyunu aç.";
+        public static void Quantity(TMP_Text text,float size=22)
+        {FruitLabStyle.TextStyle(text,size);text.color=FruitLabStyle.Text;}
+        public static NonDraggableCardItemView FruitCard(Transform parent,string name,NonDraggableCardItemView prefab,int fruit)
+        {
+            var card=parent.Find(name)?.GetComponent<NonDraggableCardItemView>();
+            if(card==null){card=UnityEngine.Object.Instantiate(prefab,parent,false);card.name=name;}
+            card.Init(fruit);card.InitLocalScale();card.SetAlpha(1);card.SetResultOutline(CardResultState.Unrevealed);
+            foreach(var graphic in card.GetComponentsInChildren<Graphic>(true)){graphic.raycastTarget=false;graphic.gameObject.layer=parent.gameObject.layer;}
+            return card;
+        }
         public static RectTransform Rect(Transform parent,string name)
         {
             var existing=parent.Find(name) as RectTransform;
@@ -55,6 +68,27 @@ namespace Menu
         public static void Content(ScrollRect scroll,float height)
         {
             scroll.content.sizeDelta=new Vector2(0,height);scroll.content.ForceUpdateRectTransforms();
+        }
+    }
+
+    // The same coin artwork and cream, prominent value as the game/menu HUD.
+    internal sealed class GardenCoinCounter
+    {
+        public readonly RectTransform Root;
+        public readonly TMP_Text Amount;
+        private readonly Image _icon;
+        public GardenCoinCounter(Transform parent,string name)
+        {
+            Root=GardenUi.Rect(parent,name);_icon=GardenUi.Icon(Root,"Coin","Coin");
+            Amount=GardenUi.Text(Root,"Value",24,FruitLabStyle.Text);Amount.alignment=TextAlignmentOptions.MidlineLeft;
+            GardenUi.Quantity(Amount,24);
+        }
+        public void SetAmount(decimal? amount)=>Amount.text=amount.HasValue?FruitCollectionView.FormatCount(amount.Value):"—";
+        public void Place(Transform parent,float x,float y,float width,float height,float size=24)
+        {
+            FruitLabStyle.Place(Root,parent,x,y,width,height);float icon=Mathf.Min(32,height-2);
+            FruitLabStyle.Place(_icon.rectTransform,Root,0,(height-icon)*.5f,icon,icon);
+            FruitLabStyle.Place(Amount.rectTransform,Root,icon+6,0,width-icon-6,height);GardenUi.Quantity(Amount,size);
         }
     }
 }

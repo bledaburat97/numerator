@@ -29,7 +29,11 @@ namespace Menu
         public event Action Cancel;
         private RectTransform _panel;
         private ScrollRect _body;
-        private TMP_Text _balance,_selected,_total,_remaining,_error;
+        private TMP_Text _balanceLabel,_selected,_totalLabel,_remaining,_error,_growthRule;
+        private GardenCoinCounter _balance,_total;
+        private NonDraggableCardItemView _cardPrefab;
+        private readonly Dictionary<FruitId,NonDraggableCardItemView> _cards=new Dictionary<FruitId,NonDraggableCardItemView>();
+        public void ConfigureCards(NonDraggableCardItemView prefab)=>_cardPrefab=prefab;
         private Button _confirm,_cancel,_minus,_plus;
         private TMP_InputField _quantity;
         private readonly Dictionary<FruitId,Button> _fruits=new Dictionary<FruitId,Button>();
@@ -47,13 +51,16 @@ namespace Menu
             // Consume taps on panel whitespace rather than dismissing through it.
             if(_panel.GetComponent<Button>()==null)_panel.gameObject.AddComponent<Button>().transition=Selectable.Transition.None;
             var title=GardenUi.Text(_panel,"Title",24,FruitLabStyle.Text);title.text="Tohum al";
-            _balance=GardenUi.Text(_panel,"Balance",18,FruitLabStyle.Gold);
+            var legacyBalance=_panel.Find("Balance");if(legacyBalance!=null)legacyBalance.gameObject.SetActive(false);
+            _balanceLabel=GardenUi.Text(_panel,"BalanceLabel",16,FruitLabStyle.Muted,true);_balanceLabel.text="Bakiye";_balanceLabel.alignment=TextAlignmentOptions.MidlineLeft;
+            _balance=new GardenCoinCounter(_panel,"BalanceCounter");
             _body=GardenUi.Scroll(_panel,"Options");
             foreach(FruitId fruit in Enum.GetValues(typeof(FruitId)))
             {
                 var button=GardenUi.Button(_body.content,fruit.ToString(),null);var selected=fruit;
                 button.onClick.AddListener(()=>FruitSelected?.Invoke(selected));_fruits.Add(fruit,button);
-                GardenUi.Icon(button.transform,"Fruit",fruit.ToString());
+                var legacy=button.transform.Find("Fruit");if(legacy!=null)legacy.gameObject.SetActive(false);
+                _cards.Add(fruit,GardenUi.FruitCard(button.transform,"FruitCard",_cardPrefab,(int)fruit));
                 var rim=FruitLabStyle.Detail(button.transform,"Selected",FruitLabStyle.Mint,true);rim.gameObject.SetActive(false);
             }
             _selected=GardenUi.Text(_body.content,"SelectedFruit",18,FruitLabStyle.Text);
@@ -63,15 +70,18 @@ namespace Menu
             _quantity=inputRect.GetComponent<TMP_InputField>() ?? inputRect.gameObject.AddComponent<TMP_InputField>();
             var viewport=GardenUi.Rect(inputRect,"Viewport");FruitLabStyle.Stretch(viewport,4);
             if(viewport.GetComponent<RectMask2D>()==null)viewport.gameObject.AddComponent<RectMask2D>();
-            var number=GardenUi.Text(viewport,"Text",22,FruitLabStyle.Text);FruitLabStyle.Stretch(number.rectTransform);
+            var number=GardenUi.Text(viewport,"Text",22,FruitLabStyle.Text);GardenUi.Quantity(number);FruitLabStyle.Stretch(number.rectTransform);
             var placeholder=GardenUi.Text(viewport,"Placeholder",18,FruitLabStyle.Muted,true);placeholder.text="Adet";FruitLabStyle.Stretch(placeholder.rectTransform);
             _quantity.textViewport=viewport;_quantity.textComponent=number;_quantity.placeholder=placeholder;
             _quantity.contentType=TMP_InputField.ContentType.IntegerNumber;_quantity.keyboardType=TouchScreenKeyboardType.NumberPad;
             _quantity.characterLimit=19;_quantity.lineType=TMP_InputField.LineType.SingleLine;
             _quantity.onValueChanged.AddListener(value=>QuantityChanged?.Invoke(value));
-            _total=GardenUi.Text(_body.content,"Total",18,FruitLabStyle.Text);
-            _remaining=GardenUi.Text(_body.content,"Remaining",16,FruitLabStyle.Muted,true);
+            foreach(string name in new[]{"Total","Remaining"}){var legacy=_body.content.Find(name);if(legacy!=null)legacy.gameObject.SetActive(false);}
+            _totalLabel=GardenUi.Text(_panel,"TotalLabel",16,FruitLabStyle.Text,true);_totalLabel.text="Toplam";_totalLabel.alignment=TextAlignmentOptions.MidlineLeft;
+            _total=new GardenCoinCounter(_panel,"TotalCounter");
+            _remaining=GardenUi.Text(_panel,"Remaining",16,FruitLabStyle.Muted,true);_remaining.alignment=TextAlignmentOptions.MidlineLeft;
             _error=GardenUi.Text(_panel,"Error",16,FruitLabStyle.OpponentPlayer,true);_error.textWrappingMode=TextWrappingModes.Normal;
+            _growthRule=GardenUi.Text(_panel,"GrowthRule",16,FruitLabStyle.Muted,true);_growthRule.text=GardenUi.PurchaseRule;_growthRule.textWrappingMode=TextWrappingModes.Normal;
             _confirm=GardenUi.Button(_panel,"Confirm","Satın al",true);_confirm.onClick.AddListener(()=>Confirm?.Invoke());
             _cancel=GardenUi.Button(_panel,"Cancel","Vazgeç");_cancel.onClick.AddListener(()=>Cancel?.Invoke());
         }
@@ -89,10 +99,11 @@ namespace Menu
         }
         public void RenderQuote(SeedPurchaseQuote quote,string error,bool busy)
         {
-            EnsureUi();_balance.text=quote==null?"":FruitCollectionView.FormatCount(quote.AvailableCoins)+" coin";
-            _total.text=quote==null?"Toplam: —":"Toplam: "+FruitCollectionView.FormatCount(quote.TotalCoinPrice)+" coin";
-            _remaining.text=quote==null?"":quote.CanAfford?"Kalan: "+FruitCollectionView.FormatCount(quote.AvailableCoins-quote.TotalCoinPrice)+" coin":"Bakiye yetersiz";
+            EnsureUi();_balance.SetAmount(quote?.AvailableCoins);_total.SetAmount(quote?.TotalCoinPrice);
+            _remaining.text=quote==null?"":quote.CanAfford?"Kalan: "+FruitCollectionView.FormatCount(quote.AvailableCoins-quote.TotalCoinPrice):"Bakiye yetersiz";
+            _remaining.color=quote!=null && !quote.CanAfford?FruitLabStyle.OpponentPlayer:FruitLabStyle.Muted;
             _error.text=error??"";_confirm.interactable=!busy && quote!=null && quote.CanAfford;
+            _growthRule.gameObject.SetActive(string.IsNullOrEmpty(error));_error.gameObject.SetActive(!string.IsNullOrEmpty(error));
             _cancel.interactable=_minus.interactable=_plus.interactable=_quantity.interactable=!busy;
             foreach(var fruit in _fruits.Values)fruit.interactable=!busy;
         }
@@ -103,24 +114,27 @@ namespace Menu
             float width=Mathf.Min(350,rect.rect.width-24),height=Mathf.Min(580,rect.rect.height-24);
             _panel.anchorMin=_panel.anchorMax=_panel.pivot=Vector2.one*.5f;_panel.anchoredPosition=Vector2.zero;_panel.sizeDelta=new Vector2(width,height);
             FruitLabStyle.Place((RectTransform)_panel.Find("Title"),_panel,16,height-50,width-32,32);
-            FruitLabStyle.Place(_balance.rectTransform,_panel,16,height-80,width-32,24);
-            FruitLabStyle.Place((RectTransform)_body.transform,_panel,16,154,width-32,Mathf.Max(1,height-244));
-            GardenUi.Content(_body,300);
-            float bodyWidth=width-32,buttonWidth=(bodyWidth-12)/3;
+            float bodyWidth=width-32;
+            FruitLabStyle.Place(_balanceLabel.rectTransform,_panel,16,height-88,bodyWidth-148,32);
+            _balance.Place(_panel,width-160,height-88,144,32);
+            FruitLabStyle.Place((RectTransform)_body.transform,_panel,16,212,bodyWidth,Mathf.Max(1,height-308));
+            GardenUi.Content(_body,236);
+            float buttonWidth=(bodyWidth-8)/3;
             int index=0;
             foreach(var item in _fruits)
             {
-                FruitLabStyle.Place((RectTransform)item.Value.transform,_body.content,(index%3)*(buttonWidth+6),300-48-(index/3)*54,buttonWidth,48);
-                var icon=(RectTransform)item.Value.transform.Find("Fruit");FruitLabStyle.Place(icon,item.Value.transform,(buttonWidth-42)*.5f,3,42,42);
+                FruitLabStyle.Place((RectTransform)item.Value.transform,_body.content,(index%3)*(buttonWidth+4),236-48-(index/3)*52,buttonWidth,48);
+                var card=_cards[item.Key];FruitLabStyle.Place((RectTransform)card.transform,item.Value.transform,(buttonWidth-42)*.5f,3,42,42);card.SetSize(Vector2.one*42);
                 FruitLabStyle.Stretch((RectTransform)item.Value.transform.Find("Selected"),1);index++;
             }
-            FruitLabStyle.Place(_selected.rectTransform,_body.content,0,114,bodyWidth,24);
-            FruitLabStyle.Place((RectTransform)_minus.transform,_body.content,0,56,48,48);
-            FruitLabStyle.Place(_quantity.GetComponent<RectTransform>(),_body.content,56,56,bodyWidth-112,48);
-            FruitLabStyle.Place((RectTransform)_plus.transform,_body.content,bodyWidth-48,56,48,48);
-            FruitLabStyle.Place(_total.rectTransform,_body.content,0,26,bodyWidth,24);
-            FruitLabStyle.Place(_remaining.rectTransform,_body.content,0,0,bodyWidth,22);
-            FruitLabStyle.Place(_error.rectTransform,_panel,16,116,width-32,30);
+            FruitLabStyle.Place(_selected.rectTransform,_body.content,0,58,bodyWidth,22);
+            FruitLabStyle.Place((RectTransform)_minus.transform,_body.content,0,0,48,48);
+            FruitLabStyle.Place(_quantity.GetComponent<RectTransform>(),_body.content,56,0,bodyWidth-112,48);
+            FruitLabStyle.Place((RectTransform)_plus.transform,_body.content,bodyWidth-48,0,48,48);
+            FruitLabStyle.Place(_totalLabel.rectTransform,_panel,16,178,68,28);_total.Place(_panel,90,178,width-106,28,22);
+            FruitLabStyle.Place(_remaining.rectTransform,_panel,16,158,bodyWidth,20);
+            FruitLabStyle.Place(_growthRule.rectTransform,_panel,16,116,bodyWidth,40);
+            FruitLabStyle.Place(_error.rectTransform,_panel,16,116,bodyWidth,40);
             FruitLabStyle.Place((RectTransform)_confirm.transform,_panel,16,66,width-32,48);
             FruitLabStyle.Place((RectTransform)_cancel.transform,_panel,16,12,width-32,44);
         }

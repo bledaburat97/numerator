@@ -128,7 +128,7 @@ public static partial class FruitLabTutorialEditorTools
                 game.BuildActors();var view=canvas.GetComponentInChildren<LevelFinishPopupView>(true);
                 view.SetOutcome(true,crystals);view.SetAchievementTarget("Meyve Koleksiyoncusu: 48/50");view.SetText("Kazandın!");view.SetStatus(true);view.GetText().rectTransform.localScale=Vector3.one;
                 view.GetButton(LevelFinishButtonType.Game).SetText("Bölüm 2");view.GetButton(LevelFinishButtonType.Menu).SetText("Menü");
-                Canvas.ForceUpdateCanvases();var goal=view.transform.Find("ResultSubtitle").GetComponent<TMP_Text>();
+                Canvas.ForceUpdateCanvases();var goal=view.GetSubtitle();
                 Require(goal.gameObject.activeSelf && goal.fontSize>=16 && !goal.isTextOverflowing,"Closest level-end goal is visible and readable");
                 if(crystals>0)
                 {

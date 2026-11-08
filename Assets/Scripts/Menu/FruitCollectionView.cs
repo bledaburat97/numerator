@@ -38,6 +38,7 @@ namespace Menu
         [SerializeField] private TMP_Text title,summary,section;
         [SerializeField] private BaseButtonView closeButton;
         [SerializeField] private FruitCollectionCell[] cells;
+        [SerializeField] private NonDraggableCardItemView cardPrefab;
         private bool _initialized;
         private Vector2 _lastSize;
         private UnityEngine.UI.Button _gardenTab,_collectionTab;
@@ -70,12 +71,13 @@ namespace Menu
             {
                 if(cell.Root.parent!=_collectionScroll.content)cell.Root.SetParent(_collectionScroll.content,false);
                 cell.Card.Init((int)cell.Fruit);cell.Name.text=FruitName(cell.Fruit);
-                FruitLabStyle.TextStyle(cell.Name,16,false);FruitLabStyle.TextStyle(cell.Amount,22);
+                FruitLabStyle.TextStyle(cell.Name,16,false);GardenUi.Quantity(cell.Amount);
                 foreach(var graphic in cell.Card.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))graphic.raycastTarget=false;
             }
-            var garden=GardenUi.Rect(transform,"Garden");_garden=garden.GetComponent<GardenPanelView>() ?? garden.gameObject.AddComponent<GardenPanelView>();_garden.EnsureUi();
+            var template=cardPrefab!=null?cardPrefab:cells[0].Card;
+            var garden=GardenUi.Rect(transform,"Garden");_garden=garden.GetComponent<GardenPanelView>() ?? garden.gameObject.AddComponent<GardenPanelView>();_garden.ConfigureCards(template);_garden.EnsureUi();
             var popup=GardenUi.Rect(transform,"SeedPurchase");_purchase=popup.GetComponent<SeedPurchasePopupView>() ?? popup.gameObject.AddComponent<SeedPurchasePopupView>();
-            FruitLabStyle.Stretch(popup);_purchase.EnsureUi();_purchase.SetVisible(false);
+            _purchase.ConfigureCards(template);FruitLabStyle.Stretch(popup);_purchase.EnsureUi();_purchase.SetVisible(false);
             section.gameObject.SetActive(false);SelectTab(_tab);
         }
         private void Choose(GardenTab tab){SelectTab(tab);TabChanged?.Invoke(tab);}

@@ -22,6 +22,31 @@ namespace Scripts
         private readonly List<INonDraggableCardItemView> _cards = new List<INonDraggableCardItemView>();
         private NonDraggableCardItemViewFactory _cardFactory;
         private TMP_Text _correctCount, _misplacedCount;
+        private Sequence _feedbackIntro;
+        public bool IsFeedbackAnimating=>_feedbackIntro!=null && _feedbackIntro.IsActive() && _feedbackIntro.IsPlaying();
+        public void PlayFeedbackIntro()
+        {
+            StopFeedbackIntro();
+            _feedbackIntro=DOTween.Sequence().SetLink(gameObject,LinkBehaviour.KillOnDisable);
+            if(IsSplit)foreach(var group in _groupViews)group.JoinIntro(_feedbackIntro);
+            else {JoinCountIntro(_feedbackIntro,_correctCount,FruitLabStyle.Mint);JoinCountIntro(_feedbackIntro,_misplacedCount,FruitLabStyle.Gold);}
+        }
+        private static void JoinCountIntro(Sequence sequence,TMP_Text label,Color color)
+        {
+            if(label==null)return;
+            sequence.Insert(0,label.rectTransform.DOScale(1.10f,.12f).SetEase(Ease.OutQuad));
+            sequence.Insert(0,label.DOColor(color,.12f));
+            sequence.Insert(.12f,label.rectTransform.DOScale(1f,.18f).SetEase(Ease.OutQuad));
+            sequence.Insert(.12f,label.DOColor(FruitLabStyle.Text,.18f));
+        }
+        private void StopFeedbackIntro()
+        {
+            _feedbackIntro?.Kill();_feedbackIntro=null;
+            ResetCount(_correctCount);ResetCount(_misplacedCount);
+            if(_groupViews!=null)foreach(var group in _groupViews)group.ResetIntro();
+        }
+        private static void ResetCount(TMP_Text label){if(label!=null){label.rectTransform.localScale=Vector3.one;label.color=FruitLabStyle.Text;}}
+        private void OnDisable()=>StopFeedbackIntro();
         private TMP_Text _playerLabel;
         private Image _evidenceFrame;
         public void SetEvidenceHighlight(bool visible)
@@ -90,6 +115,7 @@ namespace Scripts
 
         public void ResetForReuse()
         {
+            StopFeedbackIntro();
             rectTransform.DOKill();
             SetEvidenceHighlight(false);
             for (int i = 0; i < _cardPool.Count; i++)
@@ -259,6 +285,8 @@ namespace Scripts
             public void SetActive(bool active) => _panel.gameObject.SetActive(active);
             public void Display(GuessGroupFeedback result)
             { _correctCount.text = result.Correct.ToString(); _misplacedCount.text = result.Misplaced.ToString(); }
+            public void JoinIntro(Sequence sequence){JoinCountIntro(sequence,_correctCount,FruitLabStyle.Mint);JoinCountIntro(sequence,_misplacedCount,FruitLabStyle.Gold);}
+            public void ResetIntro(){ResetCount(_correctCount);ResetCount(_misplacedCount);}
             public void Resize(float x,float width,float height)
             {
                 FruitLabStyle.Place(_panel.rectTransform,_panel.transform.parent,x,0f,width,height);

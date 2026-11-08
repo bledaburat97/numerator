@@ -60,10 +60,12 @@ public static partial class FruitLabTutorialEditorTools
                 TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)menu.GetCollectionButton());
                 var panel=(GardenPanelView)view.Garden;var popup=(SeedPurchasePopupView)view.Purchase;
                 Require(view.IsVisible && panel.gameObject.activeSelf,"Bahçem initially opens its garden tab");
+                Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("Çöz, meyve biriktir")),"Empty garden connects back to solving puzzles");
+                Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-purpose.png");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
                 TapGarden(canvas,camera,eventSystem,popup.FruitButton(FruitId.Strawberry));popup.QuantityInput.text="10";
-                Require(popup.ConfirmButton.interactable && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Toplam: 10 coin")
-                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 40 coin"),"Purchase preview shows fruit, quantity, total and remaining coins");
+                Require(popup.ConfirmButton.interactable && popup.transform.Find("Panel/TotalCounter/Value").GetComponent<TMP_Text>().text=="10"
+                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 40"),"Purchase preview shows fruit, quantity, total and remaining coins");
                 TapGarden(canvas,camera,eventSystem,popup.CancelButton);
                 Require(profiles.Snapshot().Wallet.Coins==50 && garden.GetBatches().Count==0,"Cancel never spends coins");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
@@ -80,7 +82,7 @@ public static partial class FruitLabTutorialEditorTools
                 Require(!popup.gameObject.activeSelf && profiles.Snapshot().Wallet.Coins==40 && garden.GetBatches().Single().Value.Quantity==10,
                     "Actual UI purchase debits once, creates a batch and ignores a duplicate confirmation");
                 Require(clone.GetComponentInChildren<MenuHeaderView>(true).GetComponentsInChildren<TMP_Text>(true).Any(t=>t.text=="40"),"Menu coin counter refreshes after purchase");
-                Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="10 adet") && panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Tohum"),"New batch is displayed with amount and stage");
+                Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="10 adet") && panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Tohum · 0/4"),"New batch is displayed with amount and stage");
                 notice.Hide();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-seeds.png");
                 TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)view.CloseButton);
                 Require(!view.IsVisible && !garden.ProcessVisit().HasProgress,"Closing and reopening menu cannot grow purchase-day seeds");
@@ -119,7 +121,8 @@ public static partial class FruitLabTutorialEditorTools
             Require(before==Profile(),"Real player preferences stay unchanged");
             File.WriteAllText(Folder+"/garden-ui-review.json",JsonConvert.SerializeObject(new {passed=true,phone_layouts=4,
                 actual_raycast_purchase=true,cancel_outside=true,duplicate_click=true,global_focus_pause=true,
-                menu_reentry_no_growth=true,queued_notice=true,harvest_to_collection=true,real_player_unchanged=true},Formatting.Indented));
+                menu_reentry_no_growth=true,queued_notice=true,harvest_to_collection=true,real_player_unchanged=true,
+                fixed_growth_rule=true,shared_fruit_cards=true,shared_coin_counters=true,readable_stage_progress=true},Formatting.Indented));
         }
         finally
         {
@@ -133,6 +136,18 @@ public static partial class FruitLabTutorialEditorTools
     private static void GardenLayouts(Canvas canvas,Camera camera,EventSystem events,GameObject clone,FruitCollectionView view,
         SeedPurchasePopupView popup,GardenPanelView panel,FruitCollectionPresenter presenter,IPlayerProfileRepository profiles)
     {
+        foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
+        {
+            ((RectTransform)canvas.transform).sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();
+            presenter.Open();view.ApplyLayout();panel.ApplyLayout();Canvas.ForceUpdateCanvases();
+            var art=(RectTransform)panel.transform.Find("EmptyIllustration");
+            Require(art.gameObject.activeSelf && art.GetComponentsInChildren<NonDraggableCardItemView>().Length==3,"Empty garden has three static preview cards");
+            var purpose=(TMP_Text)Get(panel,"_empty");var rule=(TMP_Text)Get(panel,"_rule");var summary=(TMP_Text)Get(panel,"_summary");
+            Require(BoundsIn(art,panel.transform).yMax<BoundsIn(summary.rectTransform,panel.transform).yMin,"Empty illustration stays below the summary");
+            Require(BoundsIn(purpose.rectTransform,panel.transform).yMin>BoundsIn(rule.rectTransform,panel.transform).yMax,"Empty garden explanation stays above the fixed growing rule");
+            foreach(var text in new[]{purpose,rule,summary}){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Empty garden copy fits: "+size+" "+text.text);}
+            Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-empty-"+(int)size.y+".png");presenter.Close();
+        }
         profiles.Update(profile=>{
             for(int index=0;index<12;index++)profile.Garden.Add("layout:"+index,new PlantingBatch {Fruit=(FruitId)(index%9+1),Quantity=1000,
                 PlantedUtcDay=100,LastGrowthUtcDay=100+index%4,Stage=(GardenGrowthStage)(index%4)});
@@ -143,17 +158,35 @@ public static partial class FruitLabTutorialEditorTools
             clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();presenter.Open();view.ApplyLayout();panel.ApplyLayout();
             var list=panel.GetComponentsInChildren<ScrollRect>().Single();
             Require(list.content.childCount==12 && list.content.rect.height>list.viewport.rect.height,"Quantities use batch rows with working scroll");
+            Require(panel.GetComponentsInChildren<NonDraggableCardItemView>().Length==12,"Each batch uses the same fruit card view as gameplay");
+            Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Filiz · 1/4") && panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Çiçek · 3/4"),"Growth can be read without relying on dot colors");
+            foreach(var amount in panel.GetComponentsInChildren<TMP_Text>().Where(t=>t.name=="Quantity"))Require(amount.fontSize>=22 && amount.color==FruitLabStyle.Text,"Garden quantities match the game counter typography");
+            foreach(var label in panel.GetComponentsInChildren<TMP_Text>()){label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Garden text fits: "+label.text);}
             TapGarden(canvas,camera,events,panel.BuyButton);
             var popupPanel=(RectTransform)popup.transform.Find("Panel");
             Require(popupPanel.rect.width<=size.x-24 && popupPanel.rect.height<=size.y-24,"Purchase popup fits phone bounds");
             foreach(FruitId fruit in Enum.GetValues(typeof(FruitId)))TapGarden(canvas,camera,events,popup.FruitButton(fruit));
+            Require(popup.GetComponentsInChildren<NonDraggableCardItemView>().Length==9,"Seed choices use nine shared fruit cards");
+            var rule=popupPanel.Find("GrowthRule").GetComponent<TMP_Text>();
+            Require(rule.gameObject.activeSelf && rule.text.Contains("Bugün sayılmaz") && rule.text.Contains("4 farklı gün"),"Purchase-day exclusion is visible before confirming");
+            Require(rule.fontSize>=16 && !rule.GetComponentInParent<ScrollRect>(),"Growth explanation remains readable outside the scrolling options");
+            var options=popupPanel.Find("Options").GetComponent<ScrollRect>();
+            Canvas.ForceUpdateCanvases();popup.ApplyLayout();Canvas.ForceUpdateCanvases();
+            Require(options.content.rect.height<=options.viewport.rect.height+.1f,"Nine fruit choices and quantity fit without scrolling on supported phones");
+            foreach(string counter in new[]{"BalanceCounter","TotalCounter"})
+            {
+                var amount=popupPanel.Find(counter+"/Value").GetComponent<TMP_Text>();var icon=popupPanel.Find(counter+"/Coin").GetComponent<Image>();
+                Require(amount.fontSize>=22 && amount.color==FruitLabStyle.Text && icon.sprite==FruitLabStyle.Icon("Coin"),"Price counters share the game coin artwork and readable values");
+            }
             foreach(var label in popup.GetComponentsInChildren<TMP_Text>(false))
             {label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Purchase text fits: "+label.name+" "+label.text);}
+            Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-purchase-"+(int)size.y+".png");
             TapGarden(canvas,camera,events,popup.CancelButton);
             TapGarden(canvas,camera,events,view.GetTabButton(GardenTab.Collection));
             foreach(var cell in (FruitCollectionCell[])Get(view,"cells"))
             {
                 Require(((RectTransform)cell.Card.transform).rect.width>=50,"Collection fruit remains readable on small screens");
+                Require(cell.Amount.color==FruitLabStyle.Text && cell.Amount.fontSize>=22,"Collection quantities use the shared cream counter style");
                 foreach(var text in new[]{cell.Name,cell.Amount}){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Collection labels fit: "+text.text);}
             }
             if(size.x==375 && size.y==812){view.SelectTab(GardenTab.Garden);Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-batches.png");}

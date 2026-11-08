@@ -54,8 +54,10 @@ public static partial class FruitLabTutorialEditorTools
                 }
                 var close=Button(root.transform,"CloseButton",false);close.SetText("Kapat");
                 Field(view,"rect",root.transform);Field(view,"title",title);Field(view,"section",section);Field(view,"summary",summary);Field(view,"closeButton",close);Field(view,"cells",cells.ToArray());
+                Field(view,"cardPrefab",AssetDatabase.LoadAssetAtPath<NonDraggableCardItemView>("Assets/Prefabs/NonDraggableCardItem.prefab"));
                 ((RectTransform)root.transform).sizeDelta=new Vector2(375,812);
                 view.Render(new PlayerProfileData().Collection);view.ApplyLayout();
+                ConnectGardenCardPrefabs(root);
                 foreach(var graphic in root.GetComponentsInChildren<Graphic>(true))graphic.gameObject.layer=5;
                 root.SetActive(false);PrefabUtility.SaveAsPrefabAsset(root,CollectionPath);
             }
@@ -75,6 +77,26 @@ public static partial class FruitLabTutorialEditorTools
         }
         finally {if(opened)EditorSceneManager.CloseScene(source,true);}
         return "Saved FruitCollection.prefab and Bahçem menu entry";
+    }
+
+    private static void ConnectGardenCardPrefabs(GameObject root)
+    {
+        var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/NonDraggableCardItem.prefab");
+        foreach(var card in root.GetComponentsInChildren<NonDraggableCardItemView>(true))
+        {
+            if(PrefabUtility.IsPartOfPrefabInstance(card))continue;
+            var old=(RectTransform)card.transform;var parent=old.parent;
+            if(!Enum.TryParse<FruitId>(parent.name,out var fruit) && !Enum.TryParse<FruitId>(old.name,out fruit))continue;
+            string name=old.name;int sibling=old.GetSiblingIndex();var position=old.localPosition;var rotation=old.localRotation;var scale=old.localScale;
+            var size=old.sizeDelta;var min=old.anchorMin;var max=old.anchorMax;var pivot=old.pivot;
+            Object.DestroyImmediate(card.gameObject);
+            var replacement=(GameObject)PrefabUtility.InstantiatePrefab(prefab,parent);replacement.name=name;replacement.transform.SetSiblingIndex(sibling);
+            var rect=(RectTransform)replacement.transform;rect.anchorMin=min;rect.anchorMax=max;rect.pivot=pivot;rect.sizeDelta=size;
+            rect.localPosition=position;rect.localRotation=rotation;rect.localScale=scale;
+            var view=replacement.GetComponent<NonDraggableCardItemView>();view.Init((int)fruit);view.SetAlpha(1);
+            foreach(var graphic in replacement.GetComponentsInChildren<Graphic>(true))graphic.raycastTarget=false;
+            foreach(var component in replacement.GetComponentsInChildren<Component>(true))PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+        }
     }
 
     private static void BindCollectionTestRewards(DiContainer container)
@@ -169,7 +191,7 @@ public static partial class FruitLabTutorialEditorTools
             {
                 Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_bombPowerUpCount",1);game.BuildActors();game.Gate.Clear();
                 var award=CollectionFixtureRewards(game,out var profiles);
-                var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,(MemorySave)Get(game,"_memory"),game._saves,game.Target,award,new Scripts.Economy.AchievementService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())));
+                var completion=new SinglePlayerRoundCompletion(game.Tracker,game.Round,(MemorySave)Get(game,"_memory"),game._saves,game.Target,award,new Scripts.Economy.AchievementService(profiles,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())));
                 game.Results.LevelSuccessEvent+=(s,e)=>completion.Complete(true);
                 if(mode=="bomb")
                 {
@@ -196,9 +218,10 @@ public static partial class FruitLabTutorialEditorTools
                     var restored=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(snapshot));
                     game._saves.SetLevelSaveDataAsSaved(restored);((MemorySave)Get(game,"_memory")).Save(restored);
                 }
-                if(mode=="fail") {completion.Complete(false);Require(profiles.Snapshot().Collection.Values.All(value=>value.Current==0),"Failure awards no fruit");continue;}
+                if(mode=="fail") {Require(completion.Complete(false).EarnedFruits.Count==0 && profiles.Snapshot().Collection.Values.All(value=>value.Current==0),"Failure awards and presents no fruit");continue;}
                 for(int slot=0;slot<answer.Length;slot++)Require(game.Placement.TryPlaceCardOnBoard(answer[slot]-1,slot),"Winning collection placement");
                 Tick(.5f);game.Check();
+                Require(completion.Complete(true).EarnedFruits.SequenceEqual(answer),"The end presenter receives the actual awarded answer: "+mode);
                 Require(profiles.Snapshot().Collection.Values.Sum(value=>value.Current)==answer.Length
                     && answer.All(fruit=>profiles.Snapshot().Collection[(FruitId)fruit].Current==1),"The real winning event awards the current answer before animation: "+mode);
                 string id=game._saves.GetLevelSaveData().RoundId;
