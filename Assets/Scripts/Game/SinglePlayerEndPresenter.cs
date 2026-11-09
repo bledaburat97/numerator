@@ -55,6 +55,7 @@ namespace Game
             if (result.EarnedCrystals > 0)
                 _crystals.PrepareForCollection(result.PreviousCrystalProgress, result.PreviousReward);
             _popup.SetOutcome(result.Won, result.EarnedCrystals);
+            _popup.SetContinuationIdentity(result.Won?LevelDefinitionPreview.Resolve(result.NextLevelNumber-1):result.CurrentDefinition);
             var goal=result.AchievementTarget;
             _popup.SetAchievementTarget(goal==null?null:string.Format(System.Globalization.CultureInfo.GetCultureInfo("tr-TR"),"{0}: {1:N0}/{2:N0}",goal.Title,goal.Progress,goal.Target));
             if(result.Won)_popup.PrepareRewardDetails(result.EarnedFruits);
@@ -72,7 +73,7 @@ namespace Game
 
             int generation = _generation;
             _ending = _success.SuccessLevelAnimation(result.EarnedCoins, result.EarnedCrystals,
-                result.PreviousCoins, result.PreviousCrystalProgress, result.PreviousReward);
+                result.PreviousCoins, result.PreviousCrystalProgress, result.PreviousReward,result.DirectReward);
             _ending.OnComplete(() =>
             {
                 if (!_disposed && generation == _generation)

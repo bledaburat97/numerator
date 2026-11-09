@@ -34,7 +34,7 @@ namespace Game
             int earnedCrystalCount,
             int previousCoinCount,
             int previousCrystalProgressCount,
-            RewardType rewardTypeBeforeCollection)
+            RewardType rewardTypeBeforeCollection,RewardType? directReward=null)
         {
             _fadePanelController.SetFadeImageStatus(false);
             _fadePanelController.SetTutorialFadeImageStatus(false);
@@ -61,9 +61,9 @@ namespace Game
                     previousCrystalProgressCount,
                     rewardTypeBeforeCollection))
                 .Append(_cleanupAnimationController.FadeOutLifeBar(buttonsFadeOutDuration))
-                .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f))
+                .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f,directReward))
                 .OnKill(_rewardCollectionAnimationController.Cancel);
-            if (!PowerUpRewardPresenter.EarnsReward(previousCrystalProgressCount,earnedCrystalCount))
+            if (!directReward.HasValue && !PowerUpRewardPresenter.EarnsReward(previousCrystalProgressCount,earnedCrystalCount))
                 sequence.Insert(.70f,_levelEndPopupController.ChangeFadeButtons(.15f,1f));
             return sequence;
         }
@@ -77,6 +77,6 @@ namespace Game
             int earnedCrystalCount,
             int previousCoinCount,
             int previousCrystalProgressCount,
-            RewardType rewardTypeBeforeCollection);
+            RewardType rewardTypeBeforeCollection,RewardType? directReward=null);
     }
 }

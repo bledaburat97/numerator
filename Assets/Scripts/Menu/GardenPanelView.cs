@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using System.Collections.Generic;
 using System.Linq;
 using Scripts;
@@ -58,6 +59,7 @@ namespace Menu
             }
             ApplyLayout();
         }
+        private void OnDisable(){foreach(var row in _rows)row.StopAnimation();}
         private void LateUpdate() {if(((RectTransform)transform).rect.size!=_lastSize)ApplyLayout();}
         public void ApplyLayout()
         {
@@ -85,11 +87,16 @@ namespace Menu
             private readonly NonDraggableCardItemView _fruit;
             private readonly TMP_Text _name,_amount,_stage;
             private readonly Image[] _steps=new Image[4];
+            private readonly FruitLabGlyph _plant;
+            private GardenGrowthStage? _lastStage;
+            private Tween _growth;
+            public void StopAnimation(){_growth?.Kill();_plant.rectTransform.localScale=Vector3.one;}
             public Row(Transform parent,int index,NonDraggableCardItemView prefab)
             {
                 Root=GardenUi.Rect(parent,"Batch"+index);FruitLabStyle.AddSurface(Root.gameObject,FruitLabStyle.Panel);
                 var legacy=Root.Find("Fruit");if(legacy!=null)legacy.gameObject.SetActive(false);
                 _fruit=GardenUi.FruitCard(Root,"FruitCard",prefab,1);
+                _plant=Root.Find("PlantStage")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(Root,FruitLabGlyph.Symbol.Seed,FruitLabStyle.Mint);_plant.name="PlantStage";
                 _name=GardenUi.Text(Root,"FruitName",18,FruitLabStyle.Text);
                 _amount=GardenUi.Text(Root,"Quantity",22,FruitLabStyle.Text);GardenUi.Quantity(_amount);
                 _stage=GardenUi.Text(Root,"Stage",16,FruitLabStyle.Muted,true);
@@ -98,7 +105,14 @@ namespace Menu
             }
             public void Bind(PlantingBatch batch)
             {
-                _fruit.Init((int)batch.Fruit);_fruit.SetAlpha(1);_name.text=FruitCollectionView.FruitName(batch.Fruit);
+                _fruit.Init((int)batch.Fruit);_fruit.SetAlpha(batch.Stage==GardenGrowthStage.Fruit?1:.25f);
+                _plant.Type=batch.Stage==GardenGrowthStage.Seed?FruitLabGlyph.Symbol.Seed:batch.Stage==GardenGrowthStage.Sprout?FruitLabGlyph.Symbol.Sprout:batch.Stage==GardenGrowthStage.Leaves?FruitLabGlyph.Symbol.Plant:FruitLabGlyph.Symbol.Flower;
+                _plant.gameObject.SetActive(batch.Stage!=GardenGrowthStage.Fruit);_plant.SetVerticesDirty();
+                if(_lastStage.HasValue && _lastStage!=batch.Stage)
+                {
+                    StopAnimation();_growth=_plant.rectTransform.DOPunchScale(Vector3.one*.15f,.36f,3,.6f).SetLink(Root.gameObject,LinkBehaviour.KillOnDisable);
+                }
+                _lastStage=batch.Stage;_name.text=FruitCollectionView.FruitName(batch.Fruit);
                 _amount.text=FruitCollectionView.FormatCount(batch.Quantity)+" adet";
                 string stage=batch.Stage==GardenGrowthStage.Seed?"Tohum":batch.Stage==GardenGrowthStage.Sprout?"Filiz":batch.Stage==GardenGrowthStage.Leaves?"Yaprak":batch.Stage==GardenGrowthStage.Flower?"Çiçek":"Meyve";
                 _stage.text=stage+" · "+(int)batch.Stage+"/4";
@@ -108,6 +122,7 @@ namespace Menu
             {
                 Root.anchorMin=Root.anchorMax=new Vector2(0,1);Root.pivot=new Vector2(0,1);Root.anchoredPosition=new Vector2(0,-index*120);Root.sizeDelta=new Vector2(width,112);
                 FruitLabStyle.Place((RectTransform)_fruit.transform,Root,12,40,60,60);_fruit.SetSize(Vector2.one*60);
+                FruitLabStyle.Place(_plant.rectTransform,Root,21,48,42,42);
                 FruitLabStyle.Place(_name.rectTransform,Root,84,77,width-94,26);
                 FruitLabStyle.Place(_amount.rectTransform,Root,84,47,width-94,28);
                 FruitLabStyle.Place(_stage.rectTransform,Root,16,9,width-110,28);

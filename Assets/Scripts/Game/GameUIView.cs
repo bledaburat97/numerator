@@ -76,11 +76,12 @@ namespace Scripts
             PlaceMechanicStatus();
             if (wasVisible != visible) GetComponentInParent<Canvas>()?.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
         }
+        public RectTransform MechanicStatusRect=>_mechanicLabel?.rectTransform;
         private void PlaceMechanicStatus()
         {
             if (_mechanicLabel == null) return;
             var header = (RectTransform)userText.transform.parent;
-            FruitLabStyle.Place(_mechanicLabel.rectTransform, header, 0, 34f, header.rect.width, 14f);
+            FruitLabStyle.Place(_mechanicLabel.rectTransform, header, 0, 34f, Mathf.Max(1,header.rect.width-106), 14f);
         }
 
         private bool _multiplayerMode;
@@ -170,8 +171,9 @@ namespace Scripts
             }
             if (_matchHud != null) _matchHud.gameObject.SetActive(_multiplayerMode);
             FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width - 102f : width - 227f, 30f);
-            userText.fontSize = _multiplayerMode ? 15f : 19f;
-            userText.enableAutoSizing = false;
+            userText.fontSize = _multiplayerMode ? 15f : width<330?16f:19f;
+            userText.textWrappingMode=TextWrappingModes.NoWrap;
+            userText.enableAutoSizing = !_multiplayerMode;userText.fontSizeMin=14;userText.fontSizeMax=width<330?16:19;
             userText.fontStyle = FontStyles.Bold;
             userText.color = FruitLabStyle.Text;
             userText.alignment = TextAlignmentOptions.MidlineLeft;

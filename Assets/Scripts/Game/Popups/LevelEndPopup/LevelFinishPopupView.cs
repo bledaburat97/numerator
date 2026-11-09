@@ -25,6 +25,8 @@ namespace Scripts
         private string _multiplayerSubtitle;
         private Game.RewardType? _multiplayerReward;
         private string _achievementTarget;
+        private LevelData _continuation;
+        public void SetContinuationIdentity(LevelData definition){_continuation=definition?.Copy();ApplyLabLayout();}
         public void SetAchievementTarget(string value){_achievementTarget=value;ApplyLabLayout();}
         public TMP_Text GetSubtitle()=>rewardDetails?.Find("ResultSubtitle")?.GetComponent<TMP_Text>() ?? transform.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
         public void PrepareRewardDetails(IReadOnlyList<int> fruits)
@@ -37,7 +39,7 @@ namespace Scripts
             EnsureRewardDetails();
             _rewardIntro?.Kill();
             return _rewardIntro=DOTween.Sequence().AppendCallback(()=>_rewardsRevealed=true)
-                .Append(rewardDetailsGroup.DOFade(1,duration)).SetLink(gameObject);
+                .Append(rewardDetailsGroup.DOFade(1,duration)).AppendCallback(()=>fruitAward.PlayTransfer()).SetLink(gameObject);
         }
         private void EnsureRewardDetails()
         {
@@ -185,7 +187,8 @@ namespace Scripts
                 }
                 FruitLabStyle.Place(rect, rect.parent, x, 8f, buttonWidth,
                     _success ? (hasFruits?44f:32f) : Mathf.Min(40f, height * .44f));
-                button.buttonView.GetComponent<BaseButtonView>().ApplyLabActionStyle(!menu);
+                var action=button.buttonView.GetComponent<BaseButtonView>();action.ApplyLabActionStyle(!menu);
+                if(button.buttonType==LevelFinishButtonType.Game)action.ApplyLevelIdentity(_multiplayer?null:_continuation);
             }
         }
 

@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using System.Collections.Generic;
 using Game;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace Scripts
         private PairClue _clue;
         private RectTransform _a, _b;
         private bool _reset = true;
+        private Sequence _intro;
         private int _pointer;
         private Vector2 _dragStart, _startA, _startB;
         private RectTransform _dragParent;
@@ -50,7 +52,12 @@ namespace Scripts
         {
             CancelDrag(); _clue = clue; _reset = true;
             gameObject.SetActive(clue != null);
-            if (rope != null) { rope.Owner = this; rope.Clear(); }
+            if (rope != null)
+            {
+                _intro?.Kill();rope.Owner=this;rope.Clear();rope.color=Color.white;
+                if(clue!=null)_intro=DOTween.Sequence().Append(rope.DOColor(FruitLabStyle.Gold,.12f)).Append(rope.DOColor(Color.white,.30f))
+                    .SetLink(gameObject,LinkBehaviour.KillOnDisable);
+            }
         }
         private void LateUpdate() => RefreshRope(Time.unscaledDeltaTime);
         public void RefreshRope(float deltaTime)

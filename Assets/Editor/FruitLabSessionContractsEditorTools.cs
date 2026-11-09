@@ -349,7 +349,7 @@ public static partial class FruitLabTutorialEditorTools
     {
         public void Cancel() { }
         public bool Success;public int Coins,Crystals;public Sequence Sequence;
-        public Sequence SuccessLevelAnimation(int earnedCoinCount,int earnedCrystalCount,int previousCoinCount,int previousCrystalProgressCount,RewardType rewardTypeBeforeCollection)
+        public Sequence SuccessLevelAnimation(int earnedCoinCount,int earnedCrystalCount,int previousCoinCount,int previousCrystalProgressCount,RewardType rewardTypeBeforeCollection,RewardType? directReward=null)
         {Success=true;Coins=earnedCoinCount;Crystals=earnedCrystalCount;return Sequence=DOTween.Sequence().AppendInterval(.25f);}
         public Sequence FailLevelAnimation(){Success=false;Coins=Crystals=0;return Sequence=DOTween.Sequence().AppendInterval(.25f);}
         public Sequence FadeOutResultArea(float duration)=>DOTween.Sequence().AppendInterval(duration);

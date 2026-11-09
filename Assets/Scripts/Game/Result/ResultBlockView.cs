@@ -22,13 +22,23 @@ namespace Scripts
         private readonly List<INonDraggableCardItemView> _cards = new List<INonDraggableCardItemView>();
         private NonDraggableCardItemViewFactory _cardFactory;
         private TMP_Text _correctCount, _misplacedCount;
-        private Sequence _feedbackIntro;
+        private Sequence _feedbackIntro,_hintFeedback;
+        private Image _hintGlow;
+        public void PlayHintFeedback()
+        {
+            _hintFeedback?.Kill();
+            if(_hintGlow==null)_hintGlow=FruitLabStyle.Detail(transform,"HintGlow",FruitLabStyle.Gold,true);
+            FruitLabStyle.Stretch(_hintGlow.rectTransform,1);_hintGlow.sprite=FruitLabStyle.ResultFrame;
+            _hintGlow.color=new Color(FruitLabStyle.Gold.r,FruitLabStyle.Gold.g,FruitLabStyle.Gold.b,0);
+            _hintFeedback=DOTween.Sequence().Append(_hintGlow.DOFade(.9f,.12f)).Append(_hintGlow.DOFade(0,.50f))
+                .SetLink(gameObject,LinkBehaviour.KillOnDisable);
+        }
         public bool IsFeedbackAnimating=>_feedbackIntro!=null && _feedbackIntro.IsActive() && _feedbackIntro.IsPlaying();
         public void PlayFeedbackIntro()
         {
             StopFeedbackIntro();
             _feedbackIntro=DOTween.Sequence().SetLink(gameObject,LinkBehaviour.KillOnDisable);
-            if(IsSplit)foreach(var group in _groupViews)group.JoinIntro(_feedbackIntro);
+            if(IsSplit)for(int i=0;i<_groupViews.Length;i++)_groupViews[i].JoinIntro(_feedbackIntro,i*.06f);
             else {JoinCountIntro(_feedbackIntro,_correctCount,_correctIcon,FruitLabStyle.Mint,0);JoinCountIntro(_feedbackIntro,_misplacedCount,_misplacedIcon,FruitLabStyle.Gold,.12f);}
         }
         private static void JoinCountIntro(Sequence sequence,TMP_Text label,Graphic icon,Color color,float delay)
@@ -45,6 +55,7 @@ namespace Scripts
         private void StopFeedbackIntro()
         {
             _feedbackIntro?.Kill();_feedbackIntro=null;
+            _hintFeedback?.Kill();_hintFeedback=null;if(_hintGlow!=null){var tint=_hintGlow.color;tint.a=0;_hintGlow.color=tint;}
             ResetCount(_correctCount);ResetCount(_misplacedCount);ResetIcon(_correctIcon);ResetIcon(_misplacedIcon);
             if(_groupViews!=null)foreach(var group in _groupViews)group.ResetIntro();
         }
@@ -288,7 +299,7 @@ namespace Scripts
             public void SetActive(bool active) => _panel.gameObject.SetActive(active);
             public void Display(GuessGroupFeedback result)
             { _correctCount.text = result.Correct.ToString(); _misplacedCount.text = result.Misplaced.ToString(); }
-            public void JoinIntro(Sequence sequence){JoinCountIntro(sequence,_correctCount,_correct,FruitLabStyle.Mint,0);JoinCountIntro(sequence,_misplacedCount,_misplaced,FruitLabStyle.Gold,.12f);}
+            public void JoinIntro(Sequence sequence,float delay){JoinCountIntro(sequence,_correctCount,_correct,FruitLabStyle.Mint,delay);JoinCountIntro(sequence,_misplacedCount,_misplaced,FruitLabStyle.Gold,delay+.12f);}
             public void ResetIntro(){ResetCount(_correctCount);ResetCount(_misplacedCount);ResetIcon(_correct);ResetIcon(_misplaced);}
             public void Resize(float x,float width,float height)
             {

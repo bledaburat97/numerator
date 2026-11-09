@@ -28,6 +28,8 @@ namespace Menu
             _singlePlayerButtonController = _baseButtonControllerFactory.Create(_view.GetSinglePlayerButton(), OnSinglePlayerButtonClick);
             _singlePlayerButtonController.SetText(GetLevelText());
             _singlePlayerButtonController.SetClickOnRelease(true);
+            if(_view.GetSinglePlayerButton() is BaseButtonView button)
+                button.ApplyLevelIdentity(LevelDefinitionPreview.Resolve(_levelTracker.GetLevelId(),_gameSaveService));
 
         }
 
@@ -43,7 +45,7 @@ namespace Menu
         {
             if (_gameSaveService.HasSavedGame())
             {
-                return "Devam et";
+                return "Bölüm " + (_levelTracker.GetLevelId()+1) + " · Devam";
             }
 
             return "Bölüm " + (_levelTracker.GetLevelId() + 1);

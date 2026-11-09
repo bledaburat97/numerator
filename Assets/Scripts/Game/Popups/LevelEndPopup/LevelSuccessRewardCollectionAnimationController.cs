@@ -89,14 +89,14 @@ namespace Scripts
             _presentationTokens.Clear();
         }
 
-        public Sequence PlayPostCollectionFlow(float buttonFadeDuration)
+        public Sequence PlayPostCollectionFlow(float buttonFadeDuration,RewardType? directReward=null)
         {
-            if (!_hasCompletedReward)
+            if (!_hasCompletedReward && !directReward.HasValue)
             {
                 return _levelEndPopupController.ChangeFadeButtons(buttonFadeDuration, 1f);
             }
 
-            return DOTween.Sequence().AppendCallback(()=>_levelEndPopupController.PresentPowerUpReward(_completedRewardType));
+            return DOTween.Sequence().AppendCallback(()=>_levelEndPopupController.PresentPowerUpReward(directReward ?? _completedRewardType,directReward.HasValue));
         }
 
         private Sequence AnimateCoinsToCounter(
@@ -206,6 +206,6 @@ namespace Scripts
             int previousCoinCount,
             int previousCrystalProgressCount,
             RewardType rewardTypeBeforeCollection);
-        Sequence PlayPostCollectionFlow(float buttonFadeDuration);
+        Sequence PlayPostCollectionFlow(float buttonFadeDuration,RewardType? directReward=null);
     }
 }

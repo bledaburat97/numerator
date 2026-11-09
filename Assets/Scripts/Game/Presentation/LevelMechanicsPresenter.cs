@@ -6,6 +6,7 @@ namespace Scripts
     {
         void ShowDynamite(LevelMechanic mechanic, DynamiteRoundState state);
         void ShowPair(PairClue clue);
+        void ShowHelperFeedback();
         void ShowStatus(LevelMechanic mechanic, LevelData definition, int activeCount, int guessCount, bool split);
     }
 
@@ -19,14 +20,18 @@ namespace Scripts
             if (_view?.SetDynamiteLayout(mechanic == LevelMechanic.Dynamite) == true) _board?.RefreshLayout();
             _board?.ShowDynamite(state);
         }
+        public void ShowHelperFeedback()=>_view?.GetComponentInParent<UnityEngine.Canvas>().GetComponent<LevelEnvironmentView>()?.PulseHintProgress();
         public void ShowPair(PairClue clue) => _view?.SetPairClue(clue);
         public void ShowStatus(LevelMechanic mechanic, LevelData definition, int activeCount, int guessCount, bool split)
         {
-            string text = definition != null && definition.IsPlaytest ? LevelPlaytestSchedule.Status(definition) : LevelMechanicRules.Description(mechanic);
-            if (mechanic == LevelMechanic.Growing) text += " · " + activeCount + "/" + GrowingBoardState.MaximumCount + " alan";
-            if (mechanic == LevelMechanic.Helper) text += " · " + guessCount % 3 + "/3";
-            if (mechanic != LevelMechanic.Split && split) text = string.IsNullOrEmpty(text) ? "Bölünmüş Tahta" : text + " · Bölünmüş Tahta";
+            if(definition==null)return;
+            var identity=LevelIdentity.For(definition);
+            string text=identity.Group==LevelGroup.Normal && !definition.IsPlaytest?null:identity.Name;
+            if(definition.TrialPowerUp.HasValue && definition.Mechanic==LevelMechanic.Normal && !definition.BonusReward.HasValue)
+                text=PowerUpTypeUtility.Name(definition.TrialPowerUp.Value)+" denemesi";
+            if(mechanic!=LevelMechanic.Split && split)text="Bölünmüş Tahta";
             _view?.SetMechanicStatus(text);
+            if(_view!=null)LevelEnvironmentView.Ensure(_view.GetComponentInParent<UnityEngine.Canvas>()).Render(definition,activeCount,guessCount);
         }
     }
 }

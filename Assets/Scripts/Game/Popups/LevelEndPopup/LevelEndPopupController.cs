@@ -11,11 +11,11 @@ namespace Game
         private LevelFinishPopupView _view;
         [InjectOptional] private PowerUpRewardPresenter _rewardPresentation;
         public bool IsRewardPresentationActive => _rewardPresentation?.IsPresenting == true;
-        public void PresentPowerUpReward(RewardType reward)
+        public void PresentPowerUpReward(RewardType reward,bool bonus=false)
         {
             if (_rewardPresentation == null) { ChangeFadeButtons(.15f,1); return; }
             ChangeFadeButtons(0,0).Complete(true);
-            _rewardPresentation.Present(reward,()=>ChangeFadeButtons(.15f,1));
+            _rewardPresentation.Present(reward,()=>ChangeFadeButtons(.15f,1),bonus);
         }
         public void AfterRewardPresentation(Action action)
         { if(_rewardPresentation!=null)_rewardPresentation.AfterClose(action);else action?.Invoke(); }
@@ -58,6 +58,7 @@ namespace Game
             SetButtonStatus(LevelFinishButtonType.Game, false); SetButtonStatus(LevelFinishButtonType.Claim, false);
             _view.SetMultiplayerOpponentLeft(message);
         }
+        public void SetContinuationIdentity(LevelData definition)=>_view.SetContinuationIdentity(definition);
         public void SetOutcome(bool success, int earnedCrystalCount = 0) => _view.SetOutcome(success, earnedCrystalCount);
         public void SetAchievementTarget(string text)=>_view.SetAchievementTarget(text);
         public void PrepareRewardDetails(IReadOnlyList<int> fruits)=>_view.PrepareRewardDetails(fruits);
@@ -130,10 +131,11 @@ namespace Game
     public interface ILevelEndPopupController
     {
         bool IsRewardPresentationActive { get; }
-        void PresentPowerUpReward(RewardType reward);
+        void PresentPowerUpReward(RewardType reward,bool bonus=false);
         void AfterRewardPresentation(Action action);
         void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);
+        void SetContinuationIdentity(LevelData definition);
         void SetOutcome(bool success, int earnedCrystalCount = 0);
         void SetAchievementTarget(string text);
         void PrepareRewardDetails(IReadOnlyList<int> fruits);

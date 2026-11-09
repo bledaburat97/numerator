@@ -25,6 +25,13 @@ namespace Scripts
         private Action _onPointerUp;
         private Action _onPointerClick;
         private FruitLabGlyph _labGlyph;
+        private LevelData _levelIdentity;
+        public void ApplyActionAccent(Color color)
+        {ResolveReferences();FruitLabStyle.Surface(innerBg,color);FruitLabStyle.Surface(outerBg,color*.72f);}
+        public void ApplyLevelIdentity(LevelData definition)
+        {
+            _levelIdentity=definition?.Copy();ApplyLabStyle();
+        }
 
         private void ResolveReferences()
         {
@@ -83,6 +90,17 @@ namespace Scripts
                 text.alignment = TextAlignmentOptions.Midline;
                 text.raycastTarget = false;
                 FruitLabStyle.Stretch(text.rectTransform, 3f);
+                var oldBadge=transform.Find("LevelKind");if(oldBadge!=null)oldBadge.gameObject.SetActive(_levelIdentity!=null);
+                if(_levelIdentity!=null)
+                {
+                    var identity=LevelIdentity.For(_levelIdentity);
+                    FruitLabStyle.Surface(innerBg,identity.Accent);FruitLabStyle.Surface(outerBg,identity.Accent*.72f);
+                    text.color=FruitLabStyle.Background;
+                    var badge=transform.Find("LevelKind")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(transform,identity.Symbol,FruitLabStyle.Background);
+                    badge.gameObject.SetActive(true);badge.name="LevelKind";badge.Type=identity.Symbol;badge.color=FruitLabStyle.Background;badge.SetAllDirty();
+                    FruitLabStyle.Place(badge.rectTransform,transform,12,(rectTransform.rect.height-26)*.5f,26,26);
+                    text.rectTransform.offsetMin=new Vector2(44,3);text.rectTransform.offsetMax=new Vector2(-6,-3);
+                }
                 return;
             }
             if (primary || gameObject.name.StartsWith("ResetButton"))

@@ -9,6 +9,7 @@ namespace Scripts.Economy
     public interface IGameWinRewardService
     {
         GameWinAward SinglePlayer(string roundId,int levelId,IReadOnlyList<int> answer,int coins,int crystals);
+        GameWinAward Bonus(string roundId,int levelId,IReadOnlyList<int> answer,RewardType reward);
         GameWinAward Duel(string matchId,int round,IReadOnlyList<int> answer,RewardType reward);
     }
 
@@ -40,6 +41,23 @@ namespace Scripts.Economy
                 var result=Before(profile);
                 result.PowerUps=_rules.ApplySingle(profile,coins,crystals);
                 result.NextLevelNumber=checked(profile.Progress.LevelId+1);
+                FruitInventoryService.ApplyGrant(profile,FruitGainSource.SinglePlayer,fruits,_achievements);
+                return result;
+            });
+        }
+
+        public GameWinAward Bonus(string roundId,int levelId,IReadOnlyList<int> answer,RewardType reward)
+        {
+            ValidateId(roundId);var fruits=Fruits(answer);
+            if(levelId<0 || !Enum.IsDefined(typeof(RewardType),reward))throw new ArgumentOutOfRangeException(nameof(levelId));
+            string request=JsonConvert.SerializeObject(new{levelId,answer=answer.ToArray(),bonus=reward});
+            return Commit("single:"+roundId,"single_win",request,profile=>{
+                if(profile.Progress.LevelId!=levelId)throw new InvalidOperationException("The bonus round does not match current progression.");
+                var result=Before(profile);
+                profile.Progress.LevelId=checked(profile.Progress.LevelId+1);
+                profile.Wallet.PowerUps[reward]=checked(profile.Wallet.PowerUps[reward]+1);result.PowerUps.Add(reward);
+                result.NextLevelNumber=checked(profile.Progress.LevelId+1);
+                // No wallet normalization here: even the next crystal reward remains unchanged.
                 FruitInventoryService.ApplyGrant(profile,FruitGainSource.SinglePlayer,fruits,_achievements);
                 return result;
             });

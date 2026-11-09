@@ -361,6 +361,7 @@ namespace Scripts
         public int PlaytestStep;
         public int PlaytestStepCount;
         public RewardType? TrialPowerUp;
+        public RewardType? BonusReward;
         [Newtonsoft.Json.JsonIgnore] public bool IsPlaytest => PlaytestRevision > 0;
         // Every definition field is a value type; never mutate a shared resource or save definition.
         public LevelData Copy() => (LevelData)MemberwiseClone();

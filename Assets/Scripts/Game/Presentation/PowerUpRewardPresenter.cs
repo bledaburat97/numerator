@@ -17,10 +17,10 @@ namespace Scripts
         public PowerUpRewardPresenter(PowerUpRewardView view,ILevelTracker tracker,IHapticController haptics)
         { _view=view;_tracker=tracker;_haptics=haptics; }
         public static bool EarnsReward(int previous,int earned) => earned>0 && Math.Max(0,previous)%Math.Max(1,ConstantValues.NUM_OF_STARS_FOR_WILD)+earned>=ConstantValues.NUM_OF_STARS_FOR_WILD;
-        public void Present(RewardType reward,Action closed)
+        public void Present(RewardType reward,Action closed,bool bonus=false)
         {
             Cancel();IsPresenting=true;_closed=closed;
-            _view.Bind(reward,_tracker.GetPowerUpCount(reward),Claim);
+            _view.Bind(reward,_tracker.GetPowerUpCount(reward),Claim,bonus);
             _view.PlaySound();_haptics?.Vibrate(HapticType.Success);
             _animation=_view.PlayIntro().OnComplete(()=>{_ready=true;_view.EnableClaim();});
         }

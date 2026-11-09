@@ -7,42 +7,24 @@ namespace Scripts
     public class LevelDataCreator : NetworkBehaviour, ILevelDataCreator
     {
         private LevelData _levelData;
-        private List<LevelData> _startingLevelsDataList;
-        private List<LevelData> _loopLevelsDataList;
         [Inject] private ILevelTracker _levelTracker;
         
         public void Awake()
         {
-            _startingLevelsDataList = LevelDataGetter.GetStartingLevelsData();
-            _loopLevelsDataList = LevelDataGetter.GetLoopLevelsData();
+
         }
         
         public void SetSinglePlayerLevelData()
         {
-            int levelId = _levelTracker.GetLevelId();
-            if (LevelPlaytestSchedule.TryCreate(levelId, out _levelData)) return;
-            if (levelId < 30)
-            {
-                _levelData = _startingLevelsDataList.Find(level => level.LevelId == levelId);
-                if (_levelData == null)
-                {
-                    _levelData = GetFallbackLevelData(_startingLevelsDataList, levelId);
-                }
-            }
-            else
-            {
-                int loopLevelId = _loopLevelsDataList.Count == 0 ? 0 : levelId % _loopLevelsDataList.Count;
-                _levelData = _loopLevelsDataList.Find(level => level.LevelId == loopLevelId);
-                if (_levelData == null)
-                {
-                    _levelData = GetFallbackLevelData(_loopLevelsDataList, loopLevelId);
-                }
-            }
-
-            if (_levelData == null)
-            {
-                _levelData = CreateDefaultLevelData(levelId);
-            }
+            _levelData=DefinitionFor(_levelTracker.GetLevelId());
+        }
+        public static LevelData DefinitionFor(int levelId)
+        {
+            if(LevelPlaytestSchedule.TryCreate(levelId,out var definition))return definition;
+            var levels=levelId<30?LevelDataGetter.GetStartingLevelsData():LevelDataGetter.GetLoopLevelsData();
+            int index=levelId<30?levelId:levels.Count==0?0:levelId%levels.Count;
+            definition=levels.Find(level=>level.LevelId==index) ?? GetFallbackLevelData(levels,index);
+            return (definition ?? CreateDefaultLevelData(levelId)).Copy();
         }
 
         public void RestoreDefinition(LevelData definition)

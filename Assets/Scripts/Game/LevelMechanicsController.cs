@@ -100,7 +100,7 @@ namespace Scripts
 
         private void OnHelper(object sender, GuessEvaluation guess)
         {
-            _area.RevealGuess(guess); _powers.Refresh(); _checkpoint?.Invoke();
+            _area.RevealGuess(guess,true);_presentation?.ShowHelperFeedback(); _powers.Refresh(); _checkpoint?.Invoke();
         }
 
         private void UpdateStatus()

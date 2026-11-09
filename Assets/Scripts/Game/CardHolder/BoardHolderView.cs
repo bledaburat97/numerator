@@ -27,7 +27,8 @@ namespace Scripts
         [SerializeField] private Image _dynamiteSurface, _dynamiteRim;
         [SerializeField] private FruitLabGlyph _dynamiteIcon;
         [SerializeField] private TMP_Text _dynamiteCount;
-        private Tween _dynamitePulse;
+        private Tween _dynamitePulse,_counterFeedback;
+        private int _displayedDanger=-1;
 
         public void ShowDynamite(DynamiteRoundState state)
         {
@@ -57,14 +58,20 @@ namespace Scripts
             _dynamiteBadge.sizeDelta = new Vector2(state.Disarmed ? 26f : 48f,28f);
             _dynamiteBadge.localScale = Vector3.one;
             _dynamiteIcon.Type = state.Disarmed ? FruitLabGlyph.Symbol.Check : FruitLabGlyph.Symbol.Dynamite;
-            _dynamiteIcon.color = state.Disarmed ? FruitLabStyle.Mint : Color.white; _dynamiteIcon.SetVerticesDirty();
+            _dynamiteIcon.color = state.Disarmed ? FruitLabStyle.Mint : Color.white; _dynamiteIcon.SetAllDirty();
             FruitLabStyle.Place(_dynamiteIcon.rectTransform,_dynamiteBadge,state.Disarmed ? 3f : 2f,4f,20f,20f);
             FruitLabStyle.Place(_dynamiteCount.rectTransform,_dynamiteBadge,25f,2f,20f,24f);
             _dynamiteCount.fontSize = 16f;
             _dynamiteCount.color = new Color(1f,.94f,.76f);
             _dynamiteCount.text = state.Disarmed ? "" : state.Remaining.ToString();
+            if(_displayedDanger!=state.Remaining && !state.Disarmed)
+            {
+                _counterFeedback?.Kill();_dynamiteCount.rectTransform.localScale=Vector3.one;
+                _counterFeedback=_dynamiteCount.rectTransform.DOPunchScale(Vector3.one*.16f,.2f,3,.6f).SetLink(gameObject);
+            }
+            _displayedDanger=state.Remaining;
             _dynamiteRim.color = state.Disarmed ? FruitLabStyle.Mint : new Color(1f,.64f,.24f,.95f);
-            _dynamiteSurface.color = state.Disarmed ? new Color(.08f,.23f,.22f,.98f) : new Color(.28f,.08f,.09f,.98f);
+            _dynamiteSurface.color = state.Disarmed ? new Color(.08f,.23f,.22f,.98f) : new Color(.20f,.12f,.13f,.98f);
             if (!state.Disarmed && !state.Exploded)
                 _dynamitePulse = _dynamiteBadge.DOScale(state.Remaining == 1 ? 1.10f : 1.035f,state.Remaining == 1 ? .35f : .85f)
                     .SetEase(Ease.InOutSine).SetLoops(-1,LoopType.Yoyo).SetLink(gameObject);
@@ -115,6 +122,15 @@ namespace Scripts
             return rectTransform;
         }
         
+        public Sequence PlayGrowthSpark()
+        {
+            var root=new GameObject("GrowthSpark",typeof(RectTransform),typeof(CanvasRenderer),typeof(RewardBurstGraphic)).GetComponent<RectTransform>();
+            root.SetParent(transform,false);FruitLabStyle.Stretch(root,-8);
+            var spark=root.GetComponent<RewardBurstGraphic>();spark.raycastTarget=false;spark.color=new Color(1,1,1,0);
+            return DOTween.Sequence().Append(spark.DOFade(.7f,.10f)).Append(spark.DOFade(0,.25f))
+                .OnKill(()=>{if(root!=null)TutorialObjectUtility.Destroy(root.gameObject);}).SetLink(gameObject,LinkBehaviour.KillOnDestroy);
+        }
+
         public Sequence PlayBombRemoval()
         {
             var ghost=new GameObject("BombRemoval",typeof(RectTransform),typeof(CanvasGroup)).GetComponent<RectTransform>();
@@ -136,7 +152,7 @@ namespace Scripts
 
         public void DestroyObject()
         {
-            if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
+            if (Application.isPlaying) { gameObject.SetActive(false);Destroy(gameObject); } else DestroyImmediate(gameObject);
         }
         
         public void SetCamera(Camera cam)
@@ -223,7 +239,7 @@ namespace Scripts
         private void OnDisable()
         {
             StopRevealSelection();
-            _dynamitePulse?.Kill();
+            _dynamitePulse?.Kill();_counterFeedback?.Kill();
             if (tutorialCanvas != null) tutorialCanvas.overrideSorting = false;
         }
 
@@ -269,6 +285,7 @@ namespace Scripts
         void SetupTutorialMode();
         void CleanupTutorialMode();
         RectTransform GetGardenRectTransform();
+        Sequence PlayGrowthSpark();
         Sequence PlayBombRemoval();
         Sequence PlaySuccessFrameAnimation(float delayDuration);
         void SetSuccessFrameStatus(bool status);

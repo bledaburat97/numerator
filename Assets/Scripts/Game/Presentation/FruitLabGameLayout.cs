@@ -31,6 +31,7 @@ namespace Scripts
         }
         public RectTransform PowerUpArea => powerUpArea;
         public RectTransform BoardArea => boardArea;
+        public RectTransform HistoryArea => historyArea;
         public Vector2 LayoutSize => _lastSize;
         public PowerUpListHolderView PowerUpView => powerUpView;
         public void SetCardAnnotationMode(bool active)
@@ -124,6 +125,7 @@ namespace Scripts
             // Editing clips the bottom of history; rows retain their ordinary size.
             float clippedHistoryHeight = 0f;
             results.ApplyLabLayout(layout.HistorySpacing, clippedHistoryHeight);
+            GetComponent<LevelEnvironmentView>()?.RefreshLayout();
         }
 
         private void PrepareSceneVisuals()

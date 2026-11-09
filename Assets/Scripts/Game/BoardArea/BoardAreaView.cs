@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +13,8 @@ namespace Scripts
         [SerializeField] private Canvas canvas;
         [SerializeField] private Image firstSplitGroup;
         [SerializeField] private Image secondSplitGroup;
+        private Sequence _splitIntro;
+        private bool _groupsVisible;
 
         public void PrepareSplitVisuals()
         {
@@ -33,12 +36,20 @@ namespace Scripts
         {
             if (!first.HasValue || !second.HasValue)
             {
+                _splitIntro?.Kill();_groupsVisible=false;
                 if (firstSplitGroup != null) firstSplitGroup.gameObject.SetActive(false);
                 if (secondSplitGroup != null) secondSplitGroup.gameObject.SetActive(false);
                 return;
             }
             if (firstSplitGroup == null || secondSplitGroup == null) PrepareSplitVisuals();
             PlaceSplitGroup(firstSplitGroup,first.Value); PlaceSplitGroup(secondSplitGroup,second.Value);
+            if(!_groupsVisible)
+            {
+                _groupsVisible=true;var a=firstSplitGroup.color;var b=secondSplitGroup.color;
+                firstSplitGroup.color=new Color(a.r,a.g,a.b,0);secondSplitGroup.color=new Color(b.r,b.g,b.b,0);
+                _splitIntro=DOTween.Sequence().Append(firstSplitGroup.DOFade(a.a,.18f)).Insert(.07f,secondSplitGroup.DOFade(b.a,.18f))
+                    .SetLink(gameObject,LinkBehaviour.KillOnDestroy);
+            }
         }
 
         private void PlaceSplitGroup(Image image,Rect bounds)

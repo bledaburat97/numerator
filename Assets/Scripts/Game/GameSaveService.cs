@@ -18,6 +18,7 @@ namespace Scripts
                 var data = JsonConvert.DeserializeObject<LevelSaveData>(PlayerPrefs.GetString(_saveGameKey));
                 if (data == null || data.TargetCards == null || data.CardItemInfoList == null || data.TriedCardsList == null
                     || data.RemainingGuessCount <= 0) return null;
+                if(data.Definition?.BonusReward is RewardType bonus && !System.Enum.IsDefined(typeof(RewardType),bonus))return null;
                 if (data.Definition?.Mechanic == LevelMechanic.Growing)
                 {
                     GrowingBoardState.UpgradeLegacy(data);

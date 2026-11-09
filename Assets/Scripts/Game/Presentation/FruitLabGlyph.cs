@@ -6,7 +6,7 @@ namespace Scripts
     // Small functional symbols stay sharp at every UI scale and don't need a font glyph.
     public class FruitLabGlyph : MaskableGraphic
     {
-        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21 }
+        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21, Gift=22, Growing=23, Challenge=24, Leaf=25, Seed=26, Sprout=27, Plant=28, Flower=29 }
         public Symbol Type;
         private Color _meshTint;
         private static readonly Vector2[] FirstPairCard = {
@@ -146,6 +146,40 @@ namespace Scripts
                 RoundedStroke(mesh,new[] {new Vector2(-.13f,.03f),new Vector2(-.13f,.22f),new Vector2(0,.30f),new Vector2(.13f,.22f),new Vector2(.13f,.03f)},center,size,stroke*.85f);
                 _meshTint=FruitLabStyle.Text;Disc(mesh,center+size*new Vector2(0,-.13f),size*.055f);
             }
+            else if(Type==Symbol.Gift)
+            {
+                RaisedStroke(mesh,new[]{new Vector2(-.3f,.08f),new Vector2(-.3f,-.29f),new Vector2(.3f,-.29f),new Vector2(.3f,.08f),new Vector2(-.3f,.08f)},center,size,stroke,FruitLabStyle.Gold);
+                RoundedStroke(mesh,new[]{new Vector2(0,-.3f),new Vector2(0,.14f),new Vector2(-.2f,.28f),new Vector2(-.25f,.16f),new Vector2(0,.08f),new Vector2(.2f,.3f),new Vector2(.25f,.18f),new Vector2(0,.08f)},center,size,stroke*.7f);
+            }
+            else if(Type==Symbol.Growing)
+            {
+                for(int i=0;i<3;i++)
+                {
+                    float x=-.34f+i*.27f,top=-.08f+i*.17f;
+                    RoundedStroke(mesh,new[]{new Vector2(x,-.28f),new Vector2(x,top),new Vector2(x+.2f,top),new Vector2(x+.2f,-.28f)},center,size,stroke*.65f);
+                }
+            }
+            else if(Type==Symbol.Challenge)
+            {
+                RoundedStroke(mesh,new[]{new Vector2(-.30f,-.24f),new Vector2(-.35f,.18f),new Vector2(-.13f,.02f),new Vector2(0,.32f),new Vector2(.14f,.02f),new Vector2(.35f,.18f),new Vector2(.30f,-.24f),new Vector2(-.30f,-.24f)},center,size,stroke*.75f);
+            }
+            else if(Type==Symbol.Seed)
+            {
+                _meshTint=FruitLabStyle.Gold;Disc(mesh,center+Vector2.down*size*.1f,size*.15f);
+                _meshTint=FruitLabStyle.Text;Line(mesh,center+size*new Vector2(-.07f,-.13f),center+size*new Vector2(.04f,.01f),stroke*.5f);
+            }
+            else if(Type==Symbol.Leaf || Type==Symbol.Sprout || Type==Symbol.Plant || Type==Symbol.Flower)
+            {
+                RoundedStroke(mesh,new[]{new Vector2(0,-.31f),new Vector2(0,.20f)},center,size,stroke*.65f);
+                RoundedStroke(mesh,new[]{new Vector2(0,-.02f),new Vector2(-.25f,.2f),new Vector2(-.3f,.05f),new Vector2(0,-.1f),new Vector2(.29f,.16f),new Vector2(.26f,.31f),new Vector2(0,.13f)},center,size,stroke*.65f);
+                if(Type==Symbol.Plant || Type==Symbol.Flower)RoundedStroke(mesh,new[]{new Vector2(0,-.22f),new Vector2(.23f,-.1f),new Vector2(.28f,-.23f),new Vector2(0,-.28f)},center,size,stroke*.6f);
+                if(Type==Symbol.Flower)
+                {
+                    _meshTint=FruitLabStyle.Pink;
+                    for(int i=0;i<5;i++){float angle=i*Mathf.PI*2/5;Disc(mesh,center+size*(new Vector2(0,.27f)+new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*.105f),size*.075f);}
+                    _meshTint=FruitLabStyle.Gold;Disc(mesh,center+size*new Vector2(0,.27f),size*.065f);
+                }
+            }
             else if (Type == Symbol.Dynamite) DrawDynamite(mesh,center,size);
             else if (Type == Symbol.Swap)
             {
@@ -200,25 +234,18 @@ namespace Scripts
         private static readonly Vector2[] DynamiteFuse = { new Vector2(0,.18f),new Vector2(.02f,.32f),new Vector2(.16f,.29f),new Vector2(.23f,.41f) };
         private void DrawDynamite(VertexHelper mesh,Vector2 center,float size)
         {
-            float alpha = _meshTint.a;
-            for (int i = 0; i < 3; i++)
-            {
-                float x = -.20f+i*.20f, top = i == 1 ? .16f : .10f;
-                Vector2 a = center+size*new Vector2(x,-.30f), b = center+size*new Vector2(x,top);
-                _meshTint = new Color(.24f,.04f,.055f,alpha); Line(mesh,a,b,size*.23f); Disc(mesh,a,size*.115f); Disc(mesh,b,size*.115f);
-                _meshTint = new Color(.94f,.20f,.24f,alpha); Line(mesh,a,b,size*.17f); Disc(mesh,a,size*.085f); Disc(mesh,b,size*.085f);
-                _meshTint = new Color(1f,.48f,.40f,alpha); Line(mesh,a+Vector2.left*size*.035f,b+Vector2.left*size*.035f,size*.035f);
-            }
-            _meshTint = new Color(.24f,.16f,.13f,alpha);
-            Line(mesh,center+size*new Vector2(-.31f,-.18f),center+size*new Vector2(.31f,-.18f),size*.08f);
-            Line(mesh,center+size*new Vector2(-.31f,-.01f),center+size*new Vector2(.31f,-.01f),size*.08f);
-            _meshTint = new Color(1f,.80f,.37f,alpha); RoundedStroke(mesh,DynamiteFuse,center,size,size*.045f);
-            Vector2 spark = center+size*DynamiteFuse[3];
-            for (int i = 0; i < 5; i++)
-            {
-                float angle = i*Mathf.PI*2f/5f; var direction = new Vector2(Mathf.Cos(angle),Mathf.Sin(angle));
-                Line(mesh,spark+direction*size*.035f,spark+direction*size*.11f,size*.035f);
-            }
+            float alpha=_meshTint.a;
+            Vector2 bottom=center+Vector2.down*size*.27f,top=center+Vector2.up*size*.12f;
+            _meshTint=new Color(.18f,.07f,.08f,alpha);Line(mesh,bottom,top,size*.52f);Disc(mesh,bottom,size*.26f);Disc(mesh,top,size*.26f);
+            _meshTint=new Color(.72f,.24f,.22f,alpha);Line(mesh,bottom,top,size*.43f);Disc(mesh,bottom,size*.215f);Disc(mesh,top,size*.215f);
+            _meshTint=new Color(.94f,.47f,.36f,alpha);Line(mesh,bottom+Vector2.left*size*.11f,top+Vector2.left*size*.11f,size*.055f);
+            _meshTint=new Color(.8f,.69f,.48f,alpha);Line(mesh,center+size*new Vector2(-.26f,-.08f),center+size*new Vector2(.26f,-.08f),size*.10f);
+            _meshTint=new Color(.24f,.19f,.15f,alpha);Disc(mesh,center+size*new Vector2(0,-.08f),size*.055f);
+            _meshTint=new Color(.95f,.8f,.5f,alpha);RoundedStroke(mesh,new[]{new Vector2(0,.25f),new Vector2(.02f,.39f),new Vector2(.20f,.42f)},center,size,size*.045f);
+            Vector2 spark=center+size*new Vector2(.22f,.42f);
+            _meshTint=new Color(1f,.65f,.22f,alpha*.32f);Disc(mesh,spark,size*.13f);
+            _meshTint=new Color(1f,.82f,.38f,alpha);Disc(mesh,spark,size*.08f);
+            _meshTint=new Color(1f,.97f,.78f,alpha);Disc(mesh,spark,size*.035f);
         }
 
         private void RoundedStroke(VertexHelper mesh, Vector2[] points, Vector2 center, float size, float stroke)

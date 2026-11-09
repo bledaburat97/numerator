@@ -267,6 +267,7 @@ namespace Scripts
             var holder = _boardHolderControllerList[count-1].GetView().GetRectTransform();
             holder.localScale = Vector3.one*.15f;
             holder.DOScale(Vector3.one,.34f).SetEase(Ease.OutBack).SetLink(holder.gameObject);
+            _boardHolderControllerList[count-1].GetView().PlayGrowthSpark();
         }
 
         public void RemoveLastBoardHolder()

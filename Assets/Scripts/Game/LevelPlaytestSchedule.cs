@@ -36,6 +36,7 @@ namespace Scripts
                         || LevelMechanicRules.Normalize(step.Mechanic) != step.Mechanic
                         || (step.Mechanic == LevelMechanic.Split && step.NumOfBoardHolders < 4)
                         || (step.Mechanic == LevelMechanic.Growing && step.NumOfBoardHolders != GrowingBoardState.InitialCount)
+                        || (step.BonusReward.HasValue && !Enum.IsDefined(typeof(RewardType),step.BonusReward.Value))
                         || (step.TrialPowerUp.HasValue && !Enum.IsDefined(typeof(RewardType), step.TrialPowerUp.Value)))
                         throw new InvalidOperationException("Invalid step in level playtest cycle.");
                 return _settings;
@@ -68,7 +69,7 @@ namespace Scripts
             var original = Settings.Cycle[saved.PlaytestStep-1];
             return saved.NumOfBoardHolders == original.NumOfBoardHolders && saved.NumOfCards == original.NumOfCards
                 && saved.MaxNumOfTries == original.MaxNumOfTries && saved.Mechanic == original.Mechanic
-                && saved.TrialPowerUp == original.TrialPowerUp;
+                && saved.TrialPowerUp == original.TrialPowerUp && saved.BonusReward == original.BonusReward;
         }
 
         public static void PrepareTrialStock(ILevelTracker tracker, ILevelSaveDataManager saves, LevelData definition)

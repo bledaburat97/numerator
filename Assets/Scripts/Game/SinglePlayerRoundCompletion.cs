@@ -48,18 +48,22 @@ namespace Game
                 EnsureIdentity();
                 _round.GetActiveRewardCounts(out coins, out crystals);
                 var state=_checkpoint.GetLevelSaveData();
-                var award=_rewards.SinglePlayer(state.RoundId,state.LevelId,_target.GetTargetCardsList(),coins,crystals);
+                var bonus=state.Definition?.BonusReward;
+                if(bonus.HasValue)coins=crystals=0;
+                var award=bonus.HasValue?_rewards.Bonus(state.RoundId,state.LevelId,_target.GetTargetCardsList(),bonus.Value)
+                    :_rewards.SinglePlayer(state.RoundId,state.LevelId,_target.GetTargetCardsList(),coins,crystals);
                 previousCoins=award.PreviousCoins;previousProgress=award.PreviousCrystalProgress;
                 nextLevelNumber=award.NextLevelNumber;
                 // Match the reward preview when an old locked reward is normalized at an unlock boundary.
                 previousReward=PowerUpTypeUtility.IsUnlocked(award.PreviousReward,state.LevelId)?award.PreviousReward:PowerUpTypeUtility.NextReward(award.PreviousReward,state.LevelId);
-                if(!award.IsReplay)foreach(var type in award.PowerUps)GameTelemetry.Powerup(type,true,"crystal");
+                if(!award.IsReplay)foreach(var type in award.PowerUps)GameTelemetry.Powerup(type,true,bonus.HasValue?"bonus":"crystal");
             }
 
             _completed = new SinglePlayerRoundResult(won, _round.GetTriedCardsList().Count,
                 coins, crystals, previousCoins, previousProgress, previousReward, nextLevelNumber,
                 won?_achievements.ClosestFor(_target.GetTargetCardsList()):null,
-                won?_target.GetTargetCardsList():null);
+                won?_target.GetTargetCardsList():null,_checkpoint.GetLevelSaveData().Definition,
+                won?_checkpoint.GetLevelSaveData().Definition?.BonusReward:null);
             var saved=_saves.GetSavedLevel();
             if(saved==null || string.IsNullOrEmpty(saved.RoundId) || saved.RoundId==_checkpoint.GetLevelSaveData().RoundId)_saves.DeleteSave();
             return _completed;
@@ -78,10 +82,13 @@ namespace Game
         public int NextLevelNumber { get; }
         public AchievementStatus AchievementTarget {get;}
         public IReadOnlyList<int> EarnedFruits {get;}
+        public LevelData CurrentDefinition {get;}
+        public RewardType? DirectReward {get;}
 
         public SinglePlayerRoundResult(bool won, int guessCount, int earnedCoins, int earnedCrystals,
-            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null,IReadOnlyList<int> earnedFruits=null)
+            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null,IReadOnlyList<int> earnedFruits=null,LevelData currentDefinition=null,RewardType? directReward=null)
         {
+            CurrentDefinition=currentDefinition?.Copy();DirectReward=won?directReward:null;
             Won = won;
             GuessCount = guessCount;
             EarnedCoins = earnedCoins;

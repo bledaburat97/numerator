@@ -66,11 +66,12 @@ namespace Scripts
             EnableReview();
         }
 
-        public void RevealGuess(GuessEvaluation guess)
+        public void RevealGuess(GuessEvaluation guess,bool animate=false)
         {
             if (guess.Number <= 0 || guess.Number > _history.Count) return;
             _history[guess.Number - 1].hintStates = guess.States;
             _view.RefreshRow(guess.Number - 1);
+            if(animate)_view.PlayHintForRow(guess.Number-1);
             DetailsChanged?.Invoke(guess.Number - 1);
         }
 
@@ -122,6 +123,6 @@ namespace Scripts
         void RemoveResultBlocks();
         void EnableReview();
         void RevealAnswer(IReadOnlyList<int> answer);
-        void RevealGuess(GuessEvaluation guess);
+        void RevealGuess(GuessEvaluation guess,bool animate=false);
     }
 }

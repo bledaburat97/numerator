@@ -20,7 +20,8 @@ namespace Scripts
         private readonly List<int> _releasedIndexes = new List<int>();
         private readonly HashSet<int> _evidence = new HashSet<int>();
         private float _evidenceUntil;
-        private int _pendingFeedback=-1;
+        private int _pendingFeedback=-1,_pendingHint=-1;
+        public void PlayHintForRow(int index)=>_pendingHint=index;
         public void PlayFeedbackForRow(int index)=>_pendingFeedback=index;
         public IReadOnlyCollection<int> EvidenceRows => _evidence;
         public void FocusEvidence(IReadOnlyList<int> guessNumbers)
@@ -122,7 +123,7 @@ namespace Scripts
         private void OnEnable() => Listen();
         private void OnDisable()
         {
-            _pendingFeedback=-1;
+            _pendingFeedback=_pendingHint=-1;
             if (_listening && scrollRect != null) scrollRect.onValueChanged.RemoveListener(OnScroll);
             _listening = false;
         }
@@ -142,13 +143,14 @@ namespace Scripts
                 int index=_pendingFeedback;_pendingFeedback=-1;
                 GetVisibleRow(index)?.PlayFeedbackIntro();
             }
+            if(_pendingHint>=0){int index=_pendingHint;_pendingHint=-1;GetVisibleRow(index)?.PlayHintFeedback();}
         }
         public void HistoryChanged()
         {
             SetEmptyState(HistoryCount == 0);
             if (HistoryCount == 0)
             {
-                _pendingFeedback=-1;
+                _pendingFeedback=_pendingHint=-1;
                 ClearEvidence();
                 _scrollPending = false; scrollRect.StopMovement(); rectTransform.anchoredPosition = Vector2.zero;
             }
@@ -268,6 +270,7 @@ namespace Scripts
         void RefreshRow(int index);
         void RefreshVisibleRows();
         void SetScrollPositionToBottom();
+        void PlayHintForRow(int index);
         void PlayFeedbackForRow(int index);
         CanvasGroup GetCanvasGroup();
         float GetWidth();

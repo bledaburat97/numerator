@@ -41,6 +41,7 @@ namespace Game
                 _remainingGuessCount,
                 _triedCardsList.Count,
                 crystalTokenCount);
+            if(levelData.BonusReward.HasValue)_lifeBarRewardInfoList.Clear();
             if (levelSaveData.ActiveRewardTokens?.Count == _lifeBarRewardInfoList.Count)
                 for (int i = 0; i < _lifeBarRewardInfoList.Count; i++)
                     _lifeBarRewardInfoList[i].SetIsActive(levelSaveData.ActiveRewardTokens[i]);

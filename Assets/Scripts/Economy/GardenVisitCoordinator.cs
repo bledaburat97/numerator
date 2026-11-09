@@ -42,6 +42,7 @@ namespace Scripts.Economy
                 if(!result.HasProgress)return;
                 if(_pending==null)_pending=new GardenVisitNotice();
                 _pending.AdvancedBatches+=result.Changes.Count;
+                if(result.Changes.Count>0)_pending.ExampleGrowth=result.Changes[0];
                 foreach(var fruit in result.Harvested)
                 {
                     _pending.Harvested.TryGetValue(fruit.Key,out long previous);
@@ -56,6 +57,7 @@ namespace Scripts.Economy
     public sealed class GardenVisitNotice
     {
         public int AdvancedBatches;
+        public GardenBatchChange ExampleGrowth;
         public readonly Dictionary<FruitId,long> Harvested=new Dictionary<FruitId,long>();
     }
 }

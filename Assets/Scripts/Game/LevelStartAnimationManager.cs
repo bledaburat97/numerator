@@ -11,6 +11,7 @@ namespace Game
         private ILifeBarController _lifeBarController;
         private IInitialCardAreaController _initialCardAreaController;
         private IGameUIController _gameUIController;
+        [InjectOptional] private LevelEnvironmentView _environment;
 
         [Inject] 
         public LevelStartAnimationManager(IResultAreaController resultAreaController,
@@ -30,6 +31,7 @@ namespace Game
 
             return DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
                 .Append(FallBoxes(fallBoxesDuration))
+                .Insert(0,_environment!=null?_environment.PlayIntro():DOTween.Sequence())
                 .Append(FadeInTopAreaButtons(buttonsFadeInDuration))
                 .Join(FadeInLifeBar(buttonsFadeInDuration))
                 .Join(FadeInMiddleGameButtons(buttonsFadeInDuration))

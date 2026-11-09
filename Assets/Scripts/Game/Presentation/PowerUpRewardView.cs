@@ -49,6 +49,9 @@ namespace Scripts
             _burst = burst.GetComponent<RewardBurstGraphic>() ?? burst.gameObject.AddComponent<RewardBurstGraphic>();
             _burst.raycastTarget = false;
             _hero = FruitLabStyle.Detail(transform,"Reward",Color.white);
+            var quantity=FriendUi.Text(_hero.transform,"Quantity","×1",22);quantity.color=FruitLabStyle.Gold;
+            quantity.rectTransform.anchorMin=quantity.rectTransform.anchorMax=new Vector2(1,0);quantity.rectTransform.pivot=new Vector2(1,0);
+            quantity.rectTransform.anchoredPosition=new Vector2(6,-8);quantity.rectTransform.sizeDelta=new Vector2(42,28);
             _title = FriendUi.Text(transform,"Title","Güçlendirici kazandın!",26);
             _title.fontStyle = FontStyles.Bold; _title.color = FruitLabStyle.Gold;
             _inventory = FruitLabStyle.Detail(transform,"InventoryReward",Color.white);
@@ -74,10 +77,13 @@ namespace Scripts
             Center(_count.rectTransform,new Vector2(46,-size*.5f-70),new Vector2(88,42));
             Center((RectTransform)_claim.transform,new Vector2(0,-size*.5f-158),new Vector2(Mathf.Min(280,width-48),56));
         }
-        public void Bind(RewardType reward, int finalCount, Action claim)
+        public void Bind(RewardType reward, int finalCount, Action claim,bool bonus=false)
         {
             EnsureUi(); gameObject.SetActive(true); transform.SetAsLastSibling(); Layout();
             _finalCount = Mathf.Max(1,finalCount);
+            var accent=bonus?LevelIdentity.For(new LevelData {BonusReward=reward}).Accent:FruitLabStyle.Gold;
+            _title.color=accent;_burst.Accent=accent;_burst.SetVerticesDirty();
+            FruitLabStyle.Surface(_claim.GetComponent<Image>(),bonus?accent:FruitLabStyle.Mint);
             _group.alpha = 0; _group.blocksRaycasts = _group.interactable = true;
             _hero.rectTransform.localScale = Vector3.one*.35f;
             _burst.rectTransform.localScale = Vector3.one*.65f; _burst.rectTransform.localRotation = Quaternion.identity;

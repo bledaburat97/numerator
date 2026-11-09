@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using System.Collections.Generic;
 using System.Linq;
 using Scripts;
@@ -56,6 +57,7 @@ namespace Menu
             }
             ApplyLayout();
         }
+        private void OnDisable(){foreach(var row in _rows)row.StopAnimation();}
         private void LateUpdate(){if(((RectTransform)transform).rect.size!=_size)ApplyLayout();}
         private void OnRectTransformDimensionsChange()
         {if(_scroll!=null && gameObject.activeInHierarchy && ((RectTransform)transform).rect.size!=_size)ApplyLayout();}
@@ -77,6 +79,9 @@ namespace Menu
             private readonly Image _medal,_icon,_reward,_bar,_track;
             private readonly TMP_Text _name,_description,_progress,_status,_rewardLabel;
             private readonly FruitLabGlyph _check;
+            private bool _unlocked;
+            private Sequence _opening;
+            public void StopAnimation(){_opening?.Kill();_opening=null;_medal.rectTransform.localScale=_check.rectTransform.localScale=Vector3.one;}
             public Row(Transform parent,int index)
             {
                 Root=GardenUi.Rect(parent,"Badge"+index);FruitLabStyle.AddSurface(Root.gameObject,FruitLabStyle.Panel);
@@ -101,6 +106,14 @@ namespace Menu
                 _icon.color=item.Unlocked?Color.white:new Color(1,1,1,.55f);
                 _medal.color=item.Unlocked?new Color(.38f,.31f,.16f):FruitLabStyle.Tile;
                 _check.gameObject.SetActive(item.Unlocked);
+                if(item.Unlocked && !_unlocked)
+                {
+                    StopAnimation();
+                    _opening=DOTween.Sequence().AppendCallback(()=>_check.rectTransform.localScale=Vector3.zero)
+                        .Append(_check.rectTransform.DOScale(1,.24f).SetEase(Ease.OutBack))
+                        .Join(_medal.rectTransform.DOPunchScale(Vector3.one*.12f,.34f,3,.6f)).SetLink(Root.gameObject,LinkBehaviour.KillOnDisable);
+                }
+                _unlocked=item.Unlocked;
                 FruitLabStyle.SetIcon(_reward,PowerUpTypeUtility.IconName(item.Reward));
                 _rewardLabel.text=(item.RewardGranted?"Ödül eklendi: +":"Ödül: +")+item.RewardCount+" "+PowerUpTypeUtility.Name(item.Reward);
                 _bar.rectTransform.anchorMin=Vector2.zero;_bar.rectTransform.anchorMax=new Vector2((float)((decimal)item.Progress/item.Target),1);
