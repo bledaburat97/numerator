@@ -478,6 +478,7 @@ namespace Scripts
                 if (won) { _wins++; _expectedRewards[(int)_lastOutcome.Reward.Value]++; }
                 if(won)foreach(int fruit in _lastOutcome.Answer)_expectedFruits[fruit-1]++;
                 CheckCollectionTotals();
+                yield return AcknowledgeReward();
                 _rounds++;
                 var tracker = FindFirstObjectByType<LevelTracker>();
                 foreach (RewardType type in PowerUpTypeUtility.MultiplayerRewardTypes)
@@ -758,7 +759,19 @@ namespace Scripts
             Check(_completedOutcomes == round && PowerUpTypeUtility.MultiplayerRewardTypes.Sum(tracker.GetPowerUpCount) == _wins,
                 "Replayed finish packets cannot grant a second reward or show a second outcome");
             CheckCollectionTotals();
+            yield return AcknowledgeReward();
             _rounds++;
+        }
+        private IEnumerator AcknowledgeReward()
+        {
+            var view=FindFirstObjectByType<PowerUpRewardView>();
+            if(view==null)yield break;
+            yield return WaitFor(()=>view.ClaimButton.interactable,5,"The winner's central powerup presentation is ready");
+            var tracker=FindFirstObjectByType<LevelTracker>();
+            var stock=PowerUpTypeUtility.MultiplayerRewardTypes.Select(tracker.GetPowerUpCount).ToArray();
+            view.ClaimButton.onClick.Invoke();view.ClaimButton.onClick.Invoke();
+            yield return WaitFor(()=>!view.IsVisible,5,"Claim removes its modal blocker before rematch");
+            Check(stock.SequenceEqual(PowerUpTypeUtility.MultiplayerRewardTypes.Select(tracker.GetPowerUpCount)),"Double reward acknowledgement never duplicates inventory");
         }
         private void CheckCollectionTotals()
         {

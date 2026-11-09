@@ -107,6 +107,7 @@ namespace Scripts
                 }
             }
 
+            sequence.Append(_view.PlayRewardPreviewCompleted(simulatedRewardType,.22f));
             return sequence;
         }
 

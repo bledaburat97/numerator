@@ -222,7 +222,8 @@ namespace Scripts
         {
             DOTween.Sequence().AppendInterval(delayDuration)
                 .Append(_view.GetRectTransform().DOPunchScale(Vector3.one * 0.12f, colorChangeDuration, 5, 0.75f))
-                .AppendCallback(() => _hapticController.Vibrate(HapticType.Success));
+                .AppendCallback(() => _hapticController.Vibrate(HapticType.Success))
+                .SetLink(_view.GetRectTransform().gameObject,LinkBehaviour.KillOnDestroy);
         }
         
         public Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration)

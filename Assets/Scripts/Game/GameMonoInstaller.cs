@@ -20,6 +20,8 @@ namespace Scripts
         public override void InstallBindings()
         {
             Container.Bind<TutorialInputGate>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PowerUpRewardPresenter>().AsSingle()
+                .WithArguments(PowerUpRewardView.Ensure(canvas));
             Container.Bind<IBoardAreaView>().FromInstance(boardAreaView).AsSingle();
             Container.Bind<IInitialCardAreaView>().FromInstance(initialCardAreaView).AsSingle();
             Container.Bind<ISizeManager>().To<SizeManager>().AsSingle();

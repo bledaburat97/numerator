@@ -45,7 +45,7 @@ namespace Game
             float cardDismissDuration = 0.18f;
             float scalingUpDurationOfText = 0.22f;
             float buttonsFadeOutDuration = 0.16f;
-            return DOTween.Sequence()
+            var sequence = DOTween.Sequence()
                 .Append(_boardAnimationController.Play(cardDelayDuration, cardColorChangingDuration, ribbonImageDuration))
                 .Insert(0.1f, DOTween.Sequence()
                     .AppendCallback(() => _levelEndPopupController.SetPopupStatus(true))
@@ -62,8 +62,10 @@ namespace Game
                     rewardTypeBeforeCollection))
                 .Append(_cleanupAnimationController.FadeOutLifeBar(buttonsFadeOutDuration))
                 .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f))
-                .Insert(0.70f,_levelEndPopupController.ChangeFadeButtons(0.15f,1f))
                 .OnKill(_rewardCollectionAnimationController.Cancel);
+            if (!PowerUpRewardPresenter.EarnsReward(previousCrystalProgressCount,earnedCrystalCount))
+                sequence.Insert(.70f,_levelEndPopupController.ChangeFadeButtons(.15f,1f));
+            return sequence;
         }
     }
 

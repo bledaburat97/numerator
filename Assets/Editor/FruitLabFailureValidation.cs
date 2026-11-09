@@ -534,6 +534,7 @@ public static class FruitLabFailureValidation
     }
     private sealed class BombHolder : IBoardHolderView
     {
+        public Sequence PlayBombRemoval() => DOTween.Sequence().AppendInterval(.01f);
         public void ShowDynamite(DynamiteRoundState state) { }
         public readonly RectTransform Rect;
         public BombHolder(Transform parent) { Rect = new GameObject("BombHolder", typeof(RectTransform)).GetComponent<RectTransform>(); Rect.SetParent(parent, false); }

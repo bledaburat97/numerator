@@ -143,12 +143,13 @@ namespace Scripts
             _gainLabel.alpha = 1f; _guessLabel.alpha = 0f;
             _gainFeedback = DOTween.Sequence()
                 .Append(SetProgress(targetPercentage, .58f, null))
+                .Join(DOVirtual.Float(0,amount,.36f,value=>_gainLabel.text="+"+Mathf.Clamp(Mathf.CeilToInt(value),1,amount)))
                 .Join(image.DOColor(new Color(.86f, 1f, .94f), .14f).SetLoops(2, LoopType.Yoyo))
                 .Join(rectTransform.DOPunchScale(new Vector3(.025f, .10f, 0f), .55f, 5, .6f))
                 .Insert(0f, _gainGlow.DOFade(.85f, .12f))
                 .Insert(.12f, _gainGlow.DOFade(0f, .48f))
-                .Insert(.30f, _gainLabel.DOFade(0f, .26f))
-                .Insert(.30f, _guessLabel.DOFade(1f, .26f))
+                .Insert(.40f, _gainLabel.DOFade(0f, .18f))
+                .Insert(.40f, _guessLabel.DOFade(1f, .18f))
                 .OnKill(RestoreGainAppearance)
                 .OnComplete(RestoreGainAppearance)
                 .SetLink(gameObject, LinkBehaviour.KillOnDestroy);

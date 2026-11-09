@@ -174,7 +174,11 @@ namespace Scripts
         private void UpdateCountLabel()
         {
             int capacity = Mathf.Max(1, ConstantValues.NUM_OF_STARS_FOR_WILD);
-            if (_countLabel != null) _countLabel.text = Mathf.RoundToInt(_currentPercentage * capacity) + " / " + capacity;
+            if (_countLabel != null)
+            {
+                string value=Mathf.RoundToInt(_currentPercentage*capacity)+" / "+capacity;
+                if(_countLabel.text!=value)_countLabel.text=value;
+            }
         }
         private RectTransform _presentedRewardPreview;
         private Transform _presentedRewardOriginalParent;
@@ -228,6 +232,9 @@ namespace Scripts
 
         public void InitProgress(float targetPercentage)
         {
+            if(rectTransform!=null)rectTransform.localScale=Vector3.one;
+            var sweep=progressImage!=null?progressImage.transform.Find("CompletionSweep")?.GetComponent<Image>():null;
+            if(sweep!=null){var tint=sweep.color;tint.a=0;sweep.color=tint;}
             _currentPercentage = Mathf.Clamp01(targetPercentage);
             if (progressImage == null) return;
 
@@ -265,17 +272,19 @@ namespace Scripts
 
         public Sequence PlayCompletedFeedback(float duration)
         {
-            if (rectTransform == null) return DOTween.Sequence();
-
-            Sequence sequence = DOTween.Sequence()
-                .Append(rectTransform.DOPunchScale(Vector3.one * 0.12f, duration, 6, 0.75f));
-
-            if (completedParticle != null)
-            {
-                sequence.InsertCallback(0f, completedParticle.Play);
-            }
-
-            return sequence;
+            if (rectTransform == null || progressImage == null) return DOTween.Sequence();
+            var sweep=FruitLabStyle.Detail(progressImage.transform,"CompletionSweep",new Color(1,1,1,0));
+            sweep.rectTransform.anchorMin=sweep.rectTransform.anchorMax=sweep.rectTransform.pivot=Vector2.one*.5f;
+            sweep.rectTransform.sizeDelta=new Vector2(14,Mathf.Max(8,progressImage.rectTransform.rect.height));
+            float half=progressImage.rectTransform.rect.width*.5f;
+            return DOTween.Sequence().AppendCallback(()=>{
+                    sweep.rectTransform.anchoredPosition=new Vector2(-half,0);sweep.color=new Color(1,1,1,0);
+                    if(completedParticle!=null)completedParticle.Play();
+                })
+                .Append(sweep.rectTransform.DOAnchorPosX(half,duration).SetEase(Ease.InOutSine))
+                .Insert(0,sweep.DOFade(.85f,duration*.35f))
+                .Insert(duration*.35f,sweep.DOFade(0,duration*.65f))
+                .SetLink(gameObject,LinkBehaviour.KillOnDestroy);
         }
 
         public Sequence PlayRewardPreviewCompleted(RewardType rewardType, float duration)
@@ -284,9 +293,8 @@ namespace Scripts
             if (rewardPreviewRectTransform == null) return DOTween.Sequence();
 
             return DOTween.Sequence()
-                .AppendCallback(() => rewardPreviewRectTransform.localScale = Vector3.zero)
-                .Append(rewardPreviewRectTransform.DOScale(Vector3.one * 1.1f, duration * 0.6f).SetEase(Ease.OutBack))
-                .Append(rewardPreviewRectTransform.DOScale(Vector3.one, duration * 0.4f).SetEase(Ease.OutQuad));
+                .Append(rewardPreviewRectTransform.DOPunchScale(Vector3.one*.12f,duration,3,.6f))
+                .SetLink(gameObject,LinkBehaviour.KillOnDestroy);
         }
 
         public Sequence PresentRewardPreviewAtCenter(RewardType rewardType, float duration)
@@ -294,7 +302,7 @@ namespace Scripts
             RectTransform rewardPreviewRectTransform = GetRewardPreviewButtonRectTransform(rewardType);
             RectTransform presentationParent = GetPresentationParent();
             if (rewardPreviewRectTransform == null || presentationParent == null) return DOTween.Sequence();
-            float presentationSize = Mathf.Min(76f, Mathf.Min(presentationParent.rect.width, presentationParent.rect.height));
+            float presentationSize = Mathf.Clamp(presentationParent.rect.width/3f,100f,152f);
 
             return DOTween.Sequence()
                 .AppendCallback(() =>
@@ -431,6 +439,7 @@ namespace Scripts
             if (buttonView == null) return;
 
             buttonView.SetButtonStatus(status);
+            buttonView.GetButtonRectTransform().localScale=Vector3.one;
         }
     }
 

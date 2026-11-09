@@ -86,6 +86,10 @@ namespace Scripts
         private bool _multiplayerMode;
         public bool IsMultiplayer => _multiplayerMode;
         private PlayerAvatarView _turnAvatar;
+        private Sequence _turnFeedback,_timerFeedback;
+        private bool _localTurn;
+        private string _lastTurnStatus;
+        private int _lastTimerPulse=-1;
         public void SetMultiplayerAvatar(int avatar)
         {
             EnsureMultiplayerHud();
@@ -106,8 +110,21 @@ namespace Scripts
         }
         public void SetMultiplayerTurn(string value, bool timed, bool localTurn)
         {
+            bool changed=_lastTurnStatus!=value || _localTurn!=localTurn;
+            _lastTurnStatus=value;_localTurn=localTurn;
             SetMultiplayerStatus(value);
             _turnLabel.color = !timed ? FruitLabStyle.Muted : localTurn ? FruitLabStyle.LocalPlayer : FruitLabStyle.OpponentPlayer;
+            if(changed && timed)
+            {
+                _turnFeedback?.Kill();_turnLabel.rectTransform.localScale=Vector3.one;
+                _turnFeedback=DOTween.Sequence().Append(_turnLabel.rectTransform.DOPunchScale(Vector3.one*.065f,.28f,3,.6f));
+                if(_turnAvatar!=null)
+                {
+                    _turnAvatar.transform.localScale=Vector3.one;
+                    _turnFeedback.Join(_turnAvatar.transform.DOPunchScale(Vector3.one*.13f,.28f,3,.6f));
+                }
+                _turnFeedback.SetLink(gameObject,LinkBehaviour.KillOnDisable);
+            }
         }
         public void SetMultiplayerTimer(int seconds, bool visible)
         {
@@ -115,6 +132,16 @@ namespace Scripts
             _timeLabel.text = visible ? seconds + " sn" : "";
             _timeLabel.color = visible && seconds <= 10 ? FruitLabStyle.OpponentPlayer : FruitLabStyle.Text;
             if (_timerChip.gameObject.activeSelf != visible) _timerChip.gameObject.SetActive(visible);
+            if(!visible || !_localTurn || seconds>5 || seconds<=0)
+            {
+                _timerFeedback?.Kill();_timerChip.localScale=Vector3.one;_lastTimerPulse=-1;
+            }
+            else if(_lastTimerPulse!=seconds)
+            {
+                _lastTimerPulse=seconds;_timerFeedback?.Kill();_timerChip.localScale=Vector3.one;
+                _timerFeedback=DOTween.Sequence().Append(_timerChip.DOPunchScale(Vector3.one*.07f,.22f,2,.5f))
+                    .SetLink(gameObject,LinkBehaviour.KillOnDisable);
+            }
         }
         private void EnsureMultiplayerHud()
         {

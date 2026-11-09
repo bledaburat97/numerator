@@ -96,14 +96,7 @@ namespace Scripts
                 return _levelEndPopupController.ChangeFadeButtons(buttonFadeDuration, 1f);
             }
 
-            RewardType completedRewardType = _completedRewardType;
-            // The award was already committed. Present it briefly without requiring
-            // a claim tap or taking away the already-visible continuation buttons.
-            return DOTween.Sequence()
-                .Append(_verticalCrystalProgressController.PresentCompletedReward(completedRewardType,0.24f))
-                .AppendInterval(0.12f)
-                .Append(_verticalCrystalProgressController.HidePresentedReward(0.16f))
-                .AppendCallback(()=>_verticalCrystalProgressController.Refresh());
+            return DOTween.Sequence().AppendCallback(()=>_levelEndPopupController.PresentPowerUpReward(_completedRewardType));
         }
 
         private Sequence AnimateCoinsToCounter(

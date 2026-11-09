@@ -166,7 +166,7 @@ namespace Scripts
             {
                 float crystalHeight = height - (hasFruits?(hasTarget?146f:124f):hasTarget?120f:104f);
                 FruitLabStyle.Place(verticalCrystalProgressView.GetRectTransform(), rewardDetails, 12f, hasFruits?56f:44f, width - 24f, Mathf.Max(hasFruits?24f:28f, crystalHeight));
-                verticalCrystalProgressView.SetPresentationTarget(stage);
+                verticalCrystalProgressView.SetPresentationTarget((RectTransform)GetComponentInParent<Canvas>().rootCanvas.transform);
                 verticalCrystalProgressView.ApplyLabStyle();
                 verticalCrystalProgressView.SetStatus(_success && !_multiplayer && _hasCrystalReward);
             }
@@ -205,7 +205,9 @@ namespace Scripts
         public Sequence FadeButton(LevelFinishButtonType type, float duration, float alpha)
         {
             var group = GetButton(type)?.GetCanvasGroup();
-            return group == null ? DOTween.Sequence() : DOTween.Sequence().Append(group.DOFade(alpha, duration)).SetLink(gameObject);
+            if(group==null)return DOTween.Sequence();
+            return DOTween.Sequence().AppendCallback(()=>group.interactable=group.blocksRaycasts=alpha>.01f)
+                .Append(group.DOFade(alpha,duration)).SetLink(gameObject);
         }
         public Sequence FadeButtons(float duration, float alpha) => DOTween.Sequence()
             .Join(FadeButton(LevelFinishButtonType.Game, duration, alpha))

@@ -115,6 +115,25 @@ namespace Scripts
             return rectTransform;
         }
         
+        public Sequence PlayBombRemoval()
+        {
+            var ghost=new GameObject("BombRemoval",typeof(RectTransform),typeof(CanvasGroup)).GetComponent<RectTransform>();
+            ghost.SetParent(rectTransform.parent,false);ghost.sizeDelta=rectTransform.rect.size;
+            ghost.position=rectTransform.position;
+            ghost.SetParent(GetComponentInParent<Canvas>().rootCanvas.transform,true);ghost.SetAsLastSibling();
+            var group=ghost.GetComponent<CanvasGroup>();group.interactable=group.blocksRaycasts=false;
+            var surface=FruitLabStyle.AddSurface(ghost.gameObject,FruitLabStyle.Panel);
+            FruitLabStyle.Rim(ghost);
+            var icon=FruitLabStyle.Detail(ghost,"Bomb",Color.white);FruitLabStyle.SetIcon(icon,"Bomb");FruitLabStyle.Stretch(icon.rectTransform,10);
+            Vector3 scale=ghost.localScale;
+            return DOTween.Sequence().Append(ghost.DOScale(scale*1.12f,.09f).SetEase(Ease.OutQuad))
+                .Join(surface.DOColor(FruitLabStyle.Pink,.09f))
+                .Append(ghost.DOScale(scale*.25f,.22f).SetEase(Ease.InBack))
+                .Join(group.DOFade(0,.22f))
+                .OnKill(()=>{if(ghost!=null)TutorialObjectUtility.Destroy(ghost.gameObject);})
+                .SetLink(ghost.gameObject,LinkBehaviour.KillOnDestroy);
+        }
+
         public void DestroyObject()
         {
             if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
@@ -250,6 +269,7 @@ namespace Scripts
         void SetupTutorialMode();
         void CleanupTutorialMode();
         RectTransform GetGardenRectTransform();
+        Sequence PlayBombRemoval();
         Sequence PlaySuccessFrameAnimation(float delayDuration);
         void SetSuccessFrameStatus(bool status);
     }

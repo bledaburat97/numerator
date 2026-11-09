@@ -256,6 +256,8 @@ namespace Scripts
             if (playSuccessAnimation)
             {
                 _boardAreaController.PlaySuccessFrameAnimation(boardHolderIndex);
+                if(TryGetCardItem(cardIndex,out var revealed))
+                    revealed.GetCardViewHandler().AnimateTurnIntoCertain(0,.28f,.16f);
             }
             else
             {

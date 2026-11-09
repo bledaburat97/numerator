@@ -17,6 +17,7 @@ namespace Scripts
         private readonly List<IBoardCardHolderController> _boardHolderControllerList;
         private List<IBoardCardHolderController> _shinyBoardCardHolderControllers;
         [InjectOptional] private BoardSplitService _split;
+        private Sequence _bombFeedback;
 
         public event EventHandler<int> BoardHolderClickedEvent;
 
@@ -141,6 +142,7 @@ namespace Scripts
 
         public void ClearBoardHolders()
         {
+            _bombFeedback?.Kill();_bombFeedback=null;
             if (_view is BoardAreaView view) view.ShowSplitGroups(null,null);
             if (_boardHolderControllerList.Count > 0)
             {
@@ -280,6 +282,7 @@ namespace Scripts
             int lastIndex = _boardHolderControllerList.Count - 1;
             IBoardCardHolderController boardHolderController = _boardHolderControllerList[lastIndex];
             _boardHolderControllerList.RemoveAt(lastIndex);
+            _bombFeedback?.Kill();_bombFeedback=boardHolderController.GetView().PlayBombRemoval();
             boardHolderController.DestroyObject();
             _boardLayoutManager.Initialize(_boardHolderCountManager.GetBoardHolderCount());
             for (int i = 0; i < _boardHolderControllerList.Count; i++)

@@ -74,7 +74,7 @@ namespace Game
                 _hud.SetMultiplayerAvatar(_multiplayer.GetPlayerAvatar(state.CurrentPlayer));
             _hud.SetMultiplayerTurn(status, state.Deadline,
                 state.Phase == MultiplayerPhase.Playing && state.CurrentPlayer == _multiplayer.LocalPlayerId);
-            if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0)
+            if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0 && !_levelEndPopupController.IsRewardPresentationActive)
             {
                 _levelEndPopupController.InitButton(LevelFinishButtonType.Game, _multiplayer.LocalRematchRequested ? "Oyuncular bekleniyor…" : "Teklifi kabul et",
                     _multiplayer.LocalRematchRequested ? (Action)(() => { }) : _multiplayer.RequestRematch);
@@ -92,7 +92,10 @@ namespace Game
                 _levelEndPopupController.InitButton(LevelFinishButtonType.Game, "Tekrar oyna", _multiplayer.RequestRematch);
             _levelEndPopupController.SetPopupStatus(true);
             if (_multiplayer.State.Phase == MultiplayerPhase.Disconnected) ShowDisconnected();
-            _levelEndPopupController.ScaleUpText(.2f); _levelEndPopupController.ChangeFadeButtons(.2f, 1);
+            _levelEndPopupController.ScaleUpText(.2f);
+            if(won && outcome.Reward.HasValue && !outcome.Disconnected)
+                _levelEndPopupController.PresentPowerUpReward(outcome.Reward.Value);
+            else _levelEndPopupController.ChangeFadeButtons(.2f, 1);
         }
         public void ShowDisconnected() => _result.SetMultiplayerOpponentLeft(_multiplayer.DisconnectMessage);
     }

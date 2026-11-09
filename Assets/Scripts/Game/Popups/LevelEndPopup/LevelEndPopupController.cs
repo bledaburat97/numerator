@@ -9,6 +9,17 @@ namespace Game
     public class LevelEndPopupController : ILevelEndPopupController, IMultiplayerResultPresentation
     {
         private LevelFinishPopupView _view;
+        [InjectOptional] private PowerUpRewardPresenter _rewardPresentation;
+        public bool IsRewardPresentationActive => _rewardPresentation?.IsPresenting == true;
+        public void PresentPowerUpReward(RewardType reward)
+        {
+            if (_rewardPresentation == null) { ChangeFadeButtons(.15f,1); return; }
+            ChangeFadeButtons(0,0).Complete(true);
+            _rewardPresentation.Present(reward,()=>ChangeFadeButtons(.15f,1));
+        }
+        public void AfterRewardPresentation(Action action)
+        { if(_rewardPresentation!=null)_rewardPresentation.AfterClose(action);else action?.Invoke(); }
+
 
         [Inject]
         public LevelEndPopupController(LevelFinishPopupView view)
@@ -18,6 +29,7 @@ namespace Game
 
         public void SetAllStatusFalse()
         {
+            _rewardPresentation?.Cancel();
             _view.ResetTitle(); _view.ResetRewardProgress();
 
             SetButtonStatus(LevelFinishButtonType.Game, false);
@@ -117,6 +129,9 @@ namespace Game
 
     public interface ILevelEndPopupController
     {
+        bool IsRewardPresentationActive { get; }
+        void PresentPowerUpReward(RewardType reward);
+        void AfterRewardPresentation(Action action);
         void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);
         void SetOutcome(bool success, int earnedCrystalCount = 0);

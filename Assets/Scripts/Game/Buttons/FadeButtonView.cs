@@ -17,6 +17,7 @@ namespace Scripts
         public void SetAlpha(float alpha)
         {
             canvasGroup.alpha = alpha;
+            canvasGroup.interactable = canvasGroup.blocksRaycasts = alpha > .01f;
         }
 
         public CanvasGroup GetCanvasGroup()

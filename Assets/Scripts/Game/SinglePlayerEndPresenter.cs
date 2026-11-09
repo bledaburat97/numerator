@@ -76,7 +76,7 @@ namespace Game
             _ending.OnComplete(() =>
             {
                 if (!_disposed && generation == _generation)
-                    _popups.ShowRewardTutorials(result.EarnedCoins, result.EarnedCrystals);
+                    _popup.AfterRewardPresentation(()=>{ if(!_disposed && generation==_generation)_popups.ShowRewardTutorials(result.EarnedCoins, result.EarnedCrystals); });
             });
         }
 

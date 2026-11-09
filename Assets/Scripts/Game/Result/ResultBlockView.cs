@@ -29,20 +29,23 @@ namespace Scripts
             StopFeedbackIntro();
             _feedbackIntro=DOTween.Sequence().SetLink(gameObject,LinkBehaviour.KillOnDisable);
             if(IsSplit)foreach(var group in _groupViews)group.JoinIntro(_feedbackIntro);
-            else {JoinCountIntro(_feedbackIntro,_correctCount,FruitLabStyle.Mint);JoinCountIntro(_feedbackIntro,_misplacedCount,FruitLabStyle.Gold);}
+            else {JoinCountIntro(_feedbackIntro,_correctCount,_correctIcon,FruitLabStyle.Mint,0);JoinCountIntro(_feedbackIntro,_misplacedCount,_misplacedIcon,FruitLabStyle.Gold,.12f);}
         }
-        private static void JoinCountIntro(Sequence sequence,TMP_Text label,Color color)
+        private static void JoinCountIntro(Sequence sequence,TMP_Text label,Graphic icon,Color color,float delay)
         {
             if(label==null)return;
-            sequence.Insert(0,label.rectTransform.DOScale(1.10f,.12f).SetEase(Ease.OutQuad));
-            sequence.Insert(0,label.DOColor(color,.12f));
-            sequence.Insert(.12f,label.rectTransform.DOScale(1f,.18f).SetEase(Ease.OutQuad));
-            sequence.Insert(.12f,label.DOColor(FruitLabStyle.Text,.18f));
+            label.alpha=0;
+            if(icon!=null){var tint=icon.color;tint.a=0;icon.color=tint;sequence.Insert(delay,icon.DOFade(1,.10f));}
+            sequence.Insert(delay,label.rectTransform.DOScale(1.10f,.09f).SetEase(Ease.OutQuad));
+            sequence.Insert(delay,label.DOColor(color,.09f));
+            sequence.Insert(delay+.09f,label.rectTransform.DOScale(1f,.13f).SetEase(Ease.OutQuad));
+            sequence.Insert(delay+.09f,label.DOColor(FruitLabStyle.Text,.13f));
         }
+        private static void ResetIcon(Graphic icon){if(icon!=null){var tint=icon.color;tint.a=1;icon.color=tint;}}
         private void StopFeedbackIntro()
         {
             _feedbackIntro?.Kill();_feedbackIntro=null;
-            ResetCount(_correctCount);ResetCount(_misplacedCount);
+            ResetCount(_correctCount);ResetCount(_misplacedCount);ResetIcon(_correctIcon);ResetIcon(_misplacedIcon);
             if(_groupViews!=null)foreach(var group in _groupViews)group.ResetIntro();
         }
         private static void ResetCount(TMP_Text label){if(label!=null){label.rectTransform.localScale=Vector3.one;label.color=FruitLabStyle.Text;}}
@@ -285,8 +288,8 @@ namespace Scripts
             public void SetActive(bool active) => _panel.gameObject.SetActive(active);
             public void Display(GuessGroupFeedback result)
             { _correctCount.text = result.Correct.ToString(); _misplacedCount.text = result.Misplaced.ToString(); }
-            public void JoinIntro(Sequence sequence){JoinCountIntro(sequence,_correctCount,FruitLabStyle.Mint);JoinCountIntro(sequence,_misplacedCount,FruitLabStyle.Gold);}
-            public void ResetIntro(){ResetCount(_correctCount);ResetCount(_misplacedCount);}
+            public void JoinIntro(Sequence sequence){JoinCountIntro(sequence,_correctCount,_correct,FruitLabStyle.Mint,0);JoinCountIntro(sequence,_misplacedCount,_misplaced,FruitLabStyle.Gold,.12f);}
+            public void ResetIntro(){ResetCount(_correctCount);ResetCount(_misplacedCount);ResetIcon(_correct);ResetIcon(_misplaced);}
             public void Resize(float x,float width,float height)
             {
                 FruitLabStyle.Place(_panel.rectTransform,_panel.transform.parent,x,0f,width,height);
