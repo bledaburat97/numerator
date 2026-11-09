@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Netcode;
 using Zenject;
 
@@ -40,6 +40,7 @@ namespace Scripts
 
         private void UpdatePlayers()
         {
+            _view.SetParticipantCount(MultiplayerManager.Instance.PlayerCount);
             for (int playerIndex = 0; playerIndex < MultiplayerManager.MAX_NUM_OF_USERS; playerIndex++)
             {
                 if (MultiplayerManager.Instance.IsPlayerIndexConnected(playerIndex))
@@ -61,6 +62,7 @@ namespace Scripts
                     _playerNameViewList[playerIndex].SetRole(playerData.clientId == NetworkManager.ServerClientId,
                         playerData.clientId == NetworkManager.Singleton.LocalClientId,
                         NetworkManager.Singleton.IsServer && playerData.clientId != NetworkManager.ServerClientId);
+                    _playerNameViewList[playerIndex].SetAvatar(playerData.avatar);
                     _playerNameViewList[playerIndex].SetReadyStatus(_userReady.IsPlayerReady(playerData.clientId));
                     string name = playerData.playerName.ToString();
                     _playerNameViewList[playerIndex].SetPlayerName(string.IsNullOrWhiteSpace(name) ? "Bağlanıyor…" : name);

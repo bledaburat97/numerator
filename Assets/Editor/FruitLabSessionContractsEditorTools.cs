@@ -387,6 +387,7 @@ public static partial class FruitLabTutorialEditorTools
     }
     private sealed class ContractMultiplayerHud : IMultiplayerHudPresentation
     {
+        public void SetMultiplayerAvatar(int avatar) { }
         public string Text;public double Deadline;public bool LocalTurn;
         public void SetMultiplayerStatus(string text,double deadline){Text=text;Deadline=deadline;}
         public void SetMultiplayerTurn(string text,double deadline,bool localTurn){Text=text;Deadline=deadline;LocalTurn=localTurn;}
@@ -404,6 +405,7 @@ public static partial class FruitLabTutorialEditorTools
         public ulong LocalPlayerId=>1;public double ServerTime=>0;public MultiplayerPublicState State=>PublicState;
         public bool IsLocalTurn=>State.Phase==MultiplayerPhase.Playing && State.CurrentPlayer==LocalPlayerId;
         public bool LocalRematchRequested=>false;public string StatusNotice=>"";public string DisconnectMessage=>"Kurucu ayrıldı";
+        public int GetPlayerAvatar(ulong player) => 0;
         public string GetPlayerName(ulong player)=>"Oyuncu "+player;
         public void Initialize(){}public void BoardReady(int round){}public void SubmitGuess(int[] cards){}public void RequestRematch(){}public void Stop(){}
         public event EventHandler<int> RoundPreparing {add{} remove{}}

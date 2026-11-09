@@ -55,12 +55,14 @@ public static class FruitLabMultiplayerEditorTools
         }
         return "Explicit URP compatibility enabled for Standalone, Android and iOS";
     }
-    public static string Bake()
+    public static string Bake(bool invitationsOnly = false)
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) throw new Exception("Stop Play mode before the multiplayer bake");
         string backup = Folder + "/MultiplayerBackups/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"); Directory.CreateDirectory(backup);
         const string rowPath = "Assets/Prefabs/ResultBlock.prefab";
         File.Copy(rowPath, backup + "/ResultBlock.prefab", true);
+        if (!invitationsOnly)
+        {
         var rowRoot = PrefabUtility.LoadPrefabContents(rowPath);
         try
         {
@@ -73,7 +75,8 @@ public static class FruitLabMultiplayerEditorTools
             PrefabUtility.SaveAsPrefabAsset(rowRoot, rowPath);
         }
         finally { PrefabUtility.UnloadPrefabContents(rowRoot); }
-        foreach (string name in new[] { "Menu", "Lobby", "WaitingScene", "Game" })
+        }
+        foreach (string name in invitationsOnly ? new[] { "Lobby", "WaitingScene" } : new[] { "Menu", "Lobby", "WaitingScene", "Game" })
         {
             string path = "Assets/Scenes/" + name + ".unity"; File.Copy(path, backup + "/" + name + ".unity", true);
             var scene = SceneManager.GetSceneByPath(path); bool opened = !scene.isLoaded;
@@ -102,7 +105,9 @@ public static class FruitLabMultiplayerEditorTools
                     if (name == "Lobby")
                     {
                         var view = Find<LobbyUIView>(scene);
-                        view.GetCreateLobbyButton().SetText("Oyun Oluştur"); view.GetJoinWithCodeButton().SetText("Oyuna Katıl"); view.HideDialogs();
+                        view.GetCreateLobbyButton().SetText("Davet et"); view.GetJoinWithCodeButton().SetText("Kodla katıl"); view.HideDialogs();
+                        var obsolete = view.transform.Find("EntryDialogs/CreateGamePopup");
+                        if (obsolete != null) Object.DestroyImmediate(obsolete.gameObject);
                     }
                     else
                     {
@@ -121,7 +126,7 @@ public static class FruitLabMultiplayerEditorTools
             }
             finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
         }
-        return "Saved Menu, Lobby, WaitingScene and Game network identities; backup=" + backup;
+        return (invitationsOnly ? "Saved Lobby and WaitingScene; backup=" : "Saved Menu, Lobby, WaitingScene and Game network identities; backup=") + backup;
     }
     public static void Review(Canvas canvas, Camera camera)
     {
@@ -320,6 +325,7 @@ public static class FruitLabMultiplayerEditorTools
             var canvas = clone.GetComponent<Canvas>(); canvas.renderMode = RenderMode.WorldSpace;
             var rect = (RectTransform)clone.transform; rect.localScale = Vector3.one; rect.position = Vector3.zero; rect.sizeDelta = new Vector2(375, phoneHeight);
             clone.GetComponent<FruitLabOnlineLayout>().ApplyLayout();
+            clone.GetComponentInChildren<LobbyUIView>(true)?.ConfigureProfile("Elif", 1, (_, __) => { });
             var popup = clone.GetComponentInChildren<LobbyMessagePopupView>(true); if (popup != null) popup.gameObject.SetActive(false);
             foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
             var root = new GameObject("OnlineCapture", typeof(Camera)); SceneManager.MoveGameObjectToScene(root, scene);
@@ -333,11 +339,12 @@ public static class FruitLabMultiplayerEditorTools
                 var names = clone.GetComponentInChildren<PlayerNameAreaView>(true);
                 for (int i = 0; i < MultiplayerRules.MaxPlayers; i++)
                 {
-                    var row = (PlayerNameView)names.CreatePlayerNameView(); row.Init(i, _ => { });
+                    names.SetParticipantCount(4);
+                    var row = (PlayerNameView)names.CreatePlayerNameView(); row.Init(i, _ => { }); row.SetAvatar(i);
                     row.SetPlayerName("Oyuncu " + (i + 1)); row.SetRole(i == 0, i == 0, i > 0); row.SetReadyStatus(i != 3);
                 }
                 clone.GetComponentInChildren<WaitingSceneUIView>(true).SetStartAvailability(true, false);
-                clone.GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Tüm oyuncuların hazır olması bekleniyor.");
+                clone.GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Hazır olduğunda işaretle.");
             }
             Canvas.ForceUpdateCanvases();
             foreach (var button in clone.GetComponentsInChildren<BaseButtonView>())
@@ -359,19 +366,32 @@ public static class FruitLabMultiplayerEditorTools
             }
             foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
             Capture(camera, Folder + "/preview-multiplayer-" + name.ToLowerInvariant() + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
+            if (name == "WaitingScene")
+            {
+                var names = clone.GetComponentInChildren<PlayerNameAreaView>();
+                foreach (var row in names.GetComponentsInChildren<PlayerNameView>().Where(row => row.DisplayedName != "Oyuncu 1")) Object.DestroyImmediate(row.gameObject);
+                names.SetParticipantCount(1);
+                clone.GetComponentInChildren<WaitingSceneUIView>().SetStatus("Arkadaşın bekleniyor…");
+                foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
+                Capture(camera, Folder + "/preview-multiplayer-waiting-friend" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
+            }
             if (name == "Lobby")
             {
                 var view = clone.GetComponentInChildren<LobbyUIView>(true);
-                Require(view.NameInput.transform.parent.name == "ProfileSection" && ((Component)view.GetCreateLobbyButton()).transform.parent.name == "GameSection",
-                    "Profile input and game actions belong to separate panels");
-                Require(view.NameInput.placeholder.gameObject.activeInHierarchy && view.NameInput.placeholder.enabled,
-                    "An empty name shows its placeholder");
-                Require(!view.CreatePopup.gameObject.activeSelf && !view.JoinPopup.gameObject.activeSelf, "Entry dialogs start closed");
-                view.ShowCreateOptions();
-                Require(view.CreatePopup.gameObject.activeInHierarchy && !view.JoinPopup.gameObject.activeSelf, "Create shows a separate difficulty dialog");
-                Capture(camera, Folder + "/preview-multiplayer-lobby-create" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
+                Require(!((Component)view.GetQuickJoinButton()).gameObject.activeSelf, "Unimplemented quick play is hidden");
+                Require(view.transform.Find("ProfileSection/EditProfile/Avatar") != null, "Persistent profile opens from avatar card");
+                Require(Enumerable.Range(0, 3).All(i => ((Component)view.GetDifficultyButton(i)).gameObject.activeInHierarchy), "Difficulty is selected without an extra confirmation");
+                Require(!view.JoinPopup.gameObject.activeSelf, "Entry dialogs start closed");
+                view.ConfigureProfile("Elif", 1, (_, __) => { }); view.OpenProfile();
+                foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
+                Capture(camera, Folder + "/preview-multiplayer-profile" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
+                clone.transform.Find("FriendProfileOverlay").gameObject.SetActive(false);
+                view.ShowInvitation(new FriendInvitePreview(new FriendInvitation(FriendInvitation.NewToken("123456")), "Elif", 1, Difficulty.Easy), null, false);
+                foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
+                Capture(camera, Folder + "/preview-multiplayer-invitation" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
+                view.HideInvitation();
                 view.ShowJoinCodeInput();
-                Require(view.JoinPopup.gameObject.activeInHierarchy && !view.CreatePopup.gameObject.activeSelf, "Join shows a separate code dialog");
+                Require(view.JoinPopup.gameObject.activeInHierarchy, "Join shows a separate code dialog");
                 view.SetJoinError("Giriş yapılamadı, kodu tekrar deneyiniz.");
                 Capture(camera, Folder + "/preview-multiplayer-lobby-join" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
             }

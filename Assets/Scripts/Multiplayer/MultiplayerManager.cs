@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using UnityEngine;
@@ -22,7 +22,17 @@ namespace Scripts
             int index = GetPlayerDataIndexFromClientId(clientId);
             return index < 0 ? "Oyuncu" : _playerDataNetworkList[index].playerName.ToString();
         }
-        private const string PLAYER_NAME_KEY = "player_name_multiplayer";
+        public int LocalAvatar
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (MultiplayerNetworkProbe.IsRunning) return MultiplayerNetworkProbe.LocalAvatar;
+#endif
+                return PlayerIdentityStore.Current.avatar;
+            }
+        }
+        public int GetPlayerAvatar(ulong id) { int index = GetPlayerDataIndexFromClientId(id); return index < 0 ? 0 : _playerDataNetworkList[index].avatar; }
         public event EventHandler OnTryingToJoinGame;
         public event EventHandler OnFailedToJoinGame;
         public event EventHandler OnPlayerDataNetworkListChanged;
@@ -36,7 +46,8 @@ namespace Scripts
             if (MultiplayerNetworkProbe.IsRunning) _playerName = MultiplayerNetworkProbe.LocalPlayerName;
             else
 #endif
-            _playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY, "");
+            _playerName = PlayerIdentityStore.Current.name;
+            PlayerIdentityStore.Changed += IdentityChanged;
             DontDestroyOnLoad(gameObject);
             
             _playerDataNetworkList = new NetworkList<PlayerData>();
@@ -53,21 +64,17 @@ namespace Scripts
             return _playerName;
         }
 
-        public void SetPlayerName(string playerName)
+        public void SetPlayerName(string playerName) => PlayerIdentityStore.Set(playerName, LocalAvatar);
+        private void IdentityChanged()
         {
-            playerName = string.IsNullOrWhiteSpace(playerName) ? "" : playerName.Trim();
-            if (playerName.Length > 16) playerName = playerName.Substring(0, 16);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!MultiplayerNetworkProbe.IsRunning)
-#endif
-                PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
-            _playerName = playerName;
+            _playerName = PlayerIdentityStore.Current.name;
+            SubmitLocalPlayerData();
         }
 
         public bool StartHost()
         {
             IsMatchStarting = false;
-            NetworkManager.Singleton.NetworkConfig.ProtocolVersion = 2;
+            NetworkManager.Singleton.NetworkConfig.ProtocolVersion = 3;
             MultiplayerConnection.BeginSession();
             NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApprovalCallback;
             NetworkManager.Singleton.ConnectionApprovalCallback += OnConnectionApprovalCallback;
@@ -79,6 +86,7 @@ namespace Scripts
             if (IsServer)
             {
                 RegisterServerCallbacks();
+                _playerDataNetworkList.Clear();
                 foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
                 {
                     AddPlayerDataIfMissing(clientId);
@@ -125,7 +133,7 @@ namespace Scripts
         
         public bool StartClient()
         {
-            NetworkManager.Singleton.NetworkConfig.ProtocolVersion = 2;
+            NetworkManager.Singleton.NetworkConfig.ProtocolVersion = 3;
             MultiplayerConnection.BeginSession();
             OnTryingToJoinGame?.Invoke(this, EventArgs.Empty);
             RegisterClientCallbacks();
@@ -150,9 +158,9 @@ namespace Scripts
         }
         
         [ServerRpc(RequireOwnership = false)]
-        private void SetPlayerNameServerRpc(string playerName, ServerRpcParams serverRpcParams = default)
+        private void SetPlayerNameServerRpc(string playerName, int avatar, ServerRpcParams serverRpcParams = default)
         {
-            SetPlayerName(serverRpcParams.Receive.SenderClientId, playerName);
+            SetPlayerName(serverRpcParams.Receive.SenderClientId, playerName, avatar);
         }
         
         [ServerRpc(RequireOwnership = false)]
@@ -174,12 +182,12 @@ namespace Scripts
             {
                 ulong localClientId = NetworkManager.Singleton.LocalClientId;
                 AddPlayerDataIfMissing(localClientId);
-                SetPlayerName(localClientId, GetPlayerName());
+                SetPlayerName(localClientId, GetPlayerName(), LocalAvatar);
                 SetPlayerId(localClientId, playerId);
                 return;
             }
 
-            SetPlayerNameServerRpc(GetPlayerName());
+            SetPlayerNameServerRpc(GetPlayerName(), LocalAvatar);
             SetPlayerIdServerRpc(playerId);
         }
 
@@ -193,11 +201,12 @@ namespace Scripts
             });
         }
 
-        private void SetPlayerName(ulong clientId, string playerName)
+        private void SetPlayerName(ulong clientId, string playerName, int avatar)
         {
             int playerDataIndex = EnsurePlayerData(clientId);
             PlayerData playerData = _playerDataNetworkList[playerDataIndex];
-            playerData.playerName = playerName;
+            playerData.playerName = PlayerIdentityStore.NormalizeName(playerName);
+            playerData.avatar = Mathf.Clamp(avatar, 0, PlayerIdentityStore.AvatarCount - 1);
             _playerDataNetworkList[playerDataIndex] = playerData;
         }
 
@@ -304,6 +313,7 @@ namespace Scripts
 
         public override void OnDestroy()
         {
+            PlayerIdentityStore.Changed -= IdentityChanged;
             UnregisterCallbacks();
             if (_playerDataNetworkList != null)
             {

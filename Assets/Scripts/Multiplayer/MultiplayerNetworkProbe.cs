@@ -29,6 +29,7 @@ namespace Scripts
         private static string Role => Option("-fruitLabMultiplayerProbe");
         public static string AuthenticationProfile => Option("-fruitLabProfile");
         public static int ExpectedPlayers => int.Parse(Option("-fruitLabProbePlayers") ?? "2");
+        public static int LocalAvatar => Role == "host" ? 1 : Role == "client" ? 3 : 4;
         public static string LocalPlayerName => Role == "host" ? "Test sunucu" : Role == "client" ? "Test misafir" : "Test " + Role;
 #if UNITY_EDITOR
         public const string EditorConfigPath = "Library/FruitLabEditor/editor-multiplayer-probe.json";
@@ -70,6 +71,27 @@ namespace Scripts
             _output = Option("-fruitLabProbeOutput");
             Application.runInBackground = true; Application.targetFrameRate = 60;
             Application.logMessageReceived += OnLog;
+            SceneManager.sceneLoaded += ConfigureHeadlessCanvas;
+        }
+        private void ConfigureHeadlessCanvas(Scene scene, LoadSceneMode mode)
+        {
+            // A -nographics macOS player exposes 640x480 regardless of requested resolution.
+            // Keep portrait UI geometry real while testing its pointer and network behavior.
+            if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null) return;
+            var camera = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Camera>(true)).FirstOrDefault();
+            if (camera == null) camera = new GameObject("ProbeCamera", typeof(Camera)).GetComponent<Camera>();
+            camera.orthographic = true; camera.orthographicSize = 333.5f; camera.aspect = 375f / 667f;
+            camera.transform.position = new Vector3(0, 0, -1000); camera.transform.rotation = Quaternion.identity;
+            camera.nearClipPlane = 1; camera.farClipPlane = 2000;
+            foreach (var canvas in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Canvas>(true)).Where(canvas => canvas.isRootCanvas))
+            {
+                canvas.renderMode = RenderMode.WorldSpace; canvas.worldCamera = camera;
+                var rect = (RectTransform)canvas.transform; rect.localScale = Vector3.one;
+                rect.position = Vector3.zero; rect.sizeDelta = new Vector2(375, 667);
+                canvas.GetComponent<FruitLabOnlineLayout>()?.ApplyLayout();
+                canvas.GetComponent<FruitLabGameLayout>()?.ApplyLayout();
+            }
+            Canvas.ForceUpdateCanvases();
         }
         private void OnLog(string message, string stack, LogType type)
         {
@@ -81,13 +103,22 @@ namespace Scripts
             yield return null; yield return null;
             if (ExpectedPlayers > 2) { yield return GroupScenario(); yield break; }
             Check(SceneManager.GetActiveScene().name == "Menu", "The player starts in the real Menu scene");
-            var play = (BaseButtonView)FindFirstObjectByType<MenuUIView>().GetMultiplayerButton();
-            play.OnPointerDown(null);
-            yield return null;
-            Check(SceneManager.GetActiveScene().name == "Menu", "Navigation waits for pointer release");
-            play.OnPointerUp(null); play.OnPointerClick(null);
-            yield return new WaitForSecondsRealtime(.5f);
-            Check(SceneManager.GetActiveScene().name == "Lobby", "Friend-play enters Lobby and stays there after the click");
+            if (UseRelay && Scenario == "invite" && Role != "host")
+            {
+                string roomFile = Option("-fruitLabProbeRoomFile");
+                yield return WaitFor(() => File.Exists(roomFile) && new FileInfo(roomFile).Length > 0, 90, "The friend publishes a real invitation");
+                new GameObject("InviteInboxProbe").AddComponent<FriendInviteInbox>().Receive(File.ReadAllText(roomFile));
+                yield return WaitFor(() => SceneManager.GetActiveScene().name == "Lobby", 10, "A cold incoming invite routes directly from Menu to Lobby");
+            }
+            else
+            {
+                var play = (BaseButtonView)FindFirstObjectByType<MenuUIView>().GetMultiplayerButton();
+                play.OnPointerDown(null); yield return null;
+                Check(SceneManager.GetActiveScene().name == "Menu", "Navigation waits for pointer release");
+                play.OnPointerUp(null); play.OnPointerClick(null);
+                yield return new WaitForSecondsRealtime(.5f);
+                Check(SceneManager.GetActiveScene().name == "Lobby", "Friend-play enters Lobby and stays there after the click");
+            }
             var network = NetworkManager.Singleton;
             Check(network != null && MultiplayerManager.Instance != null, "Lobby scene provides its real network managers");
             CheckEntryProfile();
@@ -106,15 +137,47 @@ namespace Scripts
                     Check(PlayerLobby.Instance.LastError == null, "Relay host created: " + PlayerLobby.Instance.LastError);
                     string roomCode = PlayerLobby.Instance.GetLobbyCode();
                     Check(PlayerLobby.IsValidRoomCode(roomCode) && PlayerLobby.Instance.GetLobby().HasPassword, "The room has a six-digit numeric code and requires its matching password");
-                    File.WriteAllText(roomFile + ".tmp", roomCode); File.Move(roomFile + ".tmp", roomFile);
+                    string invitation = roomCode;
+                    if (Scenario == "invite")
+                    {
+                        string token = PlayerLobby.Instance.CurrentInvitation.Token;
+                        string oldRelay = PlayerLobby.Instance.GetLobby().Data["relay_join_code"].Value;
+                        PlayerLobby.Instance.SendMessage("OnApplicationPause", true);
+                        typeof(PlayerLobby).GetField("_pausedAt", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(PlayerLobby.Instance, Time.realtimeSinceStartupAsDouble - 20);
+                        PlayerLobby.Instance.SendMessage("OnApplicationPause", false);
+                        yield return WaitFor(() => PlayerLobby.Instance.IsRestoring, 10, "Returning from sharing starts waiting-room recovery");
+                        yield return WaitFor(() => !PlayerLobby.Instance.IsRestoring, 30, "Waiting-room recovery completes");
+                        Check(PlayerLobby.Instance.LastError == null, "The recovered host has no connection error");
+                        Check(PlayerLobby.Instance.CurrentInvitation.Token == token && PlayerLobby.Instance.GetLobbyCode() == roomCode,
+                            "Recovery preserves the shared invitation and numeric code");
+                        Check(PlayerLobby.Instance.GetLobby().Data["relay_join_code"].Value != oldRelay, "The invitation survives replacement of its live Relay allocation");
+                        invitation = PlayerLobby.Instance.CurrentInvitation.Url(FriendInviteSettings.Load());
+                    }
+                    File.WriteAllText(roomFile + ".tmp", invitation); File.Move(roomFile + ".tmp", roomFile);
                 }
                 else
                 {
                     yield return WaitFor(() => File.Exists(roomFile) && new FileInfo(roomFile).Length > 0, 60, "A private test room is published");
                     var entry = FindFirstObjectByType<LobbyUIView>();
-                    Click((BaseButtonView)entry.GetJoinWithCodeButton());
-                    Check(entry.CodeInput.gameObject.activeInHierarchy, "Join button reveals the code input");
-                    entry.CodeInput.text = File.ReadAllText(roomFile); entry.CodeInput.onSubmit.Invoke(entry.CodeInput.text);
+                    if (Scenario == "invite")
+                    {
+                        var canvas = entry.GetComponentInParent<Canvas>();
+                        yield return WaitFor(() => canvas.transform.Find("ReceivedFriendInvite/Invitation/Accept")?.GetComponent<UnityEngine.UI.Button>().interactable == true,
+                            25, "The invitation loads before accepting");
+                        var panel = canvas.transform.Find("ReceivedFriendInvite/Invitation");
+                        Check(panel.Find("Title").GetComponent<TMPro.TMP_Text>().text.Contains("Test sunucu")
+                            && panel.Find("Avatar").GetComponent<PlayerAvatarView>().Avatar == 1
+                            && panel.Find("Detail").GetComponent<TMPro.TMP_Text>().text == Settings.Name,
+                            "The direct invite presents the real host identity and difficulty");
+                        Check(panel.Find("Accept/Label").GetComponent<TMPro.TMP_Text>().text == "Katıl ve oyna", "Invite joins with one explicit action");
+                        panel.Find("Accept").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+                    }
+                    else
+                    {
+                        Click((BaseButtonView)entry.GetJoinWithCodeButton());
+                        Check(entry.CodeInput.gameObject.activeInHierarchy, "Join button reveals the code input");
+                        entry.CodeInput.text = File.ReadAllText(roomFile); entry.CodeInput.onSubmit.Invoke(entry.CodeInput.text);
+                    }
                 }
             }
             else
@@ -139,6 +202,27 @@ namespace Scripts
             var names = FindObjectsByType<PlayerNameView>(FindObjectsSortMode.None);
             Check(names.Length == 2 && names.Any(row => row.DisplayedName == "Test sunucu") && names.Any(row => row.DisplayedName == "Test misafir"),
                 "Both waiting-room name labels display their synchronized players");
+            Check(MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(0).avatar == 1 && MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(1).avatar == 3,
+                "Both peers synchronize the selected profile avatars");
+            if (Scenario == "reconnect")
+            {
+                if (host)
+                {
+                    ulong previous = network.ConnectedClientsIds.First(id => id != Unity.Netcode.NetworkManager.ServerClientId);
+                    network.DisconnectClient(previous);
+                    yield return WaitFor(() => MultiplayerManager.Instance.PlayerCount == 2 && network.ConnectedClientsIds.Any(id => id != 0 && id != previous),
+                        55, "A disconnected waiting guest rejoins under a new transport ID");
+                }
+                else
+                {
+                    yield return WaitFor(() => PlayerLobby.Instance.IsReconnecting, 15, "Waiting-room disconnect starts automatic recovery");
+                    yield return WaitFor(() => !PlayerLobby.Instance.IsReconnecting && network.IsConnectedClient
+                        && FindFirstObjectByType<UserReady>()?.IsSpawned == true, 55, "The guest returns to the same waiting room");
+                }
+                yield return WaitFor(() => MultiplayerManager.Instance.PlayerCount == 2
+                    && FindObjectsByType<PlayerNameView>(FindObjectsSortMode.None).Length == 2, 15, "Recovered names and avatars repopulate the lobby");
+                ready = FindFirstObjectByType<UserReady>(); names = FindObjectsByType<PlayerNameView>(FindObjectsSortMode.None);
+            }
             if (Scenario == "kick") { yield return KickScenario(names, network, ready, host); yield break; }
             if (host)
             {
@@ -212,7 +296,9 @@ namespace Scripts
                 else yield return Guess(initial, Answer(1));
             }
             yield return EndOfRound(match, 1, !host);
-            Check(FindFirstObjectByType<ResultAreaView>().GetComponentsInChildren<ResultBlockView>().Length == 2, "Both peers receive exactly two result rows");
+            var historyView = FindFirstObjectByType<ResultAreaView>();
+            Check(historyView.HistoryCount == 2 && historyView.GetVisibleRow(0) != null && historyView.GetVisibleRow(1) != null,
+                "Both peers retain and display exactly two result rows (history=" + historyView.HistoryCount + ", visible=" + historyView.VisibleRowCount + ")");
             if (Scenario == "planning" || Scenario == "annotations")
             {
                 for (int i = 0; i < initial.GetCardCount(); i++)
@@ -266,9 +352,7 @@ namespace Scripts
             yield return null; yield return null;
             var entry = FindFirstObjectByType<LobbyUIView>();
             CheckEntryProfile();
-            Check(((Component)entry.GetQuickJoinButton()).gameObject.activeInHierarchy, "Quick play is visible");
-            Click((BaseButtonView)entry.GetQuickJoinButton());
-            Check(SceneManager.GetActiveScene().name == "Lobby", "Quick play remains disabled");
+            Check(!((Component)entry.GetQuickJoinButton()).gameObject.activeSelf, "Quick play is hidden");
             Click((BaseButtonView)entry.GetMenuButton());
             yield return null;
             var entrySettings = FindFirstObjectByType<SettingsPopupView>();
@@ -337,6 +421,7 @@ namespace Scripts
                 if (host)
                 {
                     var row = FindObjectsByType<PlayerNameView>(FindObjectsSortMode.None).Single(row => row.DisplayedName == roster[roster.Length - 1].playerName.ToString());
+                    row.transform.Find("PlayerOptions").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
                     Click((BaseButtonView)row.GetKickButton());
                 }
                 if (network.LocalClientId == last)
@@ -428,6 +513,7 @@ namespace Scripts
             {
                 yield return new WaitForSecondsRealtime(.5f);
                 var row = names.Single(item => item.DisplayedName == "Test misafir");
+                row.transform.Find("PlayerOptions").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
                 var button = (BaseButtonView)row.GetKickButton();
                 var canvas = button.GetComponentInParent<Canvas>();
                 Canvas.ForceUpdateCanvases();
@@ -502,9 +588,8 @@ namespace Scripts
         private void SelectMode(bool host)
         {
             var view = FindFirstObjectByType<LobbyUIView>();
-            Click((BaseButtonView)view.GetCreateLobbyButton());
-            Check(((Component)view.GetDifficultyButton(0)).gameObject.activeInHierarchy, "Create button reveals the three difficulty buttons");
-            if (UseRelay) { Click((BaseButtonView)view.GetDifficultyButton((int)SelectedDifficulty)); Click((BaseButtonView)view.GetCreateConfirmButton()); }
+            Check(((Component)view.GetDifficultyButton(0)).gameObject.activeInHierarchy, "Difficulty choices are directly available");
+            if (UseRelay) { Click((BaseButtonView)view.GetDifficultyButton((int)SelectedDifficulty)); Click((BaseButtonView)view.GetCreateLobbyButton()); }
             else PlayerLobby.Instance.SelectDifficulty(SelectedDifficulty);
             Check(PlayerLobby.Instance.RoomDifficulty == SelectedDifficulty, "The difficulty button creates the selected duel");
         }
@@ -515,14 +600,8 @@ namespace Scripts
             var entry = FindFirstObjectByType<LobbyUIView>();
             Check(entry.transform.Find("ProfileSection") != null && entry.transform.Find("GameSection") != null,
                 "Entry separates profile and game information");
-            string name = entry.NameInput.text;
-            entry.NameInput.text = "Geçici";
-            entry.GetComponentInParent<FruitLabOnlineLayout>().ApplyLayout();
-            entry.NameInput.text = ""; entry.NameInput.ForceLabelUpdate();
-            Check(entry.NameInput.placeholder.gameObject.activeInHierarchy && entry.NameInput.placeholder.enabled
-                && ((TMPro.TMP_Text)entry.NameInput.placeholder).text == "Kullanıcı adı giriniz", "Deleting a name restores its placeholder even after a layout refresh");
-            entry.NameInput.text = name; entry.NameInput.ForceLabelUpdate();
-            Check(!entry.NameInput.placeholder.enabled, "A filled name hides the placeholder");
+            Check(!((Component)entry.GetQuickJoinButton()).gameObject.activeSelf, "Quick play is hidden until implemented");
+            Check(!string.IsNullOrWhiteSpace(MultiplayerManager.Instance.GetPlayerName()), "A usable name exists without filling a form");
             Check(entry.CodeInput.characterLimit == 6 && entry.CodeInput.keyboardType == TouchScreenKeyboardType.NumberPad,
                 "Joining provides a six-digit numeric keypad");
         }
@@ -766,7 +845,7 @@ namespace Scripts
             Application.Quit(success ? 0 : 1);
 #endif
         }
-        private void OnDestroy() => Application.logMessageReceived -= OnLog;
+        private void OnDestroy() { Application.logMessageReceived -= OnLog; SceneManager.sceneLoaded -= ConfigureHeadlessCanvas; }
     }
 }
 #endif

@@ -85,6 +85,15 @@ namespace Scripts
 
         private bool _multiplayerMode;
         public bool IsMultiplayer => _multiplayerMode;
+        private PlayerAvatarView _turnAvatar;
+        public void SetMultiplayerAvatar(int avatar)
+        {
+            EnsureMultiplayerHud();
+            if (_turnAvatar == null) _turnAvatar = PlayerAvatarView.Ensure(_matchHud, "TurnAvatar");
+            _turnAvatar.Render(avatar);
+            FruitLabStyle.Place((RectTransform)_turnAvatar.transform, _matchHud, 3, 2, 28, 28);
+            FruitLabStyle.Place(_turnLabel.rectTransform, _matchHud, 36, 0, _matchHud.rect.width - 118, 32);
+        }
         private RectTransform _matchHud;
         private TMP_Text _turnLabel, _timeLabel;
         private RectTransform _timerChip;
@@ -128,7 +137,7 @@ namespace Scripts
             {
                 EnsureMultiplayerHud();
                 FruitLabStyle.Place(_matchHud, header, 0f, 0f, width, 32f);
-                FruitLabStyle.Place(_turnLabel.rectTransform, _matchHud, 10f, 0f, width - 92f, 32f);
+                FruitLabStyle.Place(_turnLabel.rectTransform, _matchHud, _turnAvatar != null ? 36 : 10, 0f, width - (_turnAvatar != null ? 118 : 92), 32f);
                 FruitLabStyle.Place(_timerChip, _matchHud, width - 78f, 3f, 74f, 26f);
                 FruitLabStyle.Stretch(_timeLabel.rectTransform, 1f);
             }
@@ -267,6 +276,7 @@ namespace Scripts
 
     public interface IGameUIView
     {
+        void SetMultiplayerAvatar(int avatar);
         void SetMultiplayerStatus(string text);
         void SetMultiplayerTurn(string text, bool showTimer, bool localTurn);
         void SetMultiplayerTimer(int remainingSeconds, bool visible);

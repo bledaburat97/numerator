@@ -10,8 +10,15 @@ namespace Scripts
         [SerializeField] private BaseButtonView menuButton;
         [SerializeField] private BaseButtonView readyButton;
         [SerializeField] private BaseButtonView startButton;
+        private UnityEngine.UI.Button _share;
+        private bool _host;
+        public void ConfigureShare(System.Action share)
+        {
+            _share = FriendUi.Button(transform, "ShareInvitation", "Davet et", share);
+            _share.gameObject.SetActive(_host);
+        }
         public void SetLobbyNameText(string text) => lobbyNameText.text = text;
-        public void SetLobbyCodeText(string text) => lobbyCodeText.text = "Oda kodu: " + text;
+        public void SetLobbyCodeText(string text) => lobbyCodeText.text = "Kod: " + text;
         public IBaseButtonView GetMenuButton() => menuButton;
         public IBaseButtonView GetReadyButton() => readyButton;
         public IBaseButtonView GetStartButton()
@@ -21,7 +28,10 @@ namespace Scripts
         }
         public void SetStartAvailability(bool isHost, bool canStart)
         {
-            GetStartButton(); startButton.gameObject.SetActive(isHost);
+            _host = isHost;
+            GetStartButton(); startButton.gameObject.SetActive(isHost && canStart);
+            readyButton.gameObject.SetActive(!(isHost && canStart));
+            if (_share != null) _share.gameObject.SetActive(isHost);
             var group = startButton.GetComponent<CanvasGroup>();
             if (group == null) group = startButton.gameObject.AddComponent<CanvasGroup>();
             group.alpha = canStart ? 1 : .4f; group.interactable = group.blocksRaycasts = canStart;
@@ -34,28 +44,30 @@ namespace Scripts
         }
         public void ApplyOnlineLayout(float width, float height)
         {
-            FruitLabStyle.Place(lobbyNameText.rectTransform, transform, 20, height - 86, width - 40, 22);
-            lobbyNameText.fontSize = 14; lobbyNameText.color = FruitLabStyle.Muted;
-            FruitLabStyle.Place(lobbyCodeText.rectTransform, transform, 20, height - 126, width - 40, 32);
-            lobbyCodeText.fontSize = 22; lobbyCodeText.color = FruitLabStyle.Mint;
-            if (transform.Find("WaitingStatus") == null) SetStatus("Oyuncular bekleniyor.");
-            FruitLabStyle.Place((RectTransform)transform.Find("WaitingStatus"), transform, 20, height - 169, width - 40, 36);
-            var title = transform.Find("PlayersTitle")?.GetComponent<TMP_Text>();
-            if (title == null) title = FruitLabStyle.CreateText("PlayersTitle", transform, 15, FruitLabStyle.Text);
-            title.text = "Oyuncular"; title.alignment = TextAlignmentOptions.MidlineLeft;
-            FruitLabStyle.Place(title.rectTransform, transform, 20, height - 187, width - 40, 24);
+            FruitLabStyle.Place(lobbyNameText.rectTransform, transform, 20, height - 86, width - 40, 24);
+            lobbyNameText.fontSize = 17; lobbyNameText.color = FruitLabStyle.Muted;
+            FruitLabStyle.Place(lobbyCodeText.rectTransform, transform, 20, height - 111, width - 40, 22);
+            lobbyCodeText.fontSize = 16; lobbyCodeText.color = FruitLabStyle.Muted;
+            if (transform.Find("WaitingStatus") == null) SetStatus("Arkadaşın bekleniyor…");
+            var status = transform.Find("WaitingStatus").GetComponent<TMP_Text>(); status.fontSize = 16;
+            FruitLabStyle.Place(status.rectTransform, transform, 16, 116, width - 32, 28);
+            var oldTitle = transform.Find("PlayersTitle"); if (oldTitle != null) oldTitle.gameObject.SetActive(false);
             var names = GetComponentInParent<Canvas>().GetComponentInChildren<PlayerNameAreaView>(true);
             foreach (var group in names.GetComponents<UnityEngine.UI.LayoutGroup>()) group.enabled = false;
-            FruitLabStyle.Place((RectTransform)names.transform, transform, 20, 138, width - 40, height - 328);
+            FruitLabStyle.Place((RectTransform)names.transform, transform, 14, 150, width - 28, height - 268);
+            names.SetParticipantCount(names.GetComponentsInChildren<PlayerNameView>().Length);
             GetStartButton();
-            FruitLabOnlineLayout.Button(readyButton, transform, 82, width, false); readyButton.SetText("Hazırım");
-            FruitLabOnlineLayout.Button(startButton, transform, 22, width, true); startButton.SetText("Oyunu Başlat");
+            FruitLabOnlineLayout.Button(readyButton, transform, 12, width, true); readyButton.SetText("Hazırım");
+            FruitLabOnlineLayout.Button(startButton, transform, 12, width, true); startButton.SetText("Oyunu Başlat");
+            if (_share == null) ConfigureShare(null);
+            FruitLabStyle.Place((RectTransform)_share.transform, transform, 20, 66, width - 40, 44);
             FruitLabOnlineLayout.Settings(menuButton, (RectTransform)GetComponentInParent<Canvas>().transform);
             foreach (var row in names.GetComponentsInChildren<PlayerNameView>()) row.ApplyRowLayout();
         }
     }
     public interface IWaitingSceneUIView
     {
+        void ConfigureShare(System.Action share);
         void SetStatus(string message); void SetLobbyNameText(string text); void SetLobbyCodeText(string text);
         void SetStartAvailability(bool isHost, bool canStart);
         IBaseButtonView GetMenuButton(); IBaseButtonView GetReadyButton(); IBaseButtonView GetStartButton();

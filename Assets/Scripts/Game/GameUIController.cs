@@ -118,6 +118,7 @@ namespace Scripts
             _view.SetCoinCounterStatus(false);
             _view.GetTopButtonsCanvasGroup().alpha = _view.GetMiddleButtonsCanvasGroup().alpha = 1f;
         }
+        public void SetMultiplayerAvatar(int avatar) => _view.SetMultiplayerAvatar(avatar);
         public void TickPresentation() => _multiplayerHud.Tick();
         public void SetMultiplayerStatus(string text, double deadline)
         {

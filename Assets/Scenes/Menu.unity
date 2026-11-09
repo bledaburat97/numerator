@@ -2247,7 +2247,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c90a8242c37482f891f1a872bb2f726, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Menu.FruitCollectionView
 --- !u!1 &269048378
 GameObject:
@@ -7693,7 +7693,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1386947927589960688, guid: e787b11b3d61c5b49a51202cc8ecb906, type: 3}
       propertyPath: m_text
-      value: "Ba\u015Far\u0131lar"
+      value: Rozetler
       objectReference: {fileID: 0}
     - target: {fileID: 1386947927589960688, guid: e787b11b3d61c5b49a51202cc8ecb906, type: 3}
       propertyPath: m_fontSize
@@ -10437,7 +10437,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 964ad02759c14dc4a37abf750d5e3f17, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Menu.AchievementsView
 --- !u!1001 &1770507070
 PrefabInstance:

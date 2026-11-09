@@ -18,7 +18,7 @@ namespace Scripts
         }
         private void OnClientDisconnectedCallback(ulong clientId)
         {
-            if (MultiplayerConnection.IsLeaving || NetworkManager.Singleton == null) return;
+            if (MultiplayerConnection.IsLeaving || PlayerLobby.Instance?.IsRestoring == true || NetworkManager.Singleton == null) return;
             if (NetworkManager.Singleton.IsServer)
             {
                 if (clientId != NetworkManager.Singleton.LocalClientId)
@@ -26,12 +26,20 @@ namespace Scripts
                 return;
             }
             if (clientId != NetworkManager.Singleton.LocalClientId && clientId != NetworkManager.ServerClientId) return;
-            if (_shown) return; _shown = true;
             string reason = NetworkManager.Singleton.DisconnectReason;
+            if ((string.IsNullOrEmpty(reason) || (!reason.Contains("çıkarıldın") && !reason.Contains("kapattı"))) && PlayerLobby.Instance != null
+                && PlayerLobby.Instance.TryReconnectWaitingRoom(ShowRecoveryFailure))
+            { GetComponentInParent<Canvas>().GetComponentInChildren<WaitingSceneUIView>(true).SetStatus("Arkadaşına yeniden bağlanılıyor…"); return; }
+            ShowRecoveryFailure(!string.IsNullOrEmpty(reason) && reason.Contains("çıkarıldın") ? "Lobiden çıkarıldın." : "Kurucu ayrıldı veya bağlantısı kesildi. Lobi kapandı.");
+        }
+        private void ShowRecoveryFailure(string message)
+        {
+            if (this == null || _shown || MultiplayerConnection.IsLeaving) return;
+            _shown = true;
             _fadePanelController.SetFadeImageStatus(true);
             var view = Instantiate(disconnectionPopupPrefab, transform);
             var controller = new DisconnectionPopupController(); controller.Initialize(view, _baseButtonControllerFactory);
-            controller.SetText(!string.IsNullOrEmpty(reason) && reason.Contains("çıkarıldın") ? "Lobiden çıkarıldın." : "Kurucu ayrıldı veya bağlantısı kesildi. Lobi kapandı.");
+            controller.SetText(message);
             _hapticController.Vibrate(HapticType.Warning);
             PlayerLobby.Instance?.LeaveLobby();
         }

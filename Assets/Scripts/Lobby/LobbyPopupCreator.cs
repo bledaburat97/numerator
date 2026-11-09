@@ -35,7 +35,9 @@ namespace Scripts
         {
             lobbyMessagePopup.Hide();
             var view = GetComponentInParent<Canvas>().GetComponentInChildren<LobbyUIView>(true);
-            view.ShowJoinCodeInput(); view.SetJoinError("Giriş yapılamadı, kodu tekrar deneyiniz.");
+            if (FriendInviteInbox.Instance?.Pending != null)
+                view.ShowInvitation(null, PlayerLobby.Instance.LastError ?? "Davetine bağlanılamadı. Tekrar dene.", false);
+            else { view.ShowJoinCodeInput(); view.SetJoinError(PlayerLobby.Instance.LastError ?? "Giriş yapılamadı, kodu tekrar deneyiniz."); }
         }
         private void ServiceError(object sender, string message) => lobbyMessagePopup.Show(message);
         private void Failed(object sender, EventArgs args)

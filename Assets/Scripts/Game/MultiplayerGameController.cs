@@ -20,6 +20,8 @@ namespace Game
         private bool _initialized, _registered, _helloSent, _pending;
         private int _announcedRound, _builtRound, _lastFeedbackTurn;
         private ulong[] _roundPlayers = Array.Empty<ulong>();
+        private readonly Dictionary<ulong, int> _playerAvatars = new Dictionary<ulong, int>();
+        public int GetPlayerAvatar(ulong player) => _playerAvatars.TryGetValue(player, out var avatar) ? avatar : 0;
         private readonly Dictionary<ulong, string> _playerNames = new Dictionary<ulong, string>();
         private double _noticeUntil;
         public string StatusNotice { get; private set; }
@@ -90,7 +92,11 @@ namespace Game
             _difficulty = MultiplayerRules.For((Difficulty)difficulty).Difficulty;
             _roundPlayers = players; _announcedRound = number; _lastFeedbackTurn = 0; _pending = false;
             StatusNotice = null; DisconnectMessage = null;
-            foreach (ulong player in players) _playerNames[player] = MultiplayerManager.Instance.GetPlayerName(player);
+            foreach (ulong player in players)
+            {
+                _playerNames[player] = MultiplayerManager.Instance.GetPlayerName(player);
+                _playerAvatars[player] = MultiplayerManager.Instance.GetPlayerAvatar(player);
+            }
             State = new MultiplayerPublicState(number, 0, MultiplayerPhase.Preparing, MultiplayerRules.NoPlayer, MultiplayerRules.NoPlayer, 0, 0);
             _waitingSince = Time.realtimeSinceStartupAsDouble;
             BuildAnnouncedRound();
@@ -274,6 +280,7 @@ namespace Game
         string StatusNotice { get; }
         string DisconnectMessage { get; }
         string GetPlayerName(ulong player);
+        int GetPlayerAvatar(ulong player);
         void Initialize();
         void BoardReady(int round);
         void SubmitGuess(int[] cards);

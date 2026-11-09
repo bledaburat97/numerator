@@ -10,6 +10,7 @@ namespace Game
         void SetMultiplayerStatus(string text, double deadline);
         void SetMultiplayerTurn(string text, double deadline, bool localTurn);
         void TickPresentation();
+        void SetMultiplayerAvatar(int avatar);
     }
 
     public interface IMultiplayerResultPresentation
@@ -69,6 +70,8 @@ namespace Game
             if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0)
                 status = _multiplayer.LocalRematchRequested ? "Diğer oyuncular bekleniyor…" : "Yeni oyun teklifi var";
             if (!string.IsNullOrEmpty(_multiplayer.StatusNotice)) status = _multiplayer.StatusNotice;
+            if (state.Phase == MultiplayerPhase.Playing)
+                _hud.SetMultiplayerAvatar(_multiplayer.GetPlayerAvatar(state.CurrentPlayer));
             _hud.SetMultiplayerTurn(status, state.Deadline,
                 state.Phase == MultiplayerPhase.Playing && state.CurrentPlayer == _multiplayer.LocalPlayerId);
             if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0)
@@ -80,6 +83,8 @@ namespace Game
         }
         public void ShowOutcome(MultiplayerOutcome outcome, bool won)
         {
+            if (!outcome.Disconnected)
+                _hud.SetMultiplayerAvatar(_multiplayer.GetPlayerAvatar(outcome.Winner));
             _levelEndPopupController.SetAllStatusFalse(); _levelEndPopupController.SetOutcome(won);
             _result.SetMultiplayerResult(won, outcome.Disconnected, won ? outcome.Reward : null);
             _levelEndPopupController.InitText(outcome.Disconnected ? "Maç sona erdi" : won ? "Kazandın!" : _multiplayer.GetPlayerName(outcome.Winner) + " kazandı");

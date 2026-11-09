@@ -124,6 +124,7 @@ public static class FruitLabEditorTools
                 case "telemetry-provision": FruitLabTelemetryCloudTools.Provision(); reply.details = "Analytics schema setup started; existing definitions are preserved"; break;
                 case "telemetry-smoke": reply.details = FruitLabTelemetrySmokeTools.Start(); break;
                 case "telemetry-ios-build": reply.details = FruitLabMultiplayerEditorTools.BuildIos(false); break;
+                case "multiplayer-invites-review": reply.details = FruitLabFriendInviteEditorTools.Review(); break;
                 case "multiplayer-review":
                     FruitLabMultiplayerEditorTools.ValidateRules();
                     reply.details = FruitLabMultiplayerEditorTools.Bake() + "\n" + Render(3, 7, validation: FruitLabMultiplayerEditorTools.Review, validateBeforeRender: true)

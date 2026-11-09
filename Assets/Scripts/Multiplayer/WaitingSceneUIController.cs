@@ -13,6 +13,8 @@ namespace Scripts
         public void Initialize(IUserReady userReady)
         {
             _userReady = userReady;
+            _view.ConfigureShare(() => PlayerLobby.Instance.ShareInvitation());
+            PlayerLobby.Instance.OnAvailabilityChanged += RefreshReady;
             _view.SetLobbyNameText(MultiplayerRules.For(PlayerLobby.Instance.RoomDifficulty).Name);
             _view.SetLobbyCodeText(PlayerLobby.Instance.GetLobbyCode());
             var settings = _buttons.Create(_view.GetMenuButton(), () =>
@@ -25,20 +27,26 @@ namespace Scripts
             _userReady.OnReadyChanged += RefreshReady;
             MultiplayerManager.Instance.OnPlayerDataNetworkListChanged += RefreshReady;
             RefreshReady(this, System.EventArgs.Empty);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!MultiplayerNetworkProbe.IsRunning)
+#endif
+            if (PlayerLobby.Instance.ConsumePendingShare()) PlayerLobby.Instance.ShareInvitation();
         }
         private void RefreshReady(object sender, System.EventArgs args)
         {
+            if (PlayerLobby.Instance?.IsReconnecting == true) { _view.SetStatus("Arkadaşına yeniden bağlanılıyor…"); return; }
+            if (PlayerLobby.Instance?.IsRestoring == true) { _view.SetStatus("Davetine dönülüyor…"); return; }
             bool ready = _userReady.IsPlayerReady(NetworkManager.Singleton.LocalClientId);
             bool host = NetworkManager.Singleton.IsServer;
             _readyButton.SetText(ready ? "Hazır · İptal et" : "Hazırım");
             _startButton.SetButtonClickable(host && _userReady.CanStartGame);
             _view.SetStartAvailability(host, _userReady.CanStartGame);
-            _view.SetStatus(MultiplayerManager.Instance.PlayerCount < MultiplayerRules.MinPlayers ? "Başlamak için en az 2 oyuncu gerekiyor."
-                : _userReady.CanStartGame ? (host ? "Herkes hazır. Oyunu başlatabilirsin." : "Herkes hazır. Kurucunun başlatması bekleniyor.")
-                : "Tüm oyuncuların hazır olması bekleniyor.");
+            _view.SetStatus(MultiplayerManager.Instance.PlayerCount < MultiplayerRules.MinPlayers ? (PlayerLobby.Instance.ShareNotice ?? "Arkadaşın bekleniyor…")
+                : _userReady.CanStartGame ? (host ? "Herkes hazır!" : "Başlaması bekleniyor…") : "Hazır olduğunda işaretle.");
         }
         public void Dispose()
         {
+            if (PlayerLobby.Instance != null) PlayerLobby.Instance.OnAvailabilityChanged -= RefreshReady;
             if (_userReady != null) _userReady.OnReadyChanged -= RefreshReady;
             if (MultiplayerManager.Instance != null) MultiplayerManager.Instance.OnPlayerDataNetworkListChanged -= RefreshReady;
         }
