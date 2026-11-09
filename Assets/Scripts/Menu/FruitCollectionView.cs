@@ -39,7 +39,8 @@ namespace Menu
         [SerializeField] private BaseButtonView closeButton;
         [SerializeField] private FruitCollectionCell[] cells;
         [SerializeField] private NonDraggableCardItemView cardPrefab;
-        private bool _initialized;
+        private bool _initialized, _embedded;
+        public void SetEmbedded(bool embedded) { _embedded = embedded; Initialize(); ApplyLayout(); }
         private Vector2 _lastSize;
         private UnityEngine.UI.Button _gardenTab,_collectionTab;
         private UnityEngine.UI.ScrollRect _collectionScroll;
@@ -84,6 +85,7 @@ namespace Menu
         public void SelectTab(GardenTab tab)
         {
             Initialize();_tab=tab;
+            if (_embedded) title.text = tab == GardenTab.Garden ? "Bahçe" : "Koleksiyon";
             _garden.gameObject.SetActive(tab==GardenTab.Garden);
             _collectionScroll.gameObject.SetActive(tab==GardenTab.Collection);summary.gameObject.SetActive(tab==GardenTab.Collection);
             var selected=FruitLabStyle.Mint;var normal=FruitLabStyle.Tile;
@@ -106,13 +108,15 @@ namespace Menu
         public void ApplyLayout()
         {
             Initialize();_lastSize=rect.rect.size;float width=rect.rect.width,height=rect.rect.height;
+            _gardenTab.gameObject.SetActive(!_embedded);_collectionTab.gameObject.SetActive(!_embedded);closeButton.gameObject.SetActive(!_embedded);
+            if (_embedded) title.text = _tab == GardenTab.Garden ? "Bahçe" : "Koleksiyon";
             FruitLabStyle.Place(title.rectTransform,rect,20,height-62,width-40,32);
             FruitLabStyle.Place((RectTransform)_gardenTab.transform,rect,20,height-118,(width-48)*.5f,44);
             FruitLabStyle.Place((RectTransform)_collectionTab.transform,rect,28+(width-48)*.5f,height-118,(width-48)*.5f,44);
-            FruitLabStyle.Place(summary.rectTransform,rect,20,height-154,width-40,26);
-            FruitLabStyle.Place((RectTransform)_garden.transform,rect,20,80,width-40,Mathf.Max(1,height-214));_garden.ApplyLayout();
-            float viewportHeight=Mathf.Max(1,height-244);
-            FruitLabStyle.Place((RectTransform)_collectionScroll.transform,rect,20,80,width-40,viewportHeight);
+            FruitLabStyle.Place(summary.rectTransform,rect,20,height-(_embedded?96:154),width-40,26);
+            FruitLabStyle.Place((RectTransform)_garden.transform,rect,20,_embedded?12:80,width-40,Mathf.Max(1,height-(_embedded?88:214)));_garden.ApplyLayout();
+            float viewportHeight=Mathf.Max(1,height-(_embedded?120:244));
+            FruitLabStyle.Place((RectTransform)_collectionScroll.transform,rect,20,_embedded?12:80,width-40,viewportHeight);
             float cellWidth=(width-56f)/3f;
             float cellHeight=Mathf.Max(132,Mathf.Min(cellWidth+66,(viewportHeight-16)/3f));
             GardenUi.Content(_collectionScroll,cellHeight*3+16);

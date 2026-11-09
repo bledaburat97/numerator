@@ -129,12 +129,11 @@ namespace Scripts
         private readonly IBoardAreaController _board;
         private readonly ICardItemInfoManager _info;
         private readonly IRoundStateManager _round;
-        private readonly IGuessManager _guesses;
 
         public GrowingBoardService(ILevelDataCreator levels,ILevelTracker tracker,ILevelSaveDataManager save,
             ITargetNumberCreator target,IBoardAreaController board,ICardItemInfoManager info,
-            IRoundStateManager round,IGuessManager guesses)
-        { _levels = levels; _tracker = tracker; _save = save; _target = target; _board = board; _info = info; _round = round; _guesses = guesses; }
+            IRoundStateManager round)
+        { _levels = levels; _tracker = tracker; _save = save; _target = target; _board = board; _info = info; _round = round; }
 
         public bool TryAdvance(GuessEvaluation guess)
         {
@@ -145,7 +144,7 @@ namespace Scripts
             if (state.ActiveCount >= GrowingBoardState.MaximumCount) return false;
             state.WrongSinceGrowth++;
             if (state.WrongSinceGrowth < GrowingBoardState.GuessesPerGrowth) return false;
-            if (_round.GetRemainingGuessCount() <= 0 && state.ActiveCount+1 < GrowingBoardState.MaximumCount) return false;
+            if (_round.GetRemainingGuessCount() <= 0) return false;
             if (_target.GetTargetCardsList().Count != state.ActiveCount
                 || !_target.TryAppendTargetCard(state.FullTarget[state.ActiveCount])) return false;
             int newIndex = state.ActiveCount++;
@@ -154,11 +153,6 @@ namespace Scripts
                 if (!card.isLocked && card.isExisted && !card.possibleCardHolderIndicatorIndexes.Contains(newIndex))
                     card.possibleCardHolderIndicatorIndexes.Add(newIndex);
             _board.AddBoardHolder();
-            if (state.ActiveCount == GrowingBoardState.MaximumCount && !state.BonusGranted)
-            {
-                state.BonusGranted = true;
-                _guesses.GrantExtraLives(GrowingBoardState.BonusLives,true);
-            }
             return true;
         }
     }

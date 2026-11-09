@@ -6,7 +6,7 @@ namespace Scripts
     // Small functional symbols stay sharp at every UI scale and don't need a font glyph.
     public class FruitLabGlyph : MaskableGraphic
     {
-        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16 }
+        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21 }
         public Symbol Type;
         private Color _meshTint;
         private static readonly Vector2[] FirstPairCard = {
@@ -113,6 +113,38 @@ namespace Scripts
                 var star=center+size*new Vector2(.28f,.30f);
                 for(int i=0;i<4;i++){float angle=i*Mathf.PI/4;var axis=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*size*.11f;Line(mesh,star-axis,star+axis,stroke*.5f);}
                 _meshTint=original;
+            }
+            else if (Type == Symbol.Home)
+            {
+                RaisedStroke(mesh,new[] {new Vector2(-.36f,-.02f),new Vector2(0,.32f),new Vector2(.36f,-.02f)},center,size,stroke,FruitLabStyle.Gold);
+                RaisedStroke(mesh,new[] {new Vector2(-.25f,0),new Vector2(-.25f,-.32f),new Vector2(.25f,-.32f),new Vector2(.25f,0)},center,size,stroke,FruitLabStyle.Text);
+                RoundedStroke(mesh,new[] {new Vector2(-.06f,-.3f),new Vector2(-.06f,-.12f),new Vector2(.07f,-.12f),new Vector2(.07f,-.3f)},center,size,stroke*.6f);
+            }
+            else if (Type == Symbol.Garden)
+            {
+                _meshTint=FruitLabStyle.Mint; RoundedStroke(mesh,new[] {new Vector2(0,-.25f),new Vector2(0,.23f)},center,size,stroke);
+                RoundedStroke(mesh,new[] {new Vector2(0,.05f),new Vector2(-.22f,.26f),new Vector2(-.28f,.08f),new Vector2(0,-.02f),new Vector2(.26f,.2f),new Vector2(.23f,.34f),new Vector2(0,.18f)},center,size,stroke*.7f);
+                _meshTint=FruitLabStyle.Gold; RoundedStroke(mesh,new[] {new Vector2(-.25f,-.18f),new Vector2(-.18f,-.36f),new Vector2(.18f,-.36f),new Vector2(.25f,-.18f),new Vector2(-.25f,-.18f)},center,size,stroke*.8f);
+            }
+            else if (Type == Symbol.Collection)
+            {
+                _meshTint=FruitLabStyle.Muted; RoundedStroke(mesh,new[] {new Vector2(-.31f,-.28f),new Vector2(-.36f,.19f),new Vector2(-.05f,.25f)},center,size,stroke);
+                _meshTint=FruitLabStyle.Gold; RoundedStroke(mesh,new[] {new Vector2(-.15f,-.32f),new Vector2(-.15f,.31f),new Vector2(.30f,.31f),new Vector2(.30f,-.32f),new Vector2(-.15f,-.32f)},center,size,stroke);
+                _meshTint=FruitLabStyle.Pink;Disc(mesh,center+size*new Vector2(.075f,-.035f),size*.11f);
+                _meshTint=FruitLabStyle.Mint;Line(mesh,center+size*new Vector2(.08f,.09f),center+size*new Vector2(.17f,.17f),stroke*.7f);
+            }
+            else if (Type == Symbol.Players)
+            {
+                _meshTint=FruitLabStyle.Gold;Disc(mesh,center+size*new Vector2(.18f,.13f),size*.10f);
+                RoundedStroke(mesh,new[] {new Vector2(.08f,-.28f),new Vector2(.34f,-.28f),new Vector2(.32f,-.08f),new Vector2(.2f,-.02f)},center,size,stroke);
+                _meshTint=FruitLabStyle.Mint;Disc(mesh,center+size*new Vector2(-.13f,.19f),size*.12f);
+                RoundedStroke(mesh,new[] {new Vector2(-.34f,-.31f),new Vector2(-.31f,-.06f),new Vector2(-.13f,.01f),new Vector2(.05f,-.06f),new Vector2(.08f,-.31f),new Vector2(-.34f,-.31f)},center,size,stroke);
+            }
+            else if (Type == Symbol.Market)
+            {
+                _meshTint=FruitLabStyle.Gold; RoundedStroke(mesh,new[] {new Vector2(-.29f,.05f),new Vector2(-.24f,-.33f),new Vector2(.24f,-.33f),new Vector2(.29f,.05f),new Vector2(-.29f,.05f)},center,size,stroke);
+                RoundedStroke(mesh,new[] {new Vector2(-.13f,.03f),new Vector2(-.13f,.22f),new Vector2(0,.30f),new Vector2(.13f,.22f),new Vector2(.13f,.03f)},center,size,stroke*.85f);
+                _meshTint=FruitLabStyle.Text;Disc(mesh,center+size*new Vector2(0,-.13f),size*.055f);
             }
             else if (Type == Symbol.Dynamite) DrawDynamite(mesh,center,size);
             else if (Type == Symbol.Swap)

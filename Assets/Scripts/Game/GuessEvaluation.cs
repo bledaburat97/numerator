@@ -30,7 +30,7 @@ namespace Scripts
                 EvaluateRange(cards,answer,partition.FirstCount,partition.SecondCount,states)
             });
             // Detail hints follow the same active partition as the visible counters.
-            // End-of-level answer review uses an unpartitioned evaluation as before.
+            // End-of-level review uses the same partition stored on each history row.
             States = Array.AsReadOnly(states);
         }
 

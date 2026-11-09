@@ -25,10 +25,10 @@ namespace Game
         {
             LevelData levelData = _levelDataCreator.GetLevelData();
             _levelSaveData = new LevelSaveData { Definition = levelData,RoundId=System.Guid.NewGuid().ToString("N"),
-                GrowingBoard = levelData.Mechanic == LevelMechanic.Growing ? new GrowingBoardState() : null,
+                GrowingBoard = levelData.Mechanic == LevelMechanic.Growing ? new GrowingBoardState { BonusGranted = true, BonusAtStart = true } : null,
                 Dynamite = levelData.Mechanic == LevelMechanic.Dynamite ? new DynamiteRoundState() : null };
             _levelSaveData.TriedCardsList = new List<List<int>>();
-            _levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries;
+            _levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries + (_levelSaveData.GrowingBoard != null ? GrowingBoardState.BonusLives : 0);
             _levelSaveData.CardItemInfoList = new List<CardItemInfo>();
             for (int i = 0; i < levelData.NumOfCards; i++)
             {
@@ -47,6 +47,7 @@ namespace Game
 
         public void SetLevelSaveDataAsSaved(LevelSaveData savedData)
         {
+            if (savedData?.Definition?.Mechanic == LevelMechanic.Growing) GrowingBoardState.UpgradeLegacy(savedData);
             _levelSaveData = savedData;
         }
         

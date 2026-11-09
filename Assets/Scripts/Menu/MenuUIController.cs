@@ -1,4 +1,4 @@
-﻿using Scripts;
+using Scripts;
 using UnityEngine.SceneManagement;
 using Zenject;
 
@@ -12,16 +12,14 @@ namespace Menu
         private IMenuUIView _view;
         private IBaseButtonController _singlePlayerButtonController;
         private bool _navigating;
-        private readonly IFruitCollectionPresenter _collection;
         
         [Inject]
-        public MenuUIController(ILevelTracker levelTracker, IGameSaveService gameSaveService, BaseButtonControllerFactory baseButtonControllerFactory, IMenuUIView view,IFruitCollectionPresenter collection)
+        public MenuUIController(ILevelTracker levelTracker, IGameSaveService gameSaveService, BaseButtonControllerFactory baseButtonControllerFactory, IMenuUIView view)
         {
             _levelTracker = levelTracker;
             _baseButtonControllerFactory = baseButtonControllerFactory;
             _view = view;
             _gameSaveService = gameSaveService;
-            _collection=collection;
             CreateButtons();
         }
 
@@ -31,17 +29,6 @@ namespace Menu
             _singlePlayerButtonController.SetText(GetLevelText());
             _singlePlayerButtonController.SetClickOnRelease(true);
 
-            IBaseButtonController multiplayerButtonController =
-                _baseButtonControllerFactory.Create(_view.GetMultiplayerButton(), OnMultiplayerButtonClick);
-            bool multiplayerUnlocked = MenuProgression.IsMultiplayerUnlocked(_levelTracker.GetLevelId());
-            multiplayerButtonController.SetText(multiplayerUnlocked ? "Arkadaşınla oyna" :
-                "Arkadaşınla oyna\n<size=10>" + MenuProgression.MultiplayerUnlockLevel + ". bölümde açılır</size>");
-            multiplayerButtonController.SetButtonStatus(true);
-            multiplayerButtonController.SetButtonClickable(multiplayerUnlocked);
-            multiplayerButtonController.SetClickOnRelease(true);
-            _view.SetMultiplayerAvailability(multiplayerUnlocked);
-            var collection=_baseButtonControllerFactory.Create(_view.GetCollectionButton(),()=>{if(!_navigating)_collection.Open();});
-            collection.SetText("Bahçem");collection.SetClickOnRelease(true);
         }
 
         private void OnSinglePlayerButtonClick()
@@ -52,14 +39,6 @@ namespace Menu
             SceneManager.LoadScene("Game");
         }
         
-        private void OnMultiplayerButtonClick()
-        {
-            if (_navigating || !MenuProgression.IsMultiplayerUnlocked(_levelTracker.GetLevelId())) return;
-            _navigating = true;
-            _levelTracker.SetGameOption(GameOption.MultiPlayer);
-            SceneManager.LoadScene("Lobby");
-        }
-
         private string GetLevelText()
         {
             if (_gameSaveService.HasSavedGame())

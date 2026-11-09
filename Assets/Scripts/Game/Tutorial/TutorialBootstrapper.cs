@@ -87,7 +87,7 @@ namespace Scripts
             if (mechanic == LevelMechanic.Growing)
             {
                 if (TutorialProgress.Seen(TutorialProgress.GrowingLevel)) return false;
-                ShowTip("Büyüyen Tahta", "2 alanla başlarsın. Her 2 yanlışta bir alan açılır. 4 alana ulaşınca 4 ek hak kazanırsın.",
+                ShowTip("Büyüyen Tahta", "2 alanla başlarsın. Her 2 yanlışta bir alan açılır. Ek 4 hakkın başlangıçta verilir.",
                     TutorialProgress.GrowingLevel,Find<BoardAreaView>()?.GetRectTransform());
                 return true;
             }

@@ -112,10 +112,11 @@ namespace Scripts
             }
             else
             {
-                var play = (BaseButtonView)FindFirstObjectByType<MenuUIView>().GetMultiplayerButton();
-                play.OnPointerDown(null); yield return null;
+                var play = FindFirstObjectByType<MainNavigationView>().GetTab(MainTab.Multiplayer);
+                var pointer = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+                play.OnPointerDown(pointer); yield return null;
                 Check(SceneManager.GetActiveScene().name == "Menu", "Navigation waits for pointer release");
-                play.OnPointerUp(null); play.OnPointerClick(null);
+                play.OnPointerUp(pointer); play.OnPointerClick(pointer);
                 yield return new WaitForSecondsRealtime(.5f);
                 Check(SceneManager.GetActiveScene().name == "Lobby", "Friend-play enters Lobby and stays there after the click");
             }
@@ -347,7 +348,7 @@ namespace Scripts
         private IEnumerator GroupScenario()
         {
             bool host = Role == "host";
-            Click((BaseButtonView)FindFirstObjectByType<MenuUIView>().GetMultiplayerButton());
+            FindFirstObjectByType<MainNavigationView>().GetTab(MainTab.Multiplayer).onClick.Invoke();
             yield return WaitFor(() => SceneManager.GetActiveScene().name == "Lobby", 10, "Friend mode opens the entry scene");
             yield return null; yield return null;
             var entry = FindFirstObjectByType<LobbyUIView>();

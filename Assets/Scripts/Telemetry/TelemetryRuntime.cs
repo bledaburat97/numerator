@@ -200,13 +200,8 @@ namespace Scripts
         private IEnumerator MenuReady()
         {
             yield return null; yield return null;
-            var menu = FindFirstObjectByType<Menu.MenuUIView>();
+            var menu = FindFirstObjectByType<Menu.MenuUIView>(FindObjectsInactive.Include);
             if (menu == null) yield break;
-            var button = TelemetryPrivacyPanel.AddButton(menu.transform, "PrivacyButton", "Gizlilik ve veri", ShowPrivacy);
-            var rect = (RectTransform)button.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0);
-            rect.pivot = new Vector2(.5f, 1); rect.sizeDelta = new Vector2(190, 34);
-            rect.anchoredPosition = new Vector2(0, -8);
             if (!Application.isEditor && !HasChoice) ShowPrivacy();
         }
         public void ShowPrivacy()

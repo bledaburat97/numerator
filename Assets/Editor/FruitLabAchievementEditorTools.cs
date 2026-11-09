@@ -70,7 +70,9 @@ public static partial class FruitLabTutorialEditorTools
         try
         {
             clone=Object.Instantiate(Find<FruitLabMenuLayout>(source).gameObject);SceneManager.MoveGameObjectToScene(clone,camera.gameObject.scene);
-            var canvas=clone.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
+            var canvas=clone.GetComponent<Canvas>();
+            // Isolate legacy modal/presenter checks; footer routing and raycasts are covered by navigation-review.
+            clone.GetComponentInChildren<MainNavigationView>(true)?.gameObject.SetActive(false);canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
             var rect=(RectTransform)clone.transform;rect.localScale=Vector3.one;rect.position=Vector3.zero;
             var menu=clone.GetComponentInChildren<MenuUIView>(true);var view=menu.GetAchievementsView();
             var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>{var data=new PlayerProfileData();data.Progress.LevelId=17;return data;});var rules=new AchievementRules(PlayerProfileRuntime.LoadSettings());
@@ -82,7 +84,7 @@ public static partial class FruitLabTutorialEditorTools
             var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_levelId",17);
             var garden=new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),rules);
             using var collection=new FruitCollectionPresenter(inventory,profiles,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>(),garden,new GardenVisitCoordinator(garden),menu.GetGardenNoticeView());
-            new MenuUIController(tracker,new MemorySave(),bindings.Resolve<BaseButtonControllerFactory>(),menu,collection);
+            new MenuUIController(tracker,new MemorySave(),bindings.Resolve<BaseButtonControllerFactory>(),menu);
             var powers=clone.GetComponentInChildren<PowerUpListHolderView>(true);
             using var powerCounts=new MenuPowerUpCountHolderController(powers,tracker,profiles);powerCounts.Initialize();
             using var header=new MenuHeaderController(clone.GetComponentInChildren<MenuHeaderView>(true),profiles);header.Initialize(tracker);
@@ -91,7 +93,7 @@ public static partial class FruitLabTutorialEditorTools
                 foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
                 {
                     rect.sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();camera.orthographicSize=Mathf.Max(size.y/2,size.x/(2*camera.aspect));
-                    TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)menu.GetAchievementsButton());Require(view.IsVisible,"Menu achievements opens via actual raycast");
+                    presenter.Open();Require(view.IsVisible,"Presenter opens achievements; the settings entry is covered by navigation-review");
                     Canvas.ForceUpdateCanvases();view.ApplyLayout();Canvas.ForceUpdateCanvases();
                     var scroll=view.GetComponentInChildren<ScrollRect>(true);scroll.verticalNormalizedPosition=0;Canvas.ForceUpdateCanvases();
                     var badge=(RectTransform)scroll.content.Find("Badge2");var corners=new Vector3[4];badge.GetWorldCorners(corners);

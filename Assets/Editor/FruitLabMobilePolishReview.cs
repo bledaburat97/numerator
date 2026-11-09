@@ -630,14 +630,22 @@ public static partial class FruitLabTutorialEditorTools
                         int remaining = game.Round.GetRemainingGuessCount(); game._powers.Refresh();
                         var button = (BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Split);
                         Click(button);
+                        if (oldGuesses > 0)
+                        {
+                            Require(!split.IsActive && !split.CanApply && game.Tracker.GetPowerUpCount(RewardType.Split) == 2,
+                                "Split after a guess is blocked without inventory consumption");
+                            Require(game.Round.GetRemainingGuessCount() == remaining && game.Round.GetTriedCardsList().Count == oldGuesses,
+                                "Rejected Split leaves lives and history unchanged");
+                            continue;
+                        }
                         Require(split.IsActive && game._saves.GetLevelSaveData().BoardSplitApplied && game.Tracker.GetPowerUpCount(RewardType.Split) == 1,"A real Split button consumes once and activates");
                         Require(game.Round.GetRemainingGuessCount() == remaining && game.Round.GetTriedCardsList().Count == oldGuesses,"Split preserves lives and raw history");
                         Require(checkpoint != null && checkpoint.BoardSplitApplied,"Activation checkpoints even before the first guess");
                         var area = canvas.GetComponentInChildren<ResultAreaView>(true);
                         Require(area.GetComponentsInChildren<ResultBlockView>().Length == oldGuesses
-                            && area.GetComponentsInChildren<ResultBlockView>().All(row => row.IsSplit),"Earlier rows are rebuilt with separate counters");
+                            && area.GetComponentsInChildren<ResultBlockView>().All(row => row.IsSplit),"Pre-guess activation has no history to rebuild");
                         Click(button); Require(game.Tracker.GetPowerUpCount(RewardType.Split) == 1 && !split.CanApply,"A repeated press cannot consume stock");
-                        if (count == 5 && oldGuesses == 2)
+                        if (count == 5 && oldGuesses == 0)
                         {
                             var powers = canvas.GetComponentInChildren<PowerUpListHolderView>(true);
                             foreach (float width in new[] {320f,375f,430f})
@@ -681,7 +689,7 @@ public static partial class FruitLabTutorialEditorTools
             }
             Require(profile == Profile() && errors.Count == 0,"Player data and Unity/tween checks: "+string.Join("; ",errors));
             File.WriteAllText(Folder+"/powerup-polish-review.json",JsonConvert.SerializeObject(new { passed = true,ropeFrames,layouts,
-                checks = new[] { "stable reward IDs", "real Split button", "single inventory consumption", "no extra guess/life", "retroactive grouped history", "existing Helper details", "save before first guess", "manual split resume", "retry resets effect", "zero-stock/failure/multiplayer guards", "Split crystal reward", "six readable buttons", "gravity, inertial lag and damping", "no self-intersection during dragging", "continuous rope above cards", "card and control raycasts preserved", "unchanged PlayerPrefs" }
+                checks = new[] { "stable reward IDs", "real Split button", "single inventory consumption", "no extra guess/life", "blocked after any guess", "existing Helper details", "save before first guess", "manual split resume", "retry resets effect", "zero-stock/failure/multiplayer guards", "Split crystal reward", "six readable buttons", "gravity, inertial lag and damping", "no self-intersection during dragging", "continuous rope above cards", "card and control raycasts preserved", "unchanged PlayerPrefs" }
             },Formatting.Indented));
         }
         finally { DOTween.defaultUpdateType = previous; Application.logMessageReceived -= collect; }

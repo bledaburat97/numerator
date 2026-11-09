@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Menu
 {
-    public interface IFruitCollectionPresenter { void Open();void Close();void ShowPendingNotice(); }
+    public interface IFruitCollectionPresenter { void Open();void Open(GardenTab tab);void Close();void ShowPendingNotice(); }
 
     public sealed class FruitCollectionPresenter : IFruitCollectionPresenter,IDisposable
     {
@@ -34,10 +34,11 @@ namespace Menu
             _view.TabChanged+=TabChanged;_profiles.Changed+=Refresh;_visits.NoticeAvailable+=OnNoticeAvailable;
             _view.SetVisible(false);_notice.Hide();
         }
-        public void Open()
+        public void Open() => Open(GardenTab.Garden);
+        public void Open(GardenTab tab)
         {
-            if(_disposed)return;
-            _notice.Hide();_view.SetVisible(true);_view.SelectTab(GardenTab.Garden);Refresh();
+            if(_disposed || _busy)return;
+            CancelPurchase();_notice.Hide();_view.SetVisible(true);_view.SelectTab(tab);Refresh();
         }
         public void Close()
         {

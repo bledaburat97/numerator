@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using Zenject;
 
@@ -12,6 +12,8 @@ namespace Scripts
 
         public override void InstallBindings()
         {
+            Container.BindInterfacesAndSelfTo<Menu.MainNavigationController>().AsSingle()
+                .WithArguments(Menu.MainNavigationView.Ensure(waitingSceneUI.GetComponentInParent<Canvas>())).NonLazy();
             Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IWaitingSceneUIController>().To<WaitingSceneUIController>().AsSingle()

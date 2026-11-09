@@ -106,8 +106,20 @@ public static partial class FruitLabTutorialEditorTools
                         Require(wins == 1 && game.Round.GetRemainingGuessCount() == 4,"Full answer wins without spending another life");
                         game._area.RevealAnswer(answer);
                         Require(area.GetComponentsInChildren<ResultBlockView>().All(row => row.IsSplit),"Completion keeps both feedback groups visible");
-                        Require(!area.GetComponentsInChildren<FruitLabGlyph>().Any(glyph => glyph.name == "HelperAbsent"),
-                            "Full-answer review removes group-local crosses for fruits present elsewhere in the answer");
+                        for (int index = 0; index < area.HistoryCount; index++)
+                        {
+                            var model = game._area.GetHistoryEntry(index);
+                            var expected = new GuessEvaluation(index + 1, model.finalNumbers, answer, BoardPartition.ForCount(count));
+                            Require(model.reviewStates.SequenceEqual(expected.States), "Completion evaluates every historical fruit inside its own group");
+                            var row = area.GetVisibleRow(index);
+                            if (row != null)
+                            {
+                                var cards = row.GetComponentsInChildren<NonDraggableCardItemView>();
+                                for (int n = 0; n < cards.Length; n++)
+                                    Require(cards[n].transform.Find("ResultOutline").gameObject.activeSelf == (expected.States[n] == CardResultState.Correct || expected.States[n] == CardResultState.Misplaced),
+                                        "A fruit present only in the other group has no yellow frame");
+                            }
+                        }
                         var split = new BoardSplitService(new TestLevel(definition),game.Tracker);
                         Field(game.Tracker,"_gameOption",GameOption.MultiPlayer);
                         Require(split.PartitionFor(count) == null,"Multiplayer remains unpartitioned");
@@ -145,6 +157,28 @@ public static partial class FruitLabTutorialEditorTools
                     SubmitSplit(game,answer.Take(count-1).ToArray());
                     var row = canvas.GetComponentInChildren<ResultAreaView>(true).GetComponentInChildren<ResultBlockView>();
                     Require(wins == 1 && row.IsSplit,"Bomb leaves a playable 2+1 or 2+2 partition"); CheckSplitRow(row);
+                }
+            }
+            foreach (int count in new[] { 4, 5 })
+            {
+                ClearPreviewActors(canvas);
+                var normal = new LevelData { NumOfBoardHolders = count, NumOfCards = 9, MaxNumOfTries = 10 };
+                using (var game = new Fixture(canvas, camera, normal))
+                {
+                    Field(game.Tracker, "_levelId", 20); game.BuildActors(); game.Gate.Clear();
+                    var answer = Enumerable.Range(1, count).ToArray(); game.Target.RevealMultiplayerAnswer(answer);
+                    var split = (BoardSplitService)Get(game.Results, "_split");
+                    Require(split.CanApply, "Split is available before the first guess");
+                    SubmitSplit(game, answer.Reverse().ToArray());
+                    bool consumed = false;
+                    Require(!split.CanApply && !split.TryApply(() => { consumed = true; return true; }) && !consumed,
+                        "Split cannot be applied or consume stock after even one guess");
+                    var saved = GrowingSnapshot(game, normal); Require(saved.TryCreateSnapshot(out var snapshot), "Save the used board");
+                    var restored = new LevelSaveDataManager(new TestLevel(normal)); restored.SetLevelSaveDataAsSaved(snapshot);
+                    var round = new RoundStateManager(new TestLevel(normal), restored); round.Initialize();
+                    var resumed = new BoardSplitService(new TestLevel(normal), game.Tracker);
+                    Field(resumed, "_save", restored); Field(resumed, "_target", game.Target); Field(resumed, "_round", round);
+                    Require(!resumed.CanApply, "Resume does not reopen the Split eligibility window");
                 }
             }
             Require(Profile() == profile && errors.Count == 0,"No player-data changes or runtime/tween errors: "+string.Join("; ",errors));

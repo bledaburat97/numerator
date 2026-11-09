@@ -46,7 +46,7 @@ namespace Scripts
                 var answer = _target.GetTargetCardsList();
                 if (answer == null || answer.Count < 4 || answer.Count > 5) return false;
                 var history = _round.GetTriedCardsList();
-                return history.Count == 0 || !new GuessEvaluation(history.Count,history[history.Count-1],_target.GetHistoryTargetCards()).Won;
+                return history.Count == 0;
             }
         }
 

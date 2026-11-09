@@ -62,9 +62,9 @@ namespace Scripts
             rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = new Vector2(0, 1);
             rectTransform.localScale = Vector3.one; rectTransform.sizeDelta = new Vector2(width, height);
             rectTransform.anchoredPosition = new Vector2(_index % 2 * (width + 10), -(_index / 2) * (height + 10));
-            float avatarSize = height > 160 ? 72 : 44;
-            if (_avatar != null) FruitLabStyle.Place((RectTransform)_avatar.transform, transform, (width - avatarSize) * .5f, height - avatarSize - 10, avatarSize, avatarSize);
-            FruitLabStyle.Place(playerName.rectTransform, transform, 5, height > 160 ? 53 : 32, width - 10, 26);
+            float avatarSize = height > 160 ? 72 : Mathf.Min(44, Mathf.Max(28, height - 64));
+            if (_avatar != null) FruitLabStyle.Place((RectTransform)_avatar.transform, transform, (width - avatarSize) * .5f, height - avatarSize - 8, avatarSize, avatarSize);
+            FruitLabStyle.Place(playerName.rectTransform, transform, 5, height > 160 ? 53 : 29, width - 10, 24);
             if (_role != null) { _role.alignment = TextAlignmentOptions.TopLeft; FruitLabStyle.Place(_role.rectTransform, transform, 7, height - 24, 34, 18); }
             FruitLabStyle.Place(readyImage.rectTransform, transform, (width - 94) * .5f, height > 160 ? 16 : 4, 94, 26);
             if (_readyCheck != null) FruitLabStyle.Place(_readyCheck.rectTransform, readyImage.transform, 8, 5, 16, 16);

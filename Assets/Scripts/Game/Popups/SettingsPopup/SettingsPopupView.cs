@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,7 +12,18 @@ namespace Scripts
         [SerializeField] private RectTransform content;
         [SerializeField] private TMP_Text title;
         [SerializeField] private TMP_Text description;
-        private bool _singlePlayer = true;
+        private bool _singlePlayer = true, _menuContext;
+        private RectTransform _achievements;
+        public void ConfigureForMenu(System.Action achievements)
+        {
+            _menuContext = true; _notesVisible = false;
+            retryButton.SetButtonStatus(false); menuButton.SetButtonStatus(false);
+            closeButton.SetText("Kapat"); description.gameObject.SetActive(false);
+            if (_achievements == null) _achievements = (RectTransform)TelemetryPrivacyPanel.AddButton(content, "AchievementsButton", "Başarılar", () => { }).transform;
+            var button = _achievements.GetComponent<Button>(); button.onClick.RemoveAllListeners();
+            if (achievements != null) button.onClick.AddListener(achievements.Invoke);
+            ApplyLayout();
+        }
         private RectTransform _privacy;
         private RectTransform _notesReset;
         private bool _notesVisible;
@@ -66,7 +77,7 @@ namespace Scripts
             float availableWidth = parent != null && parent.rect.width > 1f ? parent.rect.width
                 : canvas != null ? ((RectTransform)canvas.rootCanvas.transform).rect.width : 375f;
             float width = Mathf.Min(335f, Mathf.Max(240f, availableWidth - 32f));
-            float height = _singlePlayer ? 400f : 340f;
+            float height = _menuContext ? 300 : _singlePlayer ? 400f : 340f;
             if(_notesVisible)height+=54f;
             rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
             rect.anchoredPosition = Vector2.zero;
@@ -80,6 +91,12 @@ namespace Scripts
             FruitLabStyle.Place(retryButton.GetButtonRectTransform(), content, 17f, 82f, innerWidth - 34f, 48f);
             FruitLabStyle.Place(menuButton.GetButtonRectTransform(), content, 17f, 22f, innerWidth - 34f, 48f);
             if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17f, height - 172f, innerWidth - 34f, 48f);
+            if (_menuContext)
+            {
+                FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 17, 18, innerWidth - 34, 52);
+                if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17, 138, innerWidth - 34, 48);
+                if (_achievements != null) FruitLabStyle.Place(_achievements, content, 17, 78, innerWidth - 34, 48);
+            }
             if(_notesVisible && _notesReset!=null)
             {
                 float closeY=_singlePlayer?142:82;

@@ -27,7 +27,7 @@ namespace Scripts
                 case LevelMechanic.Helper:return "Her 3 yanlış tahminde bir tahmindeki meyvelerin detaylı bilgisi verilir.";
                 case LevelMechanic.Pair:return "Cevapta yan yana bulunan iki meyve iple bağlıdır. Sıralarını sen bulursun.";
                 case LevelMechanic.Split:return "İki grubun sonuçları ayrı hesaplanır, yerleştirilen meyveler kendi grubunda değerlendirilir.";
-                case LevelMechanic.Growing:return "Her 2 yanlışta bir alan açılır. 4 alana ulaşınca 4 ek hak kazanırsın.";
+                case LevelMechanic.Growing:return "Her 2 yanlışta bir alan açılır. Ek 4 hakkın başlangıçta verilir.";
                 case LevelMechanic.Dynamite:return "İlk 4 hamlede dinamitli alan için doğru meyveyi bulmalısın yoksa oyun kaybedilir.";
                 default:return null;
             }

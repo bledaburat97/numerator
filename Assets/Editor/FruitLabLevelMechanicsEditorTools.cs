@@ -223,6 +223,7 @@ public static partial class FruitLabTutorialEditorTools
                 var growth = GrowthFor(game,definition);
                 using (var rules = GrowingRules(game,definition,growth))
                 {
+                    Require(game.Round.GetRemainingGuessCount() == 12 && game.Round.GetMaxGuessCount() == 12, "Growing starts with the full four-life bonus");
                     var provider = GrowingSnapshot(game,definition); LevelSaveData immediate = null;
                     rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => provider.TryCreateSnapshot(out immediate)); rules.Begin(LevelMechanic.Growing);
                     Require(provider.TryCreateSnapshot(out var initial) && GrowingBoardState.IsValid(initial),"An untouched Growing round saves all four future fruits");
@@ -233,7 +234,7 @@ public static partial class FruitLabTutorialEditorTools
                         SubmitSplit(game,prefix.Reverse().ToArray());
                         int count = Math.Min(4,2+number/2);
                         Require(game._counts.GetBoardHolderCount() == count && game.Target.GetTargetCardsList().SequenceEqual(new[] {1,2,3,4}.Take(count)),"Growth preserves the established answer prefix");
-                        Require(game.Round.GetRemainingGuessCount() == 8-number+(number >= 4 ? 4 : 0),"One life per miss; one final four-life grant");
+                        Require(game.Round.GetRemainingGuessCount() == 12-number,"All twelve lives are present at the start; growth grants none");
                         Require(provider.TryCreateSnapshot(out var saved) && GrowingBoardState.IsValid(saved),"The checkpoint is valid immediately after guess "+number);
                         Require(immediate != null && GrowingBoardState.IsValid(immediate) && immediate.GrowingBoard.LastProcessedGuess == number,"Checkpoint commits before holder/life animations finish");
                         checkpoints.Add(JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(immediate)));
@@ -247,10 +248,13 @@ public static partial class FruitLabTutorialEditorTools
                         && game.Round.GetRemainingGuessCount() == remaining,"Repeated resolution cannot grow or grant lives twice");
                     var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
                     Require(helper.TryApply() && helper.EvaluateGuess(1).Cards.Count == 2,"Helper can explain both the latest and an early short guess");
-                    var split = (BoardSplitService)Get(game.Results,"_split"); Require(split.TryApply(() => true),"Manual Split works on the grown four-slot board");
+                    var split = (BoardSplitService)Get(game.Results,"_split"); bool consumed = false;
+                    Require(!split.TryApply(() => { consumed = true; return true; }) && !consumed,"A grown board cannot activate Split after guesses");
                     game._area.RemoveResultBlocks(); game.Results.TryAddTriedCards(); game._area.RevealAnswer(game.Target.GetTargetCardsList());
                     Require(provider.TryCreateSnapshot(out var decorated),"Powerup metadata stays in the growth checkpoint");
                     checkpoints.Add(decorated);
+                    var legacySplit = JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(decorated));
+                    legacySplit.BoardSplitApplied = true; checkpoints.Add(legacySplit);
                 }
             }
             // Real actor reconstruction at every boundary, including one miss before growth.
@@ -327,7 +331,7 @@ public static partial class FruitLabTutorialEditorTools
                         if (startingLives == 8) Require(game._guess.GrantExtraLives(3),"A life powerup can precede the growth bonus");
                         int before = game.Round.GetRemainingGuessCount();
                         SubmitSplit(game,game.Target.GetTargetCardsList().AsEnumerable().Reverse().ToArray()); Tick(2f);
-                        Require(failures == 0 && game.Round.GetRemainingGuessCount() == before-1+4 && game.Round.GetMaxGuessCount() == startingLives+4,"The fourth slot safely rescues a last life and can exceed the original capacity");
+                        Require(failures == 0 && game.Round.GetRemainingGuessCount() == before-1 && game.Round.GetMaxGuessCount() == startingLives+4,"Opening the fourth slot never changes the initial capacity or adds lives");
                         Require(GrowingSnapshot(game,capacity).TryCreateSnapshot(out var saved) && GrowingBoardState.IsValid(saved),"Capacity-expanded saves validate");
                         capacityCheckpoints.Add(saved);
                         while (game.Round.GetRemainingGuessCount() > 0) SubmitSplit(game,game.Target.GetTargetCardsList().AsEnumerable().Reverse().ToArray());
@@ -365,20 +369,20 @@ public static partial class FruitLabTutorialEditorTools
                 using (var rules = GrowingRules(game,definition,GrowthFor(game,definition)))
                 {
                     rules.Begin(LevelMechanic.Growing); SubmitSplit(game,game.Target.GetTargetCardsList().ToArray());
-                    Require(wins == 1 && game._counts.GetBoardHolderCount() == 2 && !game._saves.GetLevelSaveData().GrowingBoard.BonusGranted,"A correct two-slot answer wins immediately");
+                    Require(wins == 1 && game._counts.GetBoardHolderCount() == 2 && game._saves.GetLevelSaveData().GrowingBoard.BonusAtStart,"A correct two-slot answer wins immediately with its initial capacity");
                 }
                 game._saves.CreateDefaultLevelSaveData(); game.Round.Initialize(); game.BuildActors();
-                Require(game._counts.GetBoardHolderCount() == 2 && game.Round.GetMaxGuessCount() == 8 && game.Round.GetTriedCardsList().Count == 0,"Retry creates a fresh two-slot round without a bonus");
+                Require(game._counts.GetBoardHolderCount() == 2 && game.Round.GetMaxGuessCount() == 12 && game.Round.GetRemainingGuessCount() == 12 && game.Round.GetTriedCardsList().Count == 0,"Retry starts a fresh two-slot round with the full initial capacity");
             }
             Require(errors.Count == 0 && profile == Profile(),"No Unity/tween errors or live PlayerPrefs changes: "+string.Join("; ",errors));
             File.WriteAllText(Folder+"/growing-review.json",JsonConvert.SerializeObject(new { passed = true,checkpoints = checkpoints.Count,
-                checks = new[] {"actual DI bindings", "2→3→4", "no fifth slot after further misses", "five-cap save migration and history", "fixed future answer", "original-width history", "one +4 grant", "checkpoint before first guess", "resume at every boundary", "legacy cycle save compatibility", "reward flags preserved", "locked holders retained", "future fruit protected", "Helper and Split compatibility", "zero-life rescue", "life powerup capacity", "early win", "retry reset", "unchanged PlayerPrefs"}
+                checks = new[] {"actual DI bindings", "2→3→4", "no fifth slot after further misses", "five-cap save migration and history", "fixed future answer", "original-width history", "upfront +4 lives", "checkpoint before first guess", "resume at every boundary", "legacy cycle save compatibility", "reward flags preserved", "locked holders retained", "future fruit protected", "Helper and Split compatibility", "no late life grant", "life powerup capacity", "early win", "retry reset", "unchanged PlayerPrefs"}
             },Formatting.Indented));
         }
         finally { DOTween.defaultUpdateType = previous; Application.logMessageReceived -= collect; }
     }
 
-    private static GrowingBoardService GrowthFor(Fixture game,LevelData definition) => new GrowingBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game.Board,game._info,game.Round,game._guess);
+    private static GrowingBoardService GrowthFor(Fixture game,LevelData definition) => new GrowingBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game.Board,game._info,game.Round);
     private static LevelMechanicsController GrowingRules(Fixture game,LevelData definition,GrowingBoardService growth)
     {
         var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
@@ -393,17 +397,18 @@ public static partial class FruitLabTutorialEditorTools
 
     private static void CheckGrowingCapMigration(Canvas canvas,Camera camera)
     {
+        foreach (int maximum in new[] { 4, 5 })
         for (int misses = 0; misses <= 9; misses++)
         {
             var definition = new LevelData { NumOfBoardHolders = 2,NumOfCards = 9,MaxNumOfTries = 8,Mechanic = LevelMechanic.Growing };
             var source = new LevelSaveDataManager(new TestLevel(definition)); source.CreateDefaultLevelSaveData();
-            var saved = source.GetLevelSaveData(); int oldCount = Math.Min(5,2+misses/2);
-            saved.GrowingBoard = new GrowingBoardState { FullTarget = new List<int> {1,2,3,4,5},ActiveCount = oldCount,
-                BonusGranted = oldCount == 5,WrongSinceGrowth = oldCount == 5 ? 0 : misses%2,LastProcessedGuess = misses };
+            var saved = source.GetLevelSaveData(); int oldCount = Math.Min(maximum,2+misses/2);
+            saved.GrowingBoard = new GrowingBoardState { FullTarget = Enumerable.Range(1,maximum).ToList(),ActiveCount = oldCount,
+                BonusGranted = oldCount == maximum,WrongSinceGrowth = oldCount == maximum ? 0 : misses%2,LastProcessedGuess = misses };
             saved.TargetCards = saved.GrowingBoard.FullTarget.Take(oldCount).ToList();
-            for (int n = 0; n < misses; n++) saved.TriedCardsList.Add(Enumerable.Range(1,Math.Min(5,2+n/2)).Reverse().ToList());
-            saved.RemainingGuessCount = 8-misses+(oldCount == 5 ? 4 : 0);
-            int expectedLives = saved.RemainingGuessCount+(oldCount == 4 ? 4 : 0);
+            for (int n = 0; n < misses; n++) saved.TriedCardsList.Add(Enumerable.Range(1,Math.Min(maximum,2+n/2)).Reverse().ToList());
+            saved.RemainingGuessCount = 8-misses+(oldCount == maximum ? 4 : 0);
+            int expectedLives = saved.RemainingGuessCount+(oldCount < maximum ? 4 : 0);
             if (oldCount == 5)
             {
                 saved.CardItemInfoList[4].isLocked = true;
@@ -413,8 +418,8 @@ public static partial class FruitLabTutorialEditorTools
                 saved.CardItemInfoList[0].possibleCardHolderIndicatorIndexes = new List<int> {0};
             }
             GrowingBoardState.UpgradeLegacy(saved);
-            Require(GrowingBoardState.IsValid(saved) && saved.TargetCards.Count <= 4 && saved.GrowingBoard.FullTarget.SequenceEqual(new[] {1,2,3,4}),"A previous five-cap save upgrades without restarting");
-            Require(saved.RemainingGuessCount == expectedLives && saved.GrowingBoard.BonusGranted == (misses >= 4),"The four-slot bonus migrates once without duplicating an old bonus");
+            Require(GrowingBoardState.IsValid(saved) && saved.TargetCards.Count <= 4 && saved.GrowingBoard.FullTarget.SequenceEqual(new[] {1,2,3,4}),"A previous four/five-cap save upgrades without restarting");
+            Require(saved.RemainingGuessCount == expectedLives && saved.GrowingBoard.BonusGranted && saved.GrowingBoard.BonusAtStart,"Unclaimed bonuses migrate to starting lives without duplicating a previous grant");
             GrowingBoardState.UpgradeLegacy(saved); Require(saved.RemainingGuessCount == expectedLives,"Legacy migration is idempotent");
             if (oldCount == 5) Require(!saved.CardItemInfoList[4].isLocked && saved.CardItemInfoList[0].isLocked,"Only a lock on the removed fifth slot is released");
             ClearPreviewActors(canvas);
@@ -429,12 +434,12 @@ public static partial class FruitLabTutorialEditorTools
                     var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
                     Require(helper.EvaluateGuess(misses).Cards.Count == saved.TriedCardsList[misses-1].Count && helper.TryApply(),"Legacy five-fruit history keeps its original Helper feedback");
                     var split = (BoardSplitService)Get(game.Results,"_split");
-                    Require(split.CanApply == (saved.GrowingBoard.ActiveCount == 4),"Split availability can inspect an old five-fruit last guess");
+                    Require(!split.CanApply,"Any restored guess prevents a new Split activation");
                 }
                 game._area.RevealAnswer(game.Target.GetHistoryTargetCards());
                 Require(GrowingSnapshot(game,definition).TryCreateSnapshot(out var migrated) && GrowingBoardState.IsValid(migrated)
                     && migrated.TriedCardsList.Select(row => row.Count).SequenceEqual(saved.TriedCardsList.Select(row => row.Count)),"Migrated history survives another checkpoint unchanged");
-                if (misses >= 7)
+                if (maximum == 5 && misses >= 7)
                 {
                     Require(migrated.GrowingBoard.LegacyHistoryTarget.SequenceEqual(new[] {1,2,3,4,5}),"The archived answer survives deep-copy serialization");
                     int wins = 0; game.Results.LevelSuccessEvent += (s,e) => wins++;

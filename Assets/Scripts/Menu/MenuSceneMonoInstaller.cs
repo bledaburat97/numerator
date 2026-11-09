@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Menu;
 using UnityEngine;
 using Zenject;
@@ -13,6 +13,8 @@ namespace Scripts
         [SerializeField] private VerticalCrystalProgressView crystalProgressView;
         public override void InstallBindings()
         {
+            Container.BindInterfacesAndSelfTo<MainNavigationController>().AsSingle()
+                .WithArguments(MainNavigationView.Ensure(menuUI.GetComponentInParent<Canvas>())).NonLazy();
             Container.BindInterfacesAndSelfTo<MenuHeaderController>().AsSingle()
                 .WithArguments(menuHeader);
             Container.Bind<IMenuUIController>().To<MenuUIController>().AsSingle()

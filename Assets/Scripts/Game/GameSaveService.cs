@@ -90,13 +90,14 @@ namespace Scripts
         public int WrongSinceGrowth;
         public int LastProcessedGuess;
         public bool BonusGranted;
+        public bool BonusAtStart;
         public List<int> FullTarget = new List<int>();
         // Only pre-cap-change history uses this fifth fruit; the live board stays at four.
         public List<int> LegacyHistoryTarget;
 
         public GrowingBoardState Copy() => new GrowingBoardState {
             ActiveCount = ActiveCount, WrongSinceGrowth = WrongSinceGrowth,
-            LastProcessedGuess = LastProcessedGuess, BonusGranted = BonusGranted,
+            LastProcessedGuess = LastProcessedGuess, BonusGranted = BonusGranted, BonusAtStart = BonusAtStart,
             FullTarget = new List<int>(FullTarget),
             LegacyHistoryTarget = LegacyHistoryTarget == null ? null : new List<int>(LegacyHistoryTarget)
         };
@@ -106,25 +107,34 @@ namespace Scripts
         public static void UpgradeLegacy(LevelSaveData save)
         {
             var state = save.GrowingBoard;
-            if (state?.FullTarget?.Count != 5 || !IsValidVersion(save,5)) return;
-            if (save.TriedCardsList.Any(guess => guess.Count == 5)) state.LegacyHistoryTarget = new List<int>(state.FullTarget);
-            state.FullTarget = state.FullTarget.Take(MaximumCount).ToList();
-            state.ActiveCount = System.Math.Min(state.ActiveCount,MaximumCount);
-            save.TargetCards = state.FullTarget.Take(state.ActiveCount).ToList();
-            if (state.ActiveCount == MaximumCount)
+            if (state == null) return;
+            if (state.FullTarget?.Count == 5 && IsValidVersion(save,5))
             {
-                state.WrongSinceGrowth = 0;
-                if (!state.BonusGranted) { state.BonusGranted = true; save.RemainingGuessCount += BonusLives; }
-            }
-            foreach (var card in save.CardItemInfoList)
-            {
-                if (card?.possibleCardHolderIndicatorIndexes == null) continue;
-                if (card.isLocked && card.possibleCardHolderIndicatorIndexes.Any(index => index >= MaximumCount))
+                if (save.TriedCardsList.Any(guess => guess.Count == 5)) state.LegacyHistoryTarget = new List<int>(state.FullTarget);
+                state.FullTarget = state.FullTarget.Take(MaximumCount).ToList();
+                state.ActiveCount = System.Math.Min(state.ActiveCount,MaximumCount);
+                save.TargetCards = state.FullTarget.Take(state.ActiveCount).ToList();
+                if (state.ActiveCount == MaximumCount)
                 {
-                    card.isLocked = false; card.probabilityType = ProbabilityType.Probable;
-                    card.possibleCardHolderIndicatorIndexes = Enumerable.Range(0,state.ActiveCount).ToList();
+                    state.WrongSinceGrowth = 0;
+                    if (!state.BonusGranted) { state.BonusGranted = true; save.RemainingGuessCount += BonusLives; }
                 }
-                else card.possibleCardHolderIndicatorIndexes.RemoveAll(index => index >= MaximumCount);
+                foreach (var card in save.CardItemInfoList)
+                {
+                    if (card?.possibleCardHolderIndicatorIndexes == null) continue;
+                    if (card.isLocked && card.possibleCardHolderIndicatorIndexes.Any(index => index >= MaximumCount))
+                    {
+                        card.isLocked = false; card.probabilityType = ProbabilityType.Probable;
+                        card.possibleCardHolderIndicatorIndexes = Enumerable.Range(0,state.ActiveCount).ToList();
+                    }
+                    else card.possibleCardHolderIndicatorIndexes.RemoveAll(index => index >= MaximumCount);
+                }
+            }
+            // Move an unclaimed legacy growth bonus forward exactly once; keep spent rewards/guesses.
+            if (!state.BonusAtStart && IsValidVersion(save,MaximumCount))
+            {
+                if (!state.BonusGranted) save.RemainingGuessCount += BonusLives;
+                state.BonusGranted = state.BonusAtStart = true;
             }
         }
 
@@ -144,7 +154,7 @@ namespace Scripts
                 || state.LegacyHistoryTarget.Any(card => card < 1 || card > save.Definition.NumOfCards)
                 || !state.LegacyHistoryTarget.Take(maximum).SequenceEqual(state.FullTarget))) return false;
             int expected = System.Math.Min(maximum,InitialCount+save.TriedCardsList.Count/GuessesPerGrowth);
-            if (state.ActiveCount != expected || state.BonusGranted != (expected == maximum)
+            if (state.ActiveCount != expected || (state.BonusAtStart ? !state.BonusGranted : state.BonusGranted != (expected == maximum))
                 || state.WrongSinceGrowth != (expected == maximum ? 0 : save.TriedCardsList.Count%GuessesPerGrowth)
                 || !save.TargetCards.SequenceEqual(state.FullTarget.Take(expected))
                 || save.RemainingGuessCount <= 0

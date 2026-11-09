@@ -14,7 +14,7 @@ namespace Scripts
                 case RewardType.Life:return "3 ek tahmin hakkı verir. 3 hak harcadığında kullanabilirsin.";
                 case RewardType.Helper:return "Son tahminindeki meyvelerin ayrıntısını gösterir.";
                 case RewardType.Pair:return "Cevapta yan yana bulunan iki meyveyi bağlar.";
-                case RewardType.Split:return "Tahtayı böler. Her grubun sonucu ayrı gösterilir.";
+                case RewardType.Split:return "İlk tahminden önce tahtayı böler. Sonuçlar ayrı hesaplanır.";
                 case RewardType.Ultra:return "Bu bölümde konum notlarını otomatik hesaplar.";
                 default:throw new System.ArgumentOutOfRangeException(nameof(type));
             }

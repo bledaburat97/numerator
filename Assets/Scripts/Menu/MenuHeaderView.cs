@@ -11,7 +11,7 @@ namespace Scripts
         public void ApplyLabLayout(float width)
         {
             RectTransform counter = (RectTransform)starHolder.transform;
-            FruitLabStyle.Place(counter, transform, width - 132f, 12f, 132f, 40f);
+            FruitLabStyle.Place(counter, transform, 0f, 12f, 132f, 40f);
             starHolder.SetFixedWidth(132f);
             FruitLabStyle.AddSurface(counter.gameObject, FruitLabStyle.Panel);
             foreach (ContentSizeFitter fitter in counter.GetComponentsInChildren<ContentSizeFitter>(true)) fitter.enabled = false;

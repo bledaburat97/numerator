@@ -22,9 +22,10 @@ namespace Scripts
             FruitLabStyle.Atmosphere((RectTransform)transform);
             var lobby = GetComponentInChildren<LobbyUIView>(true);
             var waiting = GetComponentInChildren<WaitingSceneUIView>(true);
-            float width = Mathf.Min(335, _size.x - 24), height = Mathf.Min(lobby != null ? 428 : 564, _size.y - 64);
+            float width = Mathf.Min(335, _size.x - 24), height = Mathf.Min(lobby != null ? 428 : 564, _size.y - 148);
             RectTransform panel = (lobby != null ? lobby.transform : waiting.transform) as RectTransform;
             panel.SetParent(transform, false); Center(panel, width, height);
+            panel.anchoredPosition = new Vector2(0, 30);
             var surface = FruitLabStyle.AddSurface(panel.gameObject, FruitLabStyle.Panel);
             surface.enabled = lobby == null;
             FruitLabStyle.Rim(panel); panel.Find("LabRim").gameObject.SetActive(lobby == null);

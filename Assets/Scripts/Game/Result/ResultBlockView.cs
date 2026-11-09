@@ -182,7 +182,7 @@ namespace Scripts
         public void SetCardResult(int index, CardResultState state)
         {
             _cards[index].SetResultOutline(state);
-            // A group-local absent hint can become a global misplaced result at completion.
+            // Keep verified local-absence marks when completion still excludes the fruit from this group.
             if (state != CardResultState.Absent && _absentMarks[index] != null)
                 _absentMarks[index].gameObject.SetActive(false);
         }

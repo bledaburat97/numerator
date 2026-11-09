@@ -37,7 +37,7 @@ namespace Game
 
             int crystalTokenCount = levelData.NumOfBoardHolders - 2;
             _lifeBarRewardInfoList = CreateLifeBarRewardInfoList(
-                levelData.MaxNumOfTries,
+                levelSaveData.GrowingBoard?.BonusAtStart == true ? _maxGuessCount : levelData.MaxNumOfTries,
                 _remainingGuessCount,
                 _triedCardsList.Count,
                 crystalTokenCount);

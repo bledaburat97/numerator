@@ -239,7 +239,9 @@ public static partial class FruitLabTutorialEditorTools
         try
         {
             clone=Object.Instantiate(Find<FruitLabMenuLayout>(source).gameObject);SceneManager.MoveGameObjectToScene(clone,camera.gameObject.scene);
-            var canvas=clone.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
+            var canvas=clone.GetComponent<Canvas>();
+            // Isolate legacy modal/presenter checks; footer routing and raycasts are covered by navigation-review.
+            clone.GetComponentInChildren<MainNavigationView>(true)?.gameObject.SetActive(false);canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
             var rect=(RectTransform)clone.transform;rect.localScale=Vector3.one;rect.position=Vector3.zero;
             events=new GameObject("CollectionTestEvents",typeof(EventSystem));SceneManager.MoveGameObjectToScene(events,camera.gameObject.scene);
             var menu=clone.GetComponentInChildren<MenuUIView>(true);var view=menu.GetCollectionView();
@@ -250,12 +252,12 @@ public static partial class FruitLabTutorialEditorTools
             {
                 var trackerRoot=new GameObject("CollectionMenuTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
                 var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;
-                var ui=new MenuUIController(tracker,new MemorySave(),bindings.Resolve<BaseButtonControllerFactory>(),menu,presenter);
+                var ui=new MenuUIController(tracker,new MemorySave(),bindings.Resolve<BaseButtonControllerFactory>(),menu);
                 foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
                 {
                     camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2f*camera.aspect));
                     rect.sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();Layer(clone.transform);Draw(camera);
-                    TapCollectionButton(canvas,camera,events.GetComponent<EventSystem>(),(BaseButtonView)menu.GetCollectionButton());Require(view.IsVisible,"Bahçem opens the garden screen");view.SelectTab(GardenTab.Collection);
+                    presenter.Open();Require(view.IsVisible,"Presenter opens the garden screen; footer entry is covered by navigation-review");view.SelectTab(GardenTab.Collection);
                     view.ApplyLayout();Layer(clone.transform);Draw(camera);
                     var cells=(FruitCollectionCell[])Get(view,"cells");Require(cells.Length==9,"All nine fruits are available in the scrollable collection");
                     foreach(var cell in cells)

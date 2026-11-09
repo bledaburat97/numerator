@@ -27,7 +27,7 @@ namespace Menu
         public event Action<int> AdjustQuantity;
         public event Action Confirm;
         public event Action Cancel;
-        private RectTransform _panel;
+        [NonSerialized] private RectTransform _panel;
         private ScrollRect _body;
         private TMP_Text _balanceLabel,_selected,_totalLabel,_remaining,_error,_growthRule;
         private GardenCoinCounter _balance,_total;

@@ -222,7 +222,7 @@ public static class FruitLabRewardEditorTools
                 Scripts.Economy.PlayerProfileRuntime.Current,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>(),
                 new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),
                 new Scripts.Economy.GardenVisitCoordinator(new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))),menu.GetGardenNoticeView());
-            var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu,collection);
+            var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu);
             using var menuPowers=new MenuPowerUpCountHolderController(powers,tracker,Scripts.Economy.PlayerProfileRuntime.Current);
             menuPowers.Initialize();
             new RewardProgressDisplayController(crystals, tracker).Initialize();
@@ -248,17 +248,17 @@ public static class FruitLabRewardEditorTools
                 bool rewardsUnlocked = levelId >= (LevelPlaytestSchedule.Settings.Enabled ? 4 : 10);
                 Require(crystals.gameObject.activeSelf == rewardsUnlocked && powers.gameObject.activeSelf == rewardsUnlocked,
                     "Crystal energy and powers follow the active content profile, independent of balances");
-                var multi = (BaseButtonView)menu.GetMultiplayerButton();
-                var group = multi.GetComponent<CanvasGroup>();
+                var nav = MainNavigationView.Ensure(canvas);
+                var requests = new List<string>();
+                using var badges = new AchievementsPresenter(new Scripts.Economy.AchievementService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),Scripts.Economy.PlayerProfileRuntime.Current,menu.GetAchievementsView(),menu.GetAchievementsButton(),bindings.Resolve<BaseButtonControllerFactory>());
+                using var navigation = new MainNavigationController(nav,tracker,bindings.Resolve<BaseButtonControllerFactory>(),collection,badges,requests.Add,()=>{});
+                MainNavigationState.RequestedTab = MainTab.Home; navigation.Initialize();
                 bool multiplayerUnlocked = levelId >= 5;
-                Require(group.interactable == multiplayerUnlocked && group.blocksRaycasts == multiplayerUnlocked
-                    && group.alpha == (multiplayerUnlocked ? 1f : .45f), "Duel unlocks when level 6 is reached");
+                Require(nav.GetTab(MainTab.Multiplayer).interactable == multiplayerUnlocked,"Multiplayer tab unlocks at level 6");
                 if (!multiplayerUnlocked)
                 {
-                    multi.OnPointerDown(null); multi.OnPointerUp(null); multi.OnPointerClick(null);
-                    typeof(MenuUIController).GetMethod("OnMultiplayerButtonClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, null);
-                    Require(!(bool)typeof(MenuUIController).GetField("_navigating", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(controller)
-                        && tracker.GetGameOption() == GameOption.SinglePlayer, "Locked duel cannot navigate even through a direct callback");
+                    navigation.Select(MainTab.Multiplayer);
+                    Require(requests.Count == 0 && tracker.GetGameOption() == GameOption.SinglePlayer,"Locked multiplayer does not navigate through a direct callback");
                 }
                 clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();
                 Require(crystals.gameObject.activeSelf == rewardsUnlocked && powers.gameObject.activeSelf == rewardsUnlocked,

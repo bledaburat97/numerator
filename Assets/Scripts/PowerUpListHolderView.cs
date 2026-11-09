@@ -59,6 +59,8 @@ namespace Scripts
         public void ApplyLabLayout(float width, float height, int rows = 1)
         {
             EnsureExtraButtons(); _width = width; _height = height; _rows = Mathf.Clamp(rows, 1, 2);
+            // All powers are shown directly; hide the retired overflow control in older scenes.
+            transform.Find("MorePowers")?.gameObject.SetActive(false);
             foreach (LayoutGroup group in GetComponents<LayoutGroup>()) group.enabled = false;
             var assigned = new HashSet<IBaseButtonView>(DisplayOrder.Select(GetPowerUpButton));
             foreach (var oldButton in GetComponentsInChildren<PowerUpButtonView>(true))

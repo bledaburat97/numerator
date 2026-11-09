@@ -31,7 +31,9 @@ public static partial class FruitLabTutorialEditorTools
         try
         {
             clone=Object.Instantiate(Find<FruitLabMenuLayout>(source).gameObject);SceneManager.MoveGameObjectToScene(clone,camera.gameObject.scene);
-            var canvas=clone.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
+            var canvas=clone.GetComponent<Canvas>();
+            // Isolate legacy modal/presenter checks; footer routing and raycasts are covered by navigation-review.
+            clone.GetComponentInChildren<MainNavigationView>(true)?.gameObject.SetActive(false);canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
             var rect=(RectTransform)clone.transform;rect.localScale=Vector3.one;rect.position=Vector3.zero;rect.sizeDelta=new Vector2(375,812);
             clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();camera.orthographicSize=Mathf.Max(406,375/(2*camera.aspect));
             events=new GameObject("GardenUiEvents",typeof(EventSystem));SceneManager.MoveGameObjectToScene(events,camera.gameObject.scene);
@@ -52,12 +54,12 @@ public static partial class FruitLabTutorialEditorTools
             {
                 var trackerRoot=new GameObject("GardenUiTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
                 var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_levelId",17);
-                new MenuUIController(tracker,new MemorySave(),buttons,menu,presenter);header.Initialize(tracker);
+                new MenuUIController(tracker,new MemorySave(),buttons,menu);header.Initialize(tracker);
                 applicationRoot=new GameObject("GardenApplicationEvents");applicationRoot.SetActive(false);
                 SceneManager.MoveGameObjectToScene(applicationRoot,camera.gameObject.scene);
                 var app=applicationRoot.AddComponent<GlobalContext>();Field(app,"_gardenVisits",visits);Field(app,"_achievements",new AchievementService(profiles,new AchievementRules(new EconomySettings())));GardenApp(app,"Start");
                 presenter.ShowPendingNotice();Require(!notice.IsVisible,"Empty startup has no growth announcement");
-                TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)menu.GetCollectionButton());
+                presenter.Open(); // Footer entry raycasts are covered by navigation-review.
                 var panel=(GardenPanelView)view.Garden;var popup=(SeedPurchasePopupView)view.Purchase;
                 Require(view.IsVisible && panel.gameObject.activeSelf,"Bahçem initially opens its garden tab");
                 Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("Çöz, meyve biriktir")),"Empty garden connects back to solving puzzles");

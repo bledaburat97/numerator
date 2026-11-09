@@ -43,7 +43,7 @@ namespace Scripts
             body.text = "İzin verirsen bölüm sonuçlarını, oyun süresini, eğitim adımlarını ve powerup kullanımını Unity Analytics ile ölçeriz. Bu ölçümler oyunun zorluğunu ve anlaşılabilirliğini iyileştirmemize yardımcı olur.\n\n"
                 + "Analitik olaylara kullanıcı adını, oda kodunu, e-posta adresini veya gizli meyve sırasını eklemeyiz. Unity, olayları oturumlar arasında ilişkilendirmek için bir oyuncu kimliği ile uygulama/cihaz bilgilerini işler.\n\n"
                 + "Hata ve çökme raporları, uygulamanın kararlılığını iyileştirmek için Unity Diagnostics tarafından ayrıca toplanır. Analitik tercihin bu teknik raporlardan ayrıdır.\n\n"
-                + "Analitiği reddedebilir, daha sonra Menü veya Ayarlar → Gizlilik ve veri bölümünden tercihini değiştirebilir ve analitik verilerinin silinmesini isteyebilirsin. Oyuna devam etmek için analitik izni gerekmez.\n\n"
+                + "Analitiği reddedebilir, daha sonra Ayarlar → Gizlilik ve veri bölümünden tercihini değiştirebilir ve analitik verilerinin silinmesini isteyebilirsin. Oyuna devam etmek için analitik izni gerekmez.\n\n"
                 + "İletişim: " + _runtime.Configuration.supportEmail;
             body.raycastTarget = false;
             FruitLabStyle.Stretch(body.rectTransform);
