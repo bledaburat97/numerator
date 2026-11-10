@@ -7,6 +7,7 @@ namespace Scripts.Economy
     {
         void Reconcile();
         IReadOnlyList<AchievementStatus> GetAchievements();
+        AchievementStatus Closest();
         AchievementStatus ClosestFor(IReadOnlyList<int> fruits);
     }
 
@@ -19,9 +20,11 @@ namespace Scripts.Economy
         // repeated startup makes no write once the persisted state is current.
         public void Reconcile()=>_profiles.Update(_rules.Apply);
         public IReadOnlyList<AchievementStatus> GetAchievements()=>_rules.Read(_profiles.Snapshot());
+        public AchievementStatus Closest()=>GetAchievements().Where(goal=>!goal.Unlocked && goal.Progress<goal.Target)
+            .OrderByDescending(goal=>(decimal)goal.Progress/goal.Target).ThenBy(goal=>goal.Target-goal.Progress).ThenBy(goal=>goal.Id,System.StringComparer.Ordinal).FirstOrDefault();
         public AchievementStatus ClosestFor(IReadOnlyList<int> fruits)=>GetAchievements()
             .Where(goal=>!goal.Unlocked && (!goal.Source.HasValue || goal.Source==FruitGainSource.SinglePlayer)
                 && (!goal.Fruit.HasValue || fruits.Contains((int)goal.Fruit.Value)))
-            .OrderByDescending(goal=>(decimal)goal.Progress/goal.Target).ThenBy(goal=>goal.Target-goal.Progress).FirstOrDefault();
+            .OrderByDescending(goal=>(decimal)goal.Progress/goal.Target).ThenBy(goal=>goal.Target-goal.Progress).ThenBy(goal=>goal.Id,System.StringComparer.Ordinal).FirstOrDefault();
     }
 }

@@ -288,20 +288,20 @@ public static class FruitLabMultiplayerEditorTools
         public bool Equals(int[] a, int[] b) => a.SequenceEqual(b);
         public int GetHashCode(int[] cards) { int hash = 17; foreach (int card in cards) hash = hash * 31 + card; return hash; }
     }
-    public static string BuildIos(bool development = true)
+    public static string BuildIos(bool development = true, string outputPath = "Builds/iOS")
     {
         Require(BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.iOS, BuildTarget.iOS), "iOS Build Support must be installed for this Unity editor");
         string existing = "Builds/Unity-iPhone.xcodeproj/project.pbxproj";
-        if (File.Exists(existing))
+        if (outputPath == "Builds/iOS" && File.Exists(existing))
         {
             var team = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(existing), @"DEVELOPMENT_TEAM = ""?([A-Z0-9]{10})");
             if (team.Success) { PlayerSettings.iOS.appleDeveloperTeamID = team.Groups[1].Value; PlayerSettings.iOS.appleEnableAutomaticSigning = true; }
         }
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
             scenes = new[] { "Assets/Scenes/Menu.unity", "Assets/Scenes/Lobby.unity", "Assets/Scenes/WaitingScene.unity", "Assets/Scenes/Game.unity" },
-            locationPathName = "Builds/iOS", target = BuildTarget.iOS, options = development ? BuildOptions.Development : BuildOptions.None });
+            locationPathName = outputPath, target = BuildTarget.iOS, options = development ? BuildOptions.Development : BuildOptions.None });
         Require(report != null && report.summary.result == BuildResult.Succeeded, "iOS Xcode export succeeded");
-        return "Builds/iOS/Unity-iPhone.xcodeproj (fresh export; existing Xcode project preserved)";
+        return outputPath+"/Unity-iPhone.xcodeproj (fresh export; existing Xcode project preserved)";
     }
     public static string Build()
     {

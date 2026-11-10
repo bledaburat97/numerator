@@ -708,6 +708,10 @@ public static partial class FruitLabTutorialEditorTools
         var card = game.Initial.GetRectTransformOfCardItem(1);
         var holder = game.Board.GetRectTransformOfGarden(1);
         var query = (IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
+        var pinned=card.GetComponent<NormalCardItemView>();
+        Require(pinned.HasPresenceBadge && CardKnowledgeFrame(pinned),"Disarmed dynamite uses the same single badge and green card frame");
+        var dynamiteMark=holder.GetComponentInParent<BoardHolderView>().transform.Find("DynamiteBadge");
+        Require(dynamiteMark==null || !dynamiteMark.gameObject.activeSelf,"Disarmed danger has no duplicate holder check badge");
         Require(card.IsChildOf(holder) && card.localPosition.sqrMagnitude < .01f && query.GetPlacedCardIndexesOnBoard()[1] == 1,
             "A solved dynamite fruit must stay physically and logically on the board after every animation frame; frame="+frame+", parent="+card.parent?.name+", expected="+holder.name+", local="+card.localPosition+", occupied="+query.GetPlacedCardIndexesOnBoard()[1]+", locked="+game._info.GetCardItemInfoList()[1].isLocked+", safe="+game._saves.GetLevelSaveData().Dynamite.Disarmed+", guesses="+game.Round.GetTriedCardsList().Count);
     }

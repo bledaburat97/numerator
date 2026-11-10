@@ -64,6 +64,7 @@ namespace Menu
                 var rim=FruitLabStyle.Detail(button.transform,"Selected",FruitLabStyle.Mint,true);rim.gameObject.SetActive(false);
             }
             _selected=GardenUi.Text(_body.content,"SelectedFruit",18,FruitLabStyle.Text);
+            _selected.enableAutoSizing=true;_selected.fontSizeMin=16;_selected.fontSizeMax=18;
             _minus=GardenUi.Button(_body.content,"Minus","−");_minus.onClick.AddListener(()=>AdjustQuantity?.Invoke(-1));
             _plus=GardenUi.Button(_body.content,"Plus","+");_plus.onClick.AddListener(()=>AdjustQuantity?.Invoke(1));
             var inputRect=GardenUi.Rect(_body.content,"Quantity");FruitLabStyle.AddSurface(inputRect.gameObject,FruitLabStyle.Recess).raycastTarget=true;
@@ -102,7 +103,8 @@ namespace Menu
             EnsureUi();_balance.SetAmount(quote?.AvailableCoins);_total.SetAmount(quote?.TotalCoinPrice);
             _remaining.text=quote==null?"":quote.CanAfford?"Kalan: "+FruitCollectionView.FormatCount(quote.AvailableCoins-quote.TotalCoinPrice):"Bakiye yetersiz";
             _remaining.color=quote!=null && !quote.CanAfford?FruitLabStyle.OpponentPlayer:FruitLabStyle.Muted;
-            _error.text=error??"";_confirm.interactable=!busy && quote!=null && quote.CanAfford;
+            if(quote!=null)_selected.text=FruitCollectionView.FruitName(quote.Fruit)+" · "+quote.SeedsPerPack+" tohum = "+quote.PackCoinPrice+" coin";
+            _error.text=error??"";_confirm.interactable=!busy && quote!=null && quote.CanPurchase;
             _growthRule.gameObject.SetActive(string.IsNullOrEmpty(error));_error.gameObject.SetActive(!string.IsNullOrEmpty(error));
             _cancel.interactable=_minus.interactable=_plus.interactable=_quantity.interactable=!busy;
             foreach(var fruit in _fruits.Values)fruit.interactable=!busy;

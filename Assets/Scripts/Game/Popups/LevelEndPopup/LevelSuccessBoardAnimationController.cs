@@ -23,7 +23,7 @@ namespace Scripts
             List<ICardViewHandler> cardsOnBoard = _cardPlacementCoordinator.GetCardsOnBoard();
             return DOTween.Sequence()
                 .Append(TurnCardsIntoCertain(cardsOnBoard, cardDelayDuration, cardColorChangingDuration, ribbonImageDuration))
-                .Join(_boardAreaController.PlayAllSuccessFrameAnimations(cardDelayDuration));
+                .Join(_boardAreaController.PlayAllSuccessFeedback(cardDelayDuration));
         }
 
         private static Sequence TurnCardsIntoCertain(

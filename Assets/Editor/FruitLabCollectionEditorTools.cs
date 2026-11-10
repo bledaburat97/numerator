@@ -56,7 +56,8 @@ public static partial class FruitLabTutorialEditorTools
                 Field(view,"rect",root.transform);Field(view,"title",title);Field(view,"section",section);Field(view,"summary",summary);Field(view,"closeButton",close);Field(view,"cells",cells.ToArray());
                 Field(view,"cardPrefab",AssetDatabase.LoadAssetAtPath<NonDraggableCardItemView>("Assets/Prefabs/NonDraggableCardItem.prefab"));
                 ((RectTransform)root.transform).sizeDelta=new Vector2(375,812);
-                view.Render(new PlayerProfileData().Collection);view.ApplyLayout();
+                view.Render(new PlayerProfileData().Collection);
+                view.RenderAchievements(new AchievementRules(PlayerProfileRuntime.LoadSettings()).Read(new PlayerProfileData()));view.ApplyLayout();
                 ConnectGardenCardPrefabs(root);
                 foreach(var graphic in root.GetComponentsInChildren<Graphic>(true))graphic.gameObject.layer=5;
                 root.SetActive(false);PrefabUtility.SaveAsPrefabAsset(root,CollectionPath);
@@ -71,6 +72,7 @@ public static partial class FruitLabTutorialEditorTools
             Set(menu,"collectionButton",entry);Set(menu,"collectionView",collection.GetComponent<FruitCollectionView>());
             menu.GetGardenNoticeView().ApplyLayout();menu.GetGardenNoticeView().Hide();
             Find<FruitLabMenuLayout>(source).ApplyLayout();
+            ClosestBadgeView.Ensure(Find<FruitLabMenuLayout>(source).HomeContent).Render(new AchievementRules(PlayerProfileRuntime.LoadSettings()).Read(new PlayerProfileData()).OrderBy(goal=>goal.Target).FirstOrDefault());
             foreach(var component in source.GetRootGameObjects().SelectMany(go=>go.GetComponentsInChildren<Component>(true)))
                 if(component!=null){EditorUtility.SetDirty(component);if(PrefabUtility.IsPartOfPrefabInstance(component))PrefabUtility.RecordPrefabInstancePropertyModifications(component);}
             EditorSceneManager.MarkSceneDirty(source);Require(EditorSceneManager.SaveScene(source),"Collection menu saves");
@@ -248,7 +250,7 @@ public static partial class FruitLabTutorialEditorTools
             var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>new PlayerProfileData());var inventory=new FruitInventoryService(profiles,new AchievementRules(new EconomySettings()));
             var bindings=new DiContainer();bindings.Bind<IHapticController>().To<HapticController>().AsSingle();
             bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
-            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,bindings.Resolve<BaseButtonControllerFactory>(),new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),new AchievementRules(new EconomySettings())),new GardenVisitCoordinator(new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),new AchievementRules(new EconomySettings()))),menu.GetGardenNoticeView()))
+            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,bindings.Resolve<BaseButtonControllerFactory>(),new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),new AchievementRules(new EconomySettings())),new GardenVisitCoordinator(new GardenService(profiles,new EconomySettings(),new SystemGardenClock(),new AchievementRules(new EconomySettings()))),menu.GetGardenNoticeView(),new Scripts.Economy.AchievementService(profiles,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))))
             {
                 var trackerRoot=new GameObject("CollectionMenuTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
                 var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;
@@ -269,7 +271,7 @@ public static partial class FruitLabTutorialEditorTools
                         foreach(var label in new[]{cell.Name,cell.Amount}){label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Fruit name and quantity stay readable: "+label.text);}
                     }
                     var collectionScroll=view.GetComponentsInChildren<ScrollRect>().Single();
-                    collectionScroll.verticalNormalizedPosition=0;Layer(clone.transform);Draw(camera);
+                    collectionScroll.verticalNormalizedPosition=1;Layer(clone.transform);Draw(camera);
                     var lastCorners=new Vector3[4];cells.Last().Root.GetWorldCorners(lastCorners);var visibleBounds=collectionScroll.viewport.rect;
                     visibleBounds.xMin-=.2f;visibleBounds.yMin-=.2f;visibleBounds.xMax+=.2f;visibleBounds.yMax+=.2f;
                     Require(lastCorners.All(point=>visibleBounds.Contains(collectionScroll.viewport.InverseTransformPoint(point))),"Last fruit row is fully reachable by scrolling");
@@ -306,4 +308,129 @@ public static partial class FruitLabTutorialEditorTools
         ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,pointer,ExecuteEvents.pointerUpHandler);
         ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,pointer,ExecuteEvents.pointerClickHandler);
     }
+}
+
+public static partial class FruitLabTutorialEditorTools
+{
+    public static string BakeCollectionHub()
+    {
+        const string path="Assets/Resources/Art/UI/Badge.png";
+        AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+        var importer=(TextureImporter)AssetImporter.GetAtPath(path);
+        importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
+        importer.alphaIsTransparency=true;importer.mipmapEnabled=false;importer.maxTextureSize=256;
+        importer.textureCompression=TextureImporterCompression.CompressedHQ;importer.wrapMode=TextureWrapMode.Clamp;
+        importer.SaveAndReimport();
+        typeof(FruitLabStyle).GetField("_icons",BindingFlags.Static|BindingFlags.NonPublic).SetValue(null,null);
+        Require(FruitLabStyle.Icon("Badge")!=null,"Reusable badge sprite imported");
+        return BakeCollection();
+    }
+    public static void ReviewCollectionHub(Canvas gameCanvas,Camera camera)
+    {
+        string before=Profile();var errors=new List<string>();
+        Application.LogCallback collect=(message,stack,type)=>{if(type==LogType.Error || type==LogType.Exception || type==LogType.Assert)errors.Add(message);};
+        Application.logMessageReceived+=collect;
+        try
+        {
+            FruitLabAchievementRuleChecks.Review(Folder,PlayerProfileRuntime.LoadSettings(),PlayerProfileRuntime.CreateRewardRules());
+            ReviewCollectionRewards();ReviewCollectionRounds(gameCanvas,camera);
+            ReviewCollectionHubUi(gameCanvas,camera);
+            Require(before==Profile(),"Real player preferences are unchanged");
+            Require(errors.Count==0,"No collection errors: "+string.Join("; ",errors));
+            File.WriteAllText(Folder+"/collection-hub-review.json",JsonConvert.SerializeObject(new {passed=true,goals=5,sizes=new[]{568,667,812,932},
+                checks=new[]{"single/duel/manual harvest lifetime totals","exclude adjustments and unharvested crops","five badge-only goals","legacy reward receipts preserved","restart and failed-write rollback","home closest unfinished target","home click focuses badge","garden album and footer reset to fruit summary","one scroll and reused rows","pending to earned live movement","all completed hides home goal","real pointer clicks","real player preferences unchanged"}},Formatting.Indented));
+        }
+        finally {Application.logMessageReceived-=collect;}
+    }
+    private static void ReviewCollectionHubUi(Canvas gameCanvas,Camera camera)
+    {
+        var source=EditorSceneManager.OpenPreviewScene("Assets/Scenes/Menu.unity");GameObject clone=null,events=null;
+        float ortho=camera.orthographicSize;var previous=MainNavigationState.RequestedTab;
+        gameCanvas.gameObject.SetActive(false);
+        try
+        {
+            clone=Object.Instantiate(Find<FruitLabMenuLayout>(source).gameObject);SceneManager.MoveGameObjectToScene(clone,camera.gameObject.scene);
+            var canvas=clone.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
+            var rect=(RectTransform)clone.transform;rect.localScale=Vector3.one;rect.position=Vector3.zero;
+            events=new GameObject("CollectionHubEvents",typeof(EventSystem));SceneManager.MoveGameObjectToScene(events,camera.gameObject.scene);
+            var eventSystem=events.GetComponent<EventSystem>();var menu=clone.GetComponentInChildren<MenuUIView>(true);var view=menu.GetCollectionView();
+            var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>new PlayerProfileData());
+            var settings=PlayerProfileRuntime.LoadSettings();var rules=new AchievementRules(settings);var service=new AchievementService(profiles,rules);
+            var inventory=new FruitInventoryService(profiles,rules);var garden=new GardenService(profiles,settings,new SystemGardenClock(),rules);
+            var bindings=new DiContainer();bindings.Bind<IHapticController>().To<HapticController>().AsSingle();
+            bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
+            var buttons=bindings.Resolve<BaseButtonControllerFactory>();
+            using var collection=new FruitCollectionPresenter(inventory,profiles,view,buttons,garden,new GardenVisitCoordinator(garden),menu.GetGardenNoticeView(),service);
+            var trackerRoot=new GameObject("CollectionHubTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
+            var tracker=trackerRoot.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_levelId",17);
+            var navigation=MainNavigationView.Ensure(canvas);
+            using var controller=new MainNavigationController(navigation,tracker,buttons,collection,_=>{});
+            MainNavigationState.RequestedTab=MainTab.Home;controller.Initialize();
+            new MenuUIController(tracker,new MemorySave(),buttons,menu);
+            var home=ClosestBadgeView.Ensure(clone.GetComponent<FruitLabMenuLayout>().HomeContent);
+            using var closest=new ClosestBadgePresenter(service,profiles,controller,home);closest.Initialize();
+            inventory.Grant("initial-single",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,8}});
+            inventory.Grant("initial-duel",FruitGainSource.Duel,new Dictionary<FruitId,long>{{FruitId.Apple,1}});
+            inventory.Grant("admin-not-collected",FruitGainSource.Adjustment,new Dictionary<FruitId,long>{{FruitId.Apple,500}});
+            inventory.Spend("spend-one",new Dictionary<FruitId,long>{{FruitId.Strawberry,1}});
+            foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
+            {
+                rect.sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();navigation.ApplyLayout();
+                camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2*camera.aspect));
+                controller.Select(MainTab.Home);Layer(clone.transform);Draw(camera);
+                Require(home.gameObject.activeInHierarchy && home.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="9/10"),"One nearest home goal counts duel and retains spent fruit");
+                var card=(RectTransform)home.transform;var play=menu.GetSinglePlayerButton().GetButtonRectTransform();
+                Require(card.rect.height>=48 && card.rect.height<play.rect.height && card.rect.width<play.rect.width,"Home target is smaller than Play with a comfortable tap area");
+                var powerRect=clone.GetComponentInChildren<PowerUpListHolderView>(true).GetRectTransform();
+                var bounds=new Vector3[4];powerRect.GetWorldCorners(bounds);
+                float powerBottom=card.parent.InverseTransformPoint(bounds[0]).y;
+                float cardTop=card.anchoredPosition.y+card.rect.height*.5f;
+                Require(cardTop<=powerBottom+((RectTransform)card.parent).rect.height*.5f-8,"Home goal does not overlap the power-up strip");
+                foreach(var candidate in service.GetAchievements())
+                {
+                    home.Render(candidate);
+                    foreach(var text in home.GetComponentsInChildren<TMP_Text>()){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Home text fits: "+text.text);}
+                }
+                home.Render(service.Closest());
+                Capture(camera,Folder+"/preview-collection-home-"+(int)size.y+".png");
+                TapGarden(canvas,camera,eventSystem,home.GetComponent<Button>());view.ApplyLayout();Layer(clone.transform);Draw(camera);
+                var scroll=view.GetComponentsInChildren<ScrollRect>().Single();
+                var focused=scroll.content.Find("Achievement-garden-owner-10") as RectTransform;
+                Require(view.IsVisible && !view.IsGardenSelected && scroll.verticalNormalizedPosition<.99f,"Home opens and scrolls directly to the selected badge");
+                var rowCorners=new Vector3[4];focused.GetWorldCorners(rowCorners);
+                Require(rowCorners.All(point=>Expanded(scroll.viewport.rect,1).Contains((Vector2)scroll.viewport.InverseTransformPoint(point))),"Focused goal is fully visible at every phone size");
+                Capture(camera,Folder+"/preview-collection-focused-"+(int)size.y+".png");
+                TapGarden(canvas,camera,eventSystem,navigation.GetTab(MainTab.Collection));
+                Require(scroll.verticalNormalizedPosition>.99f,"Collection footer opens at fruit summary");
+                var cells=(FruitCollectionCell[])Get(view,"cells");
+                Require(cells.Length==9 && cells.Single(cell=>cell.Fruit==FruitId.Strawberry).Amount.text=="8" && cells.Single(cell=>cell.Fruit==FruitId.Apple).Amount.text=="1","Fruit grid uses eligible lifetime totals, including duel but excluding adjustment");
+                Require(scroll.content.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Sıradaki rozetler"),"Pending badges share the fruit scroll");
+                foreach(var text in view.GetComponentsInChildren<TMP_Text>()){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Collection text fits: "+text.text);}
+                Capture(camera,Folder+"/preview-collection-hub-"+(int)size.y+".png");
+                scroll.verticalNormalizedPosition=0;Layer(clone.transform);Draw(camera);
+                Capture(camera,Folder+"/preview-collection-bottom-"+(int)size.y+".png");
+                TapGarden(canvas,camera,eventSystem,navigation.GetTab(MainTab.Garden));
+                TapGarden(canvas,camera,eventSystem,((GardenPanelView)view.Garden).CollectionButton);
+                Require(view.IsVisible && !view.IsGardenSelected && scroll.verticalNormalizedPosition>.99f,"Garden album routes to the common collection at fruit summary");
+            }
+            inventory.Grant("complete-nearest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Apple,1}});
+            Require(service.GetAchievements().Count(goal=>goal.Unlocked)==1,"Completed harvest unlocks the ten-fruit badge");
+            var content=view.GetComponentsInChildren<ScrollRect>().Single().content;
+            var owner=content.Find("Achievement-garden-owner-10");
+            Require(owner.gameObject.activeSelf && !owner.Find("Progress").gameObject.activeSelf,"Completed badge moves to the earned collection without progress or power-up claim");
+            Require(content.Cast<Transform>().Count(child=>child.name.StartsWith("Achievement-"))==5,"Repeated page opens and awards reuse exactly five badge rows");
+            controller.OpenCollection("garden-owner-10");Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-collection-earned.png");
+            inventory.Grant("finish-all",FruitGainSource.Duel,new Dictionary<FruitId,long>{{FruitId.Strawberry,92},{FruitId.Watermelon,100},{FruitId.Apple,1298}});
+            controller.Select(MainTab.Home);Require(!home.gameObject.activeSelf,"Home card disappears when all five badges have been earned");
+            Require(profiles.Snapshot().Wallet.PowerUps.Values.All(amount=>amount==0),"No extra power-ups are awarded for the five badge-only goals");
+            controller.OpenCollection();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-collection-all-earned.png");
+        }
+        finally
+        {
+            MainNavigationState.RequestedTab=previous;
+            if(events!=null)Object.DestroyImmediate(events);if(clone!=null)Object.DestroyImmediate(clone);
+            EditorSceneManager.ClosePreviewScene(source);gameCanvas.gameObject.SetActive(true);camera.orthographicSize=ortho;
+        }
+    }
+    private static Rect Expanded(Rect rect,float amount){rect.xMin-=amount;rect.yMin-=amount;rect.xMax+=amount;rect.yMax+=amount;return rect;}
 }

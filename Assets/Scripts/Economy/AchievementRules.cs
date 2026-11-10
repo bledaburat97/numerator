@@ -8,6 +8,8 @@ namespace Scripts.Economy
 {
     // IDs are permanent award identities. Changing a title or target must never
     // turn an already-paid badge into a new reward.
+    public enum AchievementRewardKind { PowerUp = 0, Badge = 1 }
+
     public sealed class AchievementDefinition
     {
         public string Id;
@@ -16,6 +18,7 @@ namespace Scripts.Economy
         public long Target;
         public FruitId? Fruit;
         public FruitGainSource? Source;
+        public AchievementRewardKind RewardKind;
         public RewardType Reward;
         public int RewardCount = 1;
     }
@@ -26,6 +29,7 @@ namespace Scripts.Economy
         public long Progress,Target;
         public FruitId? Fruit;
         public FruitGainSource? Source;
+        public AchievementRewardKind RewardKind;
         public RewardType Reward;
         public int RewardCount;
         public bool Unlocked,RewardGranted;
@@ -34,6 +38,7 @@ namespace Scripts.Economy
     public sealed class AchievementRewardRecord
     {
         public string AchievementId;
+        public AchievementRewardKind RewardKind;
         public RewardType Reward;
         public int Count;
     }
@@ -49,7 +54,7 @@ namespace Scripts.Economy
             settings.Validate();
             _definitions=settings.Achievements.Select(definition=>new AchievementDefinition {
                 Id=definition.Id,Title=definition.Title,Description=definition.Description,Target=definition.Target,
-                Fruit=definition.Fruit,Source=definition.Source,Reward=definition.Reward,RewardCount=definition.RewardCount
+                Fruit=definition.Fruit,Source=definition.Source,RewardKind=definition.RewardKind,Reward=definition.Reward,RewardCount=definition.RewardCount
             }).ToArray();
         }
 
@@ -69,9 +74,10 @@ namespace Scripts.Economy
                 string id="achievement:"+definition.Id;
                 // A dangling receipt is a data error, not permission to pay again.
                 if(profile.Transactions.ContainsKey(id))throw new InvalidOperationException("Achievement receipt has no matching award: "+definition.Id);
-                profile.Wallet.PowerUps[definition.Reward]=checked(profile.Wallet.PowerUps[definition.Reward]+definition.RewardCount);
+                if(definition.RewardKind==AchievementRewardKind.PowerUp)
+                    profile.Wallet.PowerUps[definition.Reward]=checked(profile.Wallet.PowerUps[definition.Reward]+definition.RewardCount);
                 profile.Transactions.Add(id,new ProfileTransactionRecord {Kind="achievement_reward",
-                    Request=JsonConvert.SerializeObject(new AchievementRewardRecord {AchievementId=definition.Id,Reward=definition.Reward,Count=definition.RewardCount}),AppliedAtUtc=DateTime.UtcNow});
+                    Request=JsonConvert.SerializeObject(new AchievementRewardRecord {AchievementId=definition.Id,RewardKind=definition.RewardKind,Reward=definition.Reward,Count=definition.RewardCount}),AppliedAtUtc=DateTime.UtcNow});
                 state.RewardTransactionId=id;state.RewardGranted=true;
             }
         }
@@ -82,12 +88,12 @@ namespace Scripts.Economy
             if(state?.RewardGranted==true && profile.Transactions.TryGetValue(state.RewardTransactionId,out var receipt) && receipt.Kind=="achievement_reward")
             {
                 awarded=JsonConvert.DeserializeObject<AchievementRewardRecord>(receipt.Request);
-                if(awarded==null || awarded.AchievementId!=definition.Id || awarded.Count<=0 || !Enum.IsDefined(typeof(RewardType),awarded.Reward))
+                if(awarded==null || awarded.AchievementId!=definition.Id || awarded.Count<=0 || !Enum.IsDefined(typeof(AchievementRewardKind),awarded.RewardKind) || !Enum.IsDefined(typeof(RewardType),awarded.Reward))
                     throw new InvalidOperationException("Invalid achievement award receipt: "+definition.Id);
             }
             return new AchievementStatus {Id=definition.Id,Title=definition.Title,Description=definition.Description,
                 Progress=Count(profile,definition),Target=definition.Target,Fruit=definition.Fruit,Source=definition.Source,
-                Reward=awarded?.Reward??definition.Reward,RewardCount=awarded?.Count??definition.RewardCount,Unlocked=state?.Unlocked??false,RewardGranted=state?.RewardGranted??false};
+                RewardKind=awarded?.RewardKind??definition.RewardKind,Reward=awarded?.Reward??definition.Reward,RewardCount=awarded?.Count??definition.RewardCount,Unlocked=state?.Unlocked??false,RewardGranted=state?.RewardGranted??false};
         }).ToArray();
 
         private static long Count(PlayerProfileData profile,AchievementDefinition definition)
@@ -100,7 +106,7 @@ namespace Scripts.Economy
                 if(definition.Fruit.HasValue && entry.Key!=definition.Fruit.Value)continue;
                 foreach(var source in entry.Value.EarnedBySource)
                 {
-                    if(source.Key==FruitGainSource.Adjustment || (definition.Source.HasValue && source.Key!=definition.Source.Value))continue;
+                    if(!FruitCollectionTotals.Counts(source.Key) || (definition.Source.HasValue && source.Key!=definition.Source.Value))continue;
                     if(source.Value>=definition.Target-total)return definition.Target;
                     total+=source.Value;
                 }

@@ -49,7 +49,7 @@ namespace Scripts
                 if (sprites.Length == 0) sprites = Resources.LoadAll<Sprite>("Art/FruitLabIcons");
                 foreach (Sprite sprite in sprites)
                     _icons[sprite.name] = sprite;
-                foreach (string key in new[] { "Helper", "Ultra", "Pair", "Split", "Information", "Eraser", "Confirm", "Swap" })
+                foreach (string key in new[] { "Helper", "Ultra", "Pair", "Split", "Information", "Eraser", "Confirm", "Swap", "Badge" })
                 {
                     var artwork = Resources.Load<Sprite>("Art/UI/" + key);
                     if (artwork != null) _icons[key] = artwork;

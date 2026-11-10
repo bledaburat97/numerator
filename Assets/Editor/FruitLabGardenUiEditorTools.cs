@@ -49,7 +49,7 @@ public static partial class FruitLabTutorialEditorTools
             var bindings=new DiContainer();bindings.Bind<IHapticController>().To<HapticController>().AsSingle();
             bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
             var buttons=bindings.Resolve<BaseButtonControllerFactory>();
-            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,buttons,garden,visits,notice))
+            using(var presenter=new FruitCollectionPresenter(inventory,profiles,view,buttons,garden,visits,notice,new Scripts.Economy.AchievementService(profiles,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))))
             using(var header=new MenuHeaderController(clone.GetComponentInChildren<MenuHeaderView>(true),profiles))
             {
                 var trackerRoot=new GameObject("GardenUiTracker");trackerRoot.SetActive(false);trackerRoot.transform.SetParent(clone.transform,false);
@@ -62,12 +62,12 @@ public static partial class FruitLabTutorialEditorTools
                 presenter.Open(); // Footer entry raycasts are covered by navigation-review.
                 var panel=(GardenPanelView)view.Garden;var popup=(SeedPurchasePopupView)view.Purchase;
                 Require(view.IsVisible && panel.gameObject.activeSelf,"Bahçem initially opens its garden tab");
-                Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("Çöz, meyve biriktir")),"Empty garden connects back to solving puzzles");
+                Require(panel.Plots.Count==9 && panel.Plots.All(plot=>plot.OccupiedCells==0),"Empty garden shows all nine permanent plots without fake crops");
                 Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-purpose.png");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
                 TapGarden(canvas,camera,eventSystem,popup.FruitButton(FruitId.Strawberry));popup.QuantityInput.text="10";
-                Require(popup.ConfirmButton.interactable && popup.transform.Find("Panel/TotalCounter/Value").GetComponent<TMP_Text>().text=="10"
-                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 40"),"Purchase preview shows fruit, quantity, total and remaining coins");
+                Require(popup.ConfirmButton.interactable && popup.transform.Find("Panel/TotalCounter/Value").GetComponent<TMP_Text>().text=="2"
+                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 48"),"Purchase preview shows fruit, quantity, total and remaining coins");
                 TapGarden(canvas,camera,eventSystem,popup.CancelButton);
                 Require(profiles.Snapshot().Wallet.Coins==50 && garden.GetBatches().Count==0,"Cancel never spends coins");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
@@ -81,10 +81,11 @@ public static partial class FruitLabTutorialEditorTools
                 popup.QuantityInput.text="10";
                 Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-seed-purchase.png");
                 TapGarden(canvas,camera,eventSystem,popup.ConfirmButton);popup.ConfirmButton.onClick.Invoke();
-                Require(!popup.gameObject.activeSelf && profiles.Snapshot().Wallet.Coins==40 && garden.GetBatches().Single().Value.Quantity==10,
+                Require(!popup.gameObject.activeSelf && profiles.Snapshot().Wallet.Coins==48 && garden.GetBatches().Single().Value.Quantity==10,
                     "Actual UI purchase debits once, creates a batch and ignores a duplicate confirmation");
-                Require(clone.GetComponentInChildren<MenuHeaderView>(true).GetComponentsInChildren<TMP_Text>(true).Any(t=>t.text=="40"),"Menu coin counter refreshes after purchase");
-                Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="10 adet") && panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Tohum · 0/4"),"New batch is displayed with amount and stage");
+                Require(clone.GetComponentInChildren<MenuHeaderView>(true).GetComponentsInChildren<TMP_Text>(true).Any(t=>t.text=="48"),"Menu coin counter refreshes after purchase");
+                var planted=panel.Plots.Single(plot=>plot.Fruit==FruitId.Strawberry);
+                Require(planted.CellCount(0).text=="10" && planted.CellArt(0).sprite.name=="Seed","New batch is displayed with its real amount and seed artwork");
                 notice.Hide();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-seeds.png");
                 TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)view.CloseButton);
                 Require(!view.IsVisible && !garden.ProcessVisit().HasProgress,"Closing and reopening menu cannot grow purchase-day seeds");
@@ -100,19 +101,32 @@ public static partial class FruitLabTutorialEditorTools
                 Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-growth-notice.png");
                 presenter.Dispose();clock.Day(40);GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
                 Require(!notice.IsVisible && garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Leaves,"Growth continues in another scene and long absence gives one stage");
-                using(var returning=new FruitCollectionPresenter(inventory,profiles,view,buttons,garden,visits,notice))
+                using(var returning=new FruitCollectionPresenter(inventory,profiles,view,buttons,garden,visits,notice,new Scripts.Economy.AchievementService(profiles,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))))
                 {
                     returning.ShowPendingNotice();Require(notice.IsVisible,"Queued game-scene progress is shown when the menu is ready");
                     notice.Hide();returning.ShowPendingNotice();Require(!notice.IsVisible,"Menu recreation never repeats an already shown notice");
                     clock.Day(41);GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
                     Require(garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Flower,"Third entry reaches flower");
                     clock.Day(42);GardenApp(app,"OnApplicationFocus",false);GardenApp(app,"OnApplicationFocus",true);
-                    Require(garden.GetBatches().Count==0 && inventory.GetCollection()[FruitId.Strawberry].Current==10,"Fourth entry automatically moves fruit into collection");
-                    Require(notice.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("10 çilek") && t.text.Contains("koleksiyonuna eklendi")),"Harvest announcement names the actual fruit and quantity");
+                    Require(garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Fruit && inventory.GetCollection()[FruitId.Strawberry].Current==0,"Fourth entry ripens but does not collect");
+                    Require(notice.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("dokun")) && !notice.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("koleksiyonuna eklendi")),"Ready notice teaches tapping and never claims an uncollected reward");
+                    Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-ready-notice.png");
+                    returning.Open();var harvestHit=planted.CellRect(0).Find("HarvestHit").GetComponent<GardenHarvestCell>();
+                    Layer(clone.transform);Draw(camera);var hitRect=(RectTransform)harvestHit.transform;
+                    var point=RectTransformUtility.WorldToScreenPoint(camera,hitRect.TransformPoint(hitRect.rect.center));
+                    var pointer=new PointerEventData(eventSystem) {position=point,pressPosition=point,button=PointerEventData.InputButton.Left,
+                        pointerPressRaycast=new RaycastResult {module=canvas.GetComponent<GraphicRaycaster>()}};
+                    harvestHit.OnPointerDown(pointer);panel.WorldScroll.OnBeginDrag(pointer);panel.WorldScroll.OnEndDrag(pointer);harvestHit.OnPointerClick(pointer);
+                    Require(inventory.GetCollection()[FruitId.Strawberry].Current==0 && garden.GetBatches().Count==1,"A swipe that returns to its start still cannot harvest");
+                    Layer(clone.transform);Draw(camera);var hits=new List<RaycastResult>();canvas.GetComponent<GraphicRaycaster>().Raycast(pointer,hits);
+                    Require(hits.Count>0 && ExecuteEvents.GetEventHandler<IPointerClickHandler>(hits[0].gameObject)==harvestHit.gameObject,"Actual raycast reaches the ripe cell");
+                    harvestHit.OnPointerDown(pointer);harvestHit.OnPointerUp(pointer);harvestHit.OnPointerClick(pointer);harvestHit.OnPointerClick(pointer);
+                    Require(garden.GetBatches().Count==0 && inventory.GetCollection()[FruitId.Strawberry].Current==10,"Actual cell tap collects once and empties the cell");
+                    Require(notice.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("10 çilek") && t.text.Contains("koleksiyonuna eklendi")),"Collection message appears only after committed harvest");
                     Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-harvest-notice.png");
                     revision=profiles.Snapshot().Revision;notice.Hide();
                     GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
-                    Require(!notice.IsVisible && profiles.Snapshot().Revision==revision,"Repeated same-day resume has no announcement or second harvest");
+                    Require(!notice.IsVisible && profiles.Snapshot().Revision==revision,"Same-day resume cannot repeat manual harvest");
                     returning.Open();TapGarden(canvas,camera,eventSystem,view.GetTabButton(GardenTab.Collection));
                     var cells=(FruitCollectionCell[])Get(view,"cells");Require(cells.Single(c=>c.Fruit==FruitId.Strawberry).Amount.text=="10","Collection tab contains the actual harvest");
                     Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-collection.png");
@@ -122,7 +136,7 @@ public static partial class FruitLabTutorialEditorTools
             Require(errors.Count==0,"Garden UI has no Unity errors: "+string.Join(" | ",errors));
             Require(before==Profile(),"Real player preferences stay unchanged");
             File.WriteAllText(Folder+"/garden-ui-review.json",JsonConvert.SerializeObject(new {passed=true,phone_layouts=4,
-                actual_raycast_purchase=true,cancel_outside=true,duplicate_click=true,global_focus_pause=true,
+                manual_harvest=true,drag_cannot_harvest=true,actual_raycast_purchase=true,cancel_outside=true,duplicate_click=true,global_focus_pause=true,
                 menu_reentry_no_growth=true,queued_notice=true,harvest_to_collection=true,real_player_unchanged=true,
                 fixed_growth_rule=true,shared_fruit_cards=true,shared_coin_counters=true,readable_stage_progress=true},Formatting.Indented));
         }
@@ -142,29 +156,29 @@ public static partial class FruitLabTutorialEditorTools
         {
             ((RectTransform)canvas.transform).sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();
             presenter.Open();view.ApplyLayout();panel.ApplyLayout();Canvas.ForceUpdateCanvases();
-            var art=(RectTransform)panel.transform.Find("EmptyIllustration");
-            Require(art.gameObject.activeSelf && art.GetComponentsInChildren<NonDraggableCardItemView>().Length==3,"Empty garden has three static preview cards");
-            var purpose=(TMP_Text)Get(panel,"_empty");var rule=(TMP_Text)Get(panel,"_rule");var summary=(TMP_Text)Get(panel,"_summary");
-            Require(BoundsIn(art,panel.transform).yMax<BoundsIn(summary.rectTransform,panel.transform).yMin,"Empty illustration stays below the summary");
-            Require(BoundsIn(purpose.rectTransform,panel.transform).yMin>BoundsIn(rule.rectTransform,panel.transform).yMax,"Empty garden explanation stays above the fixed growing rule");
-            foreach(var text in new[]{purpose,rule,summary}){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Empty garden copy fits: "+size+" "+text.text);}
+            Require(panel.Plots.Count==9 && panel.Plots.All(plot=>plot.OccupiedCells==0),"Empty garden retains all permanent plots");
+            Require(panel.WorldScroll.horizontal && !panel.WorldScroll.vertical,"Garden scrolls horizontally");
+            Require(Mathf.Abs(panel.WorldScroll.content.rect.width-panel.WorldScroll.viewport.rect.width*1.5f)<.1f,"The visible world has two columns out of three");
             Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-empty-"+(int)size.y+".png");presenter.Close();
         }
         profiles.Update(profile=>{
-            for(int index=0;index<12;index++)profile.Garden.Add("layout:"+index,new PlantingBatch {Fruit=(FruitId)(index%9+1),Quantity=1000,
+            for(int index=0;index<12;index++)profile.Garden.Add("layout:"+index,new PlantingBatch {CellIndex=index/9,Fruit=(FruitId)(index%9+1),Quantity=1000,
                 PlantedUtcDay=100,LastGrowthUtcDay=100+index%4,Stage=(GardenGrowthStage)(index%4)});
+            for(int index=2;index<4;index++)profile.Garden.Add("full-plot:"+index,new PlantingBatch {CellIndex=index,Fruit=FruitId.Strawberry,Quantity=10,
+                PlantedUtcDay=100,LastGrowthUtcDay=103,Stage=GardenGrowthStage.Flower});
         });
         foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
         {
             ((RectTransform)canvas.transform).sizeDelta=size;camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2*camera.aspect));
             clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();presenter.Open();view.ApplyLayout();panel.ApplyLayout();
-            var list=panel.GetComponentsInChildren<ScrollRect>().Single();
-            Require(list.content.childCount==12 && list.content.rect.height>list.viewport.rect.height,"Quantities use batch rows with working scroll");
-            Require(panel.GetComponentsInChildren<NonDraggableCardItemView>().Length==12,"Each batch uses the same fruit card view as gameplay");
-            Require(panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Filiz · 1/4") && panel.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Çiçek · 3/4"),"Growth can be read without relying on dot colors");
-            foreach(var amount in panel.GetComponentsInChildren<TMP_Text>().Where(t=>t.name=="Quantity"))Require(amount.fontSize>=22 && amount.color==FruitLabStyle.Text,"Garden quantities match the game counter typography");
+            Require(panel.Plots.Sum(plot=>plot.OccupiedCells)==14,"Batch quantities use one representation per occupied cell");
+            Require(panel.Plots.Any(plot=>Enumerable.Range(0,4).Any(i=>plot.CellArt(i).gameObject.activeSelf && plot.CellArt(i).sprite.name=="Sprout"))
+                && panel.Plots.Any(plot=>Enumerable.Range(0,4).Any(i=>plot.CellArt(i).gameObject.activeSelf && plot.CellArt(i).sprite.name=="Flower")),"Growth stages have distinct artwork");
+            foreach(var amount in panel.GetComponentsInChildren<TMP_Text>().Where(t=>t.name=="Quantity"))Require(amount.fontSizeMax>=14,"Compact garden cell quantities retain readable typography");
             foreach(var label in panel.GetComponentsInChildren<TMP_Text>()){label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Garden text fits: "+label.text);}
             TapGarden(canvas,camera,events,panel.BuyButton);
+            TapGarden(canvas,camera,events,popup.FruitButton(FruitId.Strawberry));
+            Require(!popup.ConfirmButton.interactable && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("Parsel dolu")),"Full plot is explained and disables purchase before coins are spent");
             var popupPanel=(RectTransform)popup.transform.Find("Panel");
             Require(popupPanel.rect.width<=size.x-24 && popupPanel.rect.height<=size.y-24,"Purchase popup fits phone bounds");
             foreach(FruitId fruit in Enum.GetValues(typeof(FruitId)))TapGarden(canvas,camera,events,popup.FruitButton(fruit));

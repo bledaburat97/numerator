@@ -14,10 +14,12 @@ namespace Scripts
         [SerializeField] private Canvas tutorialCanvas;
         [SerializeField] private GraphicRaycaster tutorialRaycaster;
         [SerializeField] private RectTransform garden;
-        [SerializeField] private Image successFrameImage;
         
         private Camera _cam;
         private Tween _selectionPulse;
+        private Sequence _successFeedback;
+        private Image _successSurface;
+        private Color _successSurfaceColor;
         private Image _selectionSurface;
         private Color _selectionSurfaceColor, _selectionHighlightColor;
         private bool _selectionActive, _highlightWasActive;
@@ -33,7 +35,7 @@ namespace Scripts
         public void ShowDynamite(DynamiteRoundState state)
         {
             _dynamitePulse?.Kill();
-            if (state == null || state.Exploded || (!state.Disarmed && state.Remaining == 0))
+            if (state == null || state.Disarmed || state.Exploded || (!state.Disarmed && state.Remaining == 0))
             {
                 if (_dynamiteBadge != null) _dynamiteBadge.gameObject.SetActive(false);
                 return;
@@ -55,24 +57,24 @@ namespace Scripts
             _dynamiteBadge.anchorMin = _dynamiteBadge.anchorMax = new Vector2(.5f,0f);
             _dynamiteBadge.pivot = new Vector2(.5f,1f);
             _dynamiteBadge.anchoredPosition = new Vector2(0f,8f);
-            _dynamiteBadge.sizeDelta = new Vector2(state.Disarmed ? 26f : 48f,28f);
+            _dynamiteBadge.sizeDelta = new Vector2(48f,28f);
             _dynamiteBadge.localScale = Vector3.one;
-            _dynamiteIcon.Type = state.Disarmed ? FruitLabGlyph.Symbol.Check : FruitLabGlyph.Symbol.Dynamite;
-            _dynamiteIcon.color = state.Disarmed ? FruitLabStyle.Mint : Color.white; _dynamiteIcon.SetAllDirty();
-            FruitLabStyle.Place(_dynamiteIcon.rectTransform,_dynamiteBadge,state.Disarmed ? 3f : 2f,4f,20f,20f);
+            _dynamiteIcon.Type = FruitLabGlyph.Symbol.Dynamite;
+            _dynamiteIcon.color = Color.white; _dynamiteIcon.SetAllDirty();
+            FruitLabStyle.Place(_dynamiteIcon.rectTransform,_dynamiteBadge,2f,4f,20f,20f);
             FruitLabStyle.Place(_dynamiteCount.rectTransform,_dynamiteBadge,25f,2f,20f,24f);
             _dynamiteCount.fontSize = 16f;
             _dynamiteCount.color = new Color(1f,.94f,.76f);
-            _dynamiteCount.text = state.Disarmed ? "" : state.Remaining.ToString();
-            if(_displayedDanger!=state.Remaining && !state.Disarmed)
+            _dynamiteCount.text = state.Remaining.ToString();
+            if(_displayedDanger!=state.Remaining)
             {
                 _counterFeedback?.Kill();_dynamiteCount.rectTransform.localScale=Vector3.one;
                 _counterFeedback=_dynamiteCount.rectTransform.DOPunchScale(Vector3.one*.16f,.2f,3,.6f).SetLink(gameObject);
             }
             _displayedDanger=state.Remaining;
-            _dynamiteRim.color = state.Disarmed ? FruitLabStyle.Mint : new Color(1f,.64f,.24f,.95f);
-            _dynamiteSurface.color = state.Disarmed ? new Color(.08f,.23f,.22f,.98f) : new Color(.20f,.12f,.13f,.98f);
-            if (!state.Disarmed && !state.Exploded)
+            _dynamiteRim.color = new Color(1f,.64f,.24f,.95f);
+            _dynamiteSurface.color = new Color(.20f,.12f,.13f,.98f);
+            if (!state.Exploded)
                 _dynamitePulse = _dynamiteBadge.DOScale(state.Remaining == 1 ? 1.10f : 1.035f,state.Remaining == 1 ? .35f : .85f)
                     .SetEase(Ease.InOutSine).SetLoops(-1,LoopType.Yoyo).SetLink(gameObject);
 
@@ -87,13 +89,10 @@ namespace Scripts
             {
                 FruitLabStyle.Stretch((RectTransform)surface, 3f);
                 FruitLabStyle.RecessSurface(surface.GetComponent<Image>());
-                FruitLabStyle.Rim((RectTransform)surface);
             }
-            FruitLabStyle.Surface(highlightImage, new Color(0.53f, 0.9f, 0.78f, 0.3f), true);
-            FruitLabStyle.Surface(successFrameImage, FruitLabStyle.Correct, true);
-            highlightImage.sprite = successFrameImage.sprite = FruitLabStyle.ResultFrame;
-            highlightImage.pixelsPerUnitMultiplier = successFrameImage.pixelsPerUnitMultiplier = 1.2f;
-            highlightImage.raycastTarget = successFrameImage.raycastTarget = false;
+            FruitLabStyle.Surface(highlightImage, new Color(0.53f, 0.9f, 0.78f, 0.22f));
+            highlightImage.pixelsPerUnitMultiplier = 1.2f;
+            highlightImage.raycastTarget = false;
         }
 #endif
         
@@ -203,7 +202,7 @@ namespace Scripts
             _highlightWasActive = highlightImage.gameObject.activeSelf;
             _selectionHighlightColor = highlightImage.color;
             highlightImage.gameObject.SetActive(true);
-            highlightImage.color = new Color(.63f, 1f, .91f, .98f);
+            highlightImage.color = new Color(.63f, 1f, .91f, .22f);
             _selectionSurface = transform.Find("Image")?.GetComponent<Image>();
             if (_selectionSurface != null)
             {
@@ -215,7 +214,7 @@ namespace Scripts
             _selectionPulse = DOVirtual.Float(0f,1f,.65f, blend =>
                 {
                     if (!_selectionActive || highlightImage == null) return;
-                    highlightImage.color = new Color(.63f,1f,.91f,Mathf.Lerp(.98f,.52f,blend));
+                    highlightImage.color = new Color(.63f,1f,.91f,Mathf.Lerp(.22f,.10f,blend));
                     if (_selectionSurface != null)
                         _selectionSurface.color = Color.Lerp(_selectionSurfaceColor,FruitLabStyle.Mint,Mathf.Lerp(.32f,.18f,blend));
                 })
@@ -239,38 +238,25 @@ namespace Scripts
         private void OnDisable()
         {
             StopRevealSelection();
+            _successFeedback?.Kill(); _successFeedback = null;
             _dynamitePulse?.Kill();_counterFeedback?.Kill();
             if (tutorialCanvas != null) tutorialCanvas.overrideSorting = false;
         }
 
-        public Sequence PlaySuccessFrameAnimation(float delayDuration)
+        // Light the existing recess briefly; no persistent success border.
+        public Sequence PlaySuccessFeedback(float delayDuration)
         {
-            Sequence sequence = DOTween.Sequence();
-            if (successFrameImage == null) return sequence;
-
-            RectTransform frameTransform = successFrameImage.rectTransform;
-            Vector3 targetScale = frameTransform.localScale == Vector3.zero ? Vector3.one : frameTransform.localScale;
-            Color frameColor = successFrameImage.color;
-            frameColor.a = 0f;
-            successFrameImage.color = frameColor;
-            frameTransform.localScale = targetScale * 0.85f;
-
-            return sequence
-                .AppendInterval(delayDuration)
-                .AppendCallback(() => successFrameImage.gameObject.SetActive(true))
-                .Append(successFrameImage.DOFade(1f, 0.12f))
-                .Join(frameTransform.DOScale(targetScale * 1.08f, 0.12f).SetEase(Ease.OutBack))
-                .Append(frameTransform.DOScale(targetScale, 0.08f).SetEase(Ease.OutQuad));
-        }
-
-        public void SetSuccessFrameStatus(bool status)
-        {
-            if (successFrameImage == null) return;
-
-            successFrameImage.gameObject.SetActive(status);
-            Color frameColor = successFrameImage.color;
-            frameColor.a = status ? 1f : 0f;
-            successFrameImage.color = frameColor;
+            StopRevealSelection();
+            _successFeedback?.Kill();
+            _successSurface = transform.Find("Image")?.GetComponent<Image>();
+            if (_successSurface == null) return DOTween.Sequence().AppendInterval(delayDuration);
+            _successSurfaceColor = _successSurface.color;
+            _successFeedback = DOTween.Sequence().AppendInterval(delayDuration)
+                .Append(_successSurface.DOColor(Color.Lerp(_successSurfaceColor, FruitLabStyle.Correct, .45f), .1f))
+                .Append(_successSurface.DOColor(_successSurfaceColor, .18f))
+                .OnKill(() => { if (_successSurface != null) _successSurface.color = _successSurfaceColor; })
+                .SetLink(gameObject, LinkBehaviour.KillOnDisable);
+            return _successFeedback;
         }
 
     }
@@ -287,7 +273,6 @@ namespace Scripts
         RectTransform GetGardenRectTransform();
         Sequence PlayGrowthSpark();
         Sequence PlayBombRemoval();
-        Sequence PlaySuccessFrameAnimation(float delayDuration);
-        void SetSuccessFrameStatus(bool status);
+        Sequence PlaySuccessFeedback(float delayDuration);
     }
 }

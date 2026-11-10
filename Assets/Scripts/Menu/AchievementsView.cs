@@ -102,7 +102,7 @@ namespace Menu
                 _name.text=item.Title;_description.text=item.Description;
                 _progress.text=FruitCollectionView.FormatCount(item.Progress)+" / "+FruitCollectionView.FormatCount(item.Target);
                 _status.text=item.Unlocked?"Kazanıldı":"Devam ediyor";
-                FruitLabStyle.SetIcon(_icon,item.Fruit?.ToString()??(item.Source==FruitGainSource.Garden?"Apple":"Pear"));
+                FruitLabStyle.SetIcon(_icon,item.RewardKind==AchievementRewardKind.Badge?"Badge":item.Fruit?.ToString()??(item.Source==FruitGainSource.Garden?"Apple":"Pear"));
                 _icon.color=item.Unlocked?Color.white:new Color(1,1,1,.55f);
                 _medal.color=item.Unlocked?new Color(.38f,.31f,.16f):FruitLabStyle.Tile;
                 _check.gameObject.SetActive(item.Unlocked);
@@ -114,8 +114,8 @@ namespace Menu
                         .Join(_medal.rectTransform.DOPunchScale(Vector3.one*.12f,.34f,3,.6f)).SetLink(Root.gameObject,LinkBehaviour.KillOnDisable);
                 }
                 _unlocked=item.Unlocked;
-                FruitLabStyle.SetIcon(_reward,PowerUpTypeUtility.IconName(item.Reward));
-                _rewardLabel.text=(item.RewardGranted?"Ödül eklendi: +":"Ödül: +")+item.RewardCount+" "+PowerUpTypeUtility.Name(item.Reward);
+                FruitLabStyle.SetIcon(_reward,item.RewardKind==AchievementRewardKind.Badge?"Badge":PowerUpTypeUtility.IconName(item.Reward));
+                _rewardLabel.text=item.RewardKind==AchievementRewardKind.Badge?(item.Unlocked?"Rozet kazanıldı":"Rozet"):(item.RewardGranted?"Ödül eklendi: +":"Ödül: +")+item.RewardCount+" "+PowerUpTypeUtility.Name(item.Reward);
                 _bar.rectTransform.anchorMin=Vector2.zero;_bar.rectTransform.anchorMax=new Vector2((float)((decimal)item.Progress/item.Target),1);
                 _bar.rectTransform.offsetMin=_bar.rectTransform.offsetMax=Vector2.zero;
             }

@@ -40,15 +40,11 @@ namespace Scripts
             _view.SetHighlightStatus(status);
         }
 
-        public Sequence PlaySuccessFrameAnimation(float delayDuration)
+        public Sequence PlaySuccessFeedback(float delayDuration)
         {
-            return _view.PlaySuccessFrameAnimation(delayDuration);
+            return _view.PlaySuccessFeedback(delayDuration);
         }
 
-        public void SetSuccessFrameStatus(bool status)
-        {
-            _view.SetSuccessFrameStatus(status);
-        }
 
         public IBoardHolderView GetView()
         {
@@ -77,7 +73,6 @@ namespace Scripts
         void SetLocalPosition(Vector2 localPosition);
         void SetOnClick(Action onClickAction);
         Sequence Move(Vector2 targetLocalPosition, float duration);
-        Sequence PlaySuccessFrameAnimation(float delayDuration);
-        void SetSuccessFrameStatus(bool status);
+        Sequence PlaySuccessFeedback(float delayDuration);
     }
 }

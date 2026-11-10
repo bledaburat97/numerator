@@ -11,6 +11,12 @@ public static class FruitLabAchievementRuleChecks
 {
     public static void Review(string folder,EconomySettings settings,WalletRewardRules walletRules)
     {
+        ReviewCollectionBadges(settings);
+        settings=new EconomySettings {Achievements=new[] {
+            new AchievementDefinition {Id="first-harvest",Title="İlk Hasat",Description="İlk hasat",Target=1,Source=FruitGainSource.Garden,Reward=RewardType.Life},
+            new AchievementDefinition {Id="strawberry-10",Title="Çilek Aşığı",Description="10 çilek",Target=10,Fruit=FruitId.Strawberry,Reward=RewardType.Revealing},
+            new AchievementDefinition {Id="collector-50",Title="Meyve Koleksiyoncusu",Description="50 meyve",Target=50,Reward=RewardType.Helper}
+        }};
         var rules=new AchievementRules(settings);
         var storage=new MemoryPlayerProfileStorage();var profiles=new PlayerProfileRepository(storage,()=>new PlayerProfileData());
         var inventory=new FruitInventoryService(profiles,rules);var service=new AchievementService(profiles,rules);
@@ -19,8 +25,8 @@ public static class FruitLabAchievementRuleChecks
         inventory.Grant("eight",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,8}});
         inventory.Grant("nine",FruitGainSource.Duel,new Dictionary<FruitId,long>{{FruitId.Strawberry,1}});
         Require(service.GetAchievements().Single(item=>item.Id=="strawberry-10").Progress==9,"Single and duel share fruit progress");
-        var clock=new AchievementClock();profiles.Update(profile=>profile.Garden.Add("ready",new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=1,PlantedUtcDay=1,LastGrowthUtcDay=3,Stage=GardenGrowthStage.Flower}));
-        var garden=new GardenService(profiles,settings,clock,rules);revision=profiles.Snapshot().Revision;garden.ProcessVisit();
+        var clock=new AchievementClock();profiles.Update(profile=>profile.Garden.Add("ready",new PlantingBatch {CellIndex=0,Fruit=FruitId.Strawberry,Quantity=1,PlantedUtcDay=1,LastGrowthUtcDay=3,Stage=GardenGrowthStage.Flower}));
+        var garden=new GardenService(profiles,settings,clock,rules);garden.ProcessVisit();revision=profiles.Snapshot().Revision;garden.Harvest("ready");
         var data=profiles.Snapshot();
         Require(data.Revision==revision+1 && data.Garden.Count==0 && data.Achievements["first-harvest"].RewardGranted
             && data.Achievements["strawberry-10"].RewardGranted && data.Wallet.PowerUps[RewardType.Life]==1 && data.Wallet.PowerUps[RewardType.Revealing]==1,
@@ -65,6 +71,31 @@ public static class FruitLabAchievementRuleChecks
         fail=false;grant.Grant("failed-total",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Apple,50}});
         grant.Grant("failed-total",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Apple,50}});
         Require(fresh.Snapshot().Wallet.PowerUps[RewardType.Helper]==1,"Retry of shared grant pays exactly once");
+    }
+
+    public static void ReviewCollectionBadges(EconomySettings settings)
+    {
+        Require(settings.Achievements.Length==5 && settings.Achievements.All(item=>item.RewardKind==AchievementRewardKind.Badge),"Exactly five badge-only goals");
+        var rules=new AchievementRules(settings);
+        var storage=new MemoryPlayerProfileStorage();var profiles=new PlayerProfileRepository(storage,()=>new PlayerProfileData());
+        var inventory=new FruitInventoryService(profiles,rules);var service=new AchievementService(profiles,rules);
+        service.Reconcile();Require(service.Closest().Id=="garden-owner-10","The first home goal is the reachable ten-fruit badge");
+        inventory.Grant("admin",FruitGainSource.Adjustment,new Dictionary<FruitId,long>{{FruitId.Strawberry,2000}});
+        Require(service.GetAchievements().All(item=>item.Progress==0) && FruitCollectionTotals.Earned(profiles.Snapshot().Collection)==0,"Administrative grants are excluded from totals and goals");
+        inventory.Grant("single",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,60}});
+        inventory.Grant("duel",FruitGainSource.Duel,new Dictionary<FruitId,long>{{FruitId.Strawberry,39}});
+        Require(service.GetAchievements().Single(item=>item.Id=="strawberry-grower-100").Progress==99,"Duels count toward fruit goals");
+        inventory.Grant("harvest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Strawberry,1},{FruitId.Watermelon,100},{FruitId.Apple,1300}});
+        inventory.Grant("harvest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Strawberry,1},{FruitId.Watermelon,100},{FruitId.Apple,1300}});
+        Require(service.GetAchievements().All(item=>item.Unlocked && item.RewardGranted) && service.Closest()==null,"All five thresholds unlock once; no finished home goal remains");
+        Require(profiles.Snapshot().Wallet.PowerUps.Values.All(value=>value==0),"Badge-only goals never pay a phantom power-up");
+        inventory.Spend("spend",new Dictionary<FruitId,long>{{FruitId.Apple,1300}});
+        Require(FruitCollectionTotals.Earned(profiles.Snapshot().Collection)==1500,"Collection display uses lifetime eligible earnings after spending");
+        var reopened=new PlayerProfileRepository(storage,()=>throw new Exception("No migration"));new AchievementService(reopened,rules).Reconcile();
+        Require(JsonConvert.SerializeObject(reopened.Snapshot())==JsonConvert.SerializeObject(profiles.Snapshot()),"Badge receipts survive restart without a second award");
+        var legacy=new AchievementRules(new EconomySettings {Achievements=new[]{new AchievementDefinition {Id="old-badge",Title="Old",Description="Old",Target=1,Reward=RewardType.Life}}});
+        new AchievementService(profiles,legacy).Reconcile();var oldReceipt=profiles.Snapshot().Transactions["achievement:old-badge"].Request;
+        service.Reconcile();Require(profiles.Snapshot().Wallet.PowerUps[RewardType.Life]==1 && profiles.Snapshot().Transactions["achievement:old-badge"].Request==oldReceipt,"Archived rewards and receipts are preserved with the new catalog");
     }
 
     private static void ExpectAchievementFailure(Action action)

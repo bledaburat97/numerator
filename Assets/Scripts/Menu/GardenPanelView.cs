@@ -1,7 +1,5 @@
 using System;
-using DG.Tweening;
 using System.Collections.Generic;
-using System.Linq;
 using Scripts;
 using Scripts.Economy;
 using TMPro;
@@ -13,121 +11,218 @@ namespace Menu
     public interface IGardenPanelView
     {
         event Action BuySeeds;
-        void Render(IReadOnlyDictionary<string,PlantingBatch> batches);
+        event Action<string> HarvestRequested;
+        bool IsVisible {get;}
+        void Render(IReadOnlyDictionary<string, PlantingBatch> batches);
+        void SetCoins(int coins);
+        void FocusFruit(FruitId fruit);
+        void PlayPlanting(string batchId);
+        void PlayGrowth(IReadOnlyList<GardenBatchChange> changes);
+        GardenHarvestVisual CaptureHarvest(string batchId);
+        void PlayHarvest(GardenHarvestVisual visual);
     }
 
-    public sealed class GardenPanelView : MonoBehaviour,IGardenPanelView
+    // Presentation only. Prices, growth and harvesting belong to IGardenService.
+    public sealed class GardenPanelView : MonoBehaviour, IGardenPanelView
     {
+        // Column-major order is explicit; FruitId is a stable save identifier,
+        // never an ordering rule for the world.
+        public static readonly FruitId[] FruitOrder = {
+            FruitId.Apple, FruitId.Strawberry, FruitId.Watermelon,
+            FruitId.Pear, FruitId.Orange, FruitId.Grape,
+            FruitId.Banana, FruitId.Blueberry, FruitId.Kiwi
+        };
         public event Action BuySeeds;
-        private TMP_Text _summary,_empty,_rule;
+        public event Action CollectionRequested;
+        public event Action<string> HarvestRequested;
         private NonDraggableCardItemView _cardPrefab;
-        private RectTransform _emptyArt;
-        private NonDraggableCardItemView[] _emptyCards;
-        public void ConfigureCards(NonDraggableCardItemView prefab)=>_cardPrefab=prefab;
-        private ScrollRect _scroll;
-        private Button _buy;
-        private readonly List<Row> _rows=new List<Row>();
-        private KeyValuePair<string,PlantingBatch>[] _batches=Array.Empty<KeyValuePair<string,PlantingBatch>>();
+        private GardenColumnScrollRect _scroll;
+        private Image _ground, _backdrop;
+        private TMP_Text _title;
+        private Button _buy, _collection;
+        private GardenCoinCounter _coins;
+        private RectTransform _footer, _detailsOverlay;
+        private GardenBatchListView _details;
+        private Button _closeDetails;
+        private readonly List<GardenPlotView> _plots = new List<GardenPlotView>();
+        private readonly List<Image> _dots = new List<Image>();
+        private IReadOnlyDictionary<string, PlantingBatch> _batches = new Dictionary<string, PlantingBatch>();
         private Vector2 _lastSize;
-        public Button BuyButton {get {EnsureUi();return _buy;}}
+        private GardenHarvestPresentation _harvestPresentation;
+        private readonly Dictionary<string,GardenBatchChange> _pendingGrowth=new Dictionary<string,GardenBatchChange>();
+        public bool IsVisible=>gameObject.activeInHierarchy;
+        public Button BuyButton { get { EnsureUi(); return _buy; } }
+        public Button CollectionButton { get { EnsureUi(); return _collection; } }
+        public IReadOnlyList<GardenPlotView> Plots => _plots;
+        public GardenColumnScrollRect WorldScroll => _scroll;
+        public void ConfigureCards(NonDraggableCardItemView prefab) => _cardPrefab = prefab;
+
         public void EnsureUi()
         {
-            if(_scroll!=null)return;
-            _summary=GardenUi.Text(transform,"Summary",18,FruitLabStyle.Text);
-            _empty=GardenUi.Text(transform,"Empty",18,FruitLabStyle.Muted,true);_empty.text=GardenUi.Purpose;
-            _empty.textWrappingMode=TextWrappingModes.Normal;
-            _emptyArt=GardenUi.Rect(transform,"EmptyIllustration");
-            _emptyCards=new[]{GardenUi.FruitCard(_emptyArt,"Apple",_cardPrefab,(int)FruitId.Apple),
-                GardenUi.FruitCard(_emptyArt,"Strawberry",_cardPrefab,(int)FruitId.Strawberry),
-                GardenUi.FruitCard(_emptyArt,"Pear",_cardPrefab,(int)FruitId.Pear)};
-            _rule=GardenUi.Text(transform,"GrowthRule",16,FruitLabStyle.Muted,true);_rule.text=GardenUi.GardenRule;_rule.textWrappingMode=TextWrappingModes.Normal;
-            _scroll=GardenUi.Scroll(transform,"Batches");
-            _buy=GardenUi.Button(transform,"BuySeeds","Tohum al",true);_buy.onClick.AddListener(()=>BuySeeds?.Invoke());
-        }
-        public void Render(IReadOnlyDictionary<string,PlantingBatch> batches)
-        {
-            EnsureUi();_batches=batches.OrderBy(entry=>entry.Value.PlantedUtcDay).ThenBy(entry=>entry.Value.Fruit).ThenBy(entry=>entry.Key).ToArray();
-            decimal total=0;foreach(var entry in _batches)total+=entry.Value.Quantity;
-            _summary.text=_batches.Length==0?"Bahçen seni bekliyor":FruitCollectionView.FormatCount(total)+" bitki yetişiyor";
-            _empty.gameObject.SetActive(_batches.Length==0);
-            _emptyArt.gameObject.SetActive(_batches.Length==0);
-            while(_rows.Count<_batches.Length)_rows.Add(new Row(_scroll.content,_rows.Count,_cardPrefab));
-            for(int index=0;index<_rows.Count;index++)
+            if (_scroll != null) return;
+            // Disable the previous list hierarchy in existing scene/prefab instances.
+            // It remains available as a batch details view, built only when opened.
+            foreach (string old in new[] { "Summary", "Empty", "EmptyIllustration", "GrowthRule", "Batches", "BuySeeds" })
             {
-                _rows[index].Root.gameObject.SetActive(index<_batches.Length);
-                if(index<_batches.Length)_rows[index].Bind(_batches[index].Value);
+                var child = transform.Find(old); if (child != null) child.gameObject.SetActive(false);
             }
+            _backdrop = FruitLabStyle.Detail(transform, "GardenBackdrop", new Color32(60, 86, 48, 255));
+            _backdrop.sprite = null; _backdrop.type = Image.Type.Simple;
+            var world = GardenUi.Rect(transform, "GardenWorld");
+            _scroll = world.GetComponent<GardenColumnScrollRect>() ?? world.gameObject.AddComponent<GardenColumnScrollRect>();
+            var viewport = GardenUi.Rect(world, "Viewport"); FruitLabStyle.Stretch(viewport);
+            var hit = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
+            hit.color = Color.clear; hit.raycastTarget = true;
+            if (viewport.GetComponent<RectMask2D>() == null) viewport.gameObject.AddComponent<RectMask2D>();
+            var content = GardenUi.Rect(viewport, "Content");
+            content.anchorMin = content.anchorMax = Vector2.zero; content.pivot = Vector2.zero;
+            _scroll.viewport = viewport; _scroll.content = content;
+            _scroll.ColumnSettled+=_=>PresentVisibleGrowth();
+            _ground = GardenPlotView.Art(content, "GardenGround", GardenArtwork.Get("GardenGround"));
+            for (int i = 0; i < FruitOrder.Length; i++)
+            {
+                var root = GardenUi.Rect(content, FruitOrder[i] + "Plot");
+                var plot = root.GetComponent<GardenPlotView>() ?? root.gameObject.AddComponent<GardenPlotView>();
+                plot.Initialize(FruitOrder[i], ShowDetails, id=>HarvestRequested?.Invoke(id)); _plots.Add(plot);
+            }
+            _title = GardenUi.Text(transform, "GardenTitle", 25, new Color32(255, 244, 215, 255)); _title.text = "Bahçem";
+            _collection = ArtButton(transform, "CollectionAlbum", GardenArtwork.Get("GardenProps", "Collection"));
+            _collection.onClick.AddListener(() => CollectionRequested?.Invoke());
+            _coins = new GardenCoinCounter(transform, "GardenCoins");
+            var coinSurface = FruitLabStyle.AddSurface(_coins.Root.gameObject, new Color32(47, 69, 44, 235)); coinSurface.raycastTarget = false;
+            _footer = GardenUi.Rect(transform, "GardenControls");
+            _buy = ArtButton(_footer, "SeedShop", GardenArtwork.Get("GardenProps", "SeedShop"));
+            _buy.onClick.AddListener(() => BuySeeds?.Invoke());
+            for (int i = 0; i < 2; i++) _dots.Add(FruitLabStyle.Detail(_footer, "Column" + i, FruitLabStyle.Text));
+            _scroll.onValueChanged.AddListener(_ => RefreshDots());
+            var harvest=GardenUi.Rect(transform,"HarvestPresentation");FruitLabStyle.Stretch(harvest);
+            _harvestPresentation=harvest.GetComponent<GardenHarvestPresentation>() ?? harvest.gameObject.AddComponent<GardenHarvestPresentation>();
             ApplyLayout();
         }
-        private void OnDisable(){foreach(var row in _rows)row.StopAnimation();}
-        private void LateUpdate() {if(((RectTransform)transform).rect.size!=_lastSize)ApplyLayout();}
+
+        public void SetCoins(int coins) { EnsureUi(); _coins.SetAmount(coins); }
+        public void FocusFruit(FruitId fruit)
+        {
+            EnsureUi();int column=Array.IndexOf(FruitOrder,fruit)/3;
+            if(column<_scroll.Column)_scroll.SetColumn(column,true);
+            else if(column>_scroll.Column+1)_scroll.SetColumn(column-1,true);
+        }
+        public void Render(IReadOnlyDictionary<string, PlantingBatch> batches)
+        {
+            EnsureUi(); _batches = batches;
+            foreach (var plot in _plots) plot.Render(batches);
+            if (_details != null && _detailsOverlay.gameObject.activeSelf) _details.Render(batches);
+            PresentVisibleGrowth();
+        }
+        public void PlayPlanting(string batchId){foreach(var plot in _plots)plot.PlayPlanting(batchId);}
+        public void PlayGrowth(IReadOnlyList<GardenBatchChange> changes)
+        {
+            foreach(var change in changes)
+            {
+                _pendingGrowth.TryGetValue(change.BatchId,out var earlier);
+                _pendingGrowth[change.BatchId]=new GardenBatchChange {BatchId=change.BatchId,Fruit=change.Fruit,Quantity=change.Quantity,
+                    PreviousStage=earlier?.PreviousStage??change.PreviousStage,CurrentStage=change.CurrentStage};
+            }
+            PresentVisibleGrowth();
+        }
+        private void PresentVisibleGrowth()
+        {
+            if(!isActiveAndEnabled || _scroll==null)return;
+            var handled=new List<string>();int played=0;
+            foreach(var entry in _pendingGrowth)
+            {
+                if(!_batches.TryGetValue(entry.Key,out var batch)){handled.Add(entry.Key);continue;}
+                if(batch.Stage!=entry.Value.CurrentStage)continue; // Foreground metadata follows the committed snapshot.
+                int index=Array.IndexOf(FruitOrder,batch.Fruit),column=index/3;
+                if(column<_scroll.Column || column>_scroll.Column+1)continue;
+                _plots[index].PlayGrowth(entry.Value,Mathf.Min(played++,4)*.025f);handled.Add(entry.Key);
+            }
+            foreach(string id in handled)_pendingGrowth.Remove(id);
+        }
+        public GardenHarvestVisual CaptureHarvest(string batchId)
+        {
+            foreach(var plot in _plots){var visual=plot.CaptureHarvest(batchId);if(visual.IsValid)return visual;}return default;
+        }
+        public void PlayHarvest(GardenHarvestVisual visual)=>_harvestPresentation.Play(visual,(RectTransform)_collection.transform);
+        public void CancelEffects()
+        {
+            foreach(var plot in _plots)if(plot!=null)plot.CancelEffects();
+            if(_harvestPresentation!=null)_harvestPresentation.Cancel();
+        }
+        private void LateUpdate()
+        {
+            if (((RectTransform)transform).rect.size != _lastSize) ApplyLayout();
+        }
         public void ApplyLayout()
         {
-            EnsureUi();var rect=(RectTransform)transform;_lastSize=rect.rect.size;float width=rect.rect.width,height=rect.rect.height;
-            FruitLabStyle.Place(_summary.rectTransform,transform,0,height-32,width,28);
-            FruitLabStyle.Place((RectTransform)_scroll.transform,transform,0,120,width,Mathf.Max(1,height-162));
-            FruitLabStyle.Place(_rule.rectTransform,transform,0,64,width,44);
-            float freeHeight=Mathf.Max(1,height-162),artHeight=Mathf.Min(76,Mathf.Max(30,freeHeight-76));
-            float emptyBottom=120+Mathf.Max(0,(freeHeight-artHeight-72)*.5f);
-            FruitLabStyle.Place(_empty.rectTransform,transform,12,emptyBottom,width-24,60);
-            FruitLabStyle.Place(_emptyArt,transform,0,emptyBottom+72,width,artHeight);
-            float side=Mathf.Max(24,Mathf.Min(64,artHeight-12)),artWidth=side*3+16;
-            for(int i=0;i<_emptyCards.Length;i++)
+            EnsureUi(); var rect = (RectTransform)transform; _lastSize = rect.rect.size;
+            float width = rect.rect.width, height = rect.rect.height;
+            FruitLabStyle.Stretch(_backdrop.rectTransform);
+            const float headerHeight = 62, footerHeight = 60;
+            float gardenHeight = Mathf.Max(1, height - headerHeight - footerHeight);
+            FruitLabStyle.Place((RectTransform)_scroll.transform, transform, 0, footerHeight, width, gardenHeight);
+            float pitch = width * .5f;
+            _scroll.content.sizeDelta = new Vector2(pitch * 3, gardenHeight);
+            FruitLabStyle.Place(_ground.rectTransform, _scroll.content, 0, 0, pitch * 3, gardenHeight);
+            float rowHeight = gardenHeight / 3;
+            float plotWidth = Mathf.Min(pitch - 12, rowHeight * 1.17f);
+            float plotHeight = Mathf.Min(rowHeight - 7, plotWidth * .88f);
+            for (int i = 0; i < _plots.Count; i++)
             {
-                FruitLabStyle.Place((RectTransform)_emptyCards[i].transform,_emptyArt,(width-artWidth)*.5f+i*(side+8),6,side,side);
-                _emptyCards[i].SetSize(Vector2.one*side);_emptyCards[i].transform.localRotation=Quaternion.Euler(0,0,(1-i)*6);
+                int column = i / 3, row = i % 3;
+                FruitLabStyle.Place(_plots[i].Root, _scroll.content, column * pitch + (pitch - plotWidth) * .5f + 2,
+                    gardenHeight - (row + 1) * rowHeight + (rowHeight - plotHeight) * .5f, plotWidth, plotHeight);
+                _plots[i].ApplyLayout(plotWidth, plotHeight);
             }
-            FruitLabStyle.Place((RectTransform)_buy.transform,transform,0,0,width,52);
-            GardenUi.Content(_scroll,_batches.Length*120f);
-            for(int index=0;index<_batches.Length;index++)_rows[index].Layout(width,index);
+            _scroll.Configure(pitch, 3);
+            FruitLabStyle.Place((RectTransform)_collection.transform, transform, 7, height - 60, 54, 54);
+            FruitLabStyle.Place(_title.rectTransform, transform, 64, height - 53, width - 184, 42);
+            _coins.Place(transform, width - 111, height - 54, 104, 40, 22);
+            FruitLabStyle.Place(_footer, transform, 0, 0, width, footerHeight);
+            FruitLabStyle.Place((RectTransform)_buy.transform, _footer, 9, 2, 56, 56);
+            for (int i = 0; i < _dots.Count; i++) FruitLabStyle.Place(_dots[i].rectTransform, _footer, width * .5f - 14 + i * 18, 24, 10, 10);
+            RefreshDots();
+            if (_detailsOverlay != null) LayoutDetails();
         }
-        private sealed class Row
+        private void RefreshDots()
         {
-            public readonly RectTransform Root;
-            private readonly NonDraggableCardItemView _fruit;
-            private readonly TMP_Text _name,_amount,_stage;
-            private readonly Image[] _steps=new Image[4];
-            private readonly FruitLabGlyph _plant;
-            private GardenGrowthStage? _lastStage;
-            private Tween _growth;
-            public void StopAnimation(){_growth?.Kill();_plant.rectTransform.localScale=Vector3.one;}
-            public Row(Transform parent,int index,NonDraggableCardItemView prefab)
+            if (_dots.Count == 0 || _scroll.ColumnWidth <= 0) return;
+            float position = -_scroll.content.anchoredPosition.x / _scroll.ColumnWidth;
+            for (int i = 0; i < _dots.Count; i++) _dots[i].color = Color.Lerp(new Color32(255, 244, 215, 90), new Color32(255, 244, 215, 255), 1 - Mathf.Clamp01(Mathf.Abs(position - i)));
+        }
+        private static Button ArtButton(Transform parent, string name, Sprite sprite)
+        {
+            var image = GardenPlotView.Art(parent, name, sprite); image.preserveAspect = true; image.raycastTarget = true;
+            var button = image.GetComponent<Button>() ?? image.gameObject.AddComponent<Button>(); button.targetGraphic = image;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            var colors = button.colors; colors.pressedColor = new Color(.85f, .89f, .81f); colors.fadeDuration = .1f; button.colors = colors;
+            return button;
+        }
+        private void ShowDetails()
+        {
+            if (_detailsOverlay == null)
             {
-                Root=GardenUi.Rect(parent,"Batch"+index);FruitLabStyle.AddSurface(Root.gameObject,FruitLabStyle.Panel);
-                var legacy=Root.Find("Fruit");if(legacy!=null)legacy.gameObject.SetActive(false);
-                _fruit=GardenUi.FruitCard(Root,"FruitCard",prefab,1);
-                _plant=Root.Find("PlantStage")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(Root,FruitLabGlyph.Symbol.Seed,FruitLabStyle.Mint);_plant.name="PlantStage";
-                _name=GardenUi.Text(Root,"FruitName",18,FruitLabStyle.Text);
-                _amount=GardenUi.Text(Root,"Quantity",22,FruitLabStyle.Text);GardenUi.Quantity(_amount);
-                _stage=GardenUi.Text(Root,"Stage",16,FruitLabStyle.Muted,true);
-                _name.alignment=_amount.alignment=_stage.alignment=TextAlignmentOptions.MidlineLeft;
-                for(int step=0;step<4;step++)_steps[step]=FruitLabStyle.Detail(Root,"Growth"+(step+1),FruitLabStyle.Recess);
+                _detailsOverlay = GardenUi.Rect(transform, "PlantingDetails");
+                var surface = FruitLabStyle.AddSurface(_detailsOverlay.gameObject, FruitLabStyle.Background); surface.raycastTarget = true;
+                var root = GardenUi.Rect(_detailsOverlay, "Batches"); _details = root.gameObject.AddComponent<GardenBatchListView>();
+                _details.ConfigureCards(_cardPrefab); _details.EnsureUi();
+                _details.BuySeeds += () => { _detailsOverlay.gameObject.SetActive(false); BuySeeds?.Invoke(); };
+                _closeDetails = GardenUi.Button(_detailsOverlay, "CloseDetails", "Kapat");
+                _closeDetails.onClick.AddListener(() => _detailsOverlay.gameObject.SetActive(false));
             }
-            public void Bind(PlantingBatch batch)
-            {
-                _fruit.Init((int)batch.Fruit);_fruit.SetAlpha(batch.Stage==GardenGrowthStage.Fruit?1:.25f);
-                _plant.Type=batch.Stage==GardenGrowthStage.Seed?FruitLabGlyph.Symbol.Seed:batch.Stage==GardenGrowthStage.Sprout?FruitLabGlyph.Symbol.Sprout:batch.Stage==GardenGrowthStage.Leaves?FruitLabGlyph.Symbol.Plant:FruitLabGlyph.Symbol.Flower;
-                _plant.gameObject.SetActive(batch.Stage!=GardenGrowthStage.Fruit);_plant.SetVerticesDirty();
-                if(_lastStage.HasValue && _lastStage!=batch.Stage)
-                {
-                    StopAnimation();_growth=_plant.rectTransform.DOPunchScale(Vector3.one*.15f,.36f,3,.6f).SetLink(Root.gameObject,LinkBehaviour.KillOnDisable);
-                }
-                _lastStage=batch.Stage;_name.text=FruitCollectionView.FruitName(batch.Fruit);
-                _amount.text=FruitCollectionView.FormatCount(batch.Quantity)+" adet";
-                string stage=batch.Stage==GardenGrowthStage.Seed?"Tohum":batch.Stage==GardenGrowthStage.Sprout?"Filiz":batch.Stage==GardenGrowthStage.Leaves?"Yaprak":batch.Stage==GardenGrowthStage.Flower?"Çiçek":"Meyve";
-                _stage.text=stage+" · "+(int)batch.Stage+"/4";
-                for(int step=0;step<4;step++)_steps[step].color=step<(int)batch.Stage?FruitLabStyle.Mint:FruitLabStyle.Border*.65f;
-            }
-            public void Layout(float width,int index)
-            {
-                Root.anchorMin=Root.anchorMax=new Vector2(0,1);Root.pivot=new Vector2(0,1);Root.anchoredPosition=new Vector2(0,-index*120);Root.sizeDelta=new Vector2(width,112);
-                FruitLabStyle.Place((RectTransform)_fruit.transform,Root,12,40,60,60);_fruit.SetSize(Vector2.one*60);
-                FruitLabStyle.Place(_plant.rectTransform,Root,21,48,42,42);
-                FruitLabStyle.Place(_name.rectTransform,Root,84,77,width-94,26);
-                FruitLabStyle.Place(_amount.rectTransform,Root,84,47,width-94,28);
-                FruitLabStyle.Place(_stage.rectTransform,Root,16,9,width-110,28);
-                for(int step=0;step<4;step++)FruitLabStyle.Place(_steps[step].rectTransform,Root,width-86+step*18,16,12,12);
-            }
+            _detailsOverlay.gameObject.SetActive(true); _detailsOverlay.SetAsLastSibling(); LayoutDetails(); _details.Render(_batches);
+        }
+        private void LayoutDetails()
+        {
+            FruitLabStyle.Stretch(_detailsOverlay);
+            float width = _detailsOverlay.rect.width, height = _detailsOverlay.rect.height;
+            FruitLabStyle.Place((RectTransform)_details.transform, _detailsOverlay, 12, 8, width - 24, Mathf.Max(1, height - 64)); _details.ApplyLayout();
+            FruitLabStyle.Place((RectTransform)_closeDetails.transform, _detailsOverlay, width - 86, height - 50, 78, 44);
+        }
+        private void OnDisable()
+        {
+            CancelEffects();
+            if (_detailsOverlay != null) _detailsOverlay.gameObject.SetActive(false);
         }
     }
 }

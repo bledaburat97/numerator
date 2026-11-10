@@ -167,32 +167,31 @@ namespace Scripts
             _boardHolderControllerList[boardHolderIndex].SetHighlightStatus(highlightStatus);
         }
 
-        public Sequence PlaySuccessFrameAnimation(int boardHolderIndex, float delayDuration = 0f)
+        public Sequence PlaySuccessFeedback(int boardHolderIndex, float delayDuration = 0f)
         {
             if (boardHolderIndex < 0 || boardHolderIndex >= _boardHolderControllerList.Count)
             {
                 return DOTween.Sequence();
             }
 
-            return _boardHolderControllerList[boardHolderIndex].PlaySuccessFrameAnimation(delayDuration);
+            return _boardHolderControllerList[boardHolderIndex].PlaySuccessFeedback(delayDuration);
         }
 
-        public void SetSuccessFrameStatus(int boardHolderIndex, bool status)
-        {
-            if (boardHolderIndex < 0 || boardHolderIndex >= _boardHolderControllerList.Count) return;
 
-            _boardHolderControllerList[boardHolderIndex].SetSuccessFrameStatus(status);
-        }
-
-        public Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders)
+        public Sequence PlayAllSuccessFeedback(float delayBetweenHolders)
         {
             Sequence sequence = DOTween.Sequence();
             for (int i = 0; i < _boardHolderControllerList.Count; i++)
             {
-                sequence.Join(_boardHolderControllerList[i].PlaySuccessFrameAnimation(delayBetweenHolders * i));
+                var holder = _boardHolderControllerList[i].GetView();
+                sequence.InsertCallback(delayBetweenHolders * i, () =>
+                {
+                    if (holder is Component component && (component == null || !component.gameObject.activeInHierarchy)) return;
+                    holder.PlaySuccessFeedback(0f);
+                });
             }
 
-            return sequence;
+            return sequence.AppendInterval(.28f);
         }
 
         private IBoardHolderView GetBoardHolderView(int boardHolderIndex)
@@ -319,9 +318,8 @@ namespace Scripts
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
-        Sequence PlaySuccessFrameAnimation(int boardHolderIndex, float delayDuration = 0f);
-        void SetSuccessFrameStatus(int boardHolderIndex, bool status);
-        Sequence PlayAllSuccessFrameAnimations(float delayBetweenHolders);
+        Sequence PlaySuccessFeedback(int boardHolderIndex, float delayDuration = 0f);
+        Sequence PlayAllSuccessFeedback(float delayBetweenHolders);
         void SetupTutorialModeOnEmptyBoardHolders();
         void CleanupTutorialModeOnShinyBoardHolders();
         void AddBoardHolder();

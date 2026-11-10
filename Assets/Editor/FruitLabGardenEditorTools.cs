@@ -18,7 +18,7 @@ public static class FruitLabGardenEditorTools
     public static string ReviewLifecycle()
     {
         string before=PlayerFingerprint();var clock=new Clock();var profiles=Profiles(20);
-        var garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Apple,2);clock.Day(1);
+        var garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Apple,5);clock.Day(1);
         var scene=EditorSceneManager.OpenPreviewScene("Assets/Scenes/Menu.unity");
         var root=new GameObject("GardenProductionComposition");root.SetActive(false);
         using(PlayerProfileRuntime.UseForTests(profiles))
@@ -51,7 +51,7 @@ public static class FruitLabGardenEditorTools
 
         string path="Library/FruitLabEditor/GardenTests/lifecycle-"+Id()+".json";bool fail=false;
         clock=new Clock();profiles=new PlayerProfileRepository(new AtomicPlayerProfileStorage(path,beforePublish:()=>{if(fail)throw new IOException("visit save failed");}),()=>Initial(20));
-        garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Kiwi,3);clock.Day(1);
+        garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Kiwi,5);clock.Day(1);
         var coordinator=new GardenVisitCoordinator(garden);int failures=0;coordinator.Failed+=_=>failures++;
         fail=true;coordinator.Initialize();
         Require(failures==1 && coordinator.TakeNotice()==null && garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Seed,"A startup write error is nonfatal and publishes no false progress");
@@ -60,7 +60,7 @@ public static class FruitLabGardenEditorTools
         coordinator.SetFocused(false);coordinator.SetPaused(true);coordinator.SetFocused(true);coordinator.SetPaused(false);
         Require(coordinator.TakeNotice()==null,"Paired lifecycle events and same-day returns never repeat the notice");
         clock=new Clock();var backgroundProfiles=Profiles(10);var backgroundGarden=new GardenService(backgroundProfiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
-        backgroundGarden.PurchaseSeeds(Id(),FruitId.Banana,1);clock.Day(1);
+        backgroundGarden.PurchaseSeeds(Id(),FruitId.Banana,5);clock.Day(1);
         var backgroundStartup=new GardenVisitCoordinator(backgroundGarden);backgroundStartup.SetPaused(true);backgroundStartup.Initialize();
         Require(backgroundGarden.GetBatches().Single().Value.Stage==GardenGrowthStage.Seed,"A startup still in background waits for foreground");
         backgroundStartup.SetPaused(false);
@@ -91,151 +91,137 @@ public static class FruitLabGardenEditorTools
 
     private static void PurchaseAndBatches(List<string> checks)
     {
-        var clock=new Clock();var settings=new EconomySettings();
-        var profiles=Profiles(100);var garden=new GardenService(profiles,settings,clock,new AchievementRules(settings));
+        var clock=new Clock();var settings=new EconomySettings();var profiles=Profiles(100);
+        var garden=new GardenService(profiles,settings,clock,new AchievementRules(settings));
         var quote=garden.QuoteSeeds(FruitId.Strawberry,10);
-        Require(quote.TotalCoinPrice==10 && quote.AvailableCoins==100 && quote.CanAfford,"Central one-coin seed quote");
-        string firstId=Id();var first=garden.PurchaseSeeds(firstId,FruitId.Strawberry,10);
-        Require(first.Status==ProfileCommitResult.Applied && first.CoinsAfter==90 && garden.GetBatches().Count==1,"Coin debit and one quantity batch");
-        Require(garden.PurchaseSeeds(firstId,FruitId.Strawberry,10).Status==ProfileCommitResult.AlreadyApplied
-            && profiles.Snapshot().Wallet.Coins==90 && garden.GetBatches()[first.BatchId].Quantity==10,"Immediate duplicate tap cannot buy the same request twice");
-        Require(garden.PurchaseSeeds(firstId.ToUpperInvariant(),FruitId.Strawberry,10).Status==ProfileCommitResult.AlreadyApplied,
-            "Purchase identity is unchanged by hexadecimal letter case");
-        var second=garden.PurchaseSeeds(Id(),FruitId.Strawberry,7);
-        Require(first.BatchId==second.BatchId && garden.GetBatches()[first.BatchId].Quantity==17,"Same fruit and purchase day merge");
-        garden.PurchaseSeeds(Id(),FruitId.Apple,3);
-        Require(garden.GetBatches().Count==2,"Different fruit has a separate batch");
-        long revision=profiles.Snapshot().Revision;
-        Require(!garden.ProcessVisit().HasProgress && profiles.Snapshot().Revision==revision,"Purchase day does not grow or save a no-op");
-        settings.SeedUnitCoinPrice=2;clock.Day(1);
-        var retry=garden.PurchaseSeeds(firstId,FruitId.Strawberry,10);
-        Require(retry.Status==ProfileCommitResult.AlreadyApplied && retry.UnitCoinPrice==1 && retry.PlantedUtcDay==first.PlantedUtcDay
-            && profiles.Snapshot().Revision==revision && garden.GetBatches()[first.BatchId].Quantity==17,"Retry across day/price changes returns the original outcome without charging");
-        Expect<InvalidOperationException>(()=>garden.PurchaseSeeds(firstId,FruitId.Apple,10));
-        Expect<InvalidOperationException>(()=>garden.PurchaseSeeds(firstId,FruitId.Strawberry,11));
-        var advance=garden.ProcessVisit();
-        Require(advance.HasProgress && advance.Changes.Count==2 && garden.GetBatches()[first.BatchId].Stage==GardenGrowthStage.Sprout,"Next UTC day advances both batches once");
-        var fresh=garden.PurchaseSeeds(Id(),FruitId.Strawberry,5);
-        Require(fresh.BatchId!=first.BatchId && garden.GetBatches().Count==3 && garden.GetBatches()[fresh.BatchId].Stage==GardenGrowthStage.Seed,"Different-day seeds remain independent");
-        revision=profiles.Snapshot().Revision;
-        var duplicate=garden.ProcessVisit();
-        Require(duplicate.IsReplay && !duplicate.HasProgress && profiles.Snapshot().Revision==revision
-            && garden.GetBatches()[fresh.BatchId].Stage==GardenGrowthStage.Seed,"Same-day reopen does not grow new seeds or repeat welcome effects");
-        clock.Day(2);garden.ProcessVisit();
-        Require(garden.GetBatches()[first.BatchId].Stage==GardenGrowthStage.Leaves
-            && garden.GetBatches()[fresh.BatchId].Stage==GardenGrowthStage.Sprout,"Older and newer batches advance independently");
-        var external=garden.GetBatches();external[first.BatchId].Quantity=999;
-        Require(garden.GetBatches()[first.BatchId].Quantity==17,"Garden readers cannot mutate durable state");
-        checks.Add("Quote, atomic debit, same-day merging, separate fruits/dates, retry after midnight/price changes, conflict rejection and independent batch ages");
+        Require(quote.TotalCoinPrice==2 && quote.SeedsPerPack==5 && quote.CanPurchase,"Two five-seed packs cost two coins");
+        string id=Id();var first=garden.PurchaseSeeds(id,FruitId.Strawberry,10);
+        Require(first.CoinsAfter==98 && first.CellIndex==0,"First planting uses top-left cell");
+        Require(garden.PurchaseSeeds(id.ToUpperInvariant(),FruitId.Strawberry,10).Status==ProfileCommitResult.AlreadyApplied && profiles.Snapshot().Wallet.Coins==98,"Duplicate and mixed-case request debits once");
+        var merge=garden.PurchaseSeeds(Id(),FruitId.Strawberry,5);
+        Require(first.BatchId==merge.BatchId && garden.GetBatches()[first.BatchId].Quantity==15 && merge.CellIndex==0,"Same-day seeds merge without another cell");
+        garden.PurchaseSeeds(Id(),FruitId.Apple,5);long revision=profiles.Snapshot().Revision;
+        Require(!garden.ProcessVisit().HasProgress && profiles.Snapshot().Revision==revision,"Planting day is excluded");
+        settings.SeedPackCoinPrice=2;clock.Day(1);
+        var retry=garden.PurchaseSeeds(id,FruitId.Strawberry,10);
+        Require(retry.Status==ProfileCommitResult.AlreadyApplied && retry.PackCoinPrice==1 && retry.CoinsAfter==98 && profiles.Snapshot().Revision==revision,"Receipt preserves original price/day/result across settings changes");
+        Expect<InvalidOperationException>(()=>garden.PurchaseSeeds(id,FruitId.Apple,10));
+        garden.ProcessVisit();var fresh=garden.PurchaseSeeds(Id(),FruitId.Strawberry,5);
+        Require(fresh.BatchId!=first.BatchId && fresh.CellIndex==1,"Different-day planting uses next cell");
+        Require(garden.ProcessVisit().IsReplay && garden.GetBatches()[fresh.BatchId].Stage==GardenGrowthStage.Seed,"Reopening on same day does not grow new seeds");
+        clock.Day(2);garden.ProcessVisit();var batches=garden.GetBatches();
+        Require(batches[first.BatchId].Stage==GardenGrowthStage.Leaves && batches[fresh.BatchId].Stage==GardenGrowthStage.Sprout && batches[fresh.BatchId].CellIndex==1,"Ages advance independently in stable cells");
+        batches[first.BatchId].Quantity=999;Require(garden.GetBatches()[first.BatchId].Quantity==15,"Snapshots cannot change committed plants");
+        checks.Add("Five-seed packs, stable slots, same-day merge, independent ages, duplicate requests and original price receipts");
     }
 
     private static void VisitsAndHarvest(List<string> checks)
     {
-        var clock=new Clock();var profiles=Profiles(100);var garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
-        new FruitInventoryService(profiles,new AchievementRules(new EconomySettings())).Grant("preexisting-game-fruit",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,2}});
+        var clock=new Clock();var profiles=Profiles(100);var rules=new AchievementRules(new EconomySettings());
+        var garden=new GardenService(profiles,new EconomySettings(),clock,rules);
+        new FruitInventoryService(profiles,rules).Grant("game-fruit",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,2}});
         var purchase=garden.PurchaseSeeds(Id(),FruitId.Strawberry,10);
-        foreach(int day in new[]{1,40,41})
+        foreach(int day in new[]{1,40,41,42})
         {
             clock.Day(day);var visit=garden.ProcessVisit();
-            Require(visit.HasProgress && visit.Changes.Count==1 && visit.Harvested.Count==0,"A real entry day advances one stage");
-            long revision=profiles.Snapshot().Revision;
-            Require(!garden.ProcessVisit().HasProgress && profiles.Snapshot().Revision==revision,"Repeated foreground visits on the same day do nothing");
+            Require(visit.HasProgress && visit.Harvested.Count==0,"Visit advances one step without collecting");
+            long revision=profiles.Snapshot().Revision;garden.ProcessVisit();Require(profiles.Snapshot().Revision==revision,"Repeated same-day return is a no-op");
         }
-        var batch=garden.GetBatches()[purchase.BatchId];
-        Require(batch.Stage==GardenGrowthStage.Flower && batch.LastGrowthUtcDay==purchase.PlantedUtcDay+41,"A long absence counts as one entry, not forty days");
-        clock.Day(42);var harvest=garden.ProcessVisit();
-        var balance=profiles.Snapshot().Collection[FruitId.Strawberry];
-        Require(harvest.HasProgress && harvest.Harvested[FruitId.Strawberry]==10 && harvest.Changes[0].CurrentStage==GardenGrowthStage.Fruit
-            && garden.GetBatches().Count==0,"Fourth distinct entry harvests automatically and removes the finished pending batch");
-        Require(balance.Current==12 && balance.LifetimeEarned==12 && balance.EarnedBySource[FruitGainSource.Garden]==10
-            && balance.EarnedBySource[FruitGainSource.SinglePlayer]==2,"Game and garden fruit share inventory with distinct source totals");
-        Require(!garden.ProcessVisit().HasProgress,"Harvest receipt replay has no new notification");
-        clock.Day(43);Require(!garden.ProcessVisit().HasProgress && profiles.Snapshot().Collection[FruitId.Strawberry].Current==12,"Harvest cannot happen twice on a later day");
-
-        // Separate planting dates can reach maturity together when neither batch
-        // was visited in between. The common inventory receives their total once.
-        clock=new Clock();profiles=Profiles(100);garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
-        garden.PurchaseSeeds(Id(),FruitId.Kiwi,10);clock.Day(1);garden.PurchaseSeeds(Id(),FruitId.Kiwi,7);
-        foreach(int day in new[]{2,3,4,5}){clock.Day(day);harvest=garden.ProcessVisit();}
-        Require(harvest.Harvested[FruitId.Kiwi]==17 && harvest.Changes.Count==2 && garden.GetBatches().Count==0
-            && profiles.Snapshot().Collection[FruitId.Kiwi].LifetimeEarned==17,"Two batches harvest into one fruit total without duplication");
-        checks.Add("Four visited UTC days, skipped-day pause, no catch-up, same-day no-op, automatic single harvest, grouped harvest and shared current/lifetime/source accounting");
+        Require(garden.GetBatches()[purchase.BatchId].Stage==GardenGrowthStage.Fruit && profiles.Snapshot().Collection[FruitId.Strawberry].Current==2,"Mature crop remains uncollected");
+        clock.Day(100);Require(!garden.ProcessVisit().HasProgress && garden.GetBatches().Count==1,"Ripe crop waits indefinitely");
+        var harvest=garden.Harvest(purchase.BatchId);var balance=profiles.Snapshot().Collection[FruitId.Strawberry];
+        Require(harvest.Status==ProfileCommitResult.Applied && harvest.Quantity==10 && garden.GetBatches().Count==0 && balance.Current==12 && balance.EarnedBySource[FruitGainSource.Garden]==10,"Tap collects the entire batch through shared inventory");
+        long saved=profiles.Snapshot().Revision;
+        Require(garden.Harvest(purchase.BatchId).Status==ProfileCommitResult.AlreadyApplied && profiles.Snapshot().Revision==saved,"Repeated tap cannot collect twice");
+        clock=new Clock();profiles=Profiles(100);garden=new GardenService(profiles,new EconomySettings(),clock,rules);
+        var first=garden.PurchaseSeeds(Id(),FruitId.Kiwi,10);clock.Day(1);var second=garden.PurchaseSeeds(Id(),FruitId.Kiwi,5);
+        foreach(int day in new[]{2,3,4,5}){clock.Day(day);garden.ProcessVisit();}
+        garden.Harvest(first.BatchId);
+        Require(garden.GetBatches()[second.BatchId].CellIndex==1,"Harvest never shifts another batch into the emptied slot");
+        garden.Harvest(second.BatchId);Require(profiles.Snapshot().Collection[FruitId.Kiwi].Current==15,"Separate batch taps give their quantities exactly once");
+        checks.Add("Four visited days without catch-up, mature waiting, manual whole-batch harvest, stable cells and idempotent collection");
     }
 
     private static void LimitsAndClock(List<string> checks)
     {
         var clock=new Clock();var settings=new EconomySettings();var profiles=Profiles(1);
         var garden=new GardenService(profiles,settings,clock,new AchievementRules(settings));string id=Id();
-        Require(!garden.QuoteSeeds(FruitId.Banana,2).CanAfford && garden.PurchaseSeeds(id,FruitId.Banana,2).Status==ProfileCommitResult.Rejected
-            && profiles.Snapshot().Garden.Count==0 && profiles.Snapshot().Transactions.Count==0,"Insufficient coins create neither batch nor success receipt");
-        profiles.Update(p=>p.Wallet.Coins=2);
-        Require(garden.PurchaseSeeds(id,FruitId.Banana,2).Status==ProfileCommitResult.Applied,"Rejected purchase may be retried after funds arrive");
+        Require(garden.PurchaseSeeds(id,FruitId.Banana,10).Failure==SeedPurchaseFailure.InsufficientCoins && profiles.Snapshot().Transactions.Count==0,"Insufficient balance neither debits nor records success");
+        profiles.Update(p=>p.Wallet.Coins=2);Require(garden.PurchaseSeeds(id,FruitId.Banana,10).Status==ProfileCommitResult.Applied,"Rejected intent may be retried after funds arrive");
+        Require(garden.QuoteSeeds(FruitId.Apple,7).Failure==SeedPurchaseFailure.InvalidQuantity,"Non-pack quantities cannot be bought");
         Expect<ArgumentOutOfRangeException>(()=>garden.PurchaseSeeds(Id(),FruitId.Apple,0));
-        Expect<ArgumentOutOfRangeException>(()=>garden.PurchaseSeeds(Id(),FruitId.Apple,-1));
-        Expect<ArgumentOutOfRangeException>(()=>garden.PurchaseSeeds(Id(),(FruitId)999,1));
-        Expect<ArgumentException>(()=>garden.PurchaseSeeds("",FruitId.Apple,1));
-        settings.SeedUnitCoinPrice=int.MaxValue;
-        Expect<ArgumentOutOfRangeException>(()=>garden.QuoteSeeds(FruitId.Apple,long.MaxValue));
-        settings.SeedUnitCoinPrice=0;Expect<InvalidOperationException>(()=>garden.QuoteSeeds(FruitId.Apple,1));
-
-        profiles=Profiles(int.MaxValue);garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
-        var bulk=garden.PurchaseSeeds(Id(),FruitId.Watermelon,int.MaxValue);
-        Require(bulk.CoinsAfter==0 && garden.GetBatches().Count==1 && garden.GetBatches()[bulk.BatchId].Quantity==int.MaxValue,"Very large seed quantities remain a single record");
-        for(int day=1;day<=4;day++){clock.Day(day);garden.ProcessVisit();}
-        Require(profiles.Snapshot().Collection[FruitId.Watermelon].Current==int.MaxValue,"Bulk harvest preserves the full quantity");
-
+        Expect<ArgumentOutOfRangeException>(()=>garden.PurchaseSeeds(Id(),(FruitId)999,5));
+        Expect<ArgumentException>(()=>garden.PurchaseSeeds("",FruitId.Apple,5));
+        settings.SeedPackCoinPrice=int.MaxValue;Expect<ArgumentOutOfRangeException>(()=>garden.QuoteSeeds(FruitId.Apple,long.MaxValue/5*5));
+        settings.SeedPackCoinPrice=0;Expect<InvalidOperationException>(()=>garden.QuoteSeeds(FruitId.Apple,5));
+        clock=new Clock();profiles=Profiles(int.MaxValue);garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
+        long amount=(long)int.MaxValue*5;var bulk=garden.PurchaseSeeds(Id(),FruitId.Watermelon,amount);
+        Require(bulk.CoinsAfter==0 && garden.GetBatches().Single().Value.Quantity==amount,"Ten billion seeds remain one quantity record");
+        for(int day=1;day<=4;day++){clock.Day(day);garden.ProcessVisit();}garden.Harvest(bulk.BatchId);
+        Require(profiles.Snapshot().Collection[FruitId.Watermelon].Current==amount,"Bulk manual harvest preserves all quantities");
         clock=new Clock();profiles=Profiles(10);garden=new GardenService(profiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
-        var original=garden.PurchaseSeeds(Id(),FruitId.Apple,2);clock.Day(1);garden.ProcessVisit();
-        clock.Day(0);Require(!garden.ProcessVisit().HasProgress,"Clock rollback cannot advance a batch");
-        var rolledBackPurchase=garden.PurchaseSeeds(Id(),FruitId.Apple,2);
-        Require(rolledBackPurchase.BatchId!=original.BatchId,"Rollback purchase cannot merge into a sprout and inherit its age");
-        clock.Day(1);Require(!garden.ProcessVisit().HasProgress,"Previously processed day cannot become a second growth day after rollback");
-        clock.Day(2);garden.ProcessVisit();
-        Require(garden.GetBatches()[rolledBackPurchase.BatchId].Stage==GardenGrowthStage.Sprout,"Rollback seeds eventually grow on a new actual processing day");
-
+        var first=garden.PurchaseSeeds(Id(),FruitId.Apple,5);clock.Day(1);garden.ProcessVisit();clock.Day(0);
+        Require(!garden.ProcessVisit().HasProgress,"Clock rollback cannot advance a batch");
+        var rollback=garden.PurchaseSeeds(Id(),FruitId.Apple,5);Require(rollback.BatchId!=first.BatchId,"Clock rollback cannot merge new seeds into a sprout");
+        clock.Day(1);Require(!garden.ProcessVisit().HasProgress,"Processed date cannot advance again");clock.Day(2);garden.ProcessVisit();
+        Require(garden.GetBatches()[rollback.BatchId].Stage==GardenGrowthStage.Sprout,"Rollback seeds grow on a new entry day");
         clock=new Clock {UtcNow=new DateTime(2026,11,5,23,59,59,DateTimeKind.Utc)};
-        garden=new GardenService(Profiles(10),new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
-        garden.PurchaseSeeds(Id(),FruitId.Grape,1);
-        Require(!garden.ProcessVisit().HasProgress,"Just before UTC midnight is still the planting day");
-        clock.UtcNow=clock.UtcNow.AddSeconds(1);Require(garden.ProcessVisit().HasProgress,"UTC midnight opens the next entry day");
+        garden=new GardenService(Profiles(10),new EconomySettings(),clock,new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Grape,5);
+        Require(!garden.ProcessVisit().HasProgress,"Planting day before midnight");clock.UtcNow=clock.UtcNow.AddSeconds(1);Require(garden.ProcessVisit().HasProgress,"UTC boundary starts next entry day");
         clock.UtcNow=DateTime.SpecifyKind(clock.UtcNow,DateTimeKind.Unspecified);Expect<ArgumentException>(()=>garden.ProcessVisit());
-        clock.UtcNow=new DateTime(1969,12,31,0,0,0,DateTimeKind.Utc);Expect<ArgumentException>(()=>garden.ProcessVisit());
-        var concurrentProfiles=Profiles(1000);
-        var concurrentGarden=new GardenService(concurrentProfiles,new EconomySettings(),new Clock(),new AchievementRules(new EconomySettings()));
-        string concurrentId=Id();var statuses=new ProfileCommitResult[8];
-        System.Threading.Tasks.Parallel.For(0,8,index=>statuses[index]=concurrentGarden.PurchaseSeeds(concurrentId,FruitId.Apple,100).Status);
-        Require(statuses.Count(status=>status==ProfileCommitResult.Applied)==1
-            && statuses.Count(status=>status==ProfileCommitResult.AlreadyApplied)==7
-            && concurrentProfiles.Snapshot().Wallet.Coins==900 && concurrentGarden.GetBatches().Single().Value.Quantity==100,"Concurrent retries of one purchase commit exactly once");
-        checks.Add("Insufficient funds, invalid input, checked price arithmetic, two-billion-seed single batch, clock rollback, UTC midnight and explicit UTC contract and eight concurrent duplicate purchase attempts");
+        var concurrentProfiles=Profiles(1000);clock=new Clock();garden=new GardenService(concurrentProfiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
+        id=Id();var statuses=new ProfileCommitResult[8];
+        System.Threading.Tasks.Parallel.For(0,8,i=>statuses[i]=garden.PurchaseSeeds(id,FruitId.Apple,100).Status);
+        Require(statuses.Count(status=>status==ProfileCommitResult.Applied)==1 && concurrentProfiles.Snapshot().Wallet.Coins==980,"Eight concurrent purchase retries commit once");
+        string batch=garden.GetBatches().Single().Key;for(int day=1;day<=4;day++){clock.Day(day);garden.ProcessVisit();}
+        System.Threading.Tasks.Parallel.For(0,8,i=>statuses[i]=garden.Harvest(batch).Status);
+        Require(statuses.Count(status=>status==ProfileCommitResult.Applied)==1 && concurrentProfiles.Snapshot().Collection[FruitId.Apple].Current==100,"Eight concurrent harvest retries collect once");
+        checks.Add("Invalid packs, insufficient funds, checked price arithmetic, huge quantities, UTC/rollback and concurrent purchase/harvest retries");
     }
 
     private static void DurableFailureAndRetry(string folder,List<string> checks)
     {
-        string path=Path.Combine(folder,"garden.json");bool fail=false;
-        var clock=new Clock();var settings=new EconomySettings();
-        var profiles=new PlayerProfileRepository(new AtomicPlayerProfileStorage(path,beforePublish:()=>{if(fail)throw new IOException("simulated interrupted publish");}),()=>Initial(100));
+        string path=Path.Combine(folder,"garden.json");bool fail=false;var clock=new Clock();var settings=new EconomySettings();
+        var profiles=new PlayerProfileRepository(new AtomicPlayerProfileStorage(path,beforePublish:()=>{if(fail)throw new IOException("interrupted publish");}),()=>Initial(100));
         profiles.Snapshot();var garden=new GardenService(profiles,settings,clock,new AchievementRules(settings));string id=Id();
         fail=true;Expect<IOException>(()=>garden.PurchaseSeeds(id,FruitId.Orange,10));
-        Require(profiles.Snapshot().Wallet.Coins==100 && profiles.Snapshot().Garden.Count==0 && profiles.Snapshot().Transactions.Count==0,"Failed publish rolls back coins, seeds and receipt in memory");
-        var reopened=Reopen(path);Require(reopened.Snapshot().Wallet.Coins==100 && reopened.Snapshot().Garden.Count==0,"Interrupted purchase has no partial durable state");
+        Require(profiles.Snapshot().Wallet.Coins==100 && profiles.Snapshot().Garden.Count==0 && Reopen(path).Snapshot().Garden.Count==0,"Failed purchase changes neither memory nor disk");
         fail=false;var purchase=garden.PurchaseSeeds(id,FruitId.Orange,10);
-        reopened=Reopen(path);var reopenedGarden=new GardenService(reopened,settings,clock,new AchievementRules(settings));
-        Require(reopenedGarden.PurchaseSeeds(id,FruitId.Orange,10).Status==ProfileCommitResult.AlreadyApplied
-            && reopened.Snapshot().Wallet.Coins==90 && reopenedGarden.GetBatches()[purchase.BatchId].Quantity==10,"Successful purchase/retry survives process restart");
-        for(int day=1;day<=3;day++){clock.Day(day);garden.ProcessVisit();}
-        clock.Day(4);fail=true;Expect<IOException>(()=>garden.ProcessVisit());
-        Require(garden.GetBatches()[purchase.BatchId].Stage==GardenGrowthStage.Flower
-            && profiles.Snapshot().Collection[FruitId.Orange].Current==0,"Failed harvest keeps the pending flowers and grants no inventory");
-        reopened=Reopen(path);Require(reopened.Snapshot().Garden[purchase.BatchId].Stage==GardenGrowthStage.Flower
-            && reopened.Snapshot().Collection[FruitId.Orange].Current==0,"Failed harvest has no partial state after restart");
-        fail=false;var harvest=garden.ProcessVisit();Require(harvest.Harvested[FruitId.Orange]==10,"Failed harvest can be retried");
-        reopened=Reopen(path);reopenedGarden=new GardenService(reopened,settings,clock,new AchievementRules(settings));
-        var replay=reopenedGarden.ProcessVisit();
-        Require(replay.IsReplay && !replay.HasProgress && replay.Harvested[FruitId.Orange]==10 && reopened.Snapshot().Garden.Count==0
-            && reopened.Snapshot().Collection[FruitId.Orange].EarnedBySource[FruitGainSource.Garden]==10,"Harvest result, source and once-only protection survive restart");
-        Require(!Directory.GetFiles(folder,"*.pending").Any(),"Failed writes clean their unpublished temporary files");
-        checks.Add("Real file storage: interrupted purchase/harvest, atomic rollback, durable retry, restart, JSON result replay and no stranded temporary files");
+        Require(Reopen(path).Snapshot().Wallet.Coins==98,"Purchase price survives reload");
+        for(int day=1;day<=3;day++){clock.Day(day);garden.ProcessVisit();}clock.Day(4);fail=true;
+        Expect<IOException>(()=>garden.ProcessVisit());Require(garden.GetBatches()[purchase.BatchId].Stage==GardenGrowthStage.Flower,"Failed growth retains previous stage");
+        fail=false;garden.ProcessVisit();byte[] before=File.ReadAllBytes(path);fail=true;
+        Expect<IOException>(()=>garden.Harvest(purchase.BatchId));
+        Require(before.SequenceEqual(File.ReadAllBytes(path)) && garden.GetBatches()[purchase.BatchId].Stage==GardenGrowthStage.Fruit && profiles.Snapshot().Collection[FruitId.Orange].Current==0,"Failed harvest preserves fruit, cell, inventory and disk atomically");
+        fail=false;garden.Harvest(purchase.BatchId);var reopened=Reopen(path);var fresh=new GardenService(reopened,settings,clock,new AchievementRules(settings));
+        Require(fresh.Harvest(purchase.BatchId).Status==ProfileCommitResult.AlreadyApplied && reopened.Snapshot().Collection[FruitId.Orange].Current==10 && reopened.Snapshot().Garden.Count==0,"Harvest receipt, inventory and freed cell survive restart and retry");
+        Require(!Directory.GetFiles(folder,"*.pending").Any(),"Interrupted writes leave no pending files");
+        CapacityAndMigration(checks);
+        checks.Add("Real atomic storage: interrupted planting/growth/harvest, reload, receipts, rollback and successful retry");
+    }
+    private static void CapacityAndMigration(List<string> checks)
+    {
+        var clock=new Clock();var profiles=Profiles(100);var settings=new EconomySettings();var garden=new GardenService(profiles,settings,clock,new AchievementRules(settings));
+        var ids=new List<string>();
+        for(int day=0;day<4;day++){clock.Day(day);garden.ProcessVisit();ids.Add(garden.PurchaseSeeds(Id(),FruitId.Apple,5).BatchId);}
+        var merged=garden.PurchaseSeeds(Id(),FruitId.Apple,5);Require(merged.BatchId==ids[3] && garden.GetBatches().Count==4,"Full plot still accepts a same-day merge");
+        clock.Day(4);garden.ProcessVisit();long revision=profiles.Snapshot().Revision;int coins=profiles.Snapshot().Wallet.Coins;
+        Require(garden.PurchaseSeeds(Id(),FruitId.Apple,5).Failure==SeedPurchaseFailure.PlotFull && profiles.Snapshot().Revision==revision && profiles.Snapshot().Wallet.Coins==coins,"Ripe crops occupy their cells; full plot rejects without spending");
+        garden.Harvest(ids[0]);var replacement=garden.PurchaseSeeds(Id(),FruitId.Apple,5);
+        Require(replacement.CellIndex==0 && garden.GetBatches()[ids[1]].CellIndex==1 && garden.Harvest(ids[0]).Status==ProfileCommitResult.AlreadyApplied,"First free cell is reused; an old tap cannot collect the new occupant");
+        var old=Initial(137);old.Version=4;
+        for(int i=0;i<7;i++)old.Garden["old:"+i]=new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=i+1,PlantedUtcDay=100+i,LastGrowthUtcDay=110,Stage=GardenGrowthStage.Fruit};
+        string purchaseId=Id();old.Transactions["seed:"+purchaseId]=new ProfileTransactionRecord {Kind="seed_purchase",Request=JsonConvert.SerializeObject(new {fruit=FruitId.Apple,quantity=3L}),AppliedAtUtc=DateTime.UtcNow,
+            Result=JsonConvert.SerializeObject(new SeedPurchaseResult {Fruit=FruitId.Apple,Quantity=3,UnitCoinPrice=1,TotalCoinPrice=3,CoinsAfter=137,BatchId="already-collected"})};
+        var storage=new MemoryPlayerProfileStorage();storage.Save(old);
+        var migrated=new PlayerProfileRepository(storage,()=>throw new Exception("Must load old profile"));garden=new GardenService(migrated,settings,clock,new AchievementRules(settings));var data=migrated.Snapshot();
+        Require(data.Version==5 && data.Wallet.Coins==137 && data.Garden.Count==7 && data.Garden.Values.Count(batch=>batch.IsLegacyOverflow)==3,"Version 4 keeps balances and all excess batches in a migration queue");
+        var replay=garden.PurchaseSeeds(purchaseId,FruitId.Apple,3);
+        Require(replay.Status==ProfileCommitResult.AlreadyApplied && replay.UnitCoinPrice==1 && replay.TotalCoinPrice==3 && migrated.Snapshot().Wallet.Coins==137,"Old one-seed-price receipts still replay despite new pack rules");
+        garden.Harvest("old:0");data=migrated.Snapshot();
+        Require(data.Garden["old:4"].CellIndex==0 && !data.Garden["old:4"].IsLegacyOverflow && data.Garden["old:1"].CellIndex==1 && data.Collection[FruitId.Strawberry].Current==1,"Harvest promotes the oldest waiting legacy batch without moving other cells");
+        var restart=new PlayerProfileRepository(storage,()=>throw new Exception("No reset"));Require(restart.Snapshot().Garden["old:4"].CellIndex==0,"Migrated slots survive a fresh repository");
+        checks.Add("Four-cell capacity, same-day merge when full, no-spend rejection, stable reuse, version-4 migration, legacy overflow promotion and old receipt compatibility");
     }
 
     private static void SharedProfileBindings(List<string> checks)
@@ -253,7 +239,7 @@ public static class FruitLabGardenEditorTools
                 Require(container.Resolve<IGardenClock>().UtcNow.Kind==DateTimeKind.Utc,"Production clock is UTC");
                 var tracker=root.AddComponent<LevelTracker>();
                 typeof(LevelTracker).GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(tracker,null);
-                var garden=new GardenService(profiles,new EconomySettings(),new Clock(),new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Blueberry,4);
+                var garden=new GardenService(profiles,new EconomySettings(),new Clock(),new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Blueberry,20);
                 Require(tracker.GetCoinCount()==16,"Purchase refreshes the existing LevelTracker coin cache");
                 tracker.SavePlayerPrefs();
                 Require(profiles.Snapshot().Wallet.Coins==16 && profiles.Snapshot().Garden.Count==1

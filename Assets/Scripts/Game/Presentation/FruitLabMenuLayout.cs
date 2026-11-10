@@ -15,6 +15,7 @@ namespace Scripts
         [SerializeField] private VerticalCrystalProgressView crystals;
         private Vector2 _lastSize;
         private RectTransform _homeContent;
+        public RectTransform HomeContent { get { EnsureHomeContent(); return _homeContent; } }
         public void SetHomeVisible(bool visible) { EnsureHomeContent(); _homeContent.gameObject.SetActive(visible); }
         private void EnsureHomeContent()
         {
@@ -70,6 +71,9 @@ namespace Scripts
                 if (old != null) ((Component)old).gameObject.SetActive(false);
             var privacy = actions.Find("PrivacyButton"); if (privacy != null) privacy.gameObject.SetActive(false);
             play.ApplyLabActionStyle(true);
+            var goal=ClosestBadgeView.Ensure(_homeContent);
+            FruitLabStyle.Place((RectTransform)goal.transform,_homeContent,36f,actions.anchoredPosition.y+44f,width-48f,60f);
+            goal.ApplyLayout();
 
         }
     }

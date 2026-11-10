@@ -12,7 +12,7 @@ namespace Scripts.Economy
 
     public sealed class PlayerProfileData
     {
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 5;
         [JsonProperty(Required=Required.Always)] public int Version = CurrentVersion;
         public long Revision;
         [JsonProperty(Required=Required.Always)] public PlayerProgressData Progress = new PlayerProgressData();
@@ -67,6 +67,9 @@ namespace Scripts.Economy
         public int PlantedUtcDay;
         public int LastGrowthUtcDay;
         public GardenGrowthStage Stage;
+        // -1 is reserved for the migration-only queue. New purchases always own a cell.
+        public int CellIndex = -1;
+        public bool IsLegacyOverflow;
     }
 
     public sealed class AchievementProgress

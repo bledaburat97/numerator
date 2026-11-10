@@ -25,7 +25,9 @@
     <type fullname="Scripts.Economy.SeedPurchaseResult" preserve="all" />
     <type fullname="Scripts.Economy.GardenBatchChange" preserve="all" />
     <type fullname="Scripts.Economy.GardenVisitResult" preserve="all" />
+    <type fullname="Scripts.Economy.GardenHarvestResult" preserve="all" />
     <type fullname="Menu.FruitCollectionPresenter" preserve="all" />
+    <type fullname="Menu.ClosestBadgePresenter" preserve="all" />
     <type fullname="Scripts.Economy.GardenVisitCoordinator" preserve="all" />
     <type fullname="Scripts.Economy.GardenVisitNotice" preserve="all" />
     <type fullname="Scripts.MenuHeaderController" preserve="all" />

@@ -98,7 +98,12 @@ public static partial class FruitLabTutorialEditorTools
                     var card=game.Initial.GetRectTransformOfCardItem(0).position;
                     Require(editor.TrySelect(0),"Manual editing is optional and available");
                     editor.GetButton(0).onClick.Invoke();Require(editor.IsSelecting && !notes.IndicatorsVisible,"A red presence note keeps editing open without revealing position strips");
-                    editor.GetButton(1).onClick.Invoke();Require(!notes.IndicatorsVisible,"Neutral and green presence notes do not reveal strips");
+                    editor.GetButton(1).onClick.Invoke();Require(!notes.IndicatorsVisible,"Neutral presence notes do not reveal strips");
+                    editor.GetButton(2).onClick.Invoke();
+                    var manualPresence=game.Initial.GetRectTransformOfCardItem(0).GetComponent<NormalCardItemView>();
+                    Require(manualPresence.HasPresenceBadge && !CardKnowledgeFrame(manualPresence) && !notes.IndicatorsVisible,
+                        "The actual manual green button shows only a presence badge without opening position strips");
+                    editor.GetButton(1).onClick.Invoke();Require(!manualPresence.HasPresenceBadge,"The actual neutral button clears the presence badge");
                     ClickPositionIndicator(game,editor.GetPositionButton(0));
                     Require(editor.IsSelecting && notes.IndicatorsVisible && !notes.State.IsPossible(1,0),"A direct positional X opens all strips and keeps selection");
                     for(int i=0;i<7;i++)Require(game.Initial.GetHolderView(i).IndicatorStrip.gameObject.activeSelf,"Every fruit strip becomes visible");
@@ -121,6 +126,8 @@ public static partial class FruitLabTutorialEditorTools
                     Require(power.TryApply() && power.TryApply() && saves==2 && profile.Snapshot().Wallet.PowerUps[RewardType.Ultra]==0,"The actual power controller checkpoints before/after activation and repeat taps cost nothing");
                     Require(notes.UltraActive && !notes.CanResetNotes && !notes.CanEditNotes && !notes.State.HasManualChanges,"Ultra discards manual notes and disables editing/reset");
                     Require(notes.State.IsPossible(1,1) && !notes.State.IsPossible(1,0) && notes.State.Presence(1)==FruitPresence.Present,"Ultra rebuilds public history and ignores an incorrect manual exclusion");
+                    var marked=(NormalCardItemView)game.Initial.GetRectTransformOfCardItem(0).GetComponent<NormalCardItemView>();
+                    Require(marked.HasPresenceBadge && !CardKnowledgeFrame(marked),"Actual Ultra shows a presence badge without a card frame or real lock");
                     var before=notes.State.Capture(1,true);notes.TogglePosition(1,1);notes.SetPresence(1,FruitPresence.Absent);notes.ResetNotes();
                     Require(notes.State.Capture(1,true).Possible.SequenceEqual(before.Possible) && !editor.TrySelect(0),"Editing commands cannot alter active Ultra");
                     var provider=new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);

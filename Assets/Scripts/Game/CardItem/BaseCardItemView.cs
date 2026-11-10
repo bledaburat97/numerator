@@ -14,6 +14,7 @@ namespace Scripts
         private Image _cardFace, _cardHighlight;
         [SerializeField] private Image resultGlow;
         [SerializeField] private Image resultOutline;
+        protected Image ResultGlow => resultGlow;
         private Color _resultColor = FruitLabStyle.Correct;
         private float _alpha = 1f;
         protected virtual float ContentOpacityMultiplier => 1f;
@@ -48,12 +49,12 @@ namespace Scripts
             rectTransform.localScale = Vector3.one;
         }
 
-        public void SetSize(Vector2 size)
+        public virtual void SetSize(Vector2 size)
         {
             rectTransform.sizeDelta = size;
         }
 
-        public void SetAlpha(float alpha)
+        public virtual void SetAlpha(float alpha)
         {
             _alpha = alpha;
             alpha *= ContentOpacityMultiplier;

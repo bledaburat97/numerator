@@ -176,7 +176,7 @@ public static partial class FruitLabTutorialEditorTools
                     Require(game.Initial.GetHolderView(0).Indicators.Count == 3, "Every fruit holder displays one numbered cell per board slot");
                     SubmitAssistedGuess(game, new[] {1,2,3}, assistance);
                     Require(game.Initial.GetHolderView(0).Indicators[0].IsExcluded, "A submitted zero-correct guess creates the right crosses");
-                    Require(((NormalCardItemView)game.Initial.GetRectTransformOfCardItem(0).GetComponent<NormalCardItemView>()).DeducedPresence == FruitPresence.Present, "Complete membership gives a green frame");
+                    Require(((NormalCardItemView)game.Initial.GetRectTransformOfCardItem(0).GetComponent<NormalCardItemView>()).DeducedPresence == FruitPresence.Present, "Complete membership gives a presence badge");
                     Require(game.Initial.GetHolderView(3).Indicators.All(indicator => indicator.IsExcluded), "Absent fruit have all their cells crossed");
                     Require(game.Initial.TryGetCardItem(3, out var absent) && ((NormalCardItemView)absent.GetView()).DeducedPresence == FruitPresence.Absent
                         && ((NormalCardItemView)absent.GetView()).GetImage().color.a <= .33f, "Absent fruit stay available, faded and crossed without being deleted");

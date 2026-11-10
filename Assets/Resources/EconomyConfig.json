@@ -1,31 +1,48 @@
 {
-  "SeedUnitCoinPrice": 1,
+  "SeedsPerPack": 5,
+  "SeedPackCoinPrice": 1,
   "RequiredGrowthVisits": 4,
   "Achievements": [
     {
-      "Id": "first-harvest",
-      "Title": "İlk Hasat",
-      "Description": "Bahçende ilk meyveni yetiştir.",
-      "Target": 1,
-      "Source": 2,
-      "Reward": 1,
+      "Id": "strawberry-grower-100",
+      "Title": "Çilek Yetiştiricisi",
+      "Description": "100 çilek topla.",
+      "Target": 100,
+      "RewardKind": 1,
+      "RewardCount": 1,
+      "Fruit": 3
+    },
+    {
+      "Id": "watermelon-grower-100",
+      "Title": "Karpuz Yetiştiricisi",
+      "Description": "100 karpuz topla.",
+      "Target": 100,
+      "RewardKind": 1,
+      "RewardCount": 1,
+      "Fruit": 8
+    },
+    {
+      "Id": "farmer-apprentice-500",
+      "Title": "Çırak Çiftçi",
+      "Description": "Toplam 500 meyve topla.",
+      "Target": 500,
+      "RewardKind": 1,
       "RewardCount": 1
     },
     {
-      "Id": "strawberry-10",
-      "Title": "Çilek Aşığı",
-      "Description": "10 çilek topla.",
+      "Id": "farmer-master-1500",
+      "Title": "Usta Çiftçi",
+      "Description": "Toplam 1500 meyve topla.",
+      "Target": 1500,
+      "RewardKind": 1,
+      "RewardCount": 1
+    },
+    {
+      "Id": "garden-owner-10",
+      "Title": "Bahçe Sahibi",
+      "Description": "Toplam 10 meyve topla.",
       "Target": 10,
-      "Fruit": 3,
-      "Reward": 0,
-      "RewardCount": 1
-    },
-    {
-      "Id": "collector-50",
-      "Title": "Meyve Koleksiyoncusu",
-      "Description": "Toplam 50 meyve topla.",
-      "Target": 50,
-      "Reward": 3,
+      "RewardKind": 1,
       "RewardCount": 1
     }
   ]

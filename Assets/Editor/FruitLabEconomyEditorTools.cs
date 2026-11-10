@@ -29,9 +29,9 @@ public static class FruitLabEconomyEditorTools
             TrackerCompatibility(folder,checks);
             ValidateGlobalBindings(checks);
             var settings=PlayerProfileRuntime.LoadSettings();
-            Require(settings.SeedUnitCoinPrice==1 && settings.RequiredGrowthVisits==4,"Central initial economy settings");
-            Expect<InvalidOperationException>(()=>new EconomySettings {SeedUnitCoinPrice=0}.Validate());
-            checks.Add("Central settings validated; automatic garden processing is not connected");
+            Require(settings.SeedsPerPack==5 && settings.SeedPackCoinPrice==1 && settings.RequiredGrowthVisits==4,"Central initial economy settings");
+            Expect<InvalidOperationException>(()=>new EconomySettings {SeedPackCoinPrice=0}.Validate());
+            checks.Add("Central pack pricing and four-entry-day growth settings validated");
         }
         Require(before==LegacySnapshot(),"Real PlayerPrefs are unchanged");
         Require(persistentBefore==PersistentFiles(),"Real profile files are unchanged");
@@ -84,8 +84,8 @@ public static class FruitLabEconomyEditorTools
         checks.Add("Shared fruit inventory: game/duel/garden sources, current/lifetime totals, spend, rejection, snapshot isolation, duplicate ids and restart");
 
         repository.Commit("batch-data","foundation_test","batch-and-achievement",profile=>{
-            profile.Garden.Add("strawberry-yesterday",new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=1000,PlantedUtcDay=20000,LastGrowthUtcDay=20001,Stage=GardenGrowthStage.Sprout});
-            profile.Garden.Add("strawberry-today",new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=10,PlantedUtcDay=20001,LastGrowthUtcDay=20001,Stage=GardenGrowthStage.Seed});
+            profile.Garden.Add("strawberry-yesterday",new PlantingBatch {CellIndex=0,Fruit=FruitId.Strawberry,Quantity=1000,PlantedUtcDay=20000,LastGrowthUtcDay=20001,Stage=GardenGrowthStage.Sprout});
+            profile.Garden.Add("strawberry-today",new PlantingBatch {CellIndex=1,Fruit=FruitId.Strawberry,Quantity=10,PlantedUtcDay=20001,LastGrowthUtcDay=20001,Stage=GardenGrowthStage.Seed});
             profile.Achievements.Add("foundation-badge",new AchievementProgress {Progress=1,Unlocked=true,UnlockedAtUtc=DateTime.UtcNow,RewardGranted=true,RewardTransactionId="batch-data"});
             return true;
         });
@@ -111,7 +111,7 @@ public static class FruitLabEconomyEditorTools
         var repository=new PlayerProfileRepository(storage,()=>initial.Copy());
         Func<PlayerProfileData,bool> joint=profile=>{
             profile.Wallet.Coins-=10;
-            profile.Garden.Add("ten-seeds",new PlantingBatch {Fruit=FruitId.Strawberry,Quantity=10,PlantedUtcDay=20001,LastGrowthUtcDay=20001});
+            profile.Garden.Add("ten-seeds",new PlantingBatch {CellIndex=1,Fruit=FruitId.Strawberry,Quantity=10,PlantedUtcDay=20001,LastGrowthUtcDay=20001});
             return true;
         };
         Expect<IOException>(()=>repository.Commit("purchase:one","foundation_test","ten-seeds-for-ten-coins",joint));
@@ -161,7 +161,7 @@ public static class FruitLabEconomyEditorTools
                     && repository.Snapshot().Collection[FruitId.Apple].Current==3,"Existing win/crystal conversion preserves collection");
                 int stock=tracker.GetPowerUpCount(RewardType.Revealing);
                 Require(tracker.TryConsumePowerUp(RewardType.Revealing) && repository.Snapshot().Wallet.PowerUps[RewardType.Revealing]==stock-1,"Existing powerup use saves through the shared profile");
-                repository.Update(profile=>{profile.Wallet.Coins-=7;profile.Garden.Add("external-batch",new PlantingBatch {Fruit=FruitId.Apple,Quantity=7});});
+                repository.Update(profile=>{profile.Wallet.Coins-=7;profile.Garden.Add("external-batch",new PlantingBatch {CellIndex=0,Fruit=FruitId.Apple,Quantity=7});});
                 Require(tracker.GetCoinCount()==45,"External transactions refresh the tracker wallet cache");
                 tracker.SavePlayerPrefs();
                 Require(repository.Snapshot().Garden.Count==1 && repository.Snapshot().Wallet.Coins==45,"Save-on-quit cannot discard external garden changes");

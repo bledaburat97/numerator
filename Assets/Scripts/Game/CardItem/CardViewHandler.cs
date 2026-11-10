@@ -220,10 +220,15 @@ namespace Scripts
         public void AnimateTurnIntoCertain(float delayDuration, float colorChangeDuration,
             float ribbonImageDuration)
         {
+            // The view owns and cancels the short visual feedback. Movement and
+            // the authoritative board parent are not changed by this animation.
             DOTween.Sequence().AppendInterval(delayDuration)
-                .Append(_view.GetRectTransform().DOPunchScale(Vector3.one * 0.12f, colorChangeDuration, 5, 0.75f))
-                .AppendCallback(() => _hapticController.Vibrate(HapticType.Success))
-                .SetLink(_view.GetRectTransform().gameObject,LinkBehaviour.KillOnDestroy);
+                .AppendCallback(() =>
+                {
+                    _view.AnimateLockImage(colorChangeDuration);
+                    _hapticController.Vibrate(HapticType.Success);
+                })
+                .SetLink(_view.GetRectTransform().gameObject,LinkBehaviour.KillOnDisable);
         }
         
         public Sequence FallToTarget(Vector2 targetPosition, float fallDuration, float bounceDuration)

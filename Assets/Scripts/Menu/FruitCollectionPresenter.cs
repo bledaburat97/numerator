@@ -6,10 +6,11 @@ using UnityEngine;
 
 namespace Menu
 {
-    public interface IFruitCollectionPresenter { void Open();void Open(GardenTab tab);void Close();void ShowPendingNotice(); }
+    public interface IFruitCollectionPresenter { void Open();void Open(GardenTab tab);void Close();void ShowPendingNotice();void FocusBadge(string id); }
 
     public sealed class FruitCollectionPresenter : IFruitCollectionPresenter,IDisposable
     {
+        private readonly IAchievementService _achievements;
         private readonly IFruitInventoryService _inventory;
         private readonly IPlayerProfileRepository _profiles;
         private readonly IFruitCollectionView _view;
@@ -24,12 +25,13 @@ namespace Menu
 
         public FruitCollectionPresenter(IFruitInventoryService inventory,IPlayerProfileRepository profiles,
             IFruitCollectionView view,Scripts.BaseButtonControllerFactory buttons,IGardenService garden,
-            GardenVisitCoordinator visits,IGardenNoticeView notice)
+            GardenVisitCoordinator visits,IGardenNoticeView notice,IAchievementService achievements)
         {
-            _inventory=inventory;_profiles=profiles;_view=view;_garden=garden;_visits=visits;_notice=notice;
+            _achievements=achievements;_inventory=inventory;_profiles=profiles;_view=view;_garden=garden;_visits=visits;_notice=notice;
             var close=buttons.Create(view.CloseButton,Close);close.SetClickOnRelease(true);
             _gardenView=view.Garden;_purchase=view.Purchase;
             _gardenView.BuySeeds+=OpenPurchase;_purchase.FruitSelected+=SelectFruit;_purchase.QuantityChanged+=ChangeQuantity;
+            _gardenView.HarvestRequested+=Harvest;
             _purchase.AdjustQuantity+=AdjustQuantity;_purchase.Confirm+=Purchase;_purchase.Cancel+=CancelPurchase;
             _view.TabChanged+=TabChanged;_profiles.Changed+=Refresh;_visits.NoticeAvailable+=OnNoticeAvailable;
             _view.SetVisible(false);_notice.Hide();
@@ -38,15 +40,21 @@ namespace Menu
         public void Open(GardenTab tab)
         {
             if(_disposed || _busy)return;
-            CancelPurchase();_notice.Hide();_view.SetVisible(true);_view.SelectTab(tab);Refresh();
+            CancelPurchase();_notice.Hide();
+            try{_achievements.Reconcile();}
+            catch(Exception error) when(error is IOException || error is InvalidOperationException || error is OverflowException)
+            { Debug.LogWarning("Achievement reconciliation deferred: "+error.GetType().Name); }
+            _view.SetVisible(true);_view.SelectTab(tab);Refresh();
+            if(tab==GardenTab.Collection)_view.FocusBadge(null);
         }
+        public void FocusBadge(string id){if(!_disposed && _view.IsVisible)_view.FocusBadge(id);}
         public void Close()
         {
             if(_disposed || _busy)return;
             CancelPurchase();_view.SetVisible(false);FlushNotice();
         }
         public void ShowPendingNotice(){_menuReady=true;FlushNotice();}
-        private void OnNoticeAvailable(){if(_menuReady)FlushNotice();}
+        private void OnNoticeAvailable(){if(_menuReady)FlushNotice();Refresh();}
         private void FlushNotice()
         {
             if(_disposed || !_menuReady || _view.IsVisible)return;
@@ -56,13 +64,15 @@ namespace Menu
         private void Refresh()
         {
             if(_disposed || !_view.IsVisible)return;
-            _view.Render(_inventory.GetCollection());_gardenView.Render(_garden.GetBatches());
+            _view.Render(_inventory.GetCollection());_view.RenderAchievements(_achievements.GetAchievements());_gardenView.Render(_garden.GetBatches());
+            _gardenView.SetCoins(_profiles.Snapshot().Wallet.Coins);
+            if(_gardenView.IsVisible)_gardenView.PlayGrowth(_visits.TakeVisualChanges());
             if(_purchaseOpen)RefreshQuote();
         }
         private void OpenPurchase()
         {
             if(_disposed || !_view.IsVisible || _busy)return;
-            _notice.Hide();_purchaseOpen=true;_fruit=FruitId.Apple;_quantity="1";NewIntent();
+            _notice.Hide();_purchaseOpen=true;_fruit=FruitId.Apple;_quantity=_garden.SeedsPerPack.ToString(CultureInfo.InvariantCulture);NewIntent();
             _purchase.SetVisible(true);_purchase.SetSelection(_fruit,_quantity);RefreshQuote();
         }
         private void CancelPurchase()
@@ -84,17 +94,20 @@ namespace Menu
         private void AdjustQuantity(int delta)
         {
             if(!_purchaseOpen || _busy)return;
-            if(!TryQuantity(out long quantity))quantity=1;
-            if(delta>0 && quantity<long.MaxValue)quantity++;
-            if(delta<0 && quantity>1)quantity--;
+            long step=_garden.SeedsPerPack;
+            if(!TryQuantity(out long quantity))quantity=step;
+            if(delta>0)
+            {if(quantity/step>=long.MaxValue/step)return;quantity=(quantity/step+1)*step;}
+            if(delta<0)quantity=Math.Max(step,(quantity-1)/step*step);
             _quantity=quantity.ToString(CultureInfo.InvariantCulture);NewIntent();
             _purchase.SetSelection(_fruit,_quantity);RefreshQuote();
         }
         private bool TryQuantity(out long quantity)=>long.TryParse(_quantity,NumberStyles.None,CultureInfo.InvariantCulture,out quantity) && quantity>0;
         private void RefreshQuote()
         {
-            if(!TryQuantity(out long quantity)){_purchase.RenderQuote(null,"En az 1 tohum seç.",_busy);return;}
-            try {_purchase.RenderQuote(_garden.QuoteSeeds(_fruit,quantity),_error,_busy);}
+            if(!TryQuantity(out long quantity) || quantity%_garden.SeedsPerPack!=0)
+            {_purchase.RenderQuote(null,_garden.SeedsPerPack+"’in katlarını seç.",_busy);return;}
+            try {var quote=_garden.QuoteSeeds(_fruit,quantity);_purchase.RenderQuote(quote,_error ?? PurchaseError(quote.Failure),_busy);}
             catch(ArgumentOutOfRangeException){_purchase.RenderQuote(null,"Adet çok yüksek.",_busy);}
         }
         private void Purchase()
@@ -104,8 +117,10 @@ namespace Menu
             try
             {
                 RefreshQuote();var result=_garden.PurchaseSeeds(_purchaseId,_fruit,quantity);
-                if(result.Status==ProfileCommitResult.Rejected){_error="Bakiyen yetersiz.";return;}
+                if(result.Status==ProfileCommitResult.Rejected){_error=PurchaseError(result.Failure);return;}
                 _purchaseOpen=false;_purchase.SetVisible(false);_view.SelectTab(GardenTab.Garden);Refresh();
+                _gardenView.FocusFruit(result.Fruit);
+                if(result.Status==ProfileCommitResult.Applied)_gardenView.PlayPlanting(result.BatchId);
                 _notice.ShowPurchase(result.Fruit,result.Quantity);
             }
             catch(Exception error) when(error is IOException || error is InvalidOperationException || error is ArgumentOutOfRangeException || error is OverflowException)
@@ -115,11 +130,41 @@ namespace Menu
             }
             finally {_busy=false;if(_purchaseOpen)RefreshQuote();}
         }
+        private string PurchaseError(SeedPurchaseFailure failure)
+        {
+            switch(failure)
+            {
+                case SeedPurchaseFailure.PlotFull:return "Parsel dolu. Olgun meyveleri topla.";
+                case SeedPurchaseFailure.InvalidQuantity:return _garden.SeedsPerPack+"’in katlarını seç.";
+                case SeedPurchaseFailure.InsufficientCoins:return "Bakiyen yetersiz.";
+                case SeedPurchaseFailure.QuantityTooLarge:return "Adet çok yüksek.";
+                default:return null;
+            }
+        }
+        private void Harvest(string batchId)
+        {
+            if(_disposed || _busy || _purchaseOpen || !_view.IsVisible)return;
+            _busy=true;
+            var visual=_gardenView.CaptureHarvest(batchId);
+            try
+            {
+                var result=_garden.Harvest(batchId);
+                if(result.Status==ProfileCommitResult.Applied){_gardenView.PlayHarvest(visual);_notice.ShowHarvest(result.Fruit,result.Quantity);}
+                else Refresh();
+            }
+            catch(Exception error) when(error is IOException || error is InvalidOperationException || error is OverflowException)
+            {
+                _notice.ShowError("Toplanamadı. Yeniden dokun.");
+                Debug.LogWarning("Garden harvest deferred: "+error.GetType().Name);
+            }
+            finally {_busy=false;}
+        }
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;
             _profiles.Changed-=Refresh;_visits.NoticeAvailable-=OnNoticeAvailable;_view.TabChanged-=TabChanged;
             _gardenView.BuySeeds-=OpenPurchase;_purchase.FruitSelected-=SelectFruit;_purchase.QuantityChanged-=ChangeQuantity;
+            _gardenView.HarvestRequested-=Harvest;
             _purchase.AdjustQuantity-=AdjustQuantity;_purchase.Confirm-=Purchase;_purchase.Cancel-=CancelPurchase;
             _purchase.SetVisible(false);_notice.Hide();
         }

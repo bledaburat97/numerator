@@ -133,8 +133,15 @@ namespace Scripts
         {
             ResolveReferences();
             if (image == null) return;
-            FruitLabStyle.Place(image.rectTransform, transform, inset, inset,
-                rectTransform.rect.width - inset * 2f, rectTransform.rect.height - inset * 2f);
+            // Keep the authored parent: settings icons can be nested inside a
+            // prefab face, whose children cannot be reparented in the Editor.
+            var parent = image.rectTransform.parent as RectTransform;
+            if (parent == null) return;
+            Rect bounds = rectTransform.rect;
+            Vector2 min = parent.InverseTransformPoint(rectTransform.TransformPoint(new Vector3(bounds.xMin + inset, bounds.yMin + inset)));
+            Vector2 max = parent.InverseTransformPoint(rectTransform.TransformPoint(new Vector3(bounds.xMax - inset, bounds.yMax - inset)));
+            FruitLabStyle.Place(image.rectTransform, parent, min.x - parent.rect.xMin, min.y - parent.rect.yMin,
+                max.x - min.x, max.y - min.y);
         }
 
         public void ApplyLabActionStyle(bool primary)

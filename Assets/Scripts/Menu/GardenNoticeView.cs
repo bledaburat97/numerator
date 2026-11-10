@@ -13,6 +13,8 @@ namespace Menu
     {
         void ShowProgress(GardenVisitNotice notice);
         void ShowPurchase(FruitId fruit,long amount);
+        void ShowHarvest(FruitId fruit,long amount);
+        void ShowError(string message);
         void Hide();
     }
 
@@ -41,7 +43,7 @@ namespace Menu
         public void ShowProgress(GardenVisitNotice notice)
         {
             if(notice==null)return;
-            if(notice.Harvested.Count==0)
+            if(notice.Ready.Count==0)
             {
                 Show("Hoş geldin!","Bahçen bir aşama büyüdü.",null);
                 _growth=transform.Find("Growth")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(transform,FruitLabGlyph.Symbol.Sprout,FruitLabStyle.Mint);_growth.name="Growth";
@@ -52,18 +54,19 @@ namespace Menu
                 }).Append(_growth.transform.DOScale(1,.28f).SetEase(Ease.OutBack)).SetLink(gameObject,LinkBehaviour.KillOnDisable);
                 ApplyLayout();return;
             }
-            if(notice.Harvested.Count==1)
+            if(notice.Ready.Count==1)
             {
-                var fruit=notice.Harvested.First();
-                Show("Hasadın hazır!",FruitCollectionView.FormatCount(fruit.Value)+" "+FruitCollectionView.FruitName(fruit.Key).ToLowerInvariant()+" olgunlaştı ve koleksiyonuna eklendi.",fruit.Key);
+                var fruit=notice.Ready.First();
+                Show("Hasadın hazır!","Olgun meyveye dokun, koleksiyonuna ekle.",fruit.Key);
             }
             else
             {
-                decimal total=0;foreach(var fruit in notice.Harvested)total+=fruit.Value;
-                Show("Hasadın hazır!",FruitCollectionView.FormatCount(total)+" meyve koleksiyonuna eklendi.",null);
+                Show("Hasadın hazır!","Olgun meyvelere dokunarak topla.",null);
             }
         }
         public void ShowPurchase(FruitId fruit,long amount) {Show("Ekim tamam!",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" tohumu bahçende.",fruit);_dismissAt=Time.unscaledTime+3f;}
+        public void ShowHarvest(FruitId fruit,long amount) {Show("Toplandı!",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" koleksiyonuna eklendi.",fruit);_dismissAt=Time.unscaledTime+3f;}
+        public void ShowError(string message) => Show("Kaydedilemedi",message,null);
         private void Show(string title,string body,FruitId? fruit)
         {
             EnsureUi();_growthAnimation?.Kill();if(_growth!=null)_growth.gameObject.SetActive(false);_title.text=title;_body.text=body;_fruit.gameObject.SetActive(fruit.HasValue);

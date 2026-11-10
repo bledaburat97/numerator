@@ -1,0 +1,454 @@
+fileFormatVersion: 2
+guid: edf20162ccbef4614b707a9913843745
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3019144464634170794
+    second: KiwiGrowth_0
+  - first:
+      213: -125994645879327794
+    second: KiwiGrowth_1
+  - first:
+      213: 6693255448382866126
+    second: KiwiGrowth_2
+  - first:
+      213: -4806887152475508626
+    second: KiwiGrowth_3
+  - first:
+      213: 944503226211092162
+    second: KiwiGrowth_4
+  - first:
+      213: 7869665243186406699
+    second: KiwiGrowth_5
+  - first:
+      213: 498799030255722577
+    second: KiwiGrowth_6
+  - first:
+      213: 3112321653229746705
+    second: KiwiGrowth_7
+  - first:
+      213: 763623237827259334
+    second: KiwiGrowth_8
+  - first:
+      213: 6769514667544078331
+    second: KiwiGrowth_9
+  - first:
+      213: -340083629026608644
+    second: KiwiGrowth_10
+  - first:
+      213: 3421298140462038667
+    second: KiwiGrowth_11
+  - first:
+      213: -2138577869006459082
+    second: KiwiGrowth_12
+  - first:
+      213: -5923960491752944129
+    second: KiwiGrowth_13
+  - first:
+      213: -5680818278639000193
+    second: KiwiGrowth_14
+  - first:
+      213: 366303731797481601
+    second: KiwiGrowth_15
+  - first:
+      213: 1823916054956177370
+    second: KiwiGrowth_16
+  - first:
+      213: -6470677715972112143
+    second: KiwiGrowth_17
+  - first:
+      213: 3222716693362535795
+    second: KiwiGrowth_18
+  - first:
+      213: -1628448833095204311
+    second: KiwiGrowth_19
+  - first:
+      213: 2453823760792603379
+    second: KiwiGrowth_20
+  - first:
+      213: 2600345751811838400
+    second: KiwiGrowth_21
+  - first:
+      213: -2742150992758618625
+    second: KiwiGrowth_22
+  - first:
+      213: -1085449273588771953
+    second: KiwiGrowth_23
+  - first:
+      213: 4256725028399274052
+    second: KiwiGrowth_24
+  - first:
+      213: 4630201851194787225
+    second: KiwiGrowth_25
+  - first:
+      213: -8617281180374366267
+    second: KiwiGrowth_26
+  - first:
+      213: -9075828365411367020
+    second: KiwiGrowth_27
+  - first:
+      213: 8064643479536043851
+    second: KiwiGrowth_28
+  - first:
+      213: -3168059838483597293
+    second: KiwiGrowth_29
+  - first:
+      213: 5293239291337840319
+    second: KiwiGrowth_30
+  - first:
+      213: 4673640053708131607
+    second: KiwiGrowth_31
+  - first:
+      213: 1040427509328209828
+    second: KiwiGrowth_32
+  - first:
+      213: 7208086781795208754
+    second: KiwiGrowth_33
+  - first:
+      213: 1166458386714496616
+    second: KiwiGrowth_34
+  - first:
+      213: 4588463746566207275
+    second: KiwiGrowth_35
+  - first:
+      213: -2201188343353024030
+    second: KiwiGrowth_36
+  - first:
+      213: -5783038696293785354
+    second: KiwiGrowth_37
+  - first:
+      213: -3997591610909918662
+    second: KiwiGrowth_38
+  - first:
+      213: 4120073002665627880
+    second: KiwiGrowth_39
+  - first:
+      213: 2583959137404199434
+    second: KiwiGrowth_40
+  - first:
+      213: 3478799707812370826
+    second: KiwiGrowth_41
+  - first:
+      213: -4083755277516519233
+    second: Seed
+  - first:
+      213: -5874521305546433143
+    second: Sprout
+  - first:
+      213: -1619830504381569487
+    second: Leaves
+  - first:
+      213: -8033050013691433640
+    second: Flower
+  - first:
+      213: 5466040766650981233
+    second: Fruit
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Seed
+      rect:
+        serializedVersion: 2
+        x: 225
+        y: 571
+        width: 93
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb8400636369357c0800000000000000
+      internalID: -4083755277516519233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprout
+      rect:
+        serializedVersion: 2
+        x: 646
+        y: 572
+        width: 237
+        height: 267
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98dd0754ff1897ea0800000000000000
+      internalID: -5874521305546433143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves
+      rect:
+        serializedVersion: 2
+        x: 1098
+        y: 572
+        width: 362
+        height: 358
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 136aefd0db43589e0800000000000000
+      internalID: -1619830504381569487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Flower
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 62
+        width: 363
+        height: 380
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85da9fec29fd48090800000000000000
+      internalID: -8033050013691433640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fruit
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 54
+        width: 368
+        height: 356
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17b1900fd174bdb40800000000000000
+      internalID: 5466040766650981233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Flower: -8033050013691433640
+      Fruit: 5466040766650981233
+      KiwiGrowth_0: 3019144464634170794
+      KiwiGrowth_1: -125994645879327794
+      KiwiGrowth_10: -340083629026608644
+      KiwiGrowth_11: 3421298140462038667
+      KiwiGrowth_12: -2138577869006459082
+      KiwiGrowth_13: -5923960491752944129
+      KiwiGrowth_14: -5680818278639000193
+      KiwiGrowth_15: 366303731797481601
+      KiwiGrowth_16: 1823916054956177370
+      KiwiGrowth_17: -6470677715972112143
+      KiwiGrowth_18: 3222716693362535795
+      KiwiGrowth_19: -1628448833095204311
+      KiwiGrowth_2: 6693255448382866126
+      KiwiGrowth_20: 2453823760792603379
+      KiwiGrowth_21: 2600345751811838400
+      KiwiGrowth_22: -2742150992758618625
+      KiwiGrowth_23: -1085449273588771953
+      KiwiGrowth_24: 4256725028399274052
+      KiwiGrowth_25: 4630201851194787225
+      KiwiGrowth_26: -8617281180374366267
+      KiwiGrowth_27: -9075828365411367020
+      KiwiGrowth_28: 8064643479536043851
+      KiwiGrowth_29: -3168059838483597293
+      KiwiGrowth_3: -4806887152475508626
+      KiwiGrowth_30: 5293239291337840319
+      KiwiGrowth_31: 4673640053708131607
+      KiwiGrowth_32: 1040427509328209828
+      KiwiGrowth_33: 7208086781795208754
+      KiwiGrowth_34: 1166458386714496616
+      KiwiGrowth_35: 4588463746566207275
+      KiwiGrowth_36: -2201188343353024030
+      KiwiGrowth_37: -5783038696293785354
+      KiwiGrowth_38: -3997591610909918662
+      KiwiGrowth_39: 4120073002665627880
+      KiwiGrowth_4: 944503226211092162
+      KiwiGrowth_40: 2583959137404199434
+      KiwiGrowth_41: 3478799707812370826
+      KiwiGrowth_5: 7869665243186406699
+      KiwiGrowth_6: 498799030255722577
+      KiwiGrowth_7: 3112321653229746705
+      KiwiGrowth_8: 763623237827259334
+      KiwiGrowth_9: 6769514667544078331
+      Leaves: -1619830504381569487
+      Seed: -4083755277516519233
+      Sprout: -5874521305546433143
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

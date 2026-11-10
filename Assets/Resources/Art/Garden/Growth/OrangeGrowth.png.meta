@@ -1,0 +1,566 @@
+fileFormatVersion: 2
+guid: 1252066537fe741dba8d7dc8d928453e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -344799050230245347
+    second: OrangeGrowth_0
+  - first:
+      213: -1873178123065936712
+    second: OrangeGrowth_1
+  - first:
+      213: 2575014857603542151
+    second: OrangeGrowth_2
+  - first:
+      213: -1224728435464624302
+    second: OrangeGrowth_3
+  - first:
+      213: 7064931611267590403
+    second: OrangeGrowth_4
+  - first:
+      213: 2426347440407491956
+    second: OrangeGrowth_5
+  - first:
+      213: -5168100357384302667
+    second: OrangeGrowth_6
+  - first:
+      213: -7229670697958635103
+    second: OrangeGrowth_7
+  - first:
+      213: -8622394829626621806
+    second: OrangeGrowth_8
+  - first:
+      213: 5577187569054626919
+    second: OrangeGrowth_9
+  - first:
+      213: -890268789530990619
+    second: OrangeGrowth_10
+  - first:
+      213: -4502899163058471088
+    second: OrangeGrowth_11
+  - first:
+      213: 8979499360334192113
+    second: OrangeGrowth_12
+  - first:
+      213: 4238346447029933720
+    second: OrangeGrowth_13
+  - first:
+      213: 5770957915926229364
+    second: OrangeGrowth_14
+  - first:
+      213: 9119102874396361089
+    second: OrangeGrowth_15
+  - first:
+      213: -4024593323529260447
+    second: OrangeGrowth_16
+  - first:
+      213: -6416342306260842063
+    second: OrangeGrowth_17
+  - first:
+      213: 4995477347616787296
+    second: OrangeGrowth_18
+  - first:
+      213: -714212994075614767
+    second: OrangeGrowth_19
+  - first:
+      213: -5477361760370180482
+    second: OrangeGrowth_20
+  - first:
+      213: 2975196880928596549
+    second: OrangeGrowth_21
+  - first:
+      213: 3568683310610642055
+    second: OrangeGrowth_22
+  - first:
+      213: -2189206313065055357
+    second: OrangeGrowth_23
+  - first:
+      213: 3693048319663279522
+    second: OrangeGrowth_24
+  - first:
+      213: 8605195518321540430
+    second: OrangeGrowth_25
+  - first:
+      213: 6433702541157168194
+    second: OrangeGrowth_26
+  - first:
+      213: 1037788679621829128
+    second: OrangeGrowth_27
+  - first:
+      213: -314574038612757591
+    second: OrangeGrowth_28
+  - first:
+      213: 2408906696358262433
+    second: OrangeGrowth_29
+  - first:
+      213: -201302750363614540
+    second: OrangeGrowth_30
+  - first:
+      213: -313569186367557455
+    second: OrangeGrowth_31
+  - first:
+      213: 405832706039968509
+    second: OrangeGrowth_32
+  - first:
+      213: 7433794469805850592
+    second: OrangeGrowth_33
+  - first:
+      213: -7808739154985997996
+    second: OrangeGrowth_34
+  - first:
+      213: 5842962671296589606
+    second: OrangeGrowth_35
+  - first:
+      213: 8060423350393622026
+    second: OrangeGrowth_36
+  - first:
+      213: 601919516625900051
+    second: OrangeGrowth_37
+  - first:
+      213: -3584232037054986306
+    second: OrangeGrowth_38
+  - first:
+      213: 317986968917360298
+    second: OrangeGrowth_39
+  - first:
+      213: -4417889337365423147
+    second: OrangeGrowth_40
+  - first:
+      213: 2824735467710052132
+    second: OrangeGrowth_41
+  - first:
+      213: -7024228926012751264
+    second: OrangeGrowth_42
+  - first:
+      213: -8635136866512080480
+    second: OrangeGrowth_43
+  - first:
+      213: -6793440558593303503
+    second: OrangeGrowth_44
+  - first:
+      213: -2491750043333997106
+    second: OrangeGrowth_45
+  - first:
+      213: -2415061620578724672
+    second: OrangeGrowth_46
+  - first:
+      213: 162884635742972861
+    second: OrangeGrowth_47
+  - first:
+      213: -4437848452012099553
+    second: OrangeGrowth_48
+  - first:
+      213: 918185489849399569
+    second: OrangeGrowth_49
+  - first:
+      213: -4798322065420692864
+    second: OrangeGrowth_50
+  - first:
+      213: 5022560635788402583
+    second: OrangeGrowth_51
+  - first:
+      213: -6855498383178835163
+    second: OrangeGrowth_52
+  - first:
+      213: -8959590103899783270
+    second: OrangeGrowth_53
+  - first:
+      213: -3086116574716237161
+    second: OrangeGrowth_54
+  - first:
+      213: 7347638908650125401
+    second: OrangeGrowth_55
+  - first:
+      213: -2512418324853172640
+    second: OrangeGrowth_56
+  - first:
+      213: 5235524170219641291
+    second: OrangeGrowth_57
+  - first:
+      213: 1001633873507773056
+    second: OrangeGrowth_58
+  - first:
+      213: -6984576504283758433
+    second: OrangeGrowth_59
+  - first:
+      213: 9182536697245188657
+    second: OrangeGrowth_60
+  - first:
+      213: 1023945518568350841
+    second: OrangeGrowth_61
+  - first:
+      213: 5546658366832282293
+    second: OrangeGrowth_62
+  - first:
+      213: 6175914102669200936
+    second: OrangeGrowth_63
+  - first:
+      213: 1310257351748086531
+    second: OrangeGrowth_64
+  - first:
+      213: -1834698062941794229
+    second: OrangeGrowth_65
+  - first:
+      213: -3181481246326879053
+    second: OrangeGrowth_66
+  - first:
+      213: 4764029939590219355
+    second: OrangeGrowth_67
+  - first:
+      213: 2879528805103888088
+    second: OrangeGrowth_68
+  - first:
+      213: -7255884193086505079
+    second: OrangeGrowth_69
+  - first:
+      213: -4083755277516519233
+    second: Seed
+  - first:
+      213: -5874521305546433143
+    second: Sprout
+  - first:
+      213: -1619830504381569487
+    second: Leaves
+  - first:
+      213: -8033050013691433640
+    second: Flower
+  - first:
+      213: 5466040766650981233
+    second: Fruit
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 2
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Seed
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 601
+        width: 125
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb8400636369357c0800000000000000
+      internalID: -4083755277516519233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprout
+      rect:
+        serializedVersion: 2
+        x: 624
+        y: 603
+        width: 270
+        height: 273
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98dd0754ff1897ea0800000000000000
+      internalID: -5874521305546433143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves
+      rect:
+        serializedVersion: 2
+        x: 1080
+        y: 603
+        width: 389
+        height: 341
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 136aefd0db43589e0800000000000000
+      internalID: -1619830504381569487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Flower
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 71
+        width: 426
+        height: 383
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85da9fec29fd48090800000000000000
+      internalID: -8033050013691433640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fruit
+      rect:
+        serializedVersion: 2
+        x: 605
+        y: 69
+        width: 344
+        height: 363
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17b1900fd174bdb40800000000000000
+      internalID: 5466040766650981233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Flower: -8033050013691433640
+      Fruit: 5466040766650981233
+      Leaves: -1619830504381569487
+      OrangeGrowth_0: -344799050230245347
+      OrangeGrowth_1: -1873178123065936712
+      OrangeGrowth_10: -890268789530990619
+      OrangeGrowth_11: -4502899163058471088
+      OrangeGrowth_12: 8979499360334192113
+      OrangeGrowth_13: 4238346447029933720
+      OrangeGrowth_14: 5770957915926229364
+      OrangeGrowth_15: 9119102874396361089
+      OrangeGrowth_16: -4024593323529260447
+      OrangeGrowth_17: -6416342306260842063
+      OrangeGrowth_18: 4995477347616787296
+      OrangeGrowth_19: -714212994075614767
+      OrangeGrowth_2: 2575014857603542151
+      OrangeGrowth_20: -5477361760370180482
+      OrangeGrowth_21: 2975196880928596549
+      OrangeGrowth_22: 3568683310610642055
+      OrangeGrowth_23: -2189206313065055357
+      OrangeGrowth_24: 3693048319663279522
+      OrangeGrowth_25: 8605195518321540430
+      OrangeGrowth_26: 6433702541157168194
+      OrangeGrowth_27: 1037788679621829128
+      OrangeGrowth_28: -314574038612757591
+      OrangeGrowth_29: 2408906696358262433
+      OrangeGrowth_3: -1224728435464624302
+      OrangeGrowth_30: -201302750363614540
+      OrangeGrowth_31: -313569186367557455
+      OrangeGrowth_32: 405832706039968509
+      OrangeGrowth_33: 7433794469805850592
+      OrangeGrowth_34: -7808739154985997996
+      OrangeGrowth_35: 5842962671296589606
+      OrangeGrowth_36: 8060423350393622026
+      OrangeGrowth_37: 601919516625900051
+      OrangeGrowth_38: -3584232037054986306
+      OrangeGrowth_39: 317986968917360298
+      OrangeGrowth_4: 7064931611267590403
+      OrangeGrowth_40: -4417889337365423147
+      OrangeGrowth_41: 2824735467710052132
+      OrangeGrowth_42: -7024228926012751264
+      OrangeGrowth_43: -8635136866512080480
+      OrangeGrowth_44: -6793440558593303503
+      OrangeGrowth_45: -2491750043333997106
+      OrangeGrowth_46: -2415061620578724672
+      OrangeGrowth_47: 162884635742972861
+      OrangeGrowth_48: -4437848452012099553
+      OrangeGrowth_49: 918185489849399569
+      OrangeGrowth_5: 2426347440407491956
+      OrangeGrowth_50: -4798322065420692864
+      OrangeGrowth_51: 5022560635788402583
+      OrangeGrowth_52: -6855498383178835163
+      OrangeGrowth_53: -8959590103899783270
+      OrangeGrowth_54: -3086116574716237161
+      OrangeGrowth_55: 7347638908650125401
+      OrangeGrowth_56: -2512418324853172640
+      OrangeGrowth_57: 5235524170219641291
+      OrangeGrowth_58: 1001633873507773056
+      OrangeGrowth_59: -6984576504283758433
+      OrangeGrowth_6: -5168100357384302667
+      OrangeGrowth_60: 9182536697245188657
+      OrangeGrowth_61: 1023945518568350841
+      OrangeGrowth_62: 5546658366832282293
+      OrangeGrowth_63: 6175914102669200936
+      OrangeGrowth_64: 1310257351748086531
+      OrangeGrowth_65: -1834698062941794229
+      OrangeGrowth_66: -3181481246326879053
+      OrangeGrowth_67: 4764029939590219355
+      OrangeGrowth_68: 2879528805103888088
+      OrangeGrowth_69: -7255884193086505079
+      OrangeGrowth_7: -7229670697958635103
+      OrangeGrowth_8: -8622394829626621806
+      OrangeGrowth_9: 5577187569054626919
+      Seed: -4083755277516519233
+      Sprout: -5874521305546433143
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

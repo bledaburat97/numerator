@@ -255,13 +255,9 @@ namespace Scripts
             CardLockedEvent?.Invoke(this,(cardIndex,boardHolderIndex));
             if (playSuccessAnimation)
             {
-                _boardAreaController.PlaySuccessFrameAnimation(boardHolderIndex);
+                _boardAreaController.PlaySuccessFeedback(boardHolderIndex);
                 if(TryGetCardItem(cardIndex,out var revealed))
                     revealed.GetCardViewHandler().AnimateTurnIntoCertain(0,.28f,.16f);
-            }
-            else
-            {
-                _boardAreaController.SetSuccessFrameStatus(boardHolderIndex, true);
             }
 
             return true;

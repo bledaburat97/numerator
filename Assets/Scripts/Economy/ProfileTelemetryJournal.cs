@@ -42,7 +42,7 @@ namespace Scripts.Economy
             else if(Action=="garden_harvested")
             {data["flFruit"]=Fruit.Value.ToString().ToLowerInvariant();data["flAmount"]=Amount;data["flFirst"]=First;}
             else if(Action=="achievement_unlocked")
-            {data["flAchievement"]=AchievementId;data["flPowerup"]=Powerup.Value.ToString().ToLowerInvariant();data["flAmount"]=Amount;data["flSource"]=Source;}
+            {data["flAchievement"]=AchievementId;if(Powerup.HasValue)data["flPowerup"]=Powerup.Value.ToString().ToLowerInvariant();data["flAmount"]=Amount;data["flSource"]=Source;}
             return data;
         }
     }
@@ -72,7 +72,7 @@ namespace Scripts.Economy
                     }
                 if(previous.Transactions.Count==next.Transactions.Count)return;
                 var receipts=next.Transactions.Where(entry=>!previous.Transactions.ContainsKey(entry.Key)).ToArray();
-                string source=receipts.Any(entry=>entry.Value.Kind=="garden_visit")?"garden":
+                string source=receipts.Any(entry=>entry.Value.Kind=="garden_visit" || entry.Value.Kind=="garden_harvest")?"garden":
                     receipts.Any(entry=>entry.Value.Kind=="single_win")?"single":receipts.Any(entry=>entry.Value.Kind=="duel_win")?"duel":
                     receipts.Any(entry=>entry.Value.Kind=="fruit_grant")?"inventory":"backfill";
                 foreach(var entry in receipts)
@@ -93,11 +93,17 @@ namespace Scripts.Economy
                         foreach(var fruit in result.Harvested)
                             Queue(next,entry.Key+":harvest:"+(int)fruit.Key,context,new EconomyTelemetryEvent {Action="garden_harvested",UtcDay=result.UtcDay,Fruit=fruit.Key,Amount=fruit.Value,First=first});
                     }
+                    else if(receipt.Kind=="garden_harvest")
+                    {
+                        var result=JsonConvert.DeserializeObject<GardenHarvestResult>(receipt.Result);
+                        bool first=!previous.Collection.Values.Any(fruit=>fruit.EarnedBySource.TryGetValue(FruitGainSource.Garden,out long amount) && amount>0);
+                        Queue(next,entry.Key,context,new EconomyTelemetryEvent {Action="garden_harvested",UtcDay=result.UtcDay,Fruit=result.Fruit,Amount=result.Quantity,First=first});
+                    }
                     else if(receipt.Kind=="achievement_reward")
                     {
                         var reward=JsonConvert.DeserializeObject<AchievementRewardRecord>(receipt.Request);
                         Queue(next,entry.Key,context,new EconomyTelemetryEvent {Action="achievement_unlocked",UtcDay=context.UtcDay,
-                            AchievementId=reward.AchievementId,Powerup=reward.Reward,Amount=reward.Count,Source=source});
+                            AchievementId=reward.AchievementId,Powerup=reward.RewardKind==AchievementRewardKind.PowerUp?(RewardType?)reward.Reward:null,Amount=reward.Count,Source=source});
                     }
                 }
             }

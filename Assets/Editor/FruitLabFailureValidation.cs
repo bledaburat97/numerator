@@ -550,10 +550,9 @@ public static class FruitLabFailureValidation
         public void SetCamera(Camera camera) { }
         public void SetOnClick(Action action) { }
         public void SetHighlightStatus(bool active) { }
-        public void SetSuccessFrameStatus(bool active) { }
         public void SetupTutorialMode() { }
         public void CleanupTutorialMode() { }
-        public Sequence PlaySuccessFrameAnimation(float delay) => DOTween.Sequence().AppendInterval(delay + .2f);
+        public Sequence PlaySuccessFeedback(float delay) => DOTween.Sequence().AppendInterval(delay + .2f);
     }
 }
 #pragma warning restore CS0067

@@ -27,6 +27,7 @@ namespace Menu
         private MainTab _selected;
         private readonly List<RectTransform> _pages = new List<RectTransform>();
         private bool _multiplayerUnlocked;
+        private bool _showSettings;
         private Action<MainTab> _choose;
         public SettingsPopupView SettingsPrefab => settingsPrefab;
         public RectTransform SafeArea => _safe;
@@ -51,6 +52,11 @@ namespace Menu
                 var glyph = _tabs[i].GetComponentInChildren<FruitLabGlyph>(true);
                 if (glyph == null) glyph = FruitLabGlyph.Create(_tabs[i].transform, symbols[i], FruitLabStyle.Text);
                 glyph.name = "Icon"; glyph.Type = symbols[i];
+                if(i==(int)MainTab.Collection)
+                {
+                    glyph.gameObject.SetActive(false);
+                    GardenUi.Icon(_tabs[i].transform,"BadgeIcon","Badge");
+                }
             }
             _settings = FriendUi.Button(transform, "HomeSettings", "", () => { });
             var icon = FruitLabStyle.Detail(_settings.transform, "Icon", Color.white);
@@ -60,7 +66,7 @@ namespace Menu
         }
         public void Initialize(Action<MainTab> choose, Action settings, bool multiplayerUnlocked, bool showSettings)
         {
-            EnsureUi(); _choose = choose; _multiplayerUnlocked = multiplayerUnlocked;
+            EnsureUi(); _choose = choose; _multiplayerUnlocked = multiplayerUnlocked; _showSettings = showSettings;
             _settings.onClick.RemoveAllListeners(); _settings.onClick.AddListener(settings.Invoke);
             _settings.gameObject.SetActive(showSettings); Render(_selected); ApplyLayout();
         }
@@ -69,6 +75,7 @@ namespace Menu
         public void Render(MainTab tab)
         {
             EnsureUi(); _selected = tab;
+            _settings.gameObject.SetActive(_showSettings && tab != MainTab.Garden);
             for (int i = 0; i < _tabs.Length; i++)
             {
                 bool available = i != (int)MainTab.Market && (i != (int)MainTab.Multiplayer || _multiplayerUnlocked);
@@ -77,10 +84,13 @@ namespace Menu
                 var glyph = _tabs[i].GetComponentInChildren<FruitLabGlyph>(true);
                 glyph.color = available ? (i == (int)tab ? FruitLabStyle.Mint : FruitLabStyle.Text) : FruitLabStyle.Muted * new Color(1, 1, 1, .35f);
                 glyph.canvasRenderer.SetAlpha(available ? 1 : .4f);
+                if(i==(int)MainTab.Collection)
+                    _tabs[i].transform.Find("BadgeIcon").GetComponent<Image>().color=i==(int)tab?Color.white:new Color(.85f,.9f,.9f,.7f);
                 var selected = FruitLabStyle.Detail(_tabs[i].transform, "Selected", FruitLabStyle.Mint);
                 FruitLabStyle.Place(selected.rectTransform, _tabs[i].transform, 18, 2, Mathf.Max(12, ((RectTransform)_tabs[i].transform).rect.width - 36), 3);
                 selected.gameObject.SetActive(i == (int)tab);
             }
+            foreach (var page in _pages) if (page != null) PlacePage(page);
         }
         public void ApplyLayout()
         {
@@ -100,6 +110,7 @@ namespace Menu
                 FruitLabStyle.Place((RectTransform)_tabs[i].transform, _bar, i * cell + 2, 5, cell - 4, 58);
                 var glyph = _tabs[i].GetComponentInChildren<FruitLabGlyph>(true);
                 FruitLabStyle.Place(glyph.rectTransform, _tabs[i].transform, (cell - 46) * .5f, 11, 42, 42);
+                if(i==(int)MainTab.Collection)FruitLabStyle.Place(_tabs[i].transform.Find("BadgeIcon") as RectTransform,_tabs[i].transform,(cell-46)*.5f,11,42,42);
             }
             FruitLabStyle.Place((RectTransform)_settings.transform, _safe, width - 66, _safe.rect.height - 64, 56, 56);
             FruitLabStyle.Place(_settings.transform.Find("Icon") as RectTransform, _settings.transform, 10, 10, 36, 36);
@@ -113,7 +124,8 @@ namespace Menu
         private void PlacePage(RectTransform page)
         {
             var parent = (RectTransform)page.parent;
-            FruitLabStyle.Place(page, parent, 0, BarHeight + 8, parent.rect.width, Mathf.Max(1, parent.rect.height - BarHeight - 82));
+            bool garden = page.GetComponent<FruitCollectionView>() is FruitCollectionView collection && collection.IsGardenSelected;
+            FruitLabStyle.Place(page, parent, 0, BarHeight + 8, parent.rect.width, Mathf.Max(1, parent.rect.height - BarHeight - (garden ? 8 : 82)));
         }
         public void Unbind() { _choose = null; if (_settings != null) _settings.onClick.RemoveAllListeners(); }
         public void BringForward() => transform.SetAsLastSibling();

@@ -221,7 +221,7 @@ public static class FruitLabRewardEditorTools
             using var collection = new FruitCollectionPresenter(new Scripts.Economy.FruitInventoryService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),
                 Scripts.Economy.PlayerProfileRuntime.Current,menu.GetCollectionView(),bindings.Resolve<BaseButtonControllerFactory>(),
                 new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),
-                new Scripts.Economy.GardenVisitCoordinator(new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))),menu.GetGardenNoticeView());
+                new Scripts.Economy.GardenVisitCoordinator(new Scripts.Economy.GardenService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.EconomySettings(),new Scripts.Economy.SystemGardenClock(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))),menu.GetGardenNoticeView(),new Scripts.Economy.AchievementService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())));
             var controller = new MenuUIController(tracker, new GameSaveService(), bindings.Resolve<BaseButtonControllerFactory>(), menu);
             using var menuPowers=new MenuPowerUpCountHolderController(powers,tracker,Scripts.Economy.PlayerProfileRuntime.Current);
             menuPowers.Initialize();
@@ -251,7 +251,7 @@ public static class FruitLabRewardEditorTools
                 var nav = MainNavigationView.Ensure(canvas);
                 var requests = new List<string>();
                 using var badges = new AchievementsPresenter(new Scripts.Economy.AchievementService(Scripts.Economy.PlayerProfileRuntime.Current,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())),Scripts.Economy.PlayerProfileRuntime.Current,menu.GetAchievementsView(),menu.GetAchievementsButton(),bindings.Resolve<BaseButtonControllerFactory>());
-                using var navigation = new MainNavigationController(nav,tracker,bindings.Resolve<BaseButtonControllerFactory>(),collection,badges,requests.Add,()=>{});
+                using var navigation = new MainNavigationController(nav,tracker,bindings.Resolve<BaseButtonControllerFactory>(),collection,requests.Add,()=>{});
                 MainNavigationState.RequestedTab = MainTab.Home; navigation.Initialize();
                 bool multiplayerUnlocked = levelId >= 5;
                 Require(nav.GetTab(MainTab.Multiplayer).interactable == multiplayerUnlocked,"Multiplayer tab unlocks at level 6");

@@ -84,6 +84,9 @@ public static class FruitLabEditorTools
             using var profileIsolation=job.operation=="tutorial-reset"?null:Scripts.Economy.PlayerProfileRuntime.UseForTests();
             switch (job.operation)
             {
+                case "garden-world-review": reply.details = FruitLabGardenWorldEditorTools.Review(); break;
+                case "garden-presentation-review": reply.details = FruitLabGardenWorldEditorTools.ReviewPresentation(); break;
+                case "garden-ios-build": reply.details = FruitLabMultiplayerEditorTools.BuildIos(false,"Builds/GardenValidation/iOS"); break;
                 case "level-identity-review": reply.details=FruitLabTutorialEditorTools.BakeLevelIdentity()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewLevelIdentity,validateBeforeRender:true);break;
                 case "powerup-reward-review": reply.details=FruitLabTutorialEditorTools.BakePowerUpRewardPresentation()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPowerUpRewardPresentation,validateBeforeRender:true);break;
                 case "navigation-review": reply.details = FruitLabNavigationEditorTools.Review(); break;
@@ -92,7 +95,8 @@ public static class FruitLabEditorTools
                     reply.details=FruitLabTutorialEditorTools.BakeUltraPresentation()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewIconPolish,validateBeforeRender:true)+"\n"+FruitLabRewardEditorTools.RenderMenu();break;
                 case "ultra-review":
                     reply.details=FruitLabTutorialEditorTools.BakeUltraPresentation()+"\n"+Render(3,7,validation:FruitLabTutorialEditorTools.ReviewUltraNotes,validateBeforeRender:true);break;
-                case "achievements-review": reply.details=FruitLabTutorialEditorTools.BakeAchievements()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewAchievements,validateBeforeRender:true);break;
+                case "achievements-review": reply.details=FruitLabTutorialEditorTools.BakeCollectionHub()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewAchievements,validateBeforeRender:true);break;
+                case "collection-hub-review": reply.details=FruitLabTutorialEditorTools.BakeCollectionHub()+"\n"+Render(4,9,validation:FruitLabTutorialEditorTools.ReviewCollectionHub,validateBeforeRender:true);break;
                 case "collection-review":
                     reply.details=FruitLabTutorialEditorTools.BakeCollection()+"\n"+Render(4,9,validation:FruitLabTutorialEditorTools.ReviewCollection,validateBeforeRender:true);break;
                 case "garden-ui-review": reply.details=FruitLabTutorialEditorTools.BakeCollection()+"\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewGardenUi,validateBeforeRender:true);break;
@@ -260,6 +264,10 @@ public static class FruitLabEditorTools
                     reply.details = Render(5, 9, validation: FruitLabRetryValidation.Validate)
                         + "\n" + Render(2, 5, validation: FruitLabRetryValidation.Validate);
                     break;
+                case "card-knowledge-review":
+                    FruitLabCardEditorTools.PrepareAssets();
+                    FruitLabFailureValidation.ValidateSuccessOrder();
+                    reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewCardKnowledge,validateBeforeRender:true);break;
                 case "cards":
                     FruitLabCardEditorTools.PrepareAssets();
                     FruitLabFailureValidation.ValidateLogic();
@@ -486,7 +494,6 @@ public static class FruitLabEditorTools
                         card.Init(answer[index]); card.InitLocalScale(); card.SetSize(initialLayout.GetBoxSize());
                         card.SetLocalPosition(Vector3.zero); card.SetLockImageStatus(true);
                         card.SetResultOutline(CardResultState.Correct);
-                        if (!failPreview) boardSlots[index].SetSuccessFrameStatus(true);
                     }
                 }
                 if (claimPreview)

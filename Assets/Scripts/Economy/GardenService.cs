@@ -9,9 +9,11 @@ namespace Scripts.Economy
     public interface IGardenService
     {
         IReadOnlyDictionary<string,PlantingBatch> GetBatches();
+        int SeedsPerPack { get; }
         SeedPurchaseQuote QuoteSeeds(FruitId fruit,long quantity);
         SeedPurchaseResult PurchaseSeeds(string purchaseId,FruitId fruit,long quantity);
         GardenVisitResult ProcessVisit();
+        GardenHarvestResult Harvest(string batchId);
     }
 
     // Rules and durable transactions only. Screen interactions and foreground
@@ -33,11 +35,12 @@ namespace Scripts.Economy
         }
 
         public IReadOnlyDictionary<string,PlantingBatch> GetBatches()=>_profiles.Snapshot().Garden;
+        public int SeedsPerPack=>_settings.SeedsPerPack;
 
         public SeedPurchaseQuote QuoteSeeds(FruitId fruit,long quantity)
         {
             ValidateSeeds(fruit,quantity);
-            return Quote(fruit,quantity,_profiles.Snapshot().Wallet.Coins);
+            return Quote(fruit,quantity,_profiles.Snapshot(),GardenDay.FromUtc(_clock.UtcNow));
         }
 
         public SeedPurchaseResult PurchaseSeeds(string purchaseId,FruitId fruit,long quantity)
@@ -51,22 +54,19 @@ namespace Scripts.Economy
             string request=JsonConvert.SerializeObject(new {fruit,quantity});
             SeedPurchaseResult result=null;
             var status=_profiles.Commit(transactionId,"seed_purchase",request,profile=>{
-                var quote=Quote(fruit,quantity,profile.Wallet.Coins);
-                result=new SeedPurchaseResult {Fruit=fruit,Quantity=quantity,UnitCoinPrice=quote.UnitCoinPrice,
-                    TotalCoinPrice=quote.TotalCoinPrice,CoinsAfter=profile.Wallet.Coins};
-                if(!quote.CanAfford)return false;
                 int day=GardenDay.FromUtc(_clock.UtcNow);
-                // Merge only seeds of the same age. A clock rollback must never
-                // mix new seeds into an already-growing batch from that date.
-                var sameDay=profile.Garden.OrderBy(entry=>entry.Key,StringComparer.Ordinal).FirstOrDefault(entry=>
-                    entry.Value.Fruit==fruit && entry.Value.PlantedUtcDay==day
-                    && entry.Value.LastGrowthUtcDay==day && entry.Value.Stage==GardenGrowthStage.Seed);
+                var quote=Quote(fruit,quantity,profile,day);
+                result=new SeedPurchaseResult {Fruit=fruit,Quantity=quantity,SeedsPerPack=quote.SeedsPerPack,PackCoinPrice=quote.PackCoinPrice,
+                    Failure=quote.Failure,TotalCoinPrice=quote.TotalCoinPrice,CoinsAfter=profile.Wallet.Coins};
+                if(!quote.CanPurchase)return false;
+                var sameDay=SameDaySeeds(profile,fruit,day);
                 string batchId=sameDay.Value!=null ? sameDay.Key : "plant:"+purchaseId;
+                int cell=sameDay.Value!=null ? sameDay.Value.CellIndex : GardenCellAllocator.FirstFree(profile.Garden,fruit);
                 if(sameDay.Value!=null)sameDay.Value.Quantity=checked(sameDay.Value.Quantity+quantity);
                 else profile.Garden.Add(batchId,new PlantingBatch {Fruit=fruit,Quantity=quantity,
-                    PlantedUtcDay=day,LastGrowthUtcDay=day,Stage=GardenGrowthStage.Seed});
+                    PlantedUtcDay=day,LastGrowthUtcDay=day,Stage=GardenGrowthStage.Seed,CellIndex=cell});
                 profile.Wallet.Coins=checked(profile.Wallet.Coins-(int)quote.TotalCoinPrice);
-                result.BatchId=batchId;result.PlantedUtcDay=day;result.CoinsAfter=profile.Wallet.Coins;
+                result.BatchId=batchId;result.CellIndex=cell;result.PlantedUtcDay=day;result.CoinsAfter=profile.Wallet.Coins;
                 return true;
             },()=>JsonConvert.SerializeObject(result));
             if(status==ProfileCommitResult.AlreadyApplied)result=Recorded<SeedPurchaseResult>(transactionId);
@@ -91,14 +91,11 @@ namespace Scripts.Economy
                     result.Changes.Add(new GardenBatchChange {BatchId=entry.Key,Fruit=batch.Fruit,
                         Quantity=batch.Quantity,PreviousStage=previous,CurrentStage=batch.Stage});
                     if(batch.Stage!=GardenGrowthStage.Fruit)continue;
-                    result.Harvested.TryGetValue(batch.Fruit,out long amount);
-                    result.Harvested[batch.Fruit]=checked(amount+batch.Quantity);
-                    profile.Garden.Remove(entry.Key);
+                    if(batch.IsLegacyOverflow)continue;
+                    result.Ready.TryGetValue(batch.Fruit,out long amount);
+                    result.Ready[batch.Fruit]=checked(amount+batch.Quantity);
                 }
                 if(result.Changes.Count==0)return false;
-                // Same inventory accounting as game wins, in the same commit as
-                // removing mature batches and recording this visit's receipt.
-                if(result.Harvested.Count>0)FruitInventoryService.ApplyGrant(profile,FruitGainSource.Garden,result.Harvested,_achievements);
                 return true;
             },()=>JsonConvert.SerializeObject(result));
             if(status==ProfileCommitResult.AlreadyApplied)
@@ -108,15 +105,50 @@ namespace Scripts.Economy
             return result;
         }
 
-        private SeedPurchaseQuote Quote(FruitId fruit,long quantity,int coins)
+        public GardenHarvestResult Harvest(string batchId)
+        {
+            if(string.IsNullOrWhiteSpace(batchId))throw new ArgumentException("A planting identity is required.",nameof(batchId));
+            string transactionId="garden:harvest:"+batchId;
+            var result=new GardenHarvestResult {BatchId=batchId};
+            var status=_profiles.Commit(transactionId,"garden_harvest",batchId,profile=>{
+                if(!profile.Garden.TryGetValue(batchId,out var batch))
+                {result.Failure=GardenHarvestFailure.MissingBatch;return false;}
+                if(batch.Stage!=GardenGrowthStage.Fruit || batch.IsLegacyOverflow)
+                {result.Failure=GardenHarvestFailure.NotReady;return false;}
+                result.Fruit=batch.Fruit;result.Quantity=batch.Quantity;result.CellIndex=batch.CellIndex;
+                result.UtcDay=GardenDay.FromUtc(_clock.UtcNow);
+                // Inventory, badge rewards, the freed cell, promoted legacy batches
+                // and the replay receipt are published as ONE durable snapshot.
+                FruitInventoryService.ApplyGrant(profile,FruitGainSource.Garden,
+                    new Dictionary<FruitId,long> {{batch.Fruit,batch.Quantity}},_achievements);
+                profile.Garden.Remove(batchId);
+                GardenCellAllocator.PromoteWaiting(profile.Garden,batch.Fruit);
+                return true;
+            },()=>JsonConvert.SerializeObject(result));
+            if(status==ProfileCommitResult.AlreadyApplied)result=Recorded<GardenHarvestResult>(transactionId);
+            result.Status=status;return result;
+        }
+
+        private SeedPurchaseQuote Quote(FruitId fruit,long quantity,PlayerProfileData profile,int day)
         {
             _settings.Validate();
+            var quote=new SeedPurchaseQuote {Fruit=fruit,Quantity=quantity,SeedsPerPack=_settings.SeedsPerPack,
+                PackCoinPrice=_settings.SeedPackCoinPrice,AvailableCoins=profile.Wallet.Coins};
+            if(quantity%_settings.SeedsPerPack!=0){quote.Failure=SeedPurchaseFailure.InvalidQuantity;return quote;}
             long price;
-            try {price=checked(quantity*_settings.SeedUnitCoinPrice);}
+            try {price=checked(quantity/_settings.SeedsPerPack*_settings.SeedPackCoinPrice);}
             catch(OverflowException) {throw new ArgumentOutOfRangeException(nameof(quantity),"Seed price exceeds supported amounts.");}
-            return new SeedPurchaseQuote {Fruit=fruit,Quantity=quantity,UnitCoinPrice=_settings.SeedUnitCoinPrice,
-                TotalCoinPrice=price,AvailableCoins=coins};
+            quote.TotalCoinPrice=price;
+            var sameDay=SameDaySeeds(profile,fruit,day);
+            if(sameDay.Value==null && GardenCellAllocator.FirstFree(profile.Garden,fruit)<0)quote.Failure=SeedPurchaseFailure.PlotFull;
+            else if(sameDay.Value!=null && sameDay.Value.Quantity>long.MaxValue-quantity)quote.Failure=SeedPurchaseFailure.QuantityTooLarge;
+            else if(!quote.CanAfford)quote.Failure=SeedPurchaseFailure.InsufficientCoins;
+            return quote;
         }
+        private static KeyValuePair<string,PlantingBatch> SameDaySeeds(PlayerProfileData profile,FruitId fruit,int day)
+            =>profile.Garden.OrderBy(entry=>entry.Key,StringComparer.Ordinal).FirstOrDefault(entry=>
+                entry.Value.Fruit==fruit && !entry.Value.IsLegacyOverflow && entry.Value.PlantedUtcDay==day
+                && entry.Value.LastGrowthUtcDay==day && entry.Value.Stage==GardenGrowthStage.Seed);
 
         private T Recorded<T>(string id) where T:class
         {

@@ -14,14 +14,15 @@ namespace Scripts
         [SerializeField] private TMP_Text description;
         private bool _singlePlayer = true, _menuContext;
         private RectTransform _achievements;
-        public void ConfigureForMenu(System.Action achievements)
+        public void ConfigureForMenu(System.Action openCollection)
         {
             _menuContext = true; _notesVisible = false;
             retryButton.SetButtonStatus(false); menuButton.SetButtonStatus(false);
             closeButton.SetText("Kapat"); description.gameObject.SetActive(false);
-            if (_achievements == null) _achievements = (RectTransform)TelemetryPrivacyPanel.AddButton(content, "AchievementsButton", "Başarılar", () => { }).transform;
+            if (_achievements == null) _achievements = (RectTransform)TelemetryPrivacyPanel.AddButton(content, "AchievementsButton", "Koleksiyon", () => { }).transform;
+            _achievements.GetComponentInChildren<TMP_Text>().text="Koleksiyon";
             var button = _achievements.GetComponent<Button>(); button.onClick.RemoveAllListeners();
-            if (achievements != null) button.onClick.AddListener(achievements.Invoke);
+            if (openCollection != null) button.onClick.AddListener(openCollection.Invoke);
             ApplyLayout();
         }
         private RectTransform _privacy;

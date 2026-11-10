@@ -20,7 +20,9 @@ namespace Scripts
             Container.Bind<IMenuUIController>().To<MenuUIController>().AsSingle()
                 .WithArguments(menuUI);
             Container.BindInterfacesAndSelfTo<FruitCollectionPresenter>().AsSingle().WithArguments(menuUI.GetCollectionView(),menuUI.GetGardenNoticeView());
-            Container.BindInterfacesAndSelfTo<AchievementsPresenter>().AsSingle().WithArguments(menuUI.GetAchievementsView(),menuUI.GetAchievementsButton()).NonLazy();
+            menuUI.GetAchievementsView().SetVisible(false);
+            Container.BindInterfacesAndSelfTo<ClosestBadgePresenter>().AsSingle().WithArguments(
+                ClosestBadgeView.Ensure(menuUI.GetComponentInParent<Canvas>().GetComponent<FruitLabMenuLayout>().HomeContent)).NonLazy();
             Container.BindInterfacesAndSelfTo<MenuPowerUpCountHolderController>().AsSingle()
                 .WithArguments(ResolvePowerUpListHolderView());
             Container.Bind<IRewardProgressDisplayController>().To<RewardProgressDisplayController>().AsSingle()

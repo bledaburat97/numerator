@@ -28,6 +28,11 @@ namespace Scripts.Economy
                 if(data.TelemetryEngagement==null)data.TelemetryEngagement=new PlayerEngagementData();
                 data.Version=4;
             }
+            if(data?.Version==4)
+            {
+                GardenCellAllocator.MigrateLegacy(data.Garden);
+                data.Version=5;
+            }
         }
         public static void Validate(PlayerProfileData data)
         {
@@ -69,7 +74,7 @@ namespace Scripts.Economy
                 Require(!item.Fruit.HasValue || Enum.IsDefined(typeof(FruitId),item.Fruit.Value),"telemetry fruit");
                 Require(!item.Powerup.HasValue || Enum.IsDefined(typeof(RewardType),item.Powerup.Value),"telemetry powerup");
                 Require((item.Action!="seed_purchased" && item.Action!="garden_harvested") || (item.Fruit.HasValue && item.Amount>0),"telemetry fruit amount");
-                Require(item.Action!="achievement_unlocked" || (item.Powerup.HasValue && item.Amount>0 && !string.IsNullOrWhiteSpace(item.AchievementId) && !string.IsNullOrWhiteSpace(item.Source)),"telemetry achievement");
+                Require(item.Action!="achievement_unlocked" || (item.Amount>0 && !string.IsNullOrWhiteSpace(item.AchievementId) && !string.IsNullOrWhiteSpace(item.Source)),"telemetry achievement");
             }
             foreach(var entry in data.Garden)
             {
@@ -77,7 +82,10 @@ namespace Scripts.Economy
                 Require(!string.IsNullOrWhiteSpace(entry.Key) && batch != null && Enum.IsDefined(typeof(FruitId),batch.Fruit)
                     && batch.Quantity > 0 && batch.PlantedUtcDay >= 0 && batch.LastGrowthUtcDay >= batch.PlantedUtcDay
                     && Enum.IsDefined(typeof(GardenGrowthStage),batch.Stage),"planting batch");
+                Require(batch.IsLegacyOverflow ? batch.CellIndex==-1 : batch.CellIndex>=0 && batch.CellIndex<GardenCellAllocator.CellsPerPlot,"planting cell");
             }
+            Require(!data.Garden.Values.Where(batch=>!batch.IsLegacyOverflow).GroupBy(batch=>new {batch.Fruit,batch.CellIndex}).Any(group=>group.Count()>1),"duplicate planting cell");
+            Require(!data.Garden.Values.Any(batch=>batch.IsLegacyOverflow && GardenCellAllocator.FirstFree(data.Garden,batch.Fruit)>=0),"unassigned legacy planting");
             foreach(var entry in data.Transactions)
                 Require(!string.IsNullOrWhiteSpace(entry.Key) && entry.Value != null && !string.IsNullOrWhiteSpace(entry.Value.Kind)
                     && entry.Value.Request != null && entry.Value.AppliedAtUtc.Kind == DateTimeKind.Utc,"transaction receipt");
