@@ -8,6 +8,8 @@ namespace Scripts
 {
     public class CardPlacementCoordinator : ICardPlacementCoordinator
     {
+        [InjectOptional] private IceBoardService _ice;
+        private bool _restoringLocks;
         private readonly IBoardAreaController _boardAreaController;
         private readonly ICardItemLocator _cardItemLocator;
         private readonly IGameUIController _gameUIController;
@@ -83,7 +85,7 @@ namespace Scripts
         
         public bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1)
         {
-            if (!CanMoveCard(cardIndex) || boardCardHolderIndex == -1
+            if (!CanMoveCard(cardIndex) || boardCardHolderIndex == -1 || _ice?.IsBlocked(boardCardHolderIndex)==true
                 || (_tutorialGate != null && !_tutorialGate.AllowsPlacement(cardIndex, boardCardHolderIndex))) return false;
 
             return PlaceCardOnBoard(cardIndex, boardCardHolderIndex);
@@ -122,7 +124,7 @@ namespace Scripts
         public bool TryPlacePairOnBoard(int first, int second, int holder)
         {
             int count = _boardPlacementQuery.GetPlacedCardIndexesOnBoard().Count;
-            if (first == second || !CanMoveCard(first) || !CanMoveCard(second) || holder < 0 || holder + 1 >= count
+            if (_ice?.IsBlocked(holder)==true || _ice?.IsBlocked(holder+1)==true || first == second || !CanMoveCard(first) || !CanMoveCard(second) || holder < 0 || holder + 1 >= count
                 || (_tutorialGate != null && (!_tutorialGate.AllowsPlacement(first, holder) || !_tutorialGate.AllowsPlacement(second, holder + 1)))) return false;
             for (int slot = holder; slot <= holder + 1; slot++)
                 if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(slot, out int occupant) && occupant != first && occupant != second) return false;
@@ -230,7 +232,7 @@ namespace Scripts
 
         public bool TryRevealAndLockCard(int boardHolderIndex, int cardIndex, bool playSuccessAnimation = true)
         {
-            if (!CanUseCard(cardIndex)) return false;
+            if (!CanUseCard(cardIndex) || (!_restoringLocks && _ice?.IsBlocked(boardHolderIndex)==true)) return false;
             if (IsCardLocked(cardIndex) && !IsCardLockedOnBoardHolder(cardIndex, boardHolderIndex)) return false;
 
             if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(boardHolderIndex, out int occupiedCardIndex) &&
@@ -352,15 +354,18 @@ namespace Scripts
 
         private void RestoreLockedCards()
         {
-            List<CardItemInfo> cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
-            if (cardItemInfoList == null) return;
-
-            for (int i = 0; i < cardItemInfoList.Count; i++)
+            _restoringLocks=true;
+            try
             {
-                if (!TryGetLockedBoardHolderIndex(cardItemInfoList[i], out int boardHolderIndex)) continue;
-
-                TryRevealAndLockCard(boardHolderIndex, i, false);
+                var cardItemInfoList = _cardItemInfoManager.GetCardItemInfoList();
+                if (cardItemInfoList == null) return;
+                for (int i = 0; i < cardItemInfoList.Count; i++)
+                {
+                    if (!TryGetLockedBoardHolderIndex(cardItemInfoList[i], out int boardHolderIndex)) continue;
+                    TryRevealAndLockCard(boardHolderIndex, i, false);
+                }
             }
+            finally { _restoringLocks=false; }
         }
 
         private bool IsCardLocked(int cardIndex)

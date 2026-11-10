@@ -1,5 +1,8 @@
 <linker>
   <assembly fullname="Assembly-CSharp">
+    <type fullname="Scripts.IceRoundState" preserve="all" />
+    <type fullname="Scripts.IceBoardService" preserve="all" />
+    <type fullname="Scripts.IceBoardPresenter" preserve="all" />
     <type fullname="Scripts.Economy.PlayerProfileData" preserve="all" />
     <type fullname="Scripts.Economy.PlayerProgressData" preserve="all" />
     <type fullname="Scripts.Economy.PlayerWalletData" preserve="all" />

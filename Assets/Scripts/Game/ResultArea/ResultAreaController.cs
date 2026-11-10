@@ -60,7 +60,7 @@ namespace Scripts
             {
                 var row = _history[i];
                 var partition = row.groups != null && row.groups.Count == 2 ? BoardPartition.ForCount(row.finalNumbers.Count) : null;
-                row.reviewStates = new GuessEvaluation(0, row.finalNumbers, answer, partition).States;
+                row.reviewStates = new GuessEvaluation(0, GuessSubmission.FromHistory(row.finalNumbers), answer, partition).States;
             }
             _view.RefreshVisibleRows();
             EnableReview();

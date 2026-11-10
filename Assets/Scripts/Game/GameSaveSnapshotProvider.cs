@@ -36,7 +36,7 @@ namespace Scripts
             levelSaveData = null;
 
             var info = _cardItemInfoManager.GetCardItemInfoList();
-            bool mutatedBeforeGuess = _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
+            bool mutatedBeforeGuess = _saveData?.GetLevelSaveData().Ice != null || _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
                 || (_saveData?.GetLevelSaveData().UltraActive ?? false) || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || (info != null && info.Any(card => card.isLocked || !card.isExisted));
             bool hasNotes = _saveData?.GetLevelSaveData().PositionNotes?.Edited == true;
@@ -66,6 +66,7 @@ namespace Scripts
                 PairClue = _saveData?.GetLevelSaveData().PairClue,
                 GrowingBoard = _saveData?.GetLevelSaveData().GrowingBoard?.Copy(),
                 Dynamite = _saveData?.GetLevelSaveData().Dynamite?.Copy(),
+                Ice = _saveData?.GetLevelSaveData().Ice?.Copy(),
                 ActiveRewardTokens = _roundStateManager.GetLifeBarRewardInfoList().Select(reward => reward.IsActive).ToList(),
                 PositionNotes = _saveData?.GetLevelSaveData().PositionNotes?.Copy()
             };

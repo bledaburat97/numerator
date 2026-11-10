@@ -118,7 +118,7 @@ namespace Scripts
             Init(_cardFactory ?? new NonDraggableCardItemViewFactory(), width, height);
             foreach (int number in model.finalNumbers)
             {
-                var card = CreateCardItem(); card.Init(number); card.InitLocalScale(); card.SetAlpha(1);
+                var card = CreateCardItem(); if(number==GuessSubmission.FrozenMarker)card.InitFrozen();else card.Init(number); card.InitLocalScale(); card.SetAlpha(1);
             }
             DisplayFeedback(model.correctPosCount, model.wrongPosCount);
             if (model.isLocalGuess.HasValue) SetPlayerIdentity(model.isLocalGuess.Value, model.playerName);

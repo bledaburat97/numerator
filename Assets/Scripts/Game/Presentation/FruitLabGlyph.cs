@@ -6,7 +6,7 @@ namespace Scripts
     // Small functional symbols stay sharp at every UI scale and don't need a font glyph.
     public class FruitLabGlyph : MaskableGraphic
     {
-        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21, Gift=22, Growing=23, Challenge=24, Leaf=25, Seed=26, Sprout=27, Plant=28, Flower=29 }
+        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21, Gift=22, Growing=23, Challenge=24, Leaf=25, Seed=26, Sprout=27, Plant=28, Flower=29, Ice=30 }
         public Symbol Type;
         private Color _meshTint;
         private static readonly Vector2[] FirstPairCard = {
@@ -94,7 +94,16 @@ namespace Scripts
             float size = Mathf.Min(r.width, r.height);
             float stroke = size * 0.095f;
             if (size <= 0) return;
-            if (Type == Symbol.Check || Type == Symbol.Helper)
+            if(Type==Symbol.Ice)
+            {
+                for(int arm=0;arm<6;arm++)
+                {
+                    float angle=arm*Mathf.PI/3;var direction=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle));var side=new Vector2(-direction.y,direction.x);
+                    RoundedStroke(mesh,new[]{Vector2.zero,direction*.4f},center,size,stroke*.65f);
+                    RoundedStroke(mesh,new[]{direction*.24f+side*.065f,direction*.31f,direction*.24f-side*.065f},center,size,stroke*.5f);
+                }
+            }
+            else if (Type == Symbol.Check || Type == Symbol.Helper)
             {
                 RoundedStroke(mesh, CheckPath, center, size, stroke);
             }

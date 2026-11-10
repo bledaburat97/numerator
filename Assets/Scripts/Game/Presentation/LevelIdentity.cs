@@ -22,9 +22,9 @@ namespace Scripts
             if(level.Mechanic==LevelMechanic.Helper || level.Mechanic==LevelMechanic.Pair || level.Mechanic==LevelMechanic.Split)
                 return new LevelIdentity(LevelGroup.Assisted,level.Mechanic==LevelMechanic.Helper?"Bonus İpucu":level.Mechanic==LevelMechanic.Pair?"Bağlı Meyveler":"Bölünmüş Tahta",
                     "172F3C","294957","86B7CE",level.Mechanic==LevelMechanic.Helper?FruitLabGlyph.Symbol.Helper:level.Mechanic==LevelMechanic.Pair?FruitLabGlyph.Symbol.Pair:FruitLabGlyph.Symbol.Split);
-            if(level.Mechanic==LevelMechanic.Growing || level.Mechanic==LevelMechanic.Dynamite || level.NumOfBoardHolders==5)
-                return new LevelIdentity(LevelGroup.Hard,level.Mechanic==LevelMechanic.Growing?"Büyüyen Tahta":level.Mechanic==LevelMechanic.Dynamite?"Dinamitli Tahta":"Zor Bölüm",
-                    "352329","4C3338","CC8B86",level.Mechanic==LevelMechanic.Growing?FruitLabGlyph.Symbol.Growing:level.Mechanic==LevelMechanic.Dynamite?FruitLabGlyph.Symbol.Dynamite:FruitLabGlyph.Symbol.Challenge);
+            if(level.Mechanic==LevelMechanic.Ice || level.Mechanic==LevelMechanic.Growing || level.Mechanic==LevelMechanic.Dynamite || level.NumOfBoardHolders==5)
+                return new LevelIdentity(LevelGroup.Hard,level.Mechanic==LevelMechanic.Ice?"Buzlu Tahta":level.Mechanic==LevelMechanic.Growing?"Büyüyen Tahta":level.Mechanic==LevelMechanic.Dynamite?"Dinamitli Tahta":"Zor Bölüm",
+                    "352329","4C3338","CC8B86",level.Mechanic==LevelMechanic.Ice?FruitLabGlyph.Symbol.Ice:level.Mechanic==LevelMechanic.Growing?FruitLabGlyph.Symbol.Growing:level.Mechanic==LevelMechanic.Dynamite?FruitLabGlyph.Symbol.Dynamite:FruitLabGlyph.Symbol.Challenge);
             return new LevelIdentity(LevelGroup.Normal,"Normal Bölüm","192F29","2B463C","94C3A6",FruitLabGlyph.Symbol.Leaf);
         }
     }

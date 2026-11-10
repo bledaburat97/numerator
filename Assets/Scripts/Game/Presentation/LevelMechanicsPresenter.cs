@@ -29,7 +29,7 @@ namespace Scripts
             string text=identity.Group==LevelGroup.Normal && !definition.IsPlaytest?null:identity.Name;
             if(definition.TrialPowerUp.HasValue && definition.Mechanic==LevelMechanic.Normal && !definition.BonusReward.HasValue)
                 text=PowerUpTypeUtility.Name(definition.TrialPowerUp.Value)+" denemesi";
-            if(mechanic!=LevelMechanic.Split && split)text="Bölünmüş Tahta";
+            if(mechanic!=LevelMechanic.Split && mechanic!=LevelMechanic.Ice && split)text="Bölünmüş Tahta";
             _view?.SetMechanicStatus(text);
             if(_view!=null)LevelEnvironmentView.Ensure(_view.GetComponentInParent<UnityEngine.Canvas>()).Render(definition,activeCount,guessCount);
         }

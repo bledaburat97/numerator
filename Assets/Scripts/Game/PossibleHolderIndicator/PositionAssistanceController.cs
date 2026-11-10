@@ -44,7 +44,8 @@ namespace Scripts
         public bool CanResetNotes=>!UltraActive;
         public bool CanEditNotes=>!UltraActive;
         public bool SupportsAutomatic=>_levels.GetLevelData()?.Mechanic!=LevelMechanic.Growing
-            && _levels.GetLevelData()?.Mechanic!=LevelMechanic.Split && !(_split?.IsActive??false);
+            && _levels.GetLevelData()?.Mechanic!=LevelMechanic.Split && (!(_split?.IsActive??false) || SupportsSplit);
+        public bool SupportsSplit=>_levels.GetLevelData()?.Mechanic==LevelMechanic.Ice;
         public event Action Changed;
         private bool CanDeduce=>UltraActive && SupportsAutomatic;
 
@@ -114,9 +115,9 @@ namespace Scripts
                 while(_processed<_history.HistoryCount)
                 {
                     int index=_processed++;var row=_history.GetHistoryEntry(index);
-                    if(row.groups!=null && row.groups.Count>0)continue;
+                    if(row.groups!=null && row.groups.Count>0 && !SupportsSplit)continue;
                     // Growing/split history is never interpreted as whole-board evidence.
-                    if(row.finalNumbers.Count==State.SlotCount)State.ApplyGuess(index+1,row.finalNumbers,row.correctPosCount,row.wrongPosCount);
+                    if(row.finalNumbers.Count==State.SlotCount)State.ApplyGuess(index+1,row.finalNumbers,row.correctPosCount,row.wrongPosCount,row.groups);
                     if(row.hintStates!=null)_details.Add(index);
                 }
                 for(int index=0;index<_history.HistoryCount;index++)
@@ -127,7 +128,14 @@ namespace Scripts
                     var row=_history.GetHistoryEntry(index);
                     if(row.hintStates==null)continue;
                     for(int slot=0;slot<row.finalNumbers.Count && slot<row.hintStates.Count && slot<State.SlotCount;slot++)
-                        State.ApplyVisibleDetail(index+1,row.finalNumbers[slot],slot,row.hintStates[slot]);
+                    {
+                        if(row.groups!=null && row.groups.Count>0)
+                        {
+                            foreach(var group in row.groups)if(slot>=group.Start && slot<group.Start+group.Count)
+                                State.ApplyVisibleDetail(index+1,row.finalNumbers[slot],slot,row.hintStates[slot],group.Start,group.Count);
+                        }
+                        else State.ApplyVisibleDetail(index+1,row.finalNumbers[slot],slot,row.hintStates[slot]);
+                    }
                 }
                 ApplyKnowledge();
             }

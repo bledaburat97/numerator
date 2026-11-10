@@ -18,7 +18,7 @@ namespace Scripts
             foreach (int number in model.finalNumbers)
             {
                 INonDraggableCardItemView card = view.CreateCardItem();
-                card.Init(number);
+                if(number==GuessSubmission.FrozenMarker)card.InitFrozen();else card.Init(number);
                 card.InitLocalScale();
             }
             view.DisplayFeedback(model.correctPosCount, model.wrongPosCount);
@@ -34,7 +34,7 @@ namespace Scripts
 
         public void RevealAnswer(IReadOnlyList<int> answer)
         {
-            var evaluation = new GuessEvaluation(0, _numbers, answer);
+            var evaluation = new GuessEvaluation(0, GuessSubmission.FromHistory(_numbers), answer);
             for (int i = 0; i < evaluation.States.Count; i++) _view.SetCardResult(i, evaluation.States[i]);
         }
     }

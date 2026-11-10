@@ -6,6 +6,7 @@ namespace Scripts
 {
     public class PowerUpMessageController : IPowerUpMessageController
     {
+        [InjectOptional] private IceBoardService _ice;
         [InjectOptional] private HelperEffect _helper;
         [InjectOptional] private PairEffect _pair;
         [InjectOptional] private BoardSplitService _split;
@@ -48,7 +49,7 @@ namespace Scripts
                 && powerUpType!=GameUIButtonType.PairPowerUp && powerUpType!=GameUIButtonType.SplitPowerUp && powerUpType!=GameUIButtonType.UltraPowerUp)return;
             if(_activePowerUpType==GameUIButtonType.RevealingPowerUp && powerUpType==_activePowerUpType){CloseActivePowerUp();return;}
             var reward=PowerUpTypeUtility.ToRewardType(powerUpType);
-            if(!PowerUpAvailability.CanUse(reward,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra))return;
+            if(!PowerUpAvailability.CanUse(reward,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra,_ice))return;
             CloseActivePowerUp();
             if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType)) return;
             switch (powerUpType)

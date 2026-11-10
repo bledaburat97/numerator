@@ -15,6 +15,7 @@ namespace Scripts
         [SerializeField] private Image resultGlow;
         [SerializeField] private Image resultOutline;
         protected Image ResultGlow => resultGlow;
+        protected void SetFruitVisible(bool visible) { if(fruitImage!=null)fruitImage.gameObject.SetActive(visible); }
         private Color _resultColor = FruitLabStyle.Correct;
         private float _alpha = 1f;
         protected virtual float ContentOpacityMultiplier => 1f;
@@ -107,5 +108,5 @@ namespace Scripts
         void SetResultOutline(CardResultState state);
     }
 
-    public enum CardResultState { Unrevealed, Correct, Misplaced, Absent }
+    public enum CardResultState { Unrevealed, Correct, Misplaced, Absent, Frozen }
 }

@@ -21,14 +21,14 @@ public static partial class FruitLabTutorialEditorTools
         int stages = 0;
         var expectedMechanics = new[] { LevelMechanic.Normal, LevelMechanic.Helper, LevelMechanic.Pair,
             LevelMechanic.Normal, LevelMechanic.Normal, LevelMechanic.Normal, LevelMechanic.Normal, LevelMechanic.Normal,
-            LevelMechanic.Split,LevelMechanic.Split,LevelMechanic.Normal,LevelMechanic.Growing,LevelMechanic.Dynamite };
+            LevelMechanic.Split,LevelMechanic.Split,LevelMechanic.Normal,LevelMechanic.Growing,LevelMechanic.Dynamite,LevelMechanic.Ice };
         var expectedPowers = new RewardType?[] { null, null, null, RewardType.Bomb, RewardType.Revealing,
-            RewardType.Life, RewardType.Helper, RewardType.Pair,null,null,RewardType.Split,null,null };
+            RewardType.Life, RewardType.Helper, RewardType.Pair,null,null,RewardType.Split,null,null,null };
         try
         {
             ValidateMechanicBindings();
             Require(LevelPlaytestSchedule.Settings.Enabled && LevelPlaytestSchedule.Settings.StartLevel == 5, "Playtest starts at display level 5");
-            Require(LevelPlaytestSchedule.Settings.Cycle.Count == 13, "Six level types, two split sizes and six powerup trials");
+            Require(LevelPlaytestSchedule.Settings.Cycle.Count == 14, "Seven level types, two split sizes and six powerup trials");
             for (int id = 0; id < 4; id++) Require(!LevelPlaytestSchedule.TryCreate(id, out _), "First four levels are untouched");
             for (int cycle = 0; cycle < 12; cycle++)
             for (int index = 0; index < expectedMechanics.Length; index++)
@@ -70,7 +70,9 @@ public static partial class FruitLabTutorialEditorTools
                         LevelPlaytestSchedule.PrepareTrialStock(game.Tracker, game._saves, definition);
                         rules.Begin(definition.Mechanic); game._powers.Refresh(); Tick(.3f);
                         var caption = canvas.GetComponentsInChildren<TMPro.TMP_Text>(true).Single(text => text.name == "MechanicStatus");
-                        Require(caption.text.StartsWith("Test " + (index + 1) + "/13"), "Current test case is identified in the header");
+                        string expectedTitle=definition.TrialPowerUp.HasValue && definition.Mechanic==LevelMechanic.Normal
+                            ?PowerUpTypeUtility.Name(definition.TrialPowerUp.Value)+" denemesi":LevelIdentity.For(definition).Name;
+                        Require(caption.text==expectedTitle,"Header identifies the actual mechanic or power trial without a debug sentence");
                         if (definition.Mechanic == LevelMechanic.Pair) Require(pair.Current != null, "Pair section gives its automatic clue");
 
                         void WrongGuess()

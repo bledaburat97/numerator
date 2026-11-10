@@ -6,6 +6,7 @@ namespace Scripts
 {
     public class RevealingPowerUpController : IRevealingPowerUpController
     {
+        [InjectOptional] private IceBoardService _ice;
         private readonly IBoardAreaController _boardAreaController;
         private readonly IPowerUpMessageController _powerUpMessageController;
         private readonly ILevelTracker _levelTracker;
@@ -48,7 +49,7 @@ namespace Scripts
             var target=_targetNumberCreator.GetTargetCardsList();
             var cards=_info.GetCardItemInfoList();
             for(int slot=0;slot<target.Count;slot++)
-                if(target[slot]>0 && target[slot]<=cards.Count && cards[target[slot]-1].isExisted && !cards[target[slot]-1].isLocked)eligible.Add(slot);
+                if(_ice?.IsBlocked(slot)!=true && target[slot]>0 && target[slot]<=cards.Count && cards[target[slot]-1].isExisted && !cards[target[slot]-1].isLocked)eligible.Add(slot);
             _boardAreaController.SetupTutorialModeOnBoardHolders(eligible);
         }
 
@@ -85,6 +86,7 @@ namespace Scripts
         private bool TryGetTargetCardIndex(int boardHolderIndex, out int cardIndex)
         {
             cardIndex = -1;
+            if(_ice?.IsBlocked(boardHolderIndex)==true)return false;
             var targetCards = _targetNumberCreator.GetTargetCardsList();
             if (targetCards==null || boardHolderIndex < 0 || boardHolderIndex >= targetCards.Count) return false;
 

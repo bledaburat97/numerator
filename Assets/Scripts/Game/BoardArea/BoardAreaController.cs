@@ -162,6 +162,12 @@ namespace Scripts
             BoardHolderClickedEvent?.Invoke(this, boardHolderIndex);
         }
 
+        public void ShowFrozenSlot(int index)
+        {
+            for(int slot=0;slot<_boardHolderControllerList.Count;slot++)
+                _boardHolderControllerList[slot].GetView().ShowFrozen(slot==index);
+        }
+
         public void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus)
         {
             _boardHolderControllerList[boardHolderIndex].SetHighlightStatus(highlightStatus);
@@ -318,6 +324,7 @@ namespace Scripts
         Vector3 GetBoardHolderPositionAtIndex(int boardHolderIndex);
         int GetClosestBoardHolderIndex(Vector2 cardItemPosition);
         void HighlightBoardHolder(int boardHolderIndex, bool highlightStatus);
+        void ShowFrozenSlot(int index);
         Sequence PlaySuccessFeedback(int boardHolderIndex, float delayDuration = 0f);
         Sequence PlayAllSuccessFeedback(float delayBetweenHolders);
         void SetupTutorialModeOnEmptyBoardHolders();

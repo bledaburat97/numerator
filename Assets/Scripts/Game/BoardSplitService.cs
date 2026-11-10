@@ -66,6 +66,8 @@ namespace Scripts
         }
 
         public GuessEvaluation Evaluate(int number,System.Collections.Generic.IReadOnlyList<int> cards,System.Collections.Generic.IReadOnlyList<int> answer)
-            => new GuessEvaluation(number,cards,answer,PartitionFor(cards.Count));
+            => Evaluate(number,GuessSubmission.FromHistory(cards),answer);
+        public GuessEvaluation Evaluate(int number,GuessSubmission submission,System.Collections.Generic.IReadOnlyList<int> answer)
+            =>new GuessEvaluation(number,submission,answer,PartitionFor(submission.AnswerScope));
     }
 }

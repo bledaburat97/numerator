@@ -534,6 +534,7 @@ public static class FruitLabFailureValidation
     }
     private sealed class BombHolder : IBoardHolderView
     {
+        public void ShowFrozen(bool value) { }
         public Sequence PlayGrowthSpark()=>DOTween.Sequence().AppendInterval(.01f);
         public Sequence PlayBombRemoval() => DOTween.Sequence().AppendInterval(.01f);
         public void ShowDynamite(DynamiteRoundState state) { }
@@ -646,6 +647,7 @@ public static class FruitLabCompletionValidation
     private static void Require(bool condition, string message) { if (!condition) throw new Exception("Completion regression: " + message); }
     private sealed class CardProbe : INonDraggableCardItemView
     {
+        public void InitFrozen()=>State=CardResultState.Frozen;
         public CardResultState State;
         public void Init(int number) => State = CardResultState.Unrevealed;
         public void InitLocalScale() { }

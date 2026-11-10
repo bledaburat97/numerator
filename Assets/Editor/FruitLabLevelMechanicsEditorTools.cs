@@ -724,3 +724,211 @@ public static partial class FruitLabTutorialEditorTools
     }
 
 }
+
+public static partial class FruitLabTutorialEditorTools
+{
+    private sealed class IceHarness : IDisposable
+    {
+        public readonly IceBoardService Service;
+        public readonly IceBoardPresenter View;
+        public readonly HelperEffect Helper;
+        public readonly LevelMechanicsController Rules;
+        public IceHarness(Fixture game,LevelData definition)
+        {
+            Service=new IceBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Round);
+            foreach(var owner in new object[]{game.Results,game.Placement,game.Reveal,game._powers,game.PowerMessages})Field(owner,"_ice",Service);
+            Helper=new HelperEffect(game.Round,game.Target,game._saves);Field(Helper,"_split",Get(game.Results,"_split"));
+            Field(game._powers,"_helper",Helper);Field(game.PowerMessages,"_helper",Helper);
+            View=new IceBoardPresenter(Service,game.Board,game.Initial,game._info);
+            Rules=new LevelMechanicsController(game.Results,Helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,
+                null,(BoardSplitService)Get(game.Results,"_split"),game.Board);
+            Field(Rules,"_levels",new TestLevel(definition));Field(Rules,"_ice",Service);Field(Rules,"_icePresentation",View);
+            Rules.Attach(new LevelMechanicsPresenter(game.View,game.Board),null);
+        }
+        public void Begin()=>Rules.Begin(LevelMechanic.Ice);
+        public void Dispose(){Rules.Dispose();View.Dispose();}
+    }
+    private static void IceFrames(float seconds)
+    {for(float elapsed=0;elapsed<seconds;){float step=Mathf.Min(1f/60f,seconds-elapsed);DOTween.ManualUpdate(step,step);elapsed+=step;}}
+    private static void SubmitIce(Fixture game,IceHarness ice,IReadOnlyList<int> cards)
+    {
+        for(int slot=0;slot<cards.Count;slot++)
+        {
+            if(ice.Service.IsBlocked(slot))continue;
+            if(game._info.GetCardItemInfoList()[cards[slot]-1].isLocked)continue;
+            Require(game.Placement.TryPlaceCardOnBoard(cards[slot]-1,slot),"Open ice-level slot accepts a normal fruit");
+        }
+        IceFrames(.4f);game.Check();IceFrames(.6f);
+    }
+    private static LevelSaveData IceSnapshot(Fixture game,LevelData definition)
+    {
+        var provider=new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
+        Field(provider,"_saveData",game._saves);Field(provider,"_levels",new TestLevel(definition));Field(provider,"_tracker",game.Tracker);
+        Require(provider.TryCreateSnapshot(out var saved,true) && IceRoundState.IsValid(saved),"Ice turn and immutable history checkpoint together");
+        return JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(saved));
+    }
+    private static void ReviewIceModel()
+    {
+        var answer=new[]{1,2,3,4,5};
+        var frozen=GuessSubmission.FrozenBoard(new[]{6,2,5,4,0},5,4);
+        var score=new GuessEvaluation(2,frozen,answer);
+        Require(score.Correct==2 && score.Misplaced==1 && !score.Won && score.States[4]==CardResultState.Frozen,"6254 + ice evaluates the full 12345 answer as 2 correct, 1 misplaced");
+        Require(!new GuessEvaluation(2,GuessSubmission.FrozenBoard(new[]{1,2,3,4,0},5,4),answer).Won,"A perfect visible prefix cannot win through ice");
+        Require(new GuessEvaluation(3,answer,answer).Won,"A complete open-board answer wins");
+        bool rejected=false;try{new GuessEvaluation(1,new[]{1,2,3,4},answer);}catch(ArgumentException){rejected=true;}
+        Require(rejected,"A shorter ordinary input is rejected rather than silently truncating the answer");
+        var prefix=new GuessEvaluation(1,GuessSubmission.FromHistory(new[]{1,2}),answer);
+        Require(prefix.Correct==2 && prefix.Submission.AnswerScope==2,"Growing history deliberately retains its short answer scope");
+        var split=new GuessEvaluation(2,GuessSubmission.FrozenBoard(new[]{3,2,5,4,0},5,4),answer,BoardPartition.ForCount(5));
+        Require(split.Correct==2 && split.Groups.Sum(group=>group.Misplaced)==1 && split.Groups[0].Misplaced==0 && split.Groups[1].Misplaced==1,"Split group retains its full hidden answer while ice excludes only input");
+        var state=new PositionDeductionService(9,5);state.ApplyGuess(2,new[]{1,2,3,4,0},4,0);
+        Require(state.Presence(5)!=FruitPresence.Absent && state.IsPossible(5,4) && state.Presence(1)==FruitPresence.Present,"Four matched iced inputs never eliminate the unentered fifth fruit");
+        var random=new System.Random(7183);
+        for(int run=0;run<300;run++)
+        {
+            var target=Enumerable.Range(1,9).OrderBy(_=>random.Next()).Take(5).ToArray();
+            var notes=new PositionDeductionService(9,5);var grouped=new PositionDeductionService(9,5);
+            for(int turn=1;turn<=8;turn++)
+            {
+                var input=Enumerable.Range(1,9).OrderBy(_=>random.Next()).Take(5).ToArray();if(turn%2==0)input[4]=0;
+                var submission=GuessSubmission.FromHistory(input);var result=new GuessEvaluation(turn,submission,target);
+                int correct=input.Select((fruit,index)=>fruit>0 && fruit==target[index]?1:0).Sum();
+                int matching=input.Count(fruit=>fruit>0 && target.Contains(fruit));
+                Require(result.Correct==correct && result.Misplaced==matching-correct && (!submission.IsComplete?!result.Won:true),"Partial evaluator agrees with an independent unique-fruit oracle");
+                notes.ApplyGuess(turn,input,result.Correct,result.Misplaced);
+                var partitioned=new GuessEvaluation(turn,submission,target,BoardPartition.ForCount(5));
+                grouped.ApplyGuess(turn,input,partitioned.Correct,partitioned.Misplaced,partitioned.Groups);
+                for(int slot=0;slot<5;slot++)
+                    Require(notes.IsConsistent && grouped.IsConsistent && notes.IsPossible(target[slot],slot) && grouped.IsPossible(target[slot],slot),"Automatic deductions never eliminate a true answer in normal or split iced history");
+            }
+        }
+    }
+    public static void ReviewIce(Canvas canvas,Camera camera)
+    {
+        var update=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
+        string prefs=Profile();var errors=new List<string>();
+        Application.LogCallback collect=(message,stack,type)=>{if(type==LogType.Error || type==LogType.Exception || type==LogType.Assert)errors.Add(message);};
+        Application.logMessageReceived+=collect;
+        try
+        {
+            ReviewIceModel();var definition=new LevelData {NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=9,Mechanic=LevelMechanic.Ice};
+            foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
+            {
+                ClearPreviewActors(canvas);((RectTransform)canvas.transform).sizeDelta=size;camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2*camera.aspect));canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
+                using(var game=new Fixture(canvas,camera,definition))
+                using(var ice=new IceHarness(game,definition))
+                {
+                    Field(game.Tracker,"_levelId",17);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});ice.Begin();
+                    Require(!ice.Service.IsFrozen && !game._counts.CanShrink,"An odd-budget hard ice level begins open and rejects Bomb");
+                    int bomb=game.Tracker.GetPowerUpCount(RewardType.Bomb);Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Bomb));
+                    Require(game.Tracker.GetPowerUpCount(RewardType.Bomb)==bomb && game._counts.GetBoardHolderCount()==5,"A disabled Bomb cannot consume inventory or remove a slot");
+                    SubmitIce(game,ice,new[]{6,2,5,4,1});
+                    Require(ice.Service.IsFrozen && !game.Placement.TryPlaceCardOnBoard(4,4),"The next editing turn is already frozen and blocks placement");
+                    var boardIce=game.Board.GetRectTransformOfGarden(4).GetComponentInParent<BoardHolderView>().GetComponentInChildren<IceCardGraphic>();
+                    Require(boardIce!=null,"Frozen last holder is visible before submitting");
+                    int reveal=game.Tracker.GetPowerUpCount(RewardType.Revealing);
+                    Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Revealing));
+                    Require(!game.Reveal.TryRequestRevealCard(4) && game.Tracker.GetPowerUpCount(RewardType.Revealing)==reveal,"Frozen reveal selection rejects the target without consuming stock");
+                    SubmitIce(game,ice,new[]{6,2,5,4,0});
+                    var history=(IResultHistorySource)game._area;var row=history.GetHistoryEntry(1);
+                    Require(row.finalNumbers.SequenceEqual(new[]{6,2,5,4,0}) && row.correctPosCount==2 && row.wrongPosCount==1 && !ice.Service.IsFrozen,"Actual four-card ice input stores five slots and reports 2/1 before thawing");
+                    Require(ice.Helper.TryApply() && history.GetHistoryEntry(1).hintStates[4]==CardResultState.Frozen,"Helper inspects four fruit and retains the ice cell");
+                    var resultView=canvas.GetComponentInChildren<ResultAreaView>(true);resultView.RefreshVisibleRows();
+                    var past=resultView.GetVisibleRow(1);
+                    Require(past!=null && past.GetComponentsInChildren<IceCardGraphic>().Length==1,"Historical ice remains visible after the live board thaws and after Helper");
+                    IceSnapshot(game,definition);
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-ice-history-"+(int)size.y+".png");
+                    SubmitIce(game,ice,new[]{6,7,8,9,1});
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-ice-frozen-"+(int)size.y+".png");
+                    Require(ice.Service.IsFrozen,"Alternating turn four freezes again");
+                }
+            }
+            ReviewIceKnownCard(canvas,camera,definition);
+            ReviewIceFinalLife(canvas,camera,definition);
+            ReviewIceUltraAndSplit(canvas,camera,definition);
+            Require(prefs==Profile(),"Ice checks preserve real player preferences");Require(errors.Count==0,"No ice runtime errors: "+string.Join("; ",errors));
+            File.WriteAllText(Folder+"/ice-review.json",JsonConvert.SerializeObject(new {passed=true,examples="6254🧊 / 12345 = 2 correct, 1 misplaced",initial_attempts=9,
+                checks=new[]{"explicit scope vs frozen input","partial cannot win","four phone sizes","frozen before input","permanent history cell","Bomb blocked without spend","Reveal selection and hidden known-card resume","Helper frozen row","split full group answer","Ultra soundness fuzz","final turn thaw with Life and resume","open turn win"}},Formatting.Indented));
+        }
+        finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=update;}
+    }
+    private static void ReviewIceKnownCard(Canvas canvas,Camera camera,LevelData definition)
+    {
+        LevelSaveData saved;ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        using(var ice=new IceHarness(game,definition))
+        {
+            Field(game.Tracker,"_levelId",17);game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});ice.Begin();
+            Require(game.Placement.TryRevealAndLockCard(4,4),"Reveal may reveal the last slot on an open turn");
+            SubmitIce(game,ice,new[]{6,7,8,9,5});
+            var known=game.Initial.GetRectTransformOfCardItem(4);
+            Require(ice.Service.IsFrozen && !known.gameObject.activeSelf && game._info.GetCardItemInfoList()[4].isLocked,"A known last fruit hides without losing its authoritative lock");
+            saved=IceSnapshot(game,definition);
+        }
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        using(var ice=new IceHarness(game,definition))
+        {
+            Field(game.Tracker,"_levelId",17);((MemorySave)Get(game,"_memory")).Save(saved);game._saves.SetLevelSaveDataAsSaved(saved);game.Round.Initialize();game.BuildActors();ice.Begin();
+            var known=game.Initial.GetRectTransformOfCardItem(4);
+            Require(ice.Service.IsFrozen && !known.gameObject.activeSelf && known.IsChildOf(game.Board.GetRectTransformOfGarden(4)),"Frozen resume rebuilds and hides the same correct card instead of skipping its lock");
+            SubmitIce(game,ice,new[]{1,2,3,4,0});
+            Require(!ice.Service.IsFrozen && known.gameObject.activeSelf && game.Round.GetTriedCardsList().Last().Last()==0,"Even four exact inputs cannot win; thaw restores the revealed card");
+            Require(known.GetComponent<NormalCardItemView>().HasPresenceBadge && CardKnowledgeFrame(known.GetComponent<NormalCardItemView>()),"The restored known fruit keeps its confirmed badge and frame");
+            int wins=0;game.Results.LevelSuccessEvent+=(s,e)=>wins++;
+            SubmitIce(game,ice,new[]{1,2,3,4,5});Require(wins==1 && !ice.Service.IsFrozen,"An open turn can win and the finished board does not freeze again");
+        }
+    }
+    private static void ReviewIceFinalLife(Canvas canvas,Camera camera,LevelData definition)
+    {
+        LevelSaveData saved;ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        using(var ice=new IceHarness(game,definition))
+        {
+            Field(game.Tracker,"_levelId",17);game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});ice.Begin();
+            for(int turn=1;turn<=8;turn++)SubmitIce(game,ice,new[]{6,7,8,9,1});
+            Require(game.Round.GetRemainingGuessCount()==1 && !ice.Service.IsFrozen,"The original ninth/final guess is open");
+            Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Life));
+            Require(game.Round.GetRemainingGuessCount()==4 && !ice.Service.IsFrozen,"Life retains its three-heart effect and never freezes an already thawed final turn");
+            for(int turn=9;turn<=11;turn++)SubmitIce(game,ice,new[]{6,7,8,9,1});
+            Require(game.Round.GetRemainingGuessCount()==1 && !ice.Service.IsFrozen && game._saves.GetLevelSaveData().Ice.FinalThaw,"An even final ordinal after Life also thaws");
+            Require(game._guess.GrantExtraLives(3) && !ice.Service.IsFrozen,"Extending the final even turn keeps that editing board open");
+            saved=IceSnapshot(game,definition);
+            var view=canvas.GetComponentInChildren<ResultAreaView>(true);var scroll=view.GetComponentInParent<UnityEngine.UI.ScrollRect>();
+            if(scroll!=null){scroll.verticalNormalizedPosition=1;scroll.onValueChanged.Invoke(Vector2.up);}
+            Require(((IResultHistorySource)game._area).GetHistoryEntry(1).finalNumbers.Last()==0,"Long history never rewrites its earlier ice slots");
+        }
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        using(var ice=new IceHarness(game,definition))
+        {
+            Field(game.Tracker,"_levelId",17);((MemorySave)Get(game,"_memory")).Save(saved);game._saves.SetLevelSaveDataAsSaved(saved);game.Round.Initialize();game.BuildActors();ice.Begin();
+            Require(!ice.Service.IsFrozen && game.Round.GetRemainingGuessCount()==4,"Resume preserves a final-thaw decision even after Life extended it");
+        }
+    }
+    private static void ReviewIceUltraAndSplit(Canvas canvas,Camera camera,LevelData definition)
+    {
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        using(var ice=new IceHarness(game,definition))
+        {
+            Field(game.Tracker,"_levelId",17);game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});ice.Begin();
+            using(var notes=AssistanceFor(game,definition,out var view))
+            {
+                Require(notes.UltraActive && notes.SupportsAutomatic,"Ultra can activate on an iced board");
+                var split=(BoardSplitService)Get(game.Results,"_split");Require(split.TryApply(()=>true),"Split may be applied before an iced level's first guess");notes.Refresh();
+                Require(notes.SupportsAutomatic,"Ice+Split keeps Ultra's group-aware deduction enabled");
+                SubmitIce(game,ice,new[]{3,2,1,4,5});notes.Refresh();
+                SubmitIce(game,ice,new[]{3,2,5,4,0});notes.Refresh();
+                for(int slot=0;slot<5;slot++)Require(notes.State.IsPossible(slot+1,slot),"Split/ice public feedback cannot exclude the hidden true position");
+                Require(ice.Helper.TryApply(),"Helper can inspect an iced split row");notes.Refresh();
+                Require(notes.State.IsPossible(3,2),"A fruit absent from the first group is not globally absent");
+                var pair=new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);
+                Require(pair.Prepare(true) && pair.Current!=null,"Pair continues to reveal real neighboring fruit on an iced board");
+                SubmitIce(game,ice,new[]{3,2,1,4,5});
+                Require(ice.Service.IsFrozen,"Pair placement restriction is checked on a frozen editing turn");
+                Require(!game.Placement.TryPlacePairOnBoard(3,4,3),"A pair cannot bypass the frozen slot");
+            }
+        }
+    }
+}

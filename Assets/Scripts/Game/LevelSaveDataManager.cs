@@ -26,7 +26,8 @@ namespace Game
             LevelData levelData = _levelDataCreator.GetLevelData();
             _levelSaveData = new LevelSaveData { Definition = levelData,RoundId=System.Guid.NewGuid().ToString("N"),
                 GrowingBoard = levelData.Mechanic == LevelMechanic.Growing ? new GrowingBoardState { BonusGranted = true, BonusAtStart = true } : null,
-                Dynamite = levelData.Mechanic == LevelMechanic.Dynamite ? new DynamiteRoundState() : null };
+                Dynamite = levelData.Mechanic == LevelMechanic.Dynamite ? new DynamiteRoundState() : null,
+                Ice = levelData.Mechanic == LevelMechanic.Ice ? new IceRoundState() : null };
             _levelSaveData.TriedCardsList = new List<List<int>>();
             _levelSaveData.RemainingGuessCount = levelData.MaxNumOfTries + (_levelSaveData.GrowingBoard != null ? GrowingBoardState.BonusLives : 0);
             _levelSaveData.CardItemInfoList = new List<CardItemInfo>();

@@ -170,6 +170,12 @@ namespace Scripts
                 case PositionDeductionKind.EliminatedFruit: message = "Bu meyve bir kristal ipucuyla elendi."; break;
                 case PositionDeductionKind.DetailedCorrect: message = prefix + "ayrıntılı ipucu bu konumu doğruladı."; break;
                 case PositionDeductionKind.DetailedMisplaced: message = prefix + "bu meyvenin yanlış yerde olduğu gösterildi."; break;
+                case PositionDeductionKind.GroupNoMatches: message=prefix+"bu meyve bu grupta yoktu.";break;
+                case PositionDeductionKind.GroupNoCorrect: message=prefix+"bu grupta doğru yerde meyve yoktu.";break;
+                case PositionDeductionKind.GroupNoMisplaced: message=prefix+"bu grupta yanlış yerde meyve yoktu.";break;
+                case PositionDeductionKind.GroupCompleteSet: message=prefix+"bu meyveler bu grupta bulundu.";break;
+                case PositionDeductionKind.SubmittedSet: message=prefix+"tahmin edilen tüm meyveler cevapta.";break;
+                case PositionDeductionKind.GroupDetailedAbsent: message=prefix+"meyvenin bu grupta olmadığı gösterildi.";break;
                 case PositionDeductionKind.DetailedAbsent: message = prefix + "bu meyvenin cevapta olmadığı gösterildi."; break;
                 default: message = "Bu meyvenin bütün alanları elendi."; break;
             }

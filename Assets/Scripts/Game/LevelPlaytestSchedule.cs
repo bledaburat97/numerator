@@ -35,6 +35,7 @@ namespace Scripts
                         || step.NumOfBoardHolders > step.NumOfCards || step.MaxNumOfTries < 4
                         || LevelMechanicRules.Normalize(step.Mechanic) != step.Mechanic
                         || (step.Mechanic == LevelMechanic.Split && step.NumOfBoardHolders < 4)
+                        || (step.Mechanic==LevelMechanic.Ice && step.MaxNumOfTries%2!=1)
                         || (step.Mechanic == LevelMechanic.Growing && step.NumOfBoardHolders != GrowingBoardState.InitialCount)
                         || (step.BonusReward.HasValue && !Enum.IsDefined(typeof(RewardType),step.BonusReward.Value))
                         || (step.TrialPowerUp.HasValue && !Enum.IsDefined(typeof(RewardType), step.TrialPowerUp.Value)))
@@ -85,6 +86,7 @@ namespace Scripts
         {
             string content = definition.Mechanic == LevelMechanic.Helper ? "Bonus İpucu"
                 : definition.Mechanic == LevelMechanic.Pair ? "Ardışık Bağlı Meyveler"
+                : definition.Mechanic == LevelMechanic.Ice ? "Buzlu Tahta"
                 : definition.Mechanic == LevelMechanic.Dynamite ? "Dinamitli Tahta"
                 : definition.Mechanic == LevelMechanic.Growing ? "Büyüyen Tahta"
                 : definition.Mechanic == LevelMechanic.Split ? "Bölünmüş Tahta" : "Normal bölüm";

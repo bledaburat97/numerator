@@ -42,6 +42,8 @@ namespace Scripts
             Container.Bind<BoardSplitService>().AsSingle();
             Container.Bind<GrowingBoardService>().AsSingle();
             Container.Bind<DynamiteService>().AsSingle();
+            Container.Bind<IceBoardService>().AsSingle();
+            Container.BindInterfacesAndSelfTo<IceBoardPresenter>().AsSingle();
             Container.Bind<HelperEffect>().AsSingle();
             Container.Bind<EliminateFruitEffect>().AsSingle();
             Container.Bind<LevelMechanicsController>().AsSingle();

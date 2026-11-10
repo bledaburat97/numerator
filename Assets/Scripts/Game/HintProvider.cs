@@ -12,6 +12,7 @@ namespace Game
     {
         [InjectOptional] private EliminateFruitEffect _eliminate;
         [InjectOptional] private IRoundStateManager _round;
+        [InjectOptional] private IceBoardService _ice;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IInitialCardAreaController _initialCardAreaController;
@@ -119,7 +120,7 @@ namespace Game
             for (int i = 0; i < targetCardNumbers.Count; i++)
             {
                 CardItemInfo targetCardItemInfo = cardItemInfoList[targetCardNumbers[i] - 1];
-                if (targetCardItemInfo.isLocked) continue;
+                if (targetCardItemInfo.isLocked || _ice?.IsBlocked(i)==true) continue;
 
                 if (!(targetCardItemInfo.probabilityType == ProbabilityType.Certain &&
                     targetCardItemInfo.possibleCardHolderIndicatorIndexes.Count == 1 &&

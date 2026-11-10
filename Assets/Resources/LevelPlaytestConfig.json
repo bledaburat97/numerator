@@ -86,6 +86,12 @@
       "NumOfCards": 7,
       "MaxNumOfTries": 8,
       "Mechanic": 6
+    },
+    {
+      "NumOfBoardHolders": 5,
+      "NumOfCards": 9,
+      "MaxNumOfTries": 9,
+      "Mechanic": 7
     }
   ]
 }

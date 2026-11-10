@@ -25,6 +25,8 @@ namespace Scripts
                     if (!GrowingBoardState.IsValid(data)) return null;
                 }
                 if (data.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(data)) return null;
+                if(data.Definition?.Mechanic==LevelMechanic.Ice && !IceRoundState.IsValid(data))return null;
+                if(data.Definition?.Mechanic!=LevelMechanic.Ice && data.TriedCardsList.Any(row=>row==null || row.Any(fruit=>fruit<=0)))return null;
                 data.RevealedGuessNumbers ??= new List<int>();
                 return data;
             }
@@ -79,6 +81,7 @@ namespace Scripts
         public PairClue PairClue;
         public GrowingBoardState GrowingBoard;
         public DynamiteRoundState Dynamite;
+        public IceRoundState Ice;
         public List<bool> ActiveRewardTokens;
         public PositionNotesSnapshot PositionNotes;
     }

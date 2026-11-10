@@ -15,6 +15,17 @@ namespace Scripts
         [SerializeField] private GraphicRaycaster tutorialRaycaster;
         [SerializeField] private RectTransform garden;
         
+        [SerializeField] private IceCardGraphic frozenVisual;
+        private bool _frozen;
+        public void PrepareFrozenVisual() { frozenVisual=IceCardGraphic.Ensure(transform); frozenVisual.gameObject.SetActive(false); }
+        public void ShowFrozen(bool frozen)
+        {
+            _frozen=frozen;
+            if(frozenVisual==null)PrepareFrozenVisual();
+            if(frozen){StopRevealSelection();highlightImage.gameObject.SetActive(false);}
+            button.interactable=!frozen;
+            frozenVisual.gameObject.SetActive(frozen);frozenVisual.transform.SetAsLastSibling();
+        }
         private Camera _cam;
         private Tween _selectionPulse;
         private Sequence _successFeedback;
@@ -177,7 +188,7 @@ namespace Scripts
         
         public void SetHighlightStatus(bool status)
         {
-            highlightImage.gameObject.SetActive(status);
+            highlightImage.gameObject.SetActive(status && !_frozen);
         }
         
         public void SetupTutorialMode()
@@ -264,6 +275,7 @@ namespace Scripts
     public interface IBoardHolderView : IBaseHolderView
     {
         void ShowDynamite(DynamiteRoundState state);
+        void ShowFrozen(bool frozen);
         void SetCamera(Camera cam);
         void SetOnClick(Action onClick);
         Vector3 GetPosition();

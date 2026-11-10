@@ -9,7 +9,7 @@ namespace Scripts
     {
         NoCorrect, NoMisplaced, NoMatches, CompleteSet, AllPositionsEliminated,
         OnlyPosition, OnlyCandidate, Occupied, FixedElsewhere, RevealedPosition, EliminatedFruit,
-        DetailedCorrect, DetailedMisplaced, DetailedAbsent, Manual
+        DetailedCorrect, DetailedMisplaced, DetailedAbsent, Manual, GroupNoMatches, GroupNoCorrect, GroupNoMisplaced, GroupCompleteSet, GroupDetailedAbsent, SubmittedSet
     }
 
     public sealed class PositionDeductionReason
@@ -64,38 +64,59 @@ namespace Scripts
         public PositionDeductionReason Reason(int fruit, int slot) => _fixedSlots[fruit - 1] == slot
             ? _fixedReasons[fruit - 1] : _exclusions[fruit - 1, slot];
 
-        public bool ApplyGuess(int number, IReadOnlyList<int> cards, int correct, int misplaced)
+        public bool ApplyGuess(int number,IReadOnlyList<int> cards,int correct,int misplaced,IReadOnlyList<GuessGroupFeedback> groups=null)
         {
-            if ((!IsConsistent && !HasManualChanges) || number < 1 || cards == null || cards.Count != SlotCount || correct < 0 || misplaced < 0
-                || correct + misplaced > SlotCount || cards.Distinct().Count() != cards.Count
-                || cards.Any(fruit => fruit < 1 || fruit > FruitCount)) return false;
-            if (correct == 0 && misplaced == 0)
+            if((!IsConsistent && !HasManualChanges) || number<1 || cards==null || cards.Count!=SlotCount
+                || correct<0 || misplaced<0 || correct+misplaced>cards.Count(fruit=>fruit>0)
+                || cards.Where(fruit=>fruit>0).Distinct().Count()!=cards.Count(fruit=>fruit>0)
+                || cards.Any(fruit=>fruit<0 || fruit>FruitCount))return false;
+            if(groups!=null && groups.Count>0)
             {
-                var reason = new PositionDeductionReason(PositionDeductionKind.NoMatches, guess: number);
-                foreach (int fruit in cards) EliminateFruit(fruit - 1, reason);
+                if(groups.Any(group=>group.Start<0 || group.Count<1 || group.Start+group.Count>SlotCount
+                    || group.Correct<0 || group.Misplaced<0 || group.Correct+group.Misplaced>cards.Skip(group.Start).Take(group.Count).Count(fruit=>fruit>0)))return false;
+                foreach(var group in groups)ApplyRange(number,cards,group.Start,group.Count,group.Correct,group.Misplaced);
+            }
+            else ApplyRange(number,cards,0,SlotCount,correct,misplaced);
+            Propagate();return true;
+        }
+        private void ApplyRange(int number,IReadOnlyList<int> cards,int start,int count,int correct,int misplaced)
+        {
+            int end=start+count;bool whole=start==0 && count==SlotCount;
+            var entered=cards.Skip(start).Take(count).Where(fruit=>fruit>0).ToArray();
+            if(correct==0 && misplaced==0)
+            {
+                var reason=new PositionDeductionReason(whole?PositionDeductionKind.NoMatches:PositionDeductionKind.GroupNoMatches,guess:number);
+                foreach(int fruit in entered)
+                    if(whole)EliminateFruit(fruit-1,reason);else for(int slot=start;slot<end;slot++)Exclude(fruit-1,slot,reason);
             }
             else
             {
-                if (correct == 0)
+                if(correct==0)
                 {
-                    var reason = new PositionDeductionReason(PositionDeductionKind.NoCorrect, guess: number);
-                    for (int slot = 0; slot < SlotCount; slot++) Exclude(cards[slot] - 1, slot, reason);
+                    var reason=new PositionDeductionReason(whole?PositionDeductionKind.NoCorrect:PositionDeductionKind.GroupNoCorrect,guess:number);
+                    for(int slot=start;slot<end;slot++)if(cards[slot]>0)Exclude(cards[slot]-1,slot,reason);
                 }
-                if (misplaced == 0)
+                if(misplaced==0)
                 {
-                    var reason = new PositionDeductionReason(PositionDeductionKind.NoMisplaced, guess: number);
-                    for (int slot = 0; slot < SlotCount; slot++)
-                        for (int other = 0; other < SlotCount; other++)
-                            if (other != slot) Exclude(cards[slot] - 1, other, reason);
+                    var reason=new PositionDeductionReason(whole?PositionDeductionKind.NoMisplaced:PositionDeductionKind.GroupNoMisplaced,guess:number);
+                    for(int slot=start;slot<end;slot++)if(cards[slot]>0)
+                        for(int other=start;other<end;other++)if(other!=slot)Exclude(cards[slot]-1,other,reason);
                 }
             }
-            if (correct + misplaced == SlotCount)
+            // Four matched fruits in a five-slot iced guess prove those four
+            // exist; they do NOT eliminate all the candidates for the fifth.
+            if(correct+misplaced==entered.Length)
             {
-                var reason = new PositionDeductionReason(PositionDeductionKind.CompleteSet, guess: number);
-                for (int fruit = 0; fruit < FruitCount; fruit++)
-                    if (cards.Contains(fruit + 1)) MarkPresent(fruit, reason); else EliminateFruit(fruit, reason);
+                var reason=new PositionDeductionReason(whole?(entered.Length==count?PositionDeductionKind.CompleteSet:PositionDeductionKind.SubmittedSet):PositionDeductionKind.GroupCompleteSet,guess:number);
+                foreach(int fruit in entered)
+                {
+                    MarkPresent(fruit-1,reason);
+                    if(!whole)for(int slot=0;slot<SlotCount;slot++)if(slot<start || slot>=end)Exclude(fruit-1,slot,reason);
+                }
+                if(entered.Length==count)
+                    for(int fruit=0;fruit<FruitCount;fruit++)if(!entered.Contains(fruit+1))
+                        if(whole)EliminateFruit(fruit,reason);else for(int slot=start;slot<end;slot++)Exclude(fruit,slot,reason);
             }
-            Propagate(); return true;
         }
 
         public void TogglePosition(int fruit, int slot)
@@ -186,18 +207,25 @@ namespace Scripts
             if (fruit < 1 || fruit > FruitCount) return;
             EliminateFruit(fruit - 1, new PositionDeductionReason(PositionDeductionKind.EliminatedFruit)); Propagate();
         }
-        public void ApplyVisibleDetail(int number, int fruit, int slot, CardResultState detail)
+        public void ApplyVisibleDetail(int number, int fruit, int slot, CardResultState detail,int groupStart=0,int groupCount=-1)
         {
             if (fruit < 1 || fruit > FruitCount || slot < 0 || slot >= SlotCount) return;
+            int end=groupCount<0?SlotCount:groupStart+groupCount;
+            if(groupStart<0 || end>SlotCount || slot<groupStart || slot>=end)return;
+            bool whole=groupStart==0 && end==SlotCount;
             if (detail == CardResultState.Correct)
                 AssignVisiblePosition(fruit - 1, slot, new PositionDeductionReason(PositionDeductionKind.DetailedCorrect, slot, number));
             else if (detail == CardResultState.Misplaced)
             {
                 var reason = new PositionDeductionReason(PositionDeductionKind.DetailedMisplaced, slot, number);
                 MarkPresent(fruit - 1, reason); Exclude(fruit - 1, slot, reason);
+                if(!whole)for(int other=0;other<SlotCount;other++)if(other<groupStart || other>=end)Exclude(fruit-1,other,reason);
             }
             else if (detail == CardResultState.Absent)
-                EliminateFruit(fruit - 1, new PositionDeductionReason(PositionDeductionKind.DetailedAbsent, slot, number));
+            {
+                var reason=new PositionDeductionReason(whole?PositionDeductionKind.DetailedAbsent:PositionDeductionKind.GroupDetailedAbsent,slot,number);
+                if(whole)EliminateFruit(fruit-1,reason);else for(int other=groupStart;other<end;other++)Exclude(fruit-1,other,reason);
+            }
             Propagate();
         }
 

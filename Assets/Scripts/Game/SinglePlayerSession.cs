@@ -122,7 +122,8 @@ namespace Game
                     if ((savedLevel.LevelId >= 0 && savedLevel.LevelId != _levelTracker.GetLevelId())
                         || !LevelPlaytestSchedule.CanResume(_levelTracker.GetLevelId(), savedLevel.Definition)
                         || (savedLevel.Definition?.Mechanic == LevelMechanic.Growing && !GrowingBoardState.IsValid(savedLevel))
-                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(savedLevel)))
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(savedLevel))
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Ice && !IceRoundState.IsValid(savedLevel)))
                     { _gameSaveService.DeleteSave(); _levelSaveDataManager.CreateDefaultLevelSaveData(); return false; }
                     if (savedLevel.Definition != null) (_levelDataCreator as LevelDataCreator)?.RestoreDefinition(savedLevel.Definition);
                     if(string.IsNullOrEmpty(savedLevel.RoundId) || savedLevel.LevelId<0)

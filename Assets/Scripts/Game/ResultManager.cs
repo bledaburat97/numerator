@@ -12,6 +12,7 @@ namespace Scripts
         [InjectOptional] private ILevelTracker _levelTracker;
         [InjectOptional] private IMultiplayerGameController _multiplayer;
         [InjectOptional] private BoardSplitService _split;
+        [InjectOptional] private IceBoardService _ice;
         private readonly IResultAreaController _resultAreaController;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
@@ -48,7 +49,8 @@ namespace Scripts
         private GuessEvaluation Evaluate(int number,List<int> cards)
         {
             var answer = number == 0 ? _targetNumberCreator.GetHistoryTargetCards() : _targetNumberCreator.GetTargetCardsList();
-            return _split != null ? _split.Evaluate(number,cards,answer) : new GuessEvaluation(number,cards,answer);
+            var submission=GuessSubmission.FromHistory(cards);
+            return _split != null ? _split.Evaluate(number,submission,answer) : new GuessEvaluation(number,submission,answer);
         }
 
         private static ResultBlockModel CreateRow(List<int> cards,GuessEvaluation evaluation) => new ResultBlockModel {
@@ -61,6 +63,7 @@ namespace Scripts
             List<int> finalCards = new List<int>();
             for (int i = 0; i < finalCardIndexes.Count; i++)
             {
+                if (_ice?.IsBlocked(i)==true) { finalCards.Add(GuessSubmission.FrozenMarker);continue; }
                 if (finalCardIndexes[i] == -1)
                 {
                     return;
@@ -79,10 +82,12 @@ namespace Scripts
                 return;
             }
 
+            var submission=_ice?.IsActive==true?_ice.Capture(finalCards):GuessSubmission.FullBoard(finalCards,_targetNumberCreator.GetTargetCardsList().Count);
+            var evaluation=_split!=null?_split.Evaluate(_roundStateManager.GetTriedCardsList().Count+1,submission,_targetNumberCreator.GetTargetCardsList())
+                :new GuessEvaluation(_roundStateManager.GetTriedCardsList().Count+1,submission,_targetNumberCreator.GetTargetCardsList());
             _roundStateManager.AddTriedCards(finalCards);
             GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
             _gamePowerUpAreaController.Refresh();
-            var evaluation = Evaluate(_roundStateManager.GetTriedCardsList().Count, finalCards);
             DetermineAction(finalCards, evaluation);
             GuessResolved?.Invoke(this, evaluation);
             _gamePowerUpAreaController.Refresh();

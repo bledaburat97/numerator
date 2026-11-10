@@ -51,6 +51,7 @@ public static class FruitLabCardEditorTools
             {
                 if (contents.TryGetComponent(out BaseCardItemView card))
                 {
+                    if(card is NonDraggableCardItemView historyCard)historyCard.PrepareFrozenVisual();
                     card.Init(1); card.SetAlpha(1f);
                     Image glow = PrepareResultImage(contents.transform, "ResultGlow", resultFrame, .9f, .32f, 0f);
                     Image outline = PrepareResultImage(contents.transform, "ResultOutline", resultFrame, 1.2f, 1f, .7f);
@@ -70,6 +71,7 @@ public static class FruitLabCardEditorTools
                     {
                         var old=contents.transform.Find(name);if(old!=null)Object.DestroyImmediate(old.gameObject);
                     }
+                    board.PrepareFrozenVisual();
                     board.ApplyLabStyle();
                     board.SetHighlightStatus(false);
                 }

@@ -7,6 +7,7 @@ namespace Scripts
 {
     public class GamePowerUpAreaController : IGamePowerUpAreaController
     {
+        [InjectOptional] private IceBoardService _ice;
         [InjectOptional] private HelperEffect _helper;
         [InjectOptional] private PairEffect _pair;
         [InjectOptional] private BoardSplitService _split;
@@ -92,14 +93,14 @@ namespace Scripts
         }
 
         private bool IsPowerUpAvailable(RewardType rewardType)
-            => PowerUpAvailability.CanUse(rewardType,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra);
+            => PowerUpAvailability.CanUse(rewardType,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra,_ice);
     }
 
     // UI availability and execution share the same eligibility rules.
     public static class PowerUpAvailability
     {
         public static bool CanUse(RewardType type,ILevelTracker tracker,IRoundStateManager round,
-            ICardItemInfoManager info,IBoardHolderCountManager counts,HelperEffect helper,PairEffect pair,BoardSplitService split,UltraPowerUpController ultra=null)
+            ICardItemInfoManager info,IBoardHolderCountManager counts,HelperEffect helper,PairEffect pair,BoardSplitService split,UltraPowerUpController ultra=null,IceBoardService ice=null)
         {
             if(tracker.GetGameOption()!=GameOption.SinglePlayer || round.GetRemainingGuessCount()<=0
                 || tracker.GetPowerUpCount(type)<=0 || !PowerUpTypeUtility.IsUnlocked(type,tracker.GetLevelId()))return false;
@@ -107,7 +108,7 @@ namespace Scripts
             {
                 case RewardType.Helper:return helper!=null && helper.CanApply;
                 case RewardType.Pair:return pair!=null && pair.CanApply;
-                case RewardType.Split:return split!=null && split.CanApply && !(ultra?.Active??false);
+                case RewardType.Split:return split!=null && split.CanApply && (!(ultra?.Active??false) || ultra.SupportsSplit);
                 case RewardType.Ultra:return ultra!=null && ultra.CanApply;
                 case RewardType.Life:return round.GetRemainingGuessCount()+3<=round.GetMaxGuessCount();
                 case RewardType.Bomb:
@@ -116,8 +117,9 @@ namespace Scripts
                     return true;
                 case RewardType.Revealing:
                     int locked=0;
-                    foreach(var card in info.GetCardItemInfoList())if(card!=null && card.isLocked)locked++;
-                    return locked<counts.GetBoardHolderCount();
+                    foreach(var card in info.GetCardItemInfoList())
+                        if(card!=null && card.isLocked && !card.possibleCardHolderIndicatorIndexes.Contains(ice?.FrozenIndex??-1))locked++;
+                    return locked<counts.GetBoardHolderCount()-(ice?.IsFrozen==true?1:0);
                 default:return false;
             }
         }

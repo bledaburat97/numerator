@@ -8,6 +8,8 @@ namespace Scripts
     public sealed class LevelMechanicsController : IDisposable
     {
         [InjectOptional] private ILevelDataCreator _levels;
+        [InjectOptional] private IceBoardService _ice;
+        [InjectOptional] private IceBoardPresenter _icePresentation;
         private readonly IResultManager _results;
         private readonly HelperEffect _helper;
         private readonly PairEffect _pair;
@@ -45,6 +47,8 @@ namespace Scripts
         {
             _mechanic = LevelMechanicRules.Normalize(mechanic);
             _dynamite?.Prepare();
+            _ice?.PrepareTurn();
+            _icePresentation?.Render();
             UpdateDynamiteView();
             RestoreDetails();
             UpdateStatus();
@@ -77,6 +81,7 @@ namespace Scripts
             if (_growing?.TryAdvance(guess) == true)
                 GameTelemetry.Mechanic("mechanic_triggered",LevelMechanic.Growing);
             if (_dynamite?.Resolve(guess) == true) GameTelemetry.Mechanic("mechanic_triggered",LevelMechanic.Dynamite);
+            _ice?.AfterGuess(guess);
             UpdateStatus(); _powers.Refresh();
             if (!guess.Won && _round.GetRemainingGuessCount() > 0) _checkpoint?.Invoke();
         }

@@ -27,7 +27,7 @@ namespace Scripts
         {
             var history = _round.GetTriedCardsList();
             return _split != null ? _split.Evaluate(number,history[number-1],_target.GetHistoryTargetCards())
-                : new GuessEvaluation(number,history[number-1],_target.GetHistoryTargetCards());
+                : new GuessEvaluation(number,GuessSubmission.FromHistory(history[number-1]),_target.GetHistoryTargetCards());
         }
 
         public bool TryApply(System.Func<bool> consumeInventory=null)

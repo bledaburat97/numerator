@@ -16,6 +16,7 @@ namespace Scripts
         public const string Helper = "helper_powerup_v1";
         public const string EliminationLevel = "level_elimination_v1";
         public const string HelperLevel = "level_helper_v1";
+        public const string IceLevel = "level_ice_v1";
         public const string DynamiteLevel = "level_dynamite_v1";
         public const string GrowingLevel = "level_growing_v1";
         public const string SplitLevel = "level_split_v1";
@@ -23,7 +24,7 @@ namespace Scripts
         public const string Ultra = "ultra_powerup_v1";
         public const string Currency = "tutorial_currency_seen";
         public const string CrystalHints = "tutorial_crystal_hints_seen";
-        public static readonly string[] Keys = { First, LegacySkipped, Bomb, Reveal, Life, Currency, CrystalHints, Helper, EliminationLevel, HelperLevel, Pair, PairLevel, SplitLevel, Split, GrowingLevel, DynamiteLevel, Ultra };
+        public static readonly string[] Keys = { First, LegacySkipped, Bomb, Reveal, Life, Currency, CrystalHints, Helper, EliminationLevel, HelperLevel, Pair, PairLevel, SplitLevel, Split, GrowingLevel, DynamiteLevel, IceLevel, Ultra };
 #if UNITY_EDITOR
         private static IDictionary<string, int> _testValues;
         public static IDisposable UseTestValues(IDictionary<string, int> values)

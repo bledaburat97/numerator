@@ -8,34 +8,37 @@ namespace Scripts
     public sealed class GuessEvaluation : EventArgs
     {
         public int Number { get; }
+        public GuessSubmission Submission { get; }
         public IReadOnlyList<int> Cards { get; }
         public IReadOnlyList<CardResultState> States { get; }
         public int Correct { get; }
         public int Misplaced { get; }
         public IReadOnlyList<GuessGroupFeedback> Groups { get; }
-        public bool Won => Correct == Cards.Count;
+        public bool Won => Submission.IsComplete && Correct == Submission.AnswerScope;
 
         public GuessEvaluation(int number, IReadOnlyList<int> cards, IReadOnlyList<int> answer, BoardPartition partition = null)
+            : this(number,GuessSubmission.FullBoard(cards,answer.Count),answer,partition) { }
+
+        public GuessEvaluation(int number,GuessSubmission submission,IReadOnlyList<int> answer,BoardPartition partition=null)
         {
-            // Earlier Growing rows keep the answer prefix that existed when submitted.
-            if (cards.Count > answer.Count || cards.Count == 0) throw new ArgumentException("A guess needs a nonempty answer prefix of matching size.");
-            if (partition != null && partition.BoardCount != cards.Count) throw new ArgumentException("Partition must match the board.");
-            Number = number;
-            Cards = Array.AsReadOnly(cards.ToArray());
-            var states = new CardResultState[cards.Count];
-            var total = EvaluateRange(cards,answer,0,cards.Count,states);
-            Correct = total.Correct; Misplaced = total.Misplaced;
-            Groups = partition == null ? Array.Empty<GuessGroupFeedback>() : Array.AsReadOnly(new[] {
-                EvaluateRange(cards,answer,0,partition.FirstCount,states),
-                EvaluateRange(cards,answer,partition.FirstCount,partition.SecondCount,states)
+            if(submission==null || answer==null || submission.AnswerScope>answer.Count)
+                throw new ArgumentException("The answer must contain the submitted scope.");
+            if(partition!=null && partition.BoardCount!=submission.AnswerScope)throw new ArgumentException("Partition must cover the answer scope.");
+            if(answer.Take(submission.AnswerScope).Any(fruit=>fruit<1))throw new ArgumentException("An answer contains real fruit in every evaluated slot.");
+            Number=number;Submission=submission;Cards=submission.Cards;
+            var states=new CardResultState[submission.AnswerScope];
+            var total=EvaluateRange(submission,answer,0,submission.AnswerScope,states);
+            Correct=total.Correct;Misplaced=total.Misplaced;
+            Groups=partition==null?Array.Empty<GuessGroupFeedback>():Array.AsReadOnly(new[]{
+                EvaluateRange(submission,answer,0,partition.FirstCount,states),
+                EvaluateRange(submission,answer,partition.FirstCount,partition.SecondCount,states)
             });
-            // Detail hints follow the same active partition as the visible counters.
-            // End-of-level review uses the same partition stored on each history row.
-            States = Array.AsReadOnly(states);
+            States=Array.AsReadOnly(states);
         }
 
-        private static GuessGroupFeedback EvaluateRange(IReadOnlyList<int> cards,IReadOnlyList<int> answer,int start,int count,CardResultState[] states)
+        private static GuessGroupFeedback EvaluateRange(GuessSubmission submission,IReadOnlyList<int> answer,int start,int count,CardResultState[] states)
         {
+            var cards=submission.Cards;
             int correct = 0, misplaced = 0, end = start+count;
             var remaining = new Dictionary<int, int>();
             for (int i = start; i < end; i++)
@@ -45,6 +48,8 @@ namespace Scripts
             }
             for (int i = start; i < end; i++)
             {
+                if (submission.Slots[i].Kind==GuessSlotKind.Frozen)
+                { if(states!=null)states[i]=CardResultState.Frozen;continue; }
                 if (cards[i] == answer[i]) continue;
                 bool exists = remaining.TryGetValue(cards[i], out int n) && n > 0;
                 if (states != null) states[i] = exists ? CardResultState.Misplaced : CardResultState.Absent;
@@ -54,18 +59,19 @@ namespace Scripts
         }
     }
 
-    public enum LevelMechanic { Normal = 0, LegacyElimination = 1, Helper = 2, Pair = 3, Split = 4, Growing = 5, Dynamite = 6 }
+    public enum LevelMechanic { Normal = 0, LegacyElimination = 1, Helper = 2, Pair = 3, Split = 4, Growing = 5, Dynamite = 6, Ice = 7 }
 
     public static class LevelMechanicRules
     {
         public static bool ShouldTrigger(LevelMechanic mechanic, GuessEvaluation guess, int remaining) =>
             mechanic == LevelMechanic.Helper && !guess.Won && remaining > 0 && guess.Number % 3 == 0;
 
-        public static LevelMechanic Normalize(LevelMechanic mechanic) => mechanic == LevelMechanic.Helper || mechanic == LevelMechanic.Pair || mechanic == LevelMechanic.Split || mechanic == LevelMechanic.Growing || mechanic == LevelMechanic.Dynamite ? mechanic : LevelMechanic.Normal;
+        public static LevelMechanic Normalize(LevelMechanic mechanic) => mechanic == LevelMechanic.Helper || mechanic == LevelMechanic.Pair || mechanic == LevelMechanic.Split || mechanic == LevelMechanic.Growing || mechanic == LevelMechanic.Dynamite || mechanic == LevelMechanic.Ice ? mechanic : LevelMechanic.Normal;
 
         public static string Description(LevelMechanic mechanic) => mechanic == LevelMechanic.Helper
             ? "Bonus İpucu"
             : mechanic == LevelMechanic.Pair ? "Ardışık Bağlı Meyveler"
+            : mechanic == LevelMechanic.Ice ? "Buzlu Tahta"
             : mechanic == LevelMechanic.Dynamite ? "Dinamitli Tahta"
             : mechanic == LevelMechanic.Growing ? "Büyüyen Tahta"
             : mechanic == LevelMechanic.Split ? "İki grubun sonucu ayrı hesaplanır" : "";

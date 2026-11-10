@@ -77,6 +77,12 @@ namespace Scripts
         {
             var mechanic = LevelMechanicRules.Normalize(_levels.GetLevelData().Mechanic);
             if (mechanic == LevelMechanic.Normal) return false;
+            if(mechanic==LevelMechanic.Ice)
+            {
+                if(TutorialProgress.Seen(TutorialProgress.IceLevel))return false;
+                ShowTip(LevelInformation.Title(mechanic),LevelInformation.Description(mechanic),TutorialProgress.IceLevel,Find<BoardAreaView>()?.GetRectTransform());
+                return true;
+            }
             if (mechanic == LevelMechanic.Dynamite)
             {
                 if (TutorialProgress.Seen(TutorialProgress.DynamiteLevel)) return false;

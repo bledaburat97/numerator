@@ -15,6 +15,7 @@ namespace Scripts
         [Inject]
         public UltraPowerUpController(LazyInject<PositionAssistanceController> notes,ILevelSaveDataManager save,UltraActivationService activations)
         { _lazyNotes=notes;_save=save;_activations=activations; }
+        public bool SupportsSplit=>Notes.SupportsSplit;
         public bool Active=>_save.GetLevelSaveData().UltraActive;
         public bool CanApply=>!Active && Notes.SupportsAutomatic;
         public void Configure(Func<bool> checkpoint)=>_checkpoint=checkpoint;

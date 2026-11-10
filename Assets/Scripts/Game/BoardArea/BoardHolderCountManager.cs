@@ -21,7 +21,8 @@ namespace Scripts
 
         public void Initialize()
         {
-            _canShrink = _levelDataCreator.GetLevelData().Mechanic != LevelMechanic.Growing;
+            _canShrink = _levelDataCreator.GetLevelData().Mechanic != LevelMechanic.Growing
+                && _levelDataCreator.GetLevelData().Mechanic != LevelMechanic.Ice;
             _removedBoardHolderCount = _levelSaveDataManager.GetLevelSaveData().RemovedBoardHolderCount;
             _boardHolderCount = (_levelSaveDataManager.GetLevelSaveData().GrowingBoard?.ActiveCount
                 ?? _levelDataCreator.GetLevelData().NumOfBoardHolders) - _removedBoardHolderCount;
