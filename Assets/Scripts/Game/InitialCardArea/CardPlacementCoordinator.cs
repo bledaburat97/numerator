@@ -55,7 +55,6 @@ namespace Scripts
             _cardItemInfoManager = cardItemInfoManager;
             _tutorialGate = tutorialGate;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
-            _revealingPowerUpController.RevealCardRequestedEvent += OnRevealCardRequested;
         }
 
         public void Initialize()
@@ -225,11 +224,6 @@ namespace Scripts
             cardItem.GetCardViewHandler().MoveToInitialParent();
         }
 
-        private void OnRevealCardRequested(object sender, LockedCardInfo args)
-        {
-            TryRevealAndLockCard(args.BoardHolderIndex, args.TargetCardIndex);
-        }
-
         public bool TryRevealAndLockCard(int boardHolderIndex, int cardIndex, bool playSuccessAnimation = true)
         {
             if (!CanUseCard(cardIndex) || (!_restoringLocks && _ice?.IsBlocked(boardHolderIndex)==true)) return false;
@@ -341,7 +335,6 @@ namespace Scripts
         public void Unsubscribe()
         {
             _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
-            _revealingPowerUpController.RevealCardRequestedEvent -= OnRevealCardRequested;
         }
         
         private void ResetPositionsOfCardItems(object sender, EventArgs args)

@@ -1,5 +1,8 @@
 <linker>
   <assembly fullname="Assembly-CSharp">
+    <type fullname="Scripts.PowerUpRuntimeEffects" preserve="all" />
+    <type fullname="Scripts.PowerUpUseService" preserve="all" />
+    <type fullname="Scripts.Economy.PowerUpUseJournal" preserve="all" />
     <type fullname="Scripts.IceRoundState" preserve="all" />
     <type fullname="Scripts.IceBoardService" preserve="all" />
     <type fullname="Scripts.IceBoardPresenter" preserve="all" />

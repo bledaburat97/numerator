@@ -243,7 +243,7 @@ public static partial class FruitLabTutorialEditorTools
                 using(var assistance=AssistanceFor(game,four,out var view))
                 {
                     assistance.Refresh();
-                    new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+                    _ = game.Bomb;
                     game._powers.Refresh();Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Bomb));Tick(1.2f);assistance.Tick();
                     Require(assistance.State.SlotCount==3 && game.Initial.GetHolderView(0).Indicators.Count(cell=>cell.gameObject.activeSelf)==3,"Bomb resizes the visible cells and resets the deduction schema");
                     SubmitAssistedGuess(game,new[]{2,3,1},assistance);Require(assistance.State.Presence(1)==FruitPresence.Present,"Bomb leaves valid public inference feedback");
@@ -689,6 +689,12 @@ public static partial class FruitLabTutorialEditorTools
         public ResultManager Results; public PowerUpMessageController PowerMessages; public RevealingPowerUpController Reveal;
         public readonly GameUIController UI; public readonly GameUIView View; public readonly TutorialBootstrapper Bootstrap;
         private readonly CardInteractionManager _interaction;
+        public readonly HelperEffect Helper;
+        public readonly PairEffect Pair;
+        public readonly BombPowerUpController Bomb;
+        public readonly PowerUpUseService Uses;
+        public readonly Scripts.Economy.IPlayerProfileRepository PowerProfiles;
+        public readonly DiContainer PowerContainer;
         public readonly GamePowerUpAreaController _powers;
         public readonly GuessManager _guess;
         public readonly ResultAreaController _area;
@@ -724,21 +730,43 @@ public static partial class FruitLabTutorialEditorTools
             var container = new DiContainer(); container.Bind<IHapticController>().FromInstance(haptic); container.Bind<TutorialInputGate>().FromInstance(Gate);
             container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             _buttons = container.Resolve<BaseButtonControllerFactory>();
-            _powers = new GamePowerUpAreaController(_buttons, canvas.GetComponentInChildren<PowerUpListHolderView>(true), Tracker, Round, _info, counts);
-            Field(_powers,"_split",split);
+            _powers = new GamePowerUpAreaController(_buttons, canvas.GetComponentInChildren<PowerUpListHolderView>(true), Tracker);
             View = canvas.GetComponentInChildren<GameUIView>(true);
             UI = new GameUIController(_buttons, Tracker, null, haptic, View, _powers); Field(UI, "_tutorialGate", Gate);
             var fade = new FadePanelController(canvas.GetComponentInChildren<FadePanelView>(true));
-            var powerMessages = PowerMessages = new PowerUpMessageController(_powers, fade, Tracker, Round, _info, counts,UI); Field(powerMessages, "_tutorialGate", Gate);
-            Field(powerMessages,"_split",split);
-            var reveal = Reveal = new RevealingPowerUpController(Board, powerMessages, Tracker, _powers, haptic, Target,_info);
+            var powerMessages = PowerMessages = new PowerUpMessageController(_powers, fade, Tracker,UI); Field(powerMessages, "_tutorialGate", Gate);
+
+            var reveal = Reveal = new RevealingPowerUpController(Board, powerMessages, _powers, haptic, Target);
             var locator = new CardItemLocator(Board, UI); locator.Initialize();
             Placement = new CardPlacementCoordinator(Board, locator, UI, indexes, indexes, reveal, Initial, _info, Gate);
             _area = new ResultAreaController(canvas.GetComponentInChildren<ResultAreaView>(true));
             var results = Results = new ResultManager(UI, _area, Target, indexes, Round, _powers);
             Field(results,"_split",split);
-            _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), Target, _info, powerMessages, UI, Round);
+            _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), UI, Round);
             _interaction = new CardInteractionManager(UI, new BoardHolderClickRouter(Board, reveal), Initial, haptic, Placement);
+            Helper=new HelperEffect(Round,Target,saves);Field(Helper,"_split",split);
+            Pair=new PairEffect(Round,Target,saves,_info,Tracker);
+            Bomb=new BombPowerUpController(Board,Placement,Target,_info,counts,Round);Field(Bomb,"_pair",Pair);
+            var snapshot=new GameSaveSnapshotProvider(Target,_info,new PlayingFlow(),counts,Round);
+            Field(snapshot,"_saveData",saves);Field(snapshot,"_levels",level);Field(snapshot,"_tracker",Tracker);
+            var profiles=PowerProfiles=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>new Scripts.Economy.PlayerProfileData());
+            profiles.Changed+=()=>{
+                var stock=profiles.Snapshot().Wallet.PowerUps;
+                foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)Field(Tracker,PowerStockField(type),stock[type]);
+            };
+            PowerContainer=new DiContainer();
+            Uses=new PowerUpUseService(Tracker,level,saves,Round,_info,counts,Target,new Scripts.Economy.PowerUpUseJournal(profiles),_memory,
+                ()=>{
+                    var countsNow=PowerUpTypeUtility.OrderedRewardTypes.ToDictionary(type=>type,Tracker.GetPowerUpCount);
+                    profiles.Update(profile=>{foreach(var entry in countsNow)profile.Wallet.PowerUps[entry.Key]=entry.Value;});
+                    return snapshot;
+                },
+                ()=>new PowerUpRuntimeEffects(Bomb,_guess,Placement,Helper,Pair,split,(UltraPowerUpController)Get(_powers,"_ultra")),
+                ()=>new IceBoardService(level,Tracker,saves,Round));
+            PowerContainer.Bind<PowerUpUseService>().FromInstance(Uses);
+            Field(_powers,"_uses",PowerContainer.Resolve<LazyInject<PowerUpUseService>>());
+            Field(PowerMessages,"_uses",PowerContainer.Resolve<LazyInject<PowerUpUseService>>());
+            Field(Reveal,"_uses",PowerContainer.Resolve<LazyInject<PowerUpUseService>>());
             var mask = _objects.AddComponent<UnmaskServiceAreaView>(); Set(mask, "unmaskServicePrefab", AssetDatabase.LoadAssetAtPath<UnmaskServiceView>(MaskPath));
             Bootstrap = new TutorialBootstrapper(Tracker, Initial, Board, Placement, results, Round, _info, UI,
                 mask, fade, Gate, _buttons);
@@ -749,6 +777,7 @@ public static partial class FruitLabTutorialEditorTools
             results.LevelSuccessEvent += (sender, args) => Bootstrap.RoundEnded(true);
             View.GetPairView()?.Configure(new PairDragPresenter(Initial, Placement, Board, indexes, Gate, UI, () => true));
         }
+        public static string PowerStockField(RewardType type)=>type==RewardType.Revealing?"_revealingPowerUpCount":type==RewardType.Life?"_lifePowerUpCount":type==RewardType.Bomb?"_bombPowerUpCount":type==RewardType.Helper?"_helperPowerUpCount":type==RewardType.Pair?"_pairPowerUpCount":type==RewardType.Split?"_splitPowerUpCount":"_ultraPowerUpCount";
         public void BuildActors()
         {
             Board.CreateBoard(); Target.SetTargetNumber(_counts.GetBoardHolderCount()); _info.Initialize(); Initial.Initialize(false);

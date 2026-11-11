@@ -32,6 +32,8 @@ namespace Scripts
         [Inject] private LevelMechanicsController _mechanics;
         [Inject] private PositionAssistanceController _positionAssistance;
         [Inject] private UltraPowerUpController _ultra;
+        [Inject] private PowerUpUseService _powerUpUses;
+        private bool _powerUpRecoveryPending;
         public PositionAssistanceController PositionAssistance => _positionAssistance;
         public CardAnnotationController Annotations { get; private set; }
         private FruitLabGameLayout _presentation;
@@ -54,18 +56,11 @@ namespace Scripts
             InitializeHapticController();
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
+            _powerUpUses.RecoveryRequired+=QueuePowerUpRecovery;
             InitializePowerUpUi();
-            _ultra.Configure(SaveUltraCheckpoint);
             InitializeGame();
             _positionAssistance.Refresh();
             _ultra.Restore();
-        }
-
-        private bool SaveUltraCheckpoint()
-        {
-            _positionAssistance.Refresh();
-            if(!_gameSaveSnapshotProvider.TryCreateSnapshot(out var snapshot,true))return false;
-            _gameSaveService.Save(snapshot);return true;
         }
 
         private void OnLayoutChanged()
@@ -75,8 +70,14 @@ namespace Scripts
             _refreshLifeLayout|=(_layoutSize-_presentation.LayoutSize).sqrMagnitude>.01f;
             _layoutSize=_presentation.LayoutSize;
         }
+        private void QueuePowerUpRecovery()=>_powerUpRecoveryPending=true;
         private void Update()
         {
+            if(_powerUpRecoveryPending)
+            {
+                _powerUpRecoveryPending=false;CancelCardGestures();
+                _session.Begin(LevelEntryMode.Resume);_positionAssistance.Refresh();_ultra.Restore();
+            }
             _positionAssistance?.Tick();
             Annotations?.Tick();
             _multiplayerHud?.TickPresentation();
@@ -131,6 +132,7 @@ namespace Scripts
 
         private void OnDestroy()
         {
+            if(_powerUpUses!=null)_powerUpUses.RecoveryRequired-=QueuePowerUpRecovery;
             Annotations?.Dispose();
             _positionAssistance?.Dispose();            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
             _mechanics?.Dispose();

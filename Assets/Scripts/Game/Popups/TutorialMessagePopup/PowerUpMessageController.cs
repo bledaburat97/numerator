@@ -6,36 +6,23 @@ namespace Scripts
 {
     public class PowerUpMessageController : IPowerUpMessageController
     {
-        [InjectOptional] private IceBoardService _ice;
-        [InjectOptional] private HelperEffect _helper;
-        [InjectOptional] private PairEffect _pair;
-        [InjectOptional] private BoardSplitService _split;
-        [InjectOptional] private UltraPowerUpController _ultra;
+        [Inject] private LazyInject<PowerUpUseService> _uses;
         [InjectOptional] private TutorialInputGate _tutorialGate;
-        private IFadePanelController _fadePanelController;
-        private ILevelTracker _levelTracker;
-        private IRoundStateManager _roundStateManager;
-        private IGamePowerUpAreaController _gamePowerUpAreaController;
-        private ICardItemInfoManager _cardItemInfoManager;
-        private IBoardHolderCountManager _boardHolderCountManager;
+        private readonly IFadePanelController _fadePanelController;
+        private readonly ILevelTracker _levelTracker;
+        private readonly IGamePowerUpAreaController _gamePowerUpAreaController;
         private GameUIButtonType _activePowerUpType = GameUIButtonType.Default;
         
-        public event EventHandler RemoveBoardHolderEvent;
         public event EventHandler<GameUIButtonType> OpenPowerUpEvent;
         public event EventHandler<GameUIButtonType> ClosePowerUpEvent;
-        public event EventHandler AddLifeEvent;
         [Inject]
         public PowerUpMessageController(IGamePowerUpAreaController gamePowerUpAreaController,
-            IFadePanelController fadePanelController, ILevelTracker levelTracker, IRoundStateManager roundStateManager,
-            ICardItemInfoManager cardItemInfoManager, IBoardHolderCountManager boardHolderCountManager,IGameUIController ui)
+            IFadePanelController fadePanelController, ILevelTracker levelTracker,IGameUIController ui)
         {
             _fadePanelController = fadePanelController;
             gamePowerUpAreaController.PowerUpClickedEvent += OnPowerUpClicked;
             _gamePowerUpAreaController = gamePowerUpAreaController;
             _levelTracker = levelTracker;
-            _roundStateManager = roundStateManager;
-            _cardItemInfoManager = cardItemInfoManager;
-            _boardHolderCountManager = boardHolderCountManager;
             _fadePanelController.SetBoardDismiss(CloseActivePowerUp);
             ui.ResetNumbers+=CancelOnAction;ui.CheckFinalNumbers+=CancelOnAction;ui.OpenSettings+=CancelOnAction;ui.OpenInformation+=CancelOnAction;
         }
@@ -49,44 +36,18 @@ namespace Scripts
                 && powerUpType!=GameUIButtonType.PairPowerUp && powerUpType!=GameUIButtonType.SplitPowerUp && powerUpType!=GameUIButtonType.UltraPowerUp)return;
             if(_activePowerUpType==GameUIButtonType.RevealingPowerUp && powerUpType==_activePowerUpType){CloseActivePowerUp();return;}
             var reward=PowerUpTypeUtility.ToRewardType(powerUpType);
-            if(!PowerUpAvailability.CanUse(reward,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra,_ice))return;
+            if(!_uses.Value.CanUse(reward))return;
             CloseActivePowerUp();
             if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType)) return;
-            switch (powerUpType)
+            if(powerUpType==GameUIButtonType.RevealingPowerUp)
             {
-                case GameUIButtonType.UltraPowerUp:
-                    _ultra.TryApply();
-                    _gamePowerUpAreaController.Refresh();
-                    break;
-                case GameUIButtonType.SplitPowerUp:
-                    _split.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Split));
-                    _gamePowerUpAreaController.Refresh();
-                    break;
-                case GameUIButtonType.PairPowerUp:
-                    _pair.TryApply(() => _levelTracker.TryConsumePowerUp(RewardType.Pair));
-                    _gamePowerUpAreaController.Refresh();
-                    break;
-                case GameUIButtonType.HelperPowerUp:
-                    _helper.TryApply(()=>_levelTracker.TryConsumePowerUp(RewardType.Helper));
-                    _gamePowerUpAreaController.Refresh();
-                    break;
-                case GameUIButtonType.LifePowerUp:
-                    if (!_levelTracker.TryConsumePowerUp(RewardType.Life)) return;
-                    AddLifeEvent?.Invoke(this, EventArgs.Empty);
-                    _gamePowerUpAreaController.Refresh();
-                    break;
-                case GameUIButtonType.BombPowerUp:
-                    if (!_levelTracker.TryConsumePowerUp(RewardType.Bomb)) return;
-                    RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
-                    _gamePowerUpAreaController.Refresh();
-                    break;
-                case GameUIButtonType.RevealingPowerUp:
-                    _activePowerUpType = GameUIButtonType.RevealingPowerUp;
-                    _fadePanelController.SetBoardFadeImageStatus(true);
-                    OpenPowerUpEvent?.Invoke(this, powerUpType);
-                    break;
+                _activePowerUpType=powerUpType;
+                _fadePanelController.SetBoardFadeImageStatus(true);
+                OpenPowerUpEvent?.Invoke(this,powerUpType);
+                return;
             }
-            
+            _uses.Value.TryApply(reward);
+            _gamePowerUpAreaController.Refresh();
         }
 
         public void CloseActivePowerUp()
@@ -102,10 +63,8 @@ namespace Scripts
 
     public interface IPowerUpMessageController
     {
-        event EventHandler RemoveBoardHolderEvent;
         event EventHandler<GameUIButtonType> OpenPowerUpEvent;
         event EventHandler<GameUIButtonType> ClosePowerUpEvent;
-        event EventHandler AddLifeEvent;
         void CloseActivePowerUp();
     }
 }

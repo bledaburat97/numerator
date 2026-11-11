@@ -134,17 +134,7 @@ namespace Scripts
             SavePlayerPrefs();
         }
         
-        public void DecreaseRevealingPowerUpCount()
-        {
-            _revealingPowerUpCount = Mathf.Max(0, _revealingPowerUpCount - 1);
-            SavePlayerPrefs();
-        }
         
-        public void DecreaseLifePowerUpCount()
-        {
-            _lifePowerUpCount = Mathf.Max(0, _lifePowerUpCount - 1);
-            SavePlayerPrefs();
-        }
         
         public void IncreaseBombPowerUpCount()
         {
@@ -153,11 +143,6 @@ namespace Scripts
             SavePlayerPrefs();
         }
 
-        public void DecreaseBombPowerUpCount()
-        {
-            _bombPowerUpCount = Mathf.Max(0, _bombPowerUpCount - 1);
-            SavePlayerPrefs();
-        }
 
         public int GetLevelId()
         {
@@ -221,39 +206,6 @@ namespace Scripts
                 default:
                     return 0;
             }
-        }
-
-        public bool TryConsumePowerUp(RewardType rewardType)
-        {
-            if (GetPowerUpCount(rewardType) <= 0) return false;
-
-            switch (rewardType)
-            {
-                case RewardType.Revealing:
-                    DecreaseRevealingPowerUpCount();
-                    break;
-                case RewardType.Life:
-                    DecreaseLifePowerUpCount();
-                    break;
-                case RewardType.Pair:
-                    _pairPowerUpCount = Mathf.Max(0, _pairPowerUpCount - 1); SavePlayerPrefs();
-                    break;
-                case RewardType.Split:
-                    _splitPowerUpCount = Mathf.Max(0, _splitPowerUpCount - 1); SavePlayerPrefs();
-                    break;
-                case RewardType.Helper:
-                    _helperPowerUpCount = Mathf.Max(0, _helperPowerUpCount - 1); SavePlayerPrefs();
-                    break;
-                case RewardType.Ultra:
-                    _ultraPowerUpCount = Mathf.Max(0, _ultraPowerUpCount - 1); SavePlayerPrefs();
-                    break;
-                case RewardType.Bomb:
-                    DecreaseBombPowerUpCount();
-                    break;
-            }
-
-            GameTelemetry.Powerup(rewardType, false, "single");
-            return true;
         }
 
         public bool IsFirstLevelTutorial()
@@ -334,9 +286,6 @@ namespace Scripts
         void IncreaseRevealingPowerUpCount();
         void IncreaseLifePowerUpCount();
         void IncreaseBombPowerUpCount();
-        void DecreaseRevealingPowerUpCount();
-        void DecreaseLifePowerUpCount();
-        void DecreaseBombPowerUpCount();
         int GetLevelId();
         int GetGiftStarCount();
         int GetCrystalProgressCount();
@@ -346,7 +295,6 @@ namespace Scripts
         int GetLifePowerUpCount();
         int GetBombPowerUpCount();
         int GetPowerUpCount(RewardType rewardType);
-        bool TryConsumePowerUp(RewardType rewardType);
         RewardType GetCurrentRewardType();
     }
 

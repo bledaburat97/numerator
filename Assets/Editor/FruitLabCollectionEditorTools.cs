@@ -197,7 +197,7 @@ public static partial class FruitLabTutorialEditorTools
                 game.Results.LevelSuccessEvent+=(s,e)=>completion.Complete(true);
                 if(mode=="bomb")
                 {
-                    var bomb=new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+                    var bomb=game.Bomb;
                     var flags=TutorialProgress.Keys.ToDictionary(key=>key,key=>1);
                     using(TutorialProgress.UseTestValues(flags)) {game._powers.Refresh();Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Bomb));Tick(.5f);}
                     Require(game.Target.GetTargetCardsList().Count==3,"Bomb changes the awarded answer size");

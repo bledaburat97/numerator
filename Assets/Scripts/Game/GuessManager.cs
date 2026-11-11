@@ -20,15 +20,14 @@ namespace Game
 
         [Inject]
         public GuessManager(IResultManager resultManager, ILifeBarController lifeBarController,
-            ITargetNumberCreator targetNumberCreator, ICardItemInfoManager cardItemInfoManager,
-            IPowerUpMessageController powerUpMessageController, IGameUIController gameUIController,
+            IGameUIController gameUIController,
             IRoundStateManager roundStateManager)
         {
             resultManager.WrongGuessEvent += OnWrongGuess;
             _lifeBarController = lifeBarController;
             _gameUIController = gameUIController;
             _roundStateManager = roundStateManager;
-            powerUpMessageController.AddLifeEvent += AddExtraLives;
+
         }
         
         public void Initialize(bool deferRewardIntroAnimation = false)
@@ -93,11 +92,6 @@ namespace Game
             _gameUIController.TriggerResetNumbers();
         }
         
-        private void AddExtraLives(object sender, EventArgs args)
-        {
-            GrantExtraLives(3);
-        }
-
         public bool GrantExtraLives(int amount,bool expandCapacity = false)
         {
             int remaining = _roundStateManager.GetRemainingGuessCount(), maximum = _roundStateManager.GetMaxGuessCount();

@@ -30,11 +30,10 @@ namespace Scripts
                 : new GuessEvaluation(number,GuessSubmission.FromHistory(history[number-1]),_target.GetHistoryTargetCards());
         }
 
-        public bool TryApply(System.Func<bool> consumeInventory=null)
+        public bool TryApply()
         {
             if (!CanApply) return false;
             var guess = Latest();
-            if(consumeInventory!=null && !consumeInventory())return false;
             _save.GetLevelSaveData().RevealedGuessNumbers.Add(guess.Number);
             Applied?.Invoke(this, guess);
             return true;

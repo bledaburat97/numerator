@@ -37,6 +37,13 @@ namespace Scripts
             Container.Bind<PositionAssistanceController>().AsSingle();
             Container.Bind<Economy.UltraActivationService>().FromMethod(context=>new Economy.UltraActivationService(context.Container.Resolve<Economy.IPlayerProfileRepository>())).AsSingle();
             Container.Bind<UltraPowerUpController>().AsSingle();
+            Container.Bind<PowerUpRuntimeEffects>().AsSingle();
+            Container.Bind<PowerUpUseService>().FromMethod(context=>new PowerUpUseService(
+                context.Container.Resolve<ILevelTracker>(),context.Container.Resolve<ILevelDataCreator>(),context.Container.Resolve<ILevelSaveDataManager>(),
+                context.Container.Resolve<IRoundStateManager>(),context.Container.Resolve<ICardItemInfoManager>(),context.Container.Resolve<IBoardHolderCountManager>(),
+                context.Container.Resolve<ITargetNumberCreator>(),context.Container.Resolve<Economy.PowerUpUseJournal>(),context.Container.Resolve<IGameSaveService>(),
+                ()=>context.Container.Resolve<IGameSaveSnapshotProvider>(),()=>context.Container.Resolve<PowerUpRuntimeEffects>(),
+                ()=>context.Container.Resolve<IceBoardService>())).AsSingle();
             Container.Bind<IPositionNotesSettings>().To<PositionAssistanceController>().FromResolve();
             Container.Bind<PairEffect>().AsSingle();
             Container.Bind<BoardSplitService>().AsSingle();

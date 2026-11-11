@@ -36,7 +36,7 @@ namespace Scripts
             levelSaveData = null;
 
             var info = _cardItemInfoManager.GetCardItemInfoList();
-            bool mutatedBeforeGuess = _saveData?.GetLevelSaveData().Ice != null || _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
+            bool mutatedBeforeGuess = (_saveData?.GetLevelSaveData().PowerUpUseRevision??0)>0 || _saveData?.GetLevelSaveData().Ice != null || _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
                 || (_saveData?.GetLevelSaveData().UltraActive ?? false) || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || (info != null && info.Any(card => card.isLocked || !card.isExisted));
             bool hasNotes = _saveData?.GetLevelSaveData().PositionNotes?.Edited == true;
@@ -47,6 +47,7 @@ namespace Scripts
             levelSaveData = new LevelSaveData
             {
                 RoundId = _saveData?.GetLevelSaveData().RoundId,
+                PowerUpUseRevision = _saveData?.GetLevelSaveData().PowerUpUseRevision ?? 0,
                 TriedCardsList = CreateTriedCardsSnapshot(),
                 TargetCards = new List<int>(_targetNumberCreator.GetTargetCardsList()),
                 RemainingGuessCount = _roundStateManager.GetRemainingGuessCount(),

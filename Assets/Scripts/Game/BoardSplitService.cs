@@ -42,7 +42,7 @@ namespace Scripts
             get
             {
                 if (_tracker.GetGameOption() != GameOption.SinglePlayer || IsActive || _save == null || _target == null || _round == null
-                    || _round.GetRemainingGuessCount() <= 0) return false;
+                    || _round.GetRemainingGuessCount() <= 0 || _save.GetLevelSaveData().UltraActive) return false;
                 var answer = _target.GetTargetCardsList();
                 if (answer == null || answer.Count < 4 || answer.Count > 5) return false;
                 var history = _round.GetTriedCardsList();
@@ -50,9 +50,9 @@ namespace Scripts
             }
         }
 
-        public bool TryApply(Func<bool> consumeInventory)
+        public bool TryApply()
         {
-            if (!CanApply || (consumeInventory != null && !consumeInventory())) return false;
+            if (!CanApply) return false;
             _save.GetLevelSaveData().BoardSplitApplied = true;
             Applied?.Invoke(this,EventArgs.Empty);
             return true;

@@ -93,7 +93,7 @@ public static partial class FruitLabTutorialEditorTools
                         {
                             Click(button);Tick(.7f);Require(game.Tracker.GetPowerUpCount(type)==stock-1,"Explicit use spends one item: "+type);
                             if(type==RewardType.Bomb)Require(game._counts.GetBoardHolderCount()==count-1 && game.Target.GetTargetCardsList().Count==count-1,"Bomb shortens both board and hidden answer");
-                            if(type==RewardType.Life)Require(game.Round.GetRemainingGuessCount()==remaining+3,"Life visibly corresponds to exactly three added guesses");
+                            if(type==RewardType.Life)Require(game.Round.GetRemainingGuessCount()==remaining+2,"Life visibly corresponds to exactly two added guesses");
                             if(type==RewardType.Helper)Require(game._saves.GetLevelSaveData().RevealedGuessNumbers.Contains(game.Round.GetTriedCardsList().Count),"Helper reveals only the latest submitted guess");
                             if(type==RewardType.Pair)Require(game._saves.GetLevelSaveData().PairClue?.Matches(game.Target.GetTargetCardsList())==true,"Pair returns a real unordered adjacency clue");
                             if(type==RewardType.Split)Require(game._saves.GetLevelSaveData().BoardSplitApplied,"Split commits its partition");
@@ -142,22 +142,20 @@ public static partial class FruitLabTutorialEditorTools
         Field(game.Tracker,"_levelId",20);
         foreach(string field in new[]{"_bombPowerUpCount","_revealingPowerUpCount","_lifePowerUpCount","_helperPowerUpCount","_pairPowerUpCount","_splitPowerUpCount","_ultraPowerUpCount"})Field(game.Tracker,field,2);
         game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
-        var helper=new HelperEffect(game.Round,game.Target,game._saves);Field(helper,"_split",Get(game.Results,"_split"));
+        var helper=game.Helper;Field(helper,"_split",Get(game.Results,"_split"));
         helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
-        var pair=new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);pair.Changed+=(sender,clue)=>game.View.SetPairClue(clue);
-        Field(game._powers,"_helper",helper);Field(game._powers,"_pair",pair);Field(game.PowerMessages,"_helper",helper);Field(game.PowerMessages,"_pair",pair);
-        new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+        var pair=game.Pair;pair.Changed+=(sender,clue)=>game.View.SetPairClue(clue);
+
+        _ = game.Bomb;
         if(type==RewardType.Ultra)
         {
             var notes=AssistanceFor(game,PowerAuditLevel(),out _,false);notes.Refresh();game.ExtraDisposables.Add(notes);
-            var profile=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>{
-                var state=new Scripts.Economy.PlayerProfileData();state.Wallet.PowerUps[RewardType.Ultra]=2;return state;
-            });
-            profile.Changed+=()=>Field(game.Tracker,"_ultraPowerUpCount",profile.Snapshot().Wallet.PowerUps[RewardType.Ultra]);
             var di=new Zenject.DiContainer();di.Bind<PositionAssistanceController>().FromInstance(notes);di.Bind<ILevelSaveDataManager>().FromInstance(game._saves);
-            di.Bind<Scripts.Economy.UltraActivationService>().FromInstance(new Scripts.Economy.UltraActivationService(profile));
-            var ultra=di.Instantiate<UltraPowerUpController>();ultra.Configure(()=>true);
-            Field(game._powers,"_ultra",ultra);Field(game.PowerMessages,"_ultra",ultra);
+            di.Bind<Scripts.Economy.UltraActivationService>().FromInstance(new Scripts.Economy.UltraActivationService(game.PowerProfiles));
+            di.Bind<PowerUpUseService>().FromInstance(game.Uses);
+            var ultra=di.Instantiate<UltraPowerUpController>();
+            Field(game._powers,"_ultra",ultra);
+
         }
         if(type==RewardType.Helper)SubmitPowerAuditWrongGuess(game);
         if(type==RewardType.Life)for(int i=0;i<3;i++)SubmitPowerAuditWrongGuess(game);
@@ -241,7 +239,7 @@ public static partial class FruitLabTutorialEditorTools
                         Field(game.Bootstrap,"_levels",new MechanicLevel { Mechanic = mechanic });
                         if (mechanic == LevelMechanic.Pair)
                         {
-                            var pair = new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);
+                            var pair = game.Pair;
                             Require(pair.TryApply(),"Pair intro has a real adjacent pair"); game.View.SetPairClue(pair.Current);
                         }
                         game.Bootstrap.PrepareRound(); game.Bootstrap.StartRound();
@@ -400,12 +398,12 @@ public static partial class FruitLabTutorialEditorTools
                 for (int n = 0; n < 3; n++) { for (int fruit = 0; fruit < 3; fruit++) game.Place(fruit); game.Check(); Tick(.5f); }
                 game._powers.Refresh();
                 Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetLifePowerUpButton());
-                Require(game.Round.GetRemainingGuessCount() == 8, "Life award remains immediate model state");
+                Require(game.Round.GetRemainingGuessCount() == 7, "Life award remains immediate model state");
                 Tick(.13f);
                 var life = canvas.GetComponentInChildren<LifeBarView>(true);
                 var gain = life.transform.Find("LifeGain").GetComponent<TMP_Text>();
                 var glow = life.transform.Find("LifeGainGlow").GetComponent<Image>();
-                Require(gain.text == "+3" && gain.alpha > .7f && glow.color.a > .4f, "Life gain has an explicit +3 and bright bar pulse");
+                Require(gain.text == "+2" && gain.alpha > .7f && glow.color.a > .4f, "Life gain has an explicit +2 and bright bar pulse");
                 Layer(canvas.transform); Draw(camera); Capture(camera,Folder+"/preview-life-gain.png");
                 Tick(.7f);
                 Require(gain.alpha < .01f && life.transform.Find("GuessesRemaining").GetComponent<TMP_Text>().alpha > .99f
@@ -436,7 +434,7 @@ public static partial class FruitLabTutorialEditorTools
             Require(errors.Count == 0,"No Unity/tween errors: "+string.Join("; ",errors));
             File.WriteAllText(Folder+"/mobile-polish-review.json",JsonConvert.SerializeObject(new {
                 passed = true, scope = "single-player polish", crystal_launch_gap = .16f,
-                checks = new[] { "portrait settings", "unordered pair", "gravity/stretch stability", "live card endpoints", "fixed bottom-center attachments including rotation", "single-card movement", "real cord/card raycasts", "two-card drag/drop", "reverse placement", "occupied-slot protection", "fixed-card protection", "life +3 glow/pulse", "single-button tutorial", "19pt body text", "overlapping crystal flights", "overflow reward preservation", "powerup bar heading without subtitle", "reveal selection pulse and real board raycast", "reveal consumption and cancellation cleanup" }
+                checks = new[] { "portrait settings", "unordered pair", "gravity/stretch stability", "live card endpoints", "fixed bottom-center attachments including rotation", "single-card movement", "real cord/card raycasts", "two-card drag/drop", "reverse placement", "occupied-slot protection", "fixed-card protection", "life +2 glow/pulse", "single-button tutorial", "19pt body text", "overlapping crystal flights", "overflow reward preservation", "powerup bar heading without subtitle", "reveal selection pulse and real board raycast", "reveal consumption and cancellation cleanup" }
             },Formatting.Indented));
         }
         finally { DOTween.defaultUpdateType = previous; Application.logMessageReceived -= collect; }
@@ -616,7 +614,7 @@ public static partial class FruitLabTutorialEditorTools
                     Field(game.Tracker,"_levelId",20); Field(game.Tracker,"_splitPowerUpCount",2);
                     game.BuildActors(); game.Gate.Clear(); var answer = Enumerable.Range(1,count).ToArray(); game.Target.RevealMultiplayerAnswer(answer);
                     var split = (BoardSplitService)Get(game.Results,"_split");
-                    var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",split);
+                    var helper = game.Helper; Field(helper,"_split",split);
                     var provider = new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
                     Field(provider,"_saveData",game._saves); Field(provider,"_levels",new TestLevel(definition)); Field(provider,"_tracker",game.Tracker);
                     using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,split,game.Board))
@@ -678,7 +676,7 @@ public static partial class FruitLabTutorialEditorTools
                     game._saves.CreateDefaultLevelSaveData(); game.Round.Initialize(); game.Board.RefreshLayout();
                     Require(!split.IsActive && split.PartitionFor(count) == null,"Retry resets the manual effect");
                     Field(game.Tracker,"_splitPowerUpCount",0);
-                    Require(!split.TryApply(() => game.Tracker.TryConsumePowerUp(RewardType.Split)) && !split.IsActive,"No-stock activation cannot change state");
+                    Require(game.Uses.TryApply(RewardType.Split)==PowerUpUseResult.Unavailable && !split.IsActive,"No-stock activation cannot change state");
                     Field(game.Tracker,"_gameOption",GameOption.MultiPlayer); Require(!split.CanApply,"Split remains single-player");
                     Field(game.Tracker,"_gameOption",GameOption.SinglePlayer);
                     Field(game.Round,"_remainingGuessCount",0); Require(!split.CanApply,"A failed round cannot activate Split");

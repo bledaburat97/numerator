@@ -15,6 +15,8 @@ namespace Scripts.Economy
         public const int CurrentVersion = 5;
         [JsonProperty(Required=Required.Always)] public int Version = CurrentVersion;
         public long Revision;
+        // Optional additive field: older v5 profiles default to no pending powerup checkpoint.
+        public string PowerUpCheckpoint;
         [JsonProperty(Required=Required.Always)] public PlayerProgressData Progress = new PlayerProgressData();
         [JsonProperty(Required=Required.Always)] public PlayerWalletData Wallet = new PlayerWalletData();
         [JsonProperty(Required=Required.Always)] public Dictionary<FruitId,FruitBalance> Collection = EmptyCollection();

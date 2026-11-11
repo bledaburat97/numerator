@@ -83,9 +83,9 @@ public static partial class FruitLabTutorialEditorTools
             {
                 game.BuildActors(); game.Gate.Clear();
                 Field(game.Tracker, "_levelId", 24); Field(game.Tracker, "_helperPowerUpCount", 2);
-                var helper = new HelperEffect(game.Round, game.Target, game._saves);
+                var helper = game.Helper;
                 var eliminate = new EliminateFruitEffect(game.Target, game._info, game.Placement, game._saves);
-                Field(game._powers, "_helper", helper); Field(game.PowerMessages, "_helper", helper);
+
                 var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                 Field(snapshot, "_saveData", game._saves); Field(snapshot, "_tracker", game.Tracker);
                 var memory = new MemorySave();
@@ -133,7 +133,7 @@ public static partial class FruitLabTutorialEditorTools
             using (var game = new Fixture(canvas, camera))
             {
                 game.BuildActors(); game.Gate.Clear(); Field(game.Tracker, "_levelId", 24);
-                var helper = new HelperEffect(game.Round, game.Target, game._saves);
+                var helper = game.Helper;
                 using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
                     game.Target, game._area, game._powers, game.Tracker))
                 {
@@ -246,10 +246,10 @@ public static partial class FruitLabTutorialEditorTools
                     int remaining = game.Round.GetRemainingGuessCount();
                     Require(!growth.TryAdvance(new GuessEvaluation(6,game.Round.GetTriedCardsList()[5],game.Target.GetTargetCardsList()))
                         && game.Round.GetRemainingGuessCount() == remaining,"Repeated resolution cannot grow or grant lives twice");
-                    var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
+                    var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
                     Require(helper.TryApply() && helper.EvaluateGuess(1).Cards.Count == 2,"Helper can explain both the latest and an early short guess");
-                    var split = (BoardSplitService)Get(game.Results,"_split"); bool consumed = false;
-                    Require(!split.TryApply(() => { consumed = true; return true; }) && !consumed,"A grown board cannot activate Split after guesses");
+                    var split = (BoardSplitService)Get(game.Results,"_split"); int stockBefore=game.Tracker.GetPowerUpCount(RewardType.Split);
+                    Require(game.Uses.TryApply(RewardType.Split)==PowerUpUseResult.Unavailable && game.Tracker.GetPowerUpCount(RewardType.Split)==stockBefore,"A grown board cannot activate Split after guesses");
                     game._area.RemoveResultBlocks(); game.Results.TryAddTriedCards(); game._area.RevealAnswer(game.Target.GetTargetCardsList());
                     Require(provider.TryCreateSnapshot(out var decorated),"Powerup metadata stays in the growth checkpoint");
                     checkpoints.Add(decorated);
@@ -385,7 +385,7 @@ public static partial class FruitLabTutorialEditorTools
     private static GrowingBoardService GrowthFor(Fixture game,LevelData definition) => new GrowingBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game.Board,game._info,game.Round);
     private static LevelMechanicsController GrowingRules(Fixture game,LevelData definition,GrowingBoardService growth)
     {
-        var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
+        var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
         var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,(BoardSplitService)Get(game.Results,"_split"),game.Board,growth);
         Field(rules,"_levels",new TestLevel(definition)); return rules;
     }
@@ -431,7 +431,7 @@ public static partial class FruitLabTutorialEditorTools
                 Require(game.Target.GetProtectedTargetCards().Count == 4,"The removed fifth fruit is not protected as a future live answer");
                 if (misses > 0)
                 {
-                    var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
+                    var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
                     Require(helper.EvaluateGuess(misses).Cards.Count == saved.TriedCardsList[misses-1].Count && helper.TryApply(),"Legacy five-fruit history keeps its original Helper feedback");
                     var split = (BoardSplitService)Get(game.Results,"_split");
                     Require(!split.CanApply,"Any restored guess prevents a new Split activation");
@@ -620,7 +620,7 @@ public static partial class FruitLabTutorialEditorTools
             using (var game = new Fixture(canvas,camera,definition))
             {
                 PrepareDynamiteFixture(game); game._saves.GetLevelSaveData().Dynamite.BoardIndex = 2; var danger = DangerFor(game,definition);
-                var pair = new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);
+                var pair = game.Pair;
                 using (var rules = DangerRules(game,definition,danger,pair))
                 {
                     var provider = GrowingSnapshot(game,definition);
@@ -628,7 +628,7 @@ public static partial class FruitLabTutorialEditorTools
                         if (provider.TryCreateSnapshot(out var current)) Require(DynamiteRoundState.IsValid(current),"Every intermediate Pair/Bomb checkpoint has a valid danger slot");
                     });
                     rules.Begin(LevelMechanic.Dynamite); Require(pair.TryApply(),"Pair may precede Bomb on a danger level");
-                    var bomb = new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round); Field(bomb,"_dynamite",danger); Field(bomb,"_pair",pair);
+                    var bomb = game.Bomb; Field(bomb,"_dynamite",danger); Field(bomb,"_pair",pair);
                     Field(game.Tracker,"_bombPowerUpCount",1); game._powers.Refresh();
                     Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Bomb)); Tick(1.2f);
                     Require(game._counts.GetBoardHolderCount() == 2 && danger.Current.BoardIndex < 2 && danger.Current.Remaining == 4,"Bomb reconciles a removed hidden danger slot without spending a move");
@@ -699,7 +699,7 @@ public static partial class FruitLabTutorialEditorTools
     private static DynamiteService DangerFor(Fixture game,LevelData definition) => new DynamiteService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game._info,game.Placement,game._guess);
     private static LevelMechanicsController DangerRules(Fixture game,LevelData definition,DynamiteService danger,PairEffect pair = null)
     {
-        var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
+        var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
         var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,pair,(BoardSplitService)Get(game.Results,"_split"),game.Board,null,danger);
         Field(rules,"_levels",new TestLevel(definition)); rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); return rules;
     }
@@ -736,9 +736,9 @@ public static partial class FruitLabTutorialEditorTools
         public IceHarness(Fixture game,LevelData definition)
         {
             Service=new IceBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Round);
-            foreach(var owner in new object[]{game.Results,game.Placement,game.Reveal,game._powers,game.PowerMessages})Field(owner,"_ice",Service);
-            Helper=new HelperEffect(game.Round,game.Target,game._saves);Field(Helper,"_split",Get(game.Results,"_split"));
-            Field(game._powers,"_helper",Helper);Field(game.PowerMessages,"_helper",Helper);
+            foreach(var owner in new object[]{game.Results,game.Placement})Field(owner,"_ice",Service);
+            Helper=game.Helper;Field(Helper,"_split",Get(game.Results,"_split"));
+
             View=new IceBoardPresenter(Service,game.Board,game.Initial,game._info);
             Rules=new LevelMechanicsController(game.Results,Helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,
                 null,(BoardSplitService)Get(game.Results,"_split"),game.Board);
@@ -889,10 +889,14 @@ public static partial class FruitLabTutorialEditorTools
             for(int turn=1;turn<=8;turn++)SubmitIce(game,ice,new[]{6,7,8,9,1});
             Require(game.Round.GetRemainingGuessCount()==1 && !ice.Service.IsFrozen,"The original ninth/final guess is open");
             Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Life));
-            Require(game.Round.GetRemainingGuessCount()==4 && !ice.Service.IsFrozen,"Life retains its three-heart effect and never freezes an already thawed final turn");
-            for(int turn=9;turn<=11;turn++)SubmitIce(game,ice,new[]{6,7,8,9,1});
+            Require(game.Round.GetRemainingGuessCount()==3 && !ice.Service.IsFrozen,"Life grants exactly two attempts and never freezes an already thawed final turn");
+            for(int turn=9;turn<=10;turn++)SubmitIce(game,ice,new[]{6,7,8,9,1});
+            Require(game.Round.GetRemainingGuessCount()==1 && !ice.Service.IsFrozen,"Two extra lives preserve the odd final open turn");
+            // Older saves may contain a three-life grant; keep their even final-thaw compatibility.
+            Require(game._guess.GrantExtraLives(3),"A legacy odd grant may still be restored");
+            for(int turn=11;turn<=13;turn++)SubmitIce(game,ice,new[]{6,7,8,9,1});
             Require(game.Round.GetRemainingGuessCount()==1 && !ice.Service.IsFrozen && game._saves.GetLevelSaveData().Ice.FinalThaw,"An even final ordinal after Life also thaws");
-            Require(game._guess.GrantExtraLives(3) && !ice.Service.IsFrozen,"Extending the final even turn keeps that editing board open");
+            Require(game._guess.GrantExtraLives(2) && !ice.Service.IsFrozen,"Extending the final even turn keeps that editing board open");
             saved=IceSnapshot(game,definition);
             var view=canvas.GetComponentInChildren<ResultAreaView>(true);var scroll=view.GetComponentInParent<UnityEngine.UI.ScrollRect>();
             if(scroll!=null){scroll.verticalNormalizedPosition=1;scroll.onValueChanged.Invoke(Vector2.up);}
@@ -903,7 +907,7 @@ public static partial class FruitLabTutorialEditorTools
         using(var ice=new IceHarness(game,definition))
         {
             Field(game.Tracker,"_levelId",17);((MemorySave)Get(game,"_memory")).Save(saved);game._saves.SetLevelSaveDataAsSaved(saved);game.Round.Initialize();game.BuildActors();ice.Begin();
-            Require(!ice.Service.IsFrozen && game.Round.GetRemainingGuessCount()==4,"Resume preserves a final-thaw decision even after Life extended it");
+            Require(!ice.Service.IsFrozen && game.Round.GetRemainingGuessCount()==3,"Resume preserves a final-thaw decision even after Life extended it");
         }
     }
     private static void ReviewIceUltraAndSplit(Canvas canvas,Camera camera,LevelData definition)
@@ -913,21 +917,34 @@ public static partial class FruitLabTutorialEditorTools
         using(var ice=new IceHarness(game,definition))
         {
             Field(game.Tracker,"_levelId",17);game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});ice.Begin();
-            using(var notes=AssistanceFor(game,definition,out var view))
+            using(var notes=AssistanceFor(game,definition,out _,true))
             {
                 Require(notes.UltraActive && notes.SupportsAutomatic,"Ultra can activate on an iced board");
-                var split=(BoardSplitService)Get(game.Results,"_split");Require(split.TryApply(()=>true),"Split may be applied before an iced level's first guess");notes.Refresh();
-                Require(notes.SupportsAutomatic,"Ice+Split keeps Ultra's group-aware deduction enabled");
+                var split=(BoardSplitService)Get(game.Results,"_split");
+                Require(!split.CanApply && !game.Uses.CanUse(RewardType.Split),"Active Ultra prevents Split, including iced levels");
                 SubmitIce(game,ice,new[]{3,2,1,4,5});notes.Refresh();
                 SubmitIce(game,ice,new[]{3,2,5,4,0});notes.Refresh();
-                for(int slot=0;slot<5;slot++)Require(notes.State.IsPossible(slot+1,slot),"Split/ice public feedback cannot exclude the hidden true position");
-                Require(ice.Helper.TryApply(),"Helper can inspect an iced split row");notes.Refresh();
-                Require(notes.State.IsPossible(3,2),"A fruit absent from the first group is not globally absent");
-                var pair=new PairEffect(game.Round,game.Target,game._saves,game._info,game.Tracker);
-                Require(pair.Prepare(true) && pair.Current!=null,"Pair continues to reveal real neighboring fruit on an iced board");
+                for(int slot=0;slot<5;slot++)Require(notes.State.IsPossible(slot+1,slot),"Ice public feedback cannot exclude the hidden true position");
+            }
+        }
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        using(var ice=new IceHarness(game,definition))
+        {
+            Field(game.Tracker,"_levelId",17);Field(game.Tracker,"_splitPowerUpCount",1);game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});ice.Begin();
+            using(var notes=AssistanceFor(game,definition,out _,false))
+            {
+                Require(game.Uses.TryApply(RewardType.Split)==PowerUpUseResult.Applied,"Split may activate before an iced level's first guess");notes.Refresh();
+                Require(!notes.SupportsAutomatic && !game.Uses.CanUse(RewardType.Ultra),"Split prevents Ultra, including iced levels");
+                ice.Helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
                 SubmitIce(game,ice,new[]{3,2,1,4,5});
-                Require(ice.Service.IsFrozen,"Pair placement restriction is checked on a frozen editing turn");
-                Require(!game.Placement.TryPlacePairOnBoard(3,4,3),"A pair cannot bypass the frozen slot");
+                SubmitIce(game,ice,new[]{3,2,5,4,0});
+                Require(ice.Helper.TryApply(),"Helper can inspect an iced split row");
+                Require(((IResultHistorySource)game._area).GetHistoryEntry(1).hintStates[4]==CardResultState.Frozen,"A detailed split hint retains its frozen final cell");
+                var pair=game.Pair;
+                Require(pair.Prepare(true) && pair.Current!=null,"Pair reveals real neighboring fruit on an iced board");
+                SubmitIce(game,ice,new[]{3,2,1,4,5});
+                Require(ice.Service.IsFrozen && !game.Placement.TryPlacePairOnBoard(3,4,3),"A pair cannot bypass the frozen slot");
             }
         }
     }

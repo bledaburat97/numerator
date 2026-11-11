@@ -69,9 +69,9 @@ public static partial class FruitLabTutorialEditorTools
                 using (var game = new Fixture(canvas,camera,definition))
                 {
                     Field(game.Tracker,"_levelId",20); game.BuildActors(); game.Gate.Clear(); game.Target.RevealMultiplayerAnswer(answer);
-                    var helper = new HelperEffect(game.Round,game.Target,game._saves);
+                    var helper = game.Helper;
                     Field(helper,"_split",Get(game.Results,"_split"));
-                    Field(game._powers,"_helper",helper); Field(game.PowerMessages,"_helper",helper);
+
                     using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
                     {
                         rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Split);
@@ -137,7 +137,7 @@ public static partial class FruitLabTutorialEditorTools
                     Require(rows.Length == 6 && rows.All(row => row.IsSplit) && game.Round.GetRemainingGuessCount() == 4,"Resume rebuilds every split result without spending lives");
                     var groups = (IReadOnlyList<GuessGroupFeedback>)Get(rows[0],"_groups");
                     Require(groups[0].Correct == 2 && groups[1].Correct == count-4,"Resumed local counts match the original submitted guess");
-                    var helper = new HelperEffect(game.Round,game.Target,game._saves); Field(helper,"_split",Get(game.Results,"_split"));
+                    var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
                     using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
                     {
                         rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Split);
@@ -150,7 +150,7 @@ public static partial class FruitLabTutorialEditorTools
                 using (var game = new Fixture(canvas,camera,definition))
                 {
                     Field(game.Tracker,"_levelId",20); game.BuildActors(); game.Gate.Clear(); game.Target.RevealMultiplayerAnswer(answer);
-                    new BombPowerUpController(game.PowerMessages,game.Board,game.Placement,game.Target,game._info,game._counts,game.Round);
+                    _ = game.Bomb;
                     game._powers.Refresh(); Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Bomb)); Tick(1.2f);
                     Require(game.Target.GetTargetCardsList().Count == count-1,"Bomb removes the final split slot");
                     int wins = 0; game.Results.LevelSuccessEvent += (sender,args) => wins++;
@@ -170,8 +170,8 @@ public static partial class FruitLabTutorialEditorTools
                     var split = (BoardSplitService)Get(game.Results, "_split");
                     Require(split.CanApply, "Split is available before the first guess");
                     SubmitSplit(game, answer.Reverse().ToArray());
-                    bool consumed = false;
-                    Require(!split.CanApply && !split.TryApply(() => { consumed = true; return true; }) && !consumed,
+                    int stockBefore=game.Tracker.GetPowerUpCount(RewardType.Split);
+                    Require(!split.CanApply && game.Uses.TryApply(RewardType.Split)==PowerUpUseResult.Unavailable && game.Tracker.GetPowerUpCount(RewardType.Split)==stockBefore,
                         "Split cannot be applied or consume stock after even one guess");
                     var saved = GrowingSnapshot(game, normal); Require(saved.TryCreateSnapshot(out var snapshot), "Save the used board");
                     var restored = new LevelSaveDataManager(new TestLevel(normal)); restored.SetLevelSaveDataAsSaved(snapshot);

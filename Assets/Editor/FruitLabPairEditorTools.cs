@@ -48,9 +48,9 @@ public static partial class FruitLabTutorialEditorTools
                     Field(game.Tracker, "_levelId", 45); Field(game.Tracker, "_pairPowerUpCount", 2);
                     game.BuildActors(); game.Gate.Clear();
                     var answer = new[] {4,1,3,5,2}.Take(slots).ToArray(); game.Target.RevealMultiplayerAnswer(answer);
-                    var pair = new PairEffect(game.Round, game.Target, game._saves, game._info, game.Tracker);
-                    Field(game._powers, "_pair", pair); Field(game.PowerMessages, "_pair", pair);
-                    var helper = new HelperEffect(game.Round, game.Target, game._saves);
+                    var pair = game.Pair;
+
+                    var helper = game.Helper;
                     var eliminate = new EliminateFruitEffect(game.Target, game._info, game.Placement, game._saves);
                     var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                     Field(snapshot, "_saveData", game._saves); Field(snapshot, "_tracker", game.Tracker); Field(snapshot, "_levels", new TestLevel(definition));
@@ -77,22 +77,25 @@ public static partial class FruitLabTutorialEditorTools
                         Require(pair.Current.First == first.First && pair.Current.Second == first.Second
                             && game._info.GetCardItemInfoList().All(card => card.isExisted)
                             && game._saves.GetLevelSaveData().RevealedGuessNumbers.Count == 0, "Pair level never executes periodic Helper/elimination rules");
-                        // Retry state is new; the normal level must allow one manual application.
+                        // Move to a normal definition: Pair levels themselves always provide this clue for free.
+                        definition.Mechanic=LevelMechanic.Normal;
                         game._saves.CreateDefaultLevelSaveData(); game.Round.Initialize(); game._info.Initialize();
                         rules.Begin(LevelMechanic.Normal); game._powers.SetButtonsClickable(true);
                         Require(pair.Current == null && !game.View.HasPairClue && pair.CanApply, "Retry clears the prior relationship");
-                        Require(!pair.TryApply(() => false) && pair.Current == null && !game._saves.GetLevelSaveData().PairWasApplied, "Rejected inventory transaction leaves no clue or used flag");
+                        Field(game.Tracker,"_pairPowerUpCount",0);
+                        Require(game.Uses.TryApply(RewardType.Pair)==PowerUpUseResult.Unavailable && pair.Current==null && !game._saves.GetLevelSaveData().PairWasApplied,"Rejected use leaves no clue or used flag");
+                        Field(game.Tracker,"_pairPowerUpCount",2);
                         var button = (BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Pair);
                         Click(button); Tick(.3f);
                         Require(game.Tracker.GetPowerUpCount(RewardType.Pair) == 1 && pair.Current.Matches(answer) && game.View.HasPairClue, "Manual button uses the same effect and consumes exactly one");
                         Click(button);
-                        Require(game.Tracker.GetPowerUpCount(RewardType.Pair) == 1 && !pair.TryApply(() => throw new Exception("Cannot consume twice")), "Repeated use is rejected before inventory consumption");
+                        Require(game.Tracker.GetPowerUpCount(RewardType.Pair) == 1 && !pair.TryApply(), "Repeated use is rejected before inventory consumption");
                         Require(memory.Data.PairWasApplied && memory.Data.PairClue.Matches(answer), "Manual application checkpoints the relationship");
 
                         if (slots == 3)
                         {
                             game._saves.GetLevelSaveData().PairClue = new PairClue(answer[1], answer[2]);
-                            var bomb = new BombPowerUpController(game.PowerMessages, game.Board, game.Placement, game.Target, game._info, game._counts, game.Round);
+                            var bomb = game.Bomb;
                             Field(bomb, "_pair", pair);
                             Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetBombPowerUpButton()); Tick(.3f);
                             Require(game.Target.GetTargetCardsList().Count == 2 && pair.Current.Matches(game.Target.GetTargetCardsList()), "Bomb repairs a pair containing the removed last fruit");
@@ -136,7 +139,7 @@ public static partial class FruitLabTutorialEditorTools
                         game.Round.AddTriedCards(answer.ToList()); Require(!pair.CanApply, "Winning guess blocks subsequent use");
                         game.Round.Initialize();
                         while (game.Round.GetRemainingGuessCount() > 0) game.Round.DecreaseRemainingGuessCount();
-                        Require(!pair.TryApply(() => throw new Exception("Cannot consume after fail")), "No Pair after final failure");
+                        Require(!pair.TryApply(), "No Pair after final failure");
                         game.Tracker.SetGameOption(GameOption.MultiPlayer);
                         Require(!pair.CanApply && !pair.TryApply(), "Pair cannot be used in multiplayer");
                         game.View.SetOpponentInfoStatus(true); Require(!game.View.HasPairClue, "Multiplayer hides the clue row");
@@ -150,7 +153,7 @@ public static partial class FruitLabTutorialEditorTools
             {
                 Field(game.Tracker, "_levelId", 37); Field(game.Tracker, "_pairPowerUpCount", 1);
                 game.BuildActors();
-                var pair = new PairEffect(game.Round, game.Target, game._saves, game._info, game.Tracker);
+                var pair = game.Pair;
                 Require(pair.Prepare(true), "First encounter has an actual pair clue"); game.View.SetPairClue(pair.Current);
                 Field(game.Bootstrap, "_levels", new TestLevel(new LevelData { Mechanic = LevelMechanic.Pair }));
                 game.Bootstrap.StartRound(); Require(game.Message != null, "Pair level has a contextual explanation");

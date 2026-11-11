@@ -299,7 +299,7 @@ public static partial class FruitLabTutorialEditorTools
             using(var game=new Fixture(canvas,camera,definition))
             {
                 game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
-                var helper=new HelperEffect(game.Round,game.Target,game._saves);
+                var helper=game.Helper;
                 using(var rules=new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
                 using(var notes=AssistanceFor(game,definition,out var noteView,false))
                 {

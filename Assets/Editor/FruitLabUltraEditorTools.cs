@@ -114,16 +114,15 @@ public static partial class FruitLabTutorialEditorTools
                     notes.ResetNotes();SubmitAssistedGuess(game,new[]{1,2,3},notes);
                     Require(Enumerable.Range(1,7).All(fruit=>Enumerable.Range(0,3).All(slot=>notes.State.IsPossible(fruit,slot))),"Ordinary feedback never creates automatic notes");
                     notes.SetPresence(1,FruitPresence.Absent);
-                    var profile=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>{var p=new PlayerProfileData();p.Wallet.PowerUps[RewardType.Ultra]=1;return p;});
-                    var service=new UltraActivationService(profile);
+                    var profile=game.PowerProfiles;
+                    Field(game.Tracker,"_ultraPowerUpCount",1);
                     var container=new Zenject.DiContainer();container.Bind<PositionAssistanceController>().FromInstance(notes);
-                    container.Bind<ILevelSaveDataManager>().FromInstance(game._saves);container.Bind<UltraActivationService>().FromInstance(service);
-                    var power=container.Instantiate<UltraPowerUpController>();
-                    var activationSnapshot=new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
-                    Field(activationSnapshot,"_saveData",game._saves);Field(activationSnapshot,"_levels",new TestLevel(definition));Field(activationSnapshot,"_tracker",game.Tracker);
-                    int saves=0;
-                    power.Configure(()=>{saves++;return activationSnapshot.TryCreateSnapshot(out _,true);});
-                    Require(power.TryApply() && power.TryApply() && saves==2 && profile.Snapshot().Wallet.PowerUps[RewardType.Ultra]==0,"The actual power controller checkpoints before/after activation and repeat taps cost nothing");
+                    container.Bind<ILevelSaveDataManager>().FromInstance(game._saves);
+                    container.Bind<UltraActivationService>().FromInstance(new UltraActivationService(profile));
+                    container.Bind<PowerUpUseService>().FromInstance(game.Uses);
+                    var power=container.Instantiate<UltraPowerUpController>();Field(game._powers,"_ultra",power);
+                    Require(power.TryApply() && power.TryApply() && profile.Snapshot().Wallet.PowerUps[RewardType.Ultra]==0,
+                        "The actual controller uses the common atomic journal and repeat taps cost nothing");
                     Require(notes.UltraActive && !notes.CanResetNotes && !notes.CanEditNotes && !notes.State.HasManualChanges,"Ultra discards manual notes and disables editing/reset");
                     Require(notes.State.IsPossible(1,1) && !notes.State.IsPossible(1,0) && notes.State.Presence(1)==FruitPresence.Present,"Ultra rebuilds public history and ignores an incorrect manual exclusion");
                     var marked=(NormalCardItemView)game.Initial.GetRectTransformOfCardItem(0).GetComponent<NormalCardItemView>();
@@ -184,7 +183,7 @@ public static partial class FruitLabTutorialEditorTools
                     Require(!notes.UltraActive && !notes.IndicatorsVisible,"Retry/new round restores the initial normal state");
                     game.Target.RevealMultiplayerAnswer(new[]{2,3,1});game.Gate.Clear();
                     SubmitAssistedGuess(game,new[]{4,5,6},notes);
-                    var helper=new HelperEffect(game.Round,game.Target,game._saves);helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
+                    var helper=game.Helper;helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
                     Require(helper.TryApply(),"A real detailed hint is available");notes.Tick();
                     Require(!notes.IndicatorsVisible && !notes.CanEditFruit(4),"Verified absent detail cannot enable strips or be overwritten manually");
                     notes.SetPresence(4,FruitPresence.Present);Require(notes.State.Presence(4)==FruitPresence.Unknown,"A manual green command cannot contradict a verified absent fruit");
@@ -265,10 +264,203 @@ public static partial class FruitLabTutorialEditorTools
         Require(old.Version==PlayerProfileData.CurrentVersion && old.Wallet.PowerUps[RewardType.Ultra]==0 && old.Wallet.Coins==123 && old.Progress.LevelId==17,"Adding Ultra preserves existing balances/progression");
         var storage=new MemoryPlayerProfileStorage();
         var repository=new PlayerProfileRepository(storage,()=>{var state=new PlayerProfileData();state.Wallet.PowerUps[RewardType.Ultra]=1;return state;});
-        var activation=new UltraActivationService(repository);string id=Guid.NewGuid().ToString("N");
-        Require(!activation.IsActive(id) && activation.TryActivate(id) && activation.TryActivate(id),"Activation is repeat-safe");
+        string id=Guid.NewGuid().ToString("N");
+        var before=new LevelSaveData {RoundId=id};
+        var after=new LevelSaveData {RoundId=id,PowerUpUseRevision=1,UltraActive=true};
+        var journal=new PowerUpUseJournal(repository);var request=new PowerUpUseRequest(RewardType.Ultra);
+        Require(journal.Commit(before,after,request)==ProfileCommitResult.Applied && journal.Commit(before,after,request)==ProfileCommitResult.AlreadyApplied,"Activation is repeat-safe");
         Require(repository.Snapshot().Wallet.PowerUps[RewardType.Ultra]==0 && repository.Snapshot().Transactions.Count==1,"Only one Ultra is consumed");
-        var resumed=new UltraActivationService(new PlayerProfileRepository(storage,()=>throw new Exception("Must load")));
-        Require(resumed.IsActive(id) && !resumed.TryActivate(Guid.NewGuid().ToString("N")),"Receipt survives reload and empty stock cannot activate another round");
+        var resumed=new PowerUpUseJournal(new PlayerProfileRepository(storage,()=>throw new Exception("Must load")));
+        Require(resumed.Recover(before).UltraActive,"Activation checkpoint survives reload");
+
+    }
+}
+
+public static partial class FruitLabTutorialEditorTools
+{
+    public static void ReviewPowerUpUses(Canvas canvas,Camera camera)
+    {
+        var previous=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
+        string prefs=Profile();var errors=new List<string>();
+        Application.LogCallback collect=(message,stack,type)=>{if(type==LogType.Error || type==LogType.Exception || type==LogType.Assert)errors.Add(message);};
+        Application.logMessageReceived+=collect;
+        try
+        {
+            ValidateMechanicBindings();ReviewPowerUpJournal();
+            var definition=new LevelData {NumOfBoardHolders=4,NumOfCards=8,MaxNumOfTries=9};
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});
+                void Wrong(){for(int card=0;card<4;card++)game.Place(card);game.Check();Tick(.5f);}
+                Require(!game.Uses.CanUse(RewardType.Life),"Life unavailable before spending attempts");
+                Wrong();Require(!game.Uses.CanUse(RewardType.Life),"One spent attempt is insufficient");
+                Wrong();Require(game.Uses.CanUse(RewardType.Life),"Exactly two spent attempts unlock Life");
+                int stock=game.Tracker.GetPowerUpCount(RewardType.Life);
+                Require(game.Uses.TryApply(RewardType.Life)==PowerUpUseResult.Applied && game.Round.GetRemainingGuessCount()==9
+                    && game.Tracker.GetPowerUpCount(RewardType.Life)==stock-1,"One common use grants exactly two lives and spends one item");
+                Require(game.Uses.TryApply(RewardType.Life)==PowerUpUseResult.Unavailable && game.Tracker.GetPowerUpCount(RewardType.Life)==stock-1,"A duplicate click cannot overfill or spend again");
+                Require(((MemorySave)Get(game,"_memory")).Data.RemainingGuessCount==9,"The granted lives are checkpointed before animation completion");
+                Tick(.13f);var gain=canvas.GetComponentInChildren<LifeBarView>(true).transform.Find("LifeGain").GetComponent<TMP_Text>();
+                Require(gain.text=="+2","The existing life animation displays +2");
+            }
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
+                int stock=game.Tracker.GetPowerUpCount(RewardType.Bomb);
+                Require(game.Uses.TryApply(RewardType.Bomb)==PowerUpUseResult.Applied && game.Target.GetTargetCardsList().SequenceEqual(new[]{1,2,3})
+                    && game._counts.GetRemovedBoardHolderCount()==1 && game.Tracker.GetPowerUpCount(RewardType.Bomb)==stock-1,"Bomb commits the shortened answer and changes the live board");
+                Require(game.Uses.TryApply(RewardType.Bomb)==PowerUpUseResult.Unavailable,"Bomb is single-use");
+                Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetRevealingPowerUpButton());
+                int revealStock=game.Tracker.GetPowerUpCount(RewardType.Revealing);
+                game.PowerMessages.CloseActivePowerUp();Require(!game.Reveal.IsActive && game.Tracker.GetPowerUpCount(RewardType.Revealing)==revealStock,"Cancelling target selection consumes nothing");
+                Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetRevealingPowerUpButton());
+                Require(game.Reveal.TryRequestRevealCard(0) && game._info.GetCardItemInfoList()[0].isLocked
+                    && game.Tracker.GetPowerUpCount(RewardType.Revealing)==revealStock-1,"Reveal returns a real lock result and debits only the selected target");
+            }
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_pairPowerUpCount",1);Field(game.Tracker,"_splitPowerUpCount",1);
+                game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});
+                Require(game.Uses.TryApply(RewardType.Pair)==PowerUpUseResult.Applied && game.Pair.Current!=null,"Pair uses its prepared durable clue");
+                Require(game.Uses.TryApply(RewardType.Pair)==PowerUpUseResult.Unavailable,"A provided pair cannot be charged twice");
+                Require(game.Uses.TryApply(RewardType.Split)==PowerUpUseResult.Applied,"Split applies before the first guess");
+                Require(!game.Uses.CanUse(RewardType.Ultra),"Split and Ultra are mutually exclusive");
+                Field(game.Tracker,"_helperPowerUpCount",1);game.Helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
+                for(int card=0;card<4;card++)game.Place(card);game.Check();Tick(.5f);
+                Require(game.Uses.TryApply(RewardType.Helper)==PowerUpUseResult.Applied && game._saves.GetLevelSaveData().RevealedGuessNumbers.SequenceEqual(new[]{1}),"Helper uses the existing shared detailed effect");
+                Require(game.Uses.TryApply(RewardType.Helper)==PowerUpUseResult.Unavailable,"An already inspected row is not charged again");
+                Field(game.Tracker,"_gameOption",GameOption.MultiPlayer);
+                foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)Require(!game.Uses.CanUse(type) && game.Uses.TryApply(type)==PowerUpUseResult.Unavailable,"No multiplayer use: "+type);
+            }
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                Field(game.Tracker,"_levelId",20);Field(game.Tracker,"_ultraPowerUpCount",1);Field(game.Tracker,"_splitPowerUpCount",1);
+                game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});
+                using(var notes=AssistanceFor(game,definition,out _,false))
+                {
+                    var di=new Zenject.DiContainer();di.Bind<PositionAssistanceController>().FromInstance(notes);
+                    di.Bind<ILevelSaveDataManager>().FromInstance(game._saves);di.Bind<PowerUpUseService>().FromInstance(game.Uses);
+                    di.Bind<UltraActivationService>().FromInstance(new UltraActivationService(game.PowerProfiles));
+                    var ultra=di.Instantiate<UltraPowerUpController>();Field(game._powers,"_ultra",ultra);
+                    Require(ultra.TryApply() && ultra.TryApply() && notes.UltraActive && game.Tracker.GetPowerUpCount(RewardType.Ultra)==0,"Ultra shares the journal, survives zero stock and repeat activation costs nothing");
+                    Require(!game.Uses.CanUse(RewardType.Split) && !((BoardSplitService)Get(game.Results,"_split")).CanApply,"Both UI and effect reject Split after Ultra");
+                }
+            }
+            ReviewPowerUpInterruption(canvas,camera,definition);
+            Require(prefs==Profile(),"Powerup use review preserves real player preferences");
+            Require(errors.Count==0,"No powerup runtime errors: "+string.Join(" | ",errors));
+            File.WriteAllText(Folder+"/powerup-use-review.json",JsonConvert.SerializeObject(new {passed=true,life_grant=2,
+                checks=new[]{"seven shared CanUse/TryApply effects","central definitions","same-write stock and checkpoint","interruption recovery","duplicate receipts","later checkpoints preserved","other rounds isolated","storage failure leaves stock unchanged","actual Bomb and Reveal","cancel without charge","actual Helper Pair Split Ultra","Life +2 animation","mutual exclusion","multiplayer blocked","scene DI","real preferences preserved"}},Formatting.Indented));
+        }
+        finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=previous;}
+    }
+
+    private sealed class PowerUseFailingStorage : IPlayerProfileStorage
+    {
+        private readonly MemoryPlayerProfileStorage _inner=new MemoryPlayerProfileStorage();
+        public bool Fail;
+        public PlayerProfileData Load()=>_inner.Load();
+        public void Save(PlayerProfileData profile){if(Fail)throw new IOException("Simulated interrupted atomic write");_inner.Save(profile);}
+    }
+    private static void ReviewPowerUpJournal()
+    {
+        foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
+        {
+            var definition=PowerUpDefinition.Get(type);
+            Require(definition.Type==type && definition.TutorialKey==PowerUpTypeUtility.TutorialKey(type) && !string.IsNullOrEmpty(definition.IconName),"Central power definition: "+type);
+            var before=new LevelSaveData {RoundId=Guid.NewGuid().ToString("N"),Definition=new LevelData {NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=9},
+                TargetCards=new List<int>{1,2,3,4,5},TriedCardsList=new List<List<int>>(),RemainingGuessCount=type==RewardType.Life?7:9,
+                CardItemInfoList=Enumerable.Range(1,9).Select(_=>new CardItemInfo {isExisted=true,possibleCardHolderIndicatorIndexes=Enumerable.Range(0,5).ToList()}).ToList()};
+            if(type==RewardType.Helper)before.TriedCardsList.Add(new List<int>{6,2,5,4,1});
+            var context=new PowerUpContext {State=before,Answer=before.TargetCards,History=before.TriedCardsList,Cards=before.CardItemInfoList,
+                Remaining=before.RemainingGuessCount,Capacity=9,Slots=5,CanShrink=true};
+            var after=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));
+            var effect=PowerUpEffects.Get(type);int slot=type==RewardType.Revealing?2:-1;
+            Require(effect.CanUse(context,slot) && effect.TryApply(context,after,slot),"Effect can prepare without spending or changing live state: "+type);
+            after.PowerUpUseRevision=1;
+            var storage=new PowerUseFailingStorage();
+            var repository=new PlayerProfileRepository(storage,()=>{var profile=new PlayerProfileData();profile.Wallet.PowerUps[type]=2;return profile;});
+            repository.Snapshot();var journal=new PowerUpUseJournal(repository);var request=new PowerUpUseRequest(type,slot);
+            storage.Fail=true;
+            try{journal.Commit(before,after,request);throw new Exception("Storage should reject");}catch(IOException){}
+            Require(repository.Snapshot().Wallet.PowerUps[type]==2 && journal.Recover(before)==before,"Interrupted write cannot debit stock: "+type);
+            storage.Fail=false;
+            Require(journal.Commit(before,after,request)==ProfileCommitResult.Applied && journal.Commit(before,after,request)==ProfileCommitResult.AlreadyApplied,"Receipt retry is idempotent: "+type);
+            var reopened=new PlayerProfileRepository(storage,()=>throw new Exception("Must load existing profile"));
+            var recovered=new PowerUpUseJournal(reopened).Recover(before);
+            Require(reopened.Snapshot().Wallet.PowerUps[type]==1 && JsonConvert.SerializeObject(recovered)==JsonConvert.SerializeObject(after),"Closing before live effect/checkpoint restores the exact committed effect: "+type);
+            var later=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(after));later.RemainingGuessCount--;
+            Require(journal.Recover(later)==later,"A later saved guess is not rolled back: "+type);
+            var other=new LevelSaveData {RoundId=Guid.NewGuid().ToString("N")};Require(journal.Recover(other)==other,"Old effects cannot leak to retry/new round: "+type);
+        }
+    }
+}
+
+public static partial class FruitLabTutorialEditorTools
+{
+    private sealed class PowerUseControlledSave : IGameSaveService
+    {
+        public LevelSaveData Data;public int Writes,FailOn;
+        public LevelSaveData GetSavedLevel()=>Data;
+        public bool HasSavedGame()=>Data!=null;
+        public void DeleteSave()=>Data=null;
+        public void Save(LevelSaveData state)
+        {
+            if(++Writes==FailOn)throw new IOException("Simulated checkpoint interruption");
+            Data=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(state));
+        }
+    }
+    private static void ReviewPowerUpInterruption(Canvas canvas,Camera camera,LevelData definition)
+    {
+        foreach(int failure in new[]{0,1,2})
+        {
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();
+                game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});Field(game.Round,"_remainingGuessCount",7);
+                var profile=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>{var p=new PlayerProfileData();p.Wallet.PowerUps[RewardType.Life]=1;p.Wallet.PowerUps[RewardType.Revealing]=1;return p;});
+                var journal=new PowerUpUseJournal(profile);var saves=new PowerUseControlledSave {FailOn=failure};
+                var snapshots=GrowingSnapshot(game,definition);var split=(BoardSplitService)Get(game.Results,"_split");
+                var service=new PowerUpUseService(game.Tracker,new TestLevel(definition),game._saves,game.Round,game._info,game._counts,game.Target,journal,saves,
+                    ()=>snapshots,()=>failure==0?throw new IOException("Interrupted before live effect"):
+                        new PowerUpRuntimeEffects(game.Bomb,game._guess,game.Placement,game.Helper,game.Pair,split,null),()=>null);
+                int recovery=0;service.RecoveryRequired+=()=>recovery++;
+                var outcome=service.TryApply(RewardType.Life);
+                if(failure==1)
+                {
+                    Require(outcome==PowerUpUseResult.StorageFailed && recovery==0 && profile.Snapshot().Wallet.PowerUps[RewardType.Life]==1
+                        && game.Round.GetRemainingGuessCount()==7,"Failure before the base checkpoint spends nothing and changes no live state");
+                }
+                else
+                {
+                    Require(outcome==PowerUpUseResult.ResumeRequired && recovery==1 && profile.Snapshot().Wallet.PowerUps[RewardType.Life]==0,
+                        "An interrupted committed effect requests recovery and debits exactly once");
+                    Require(journal.Recover(saves.Data).RemainingGuessCount==9,"Recovery includes both lives even before live application or final checkpoint");
+                    Require(service.TryApply(RewardType.Life)==PowerUpUseResult.Unavailable && profile.Snapshot().Transactions.Count==1,"An interrupted pending operation cannot be charged again");
+                    var restored=journal.Recover(saves.Data);
+                    game._saves.SetLevelSaveDataAsSaved(restored);game.Round.Initialize();game._info.Initialize();
+                    Require(service.CanUse(RewardType.Revealing,0),"Reloading the same round clears the failed live-instance guard and restores other powers");
+                }
+            }
+        }
+        ClearPreviewActors(canvas);
+        var dangerDefinition=definition.Copy();dangerDefinition.Mechanic=LevelMechanic.Dynamite;
+        using(var game=new Fixture(canvas,camera,dangerDefinition))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});
+            using(var danger=new DynamiteService(new TestLevel(dangerDefinition),game.Tracker,game._saves,game.Target,game._info,game.Placement,game._guess))
+            {
+                danger.Prepare();danger.Current.BoardIndex=0;game.Results.GuessResolved+=(sender,guess)=>danger.Resolve(guess);
+                for(int turn=0;turn<2;turn++){for(int card=0;card<4;card++)game.Place(card);game.Check();Tick(.5f);}
+                Require(danger.Current.GuessesUsed==2 && game.Uses.TryApply(RewardType.Life)==PowerUpUseResult.Applied
+                    && game.Round.GetRemainingGuessCount()==9 && danger.Current.GuessesUsed==2 && !danger.Current.Disarmed,
+                    "Paid Life grants two global attempts without extending the four-move dynamite deadline");
+            }
+        }
     }
 }

@@ -7,10 +7,7 @@ namespace Scripts
 {
     public class GamePowerUpAreaController : IGamePowerUpAreaController
     {
-        [InjectOptional] private IceBoardService _ice;
-        [InjectOptional] private HelperEffect _helper;
-        [InjectOptional] private PairEffect _pair;
-        [InjectOptional] private BoardSplitService _split;
+        [Inject] private LazyInject<PowerUpUseService> _uses;
         [InjectOptional] private UltraPowerUpController _ultra;
         private const float DisabledAlpha = 0.55f;
         private const float EnabledAlpha = 1f;
@@ -18,9 +15,6 @@ namespace Scripts
         private readonly BaseButtonControllerFactory _baseButtonControllerFactory;
         private readonly IPowerUpListHolderView _view;
         private readonly ILevelTracker _levelTracker;
-        private readonly IRoundStateManager _roundStateManager;
-        private readonly ICardItemInfoManager _cardItemInfoManager;
-        private readonly IBoardHolderCountManager _boardHolderCountManager;
         private readonly Dictionary<RewardType, IBaseButtonController> _buttonControllers;
 
         private bool _isInitialized;
@@ -30,15 +24,11 @@ namespace Scripts
 
         [Inject]
         public GamePowerUpAreaController(BaseButtonControllerFactory baseButtonControllerFactory,
-            IPowerUpListHolderView view, ILevelTracker levelTracker, IRoundStateManager roundStateManager,
-            ICardItemInfoManager cardItemInfoManager, IBoardHolderCountManager boardHolderCountManager)
+            IPowerUpListHolderView view, ILevelTracker levelTracker)
         {
             _baseButtonControllerFactory = baseButtonControllerFactory;
             _view = view;
             _levelTracker = levelTracker;
-            _roundStateManager = roundStateManager;
-            _cardItemInfoManager = cardItemInfoManager;
-            _boardHolderCountManager = boardHolderCountManager;
             _buttonControllers = new Dictionary<RewardType, IBaseButtonController>();
         }
 
@@ -54,6 +44,7 @@ namespace Scripts
             }
 
             _view.SetRaycastStatus(true);
+            _uses.Value.Changed+=Refresh;
             foreach (var type in PowerUpTypeUtility.OrderedRewardTypes) CreateButtonController(type);
             _isInitialized = true;
             Refresh();
@@ -93,36 +84,7 @@ namespace Scripts
         }
 
         private bool IsPowerUpAvailable(RewardType rewardType)
-            => PowerUpAvailability.CanUse(rewardType,_levelTracker,_roundStateManager,_cardItemInfoManager,_boardHolderCountManager,_helper,_pair,_split,_ultra,_ice);
-    }
-
-    // UI availability and execution share the same eligibility rules.
-    public static class PowerUpAvailability
-    {
-        public static bool CanUse(RewardType type,ILevelTracker tracker,IRoundStateManager round,
-            ICardItemInfoManager info,IBoardHolderCountManager counts,HelperEffect helper,PairEffect pair,BoardSplitService split,UltraPowerUpController ultra=null,IceBoardService ice=null)
-        {
-            if(tracker.GetGameOption()!=GameOption.SinglePlayer || round.GetRemainingGuessCount()<=0
-                || tracker.GetPowerUpCount(type)<=0 || !PowerUpTypeUtility.IsUnlocked(type,tracker.GetLevelId()))return false;
-            switch(type)
-            {
-                case RewardType.Helper:return helper!=null && helper.CanApply;
-                case RewardType.Pair:return pair!=null && pair.CanApply;
-                case RewardType.Split:return split!=null && split.CanApply && (!(ultra?.Active??false) || ultra.SupportsSplit);
-                case RewardType.Ultra:return ultra!=null && ultra.CanApply;
-                case RewardType.Life:return round.GetRemainingGuessCount()+3<=round.GetMaxGuessCount();
-                case RewardType.Bomb:
-                    if(!counts.CanShrink || counts.GetBoardHolderCount()<=1 || round.GetTriedCardsList().Count>0 || counts.GetRemovedBoardHolderCount()>0)return false;
-                    foreach(var card in info.GetCardItemInfoList())if(card!=null && card.isLocked)return false;
-                    return true;
-                case RewardType.Revealing:
-                    int locked=0;
-                    foreach(var card in info.GetCardItemInfoList())
-                        if(card!=null && card.isLocked && !card.possibleCardHolderIndicatorIndexes.Contains(ice?.FrozenIndex??-1))locked++;
-                    return locked<counts.GetBoardHolderCount()-(ice?.IsFrozen==true?1:0);
-                default:return false;
-            }
-        }
+            => _uses.Value.CanUse(rewardType);
     }
 
     public interface IGamePowerUpAreaController

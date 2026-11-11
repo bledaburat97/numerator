@@ -8,6 +8,7 @@ namespace Scripts
 {
     public class GameSaveService : IGameSaveService
     {
+        [Zenject.InjectOptional] private Economy.PowerUpUseJournal _powerUps;
         private readonly string _saveGameKey = "saved_game_key";
         
         public LevelSaveData GetSavedLevel()
@@ -16,6 +17,7 @@ namespace Scripts
             try
             {
                 var data = JsonConvert.DeserializeObject<LevelSaveData>(PlayerPrefs.GetString(_saveGameKey));
+                if(_powerUps!=null)data=_powerUps.Recover(data);
                 if (data == null || data.TargetCards == null || data.CardItemInfoList == null || data.TriedCardsList == null
                     || data.RemainingGuessCount <= 0) return null;
                 if(data.Definition?.BonusReward is RewardType bonus && !System.Enum.IsDefined(typeof(RewardType),bonus))return null;
@@ -47,7 +49,7 @@ namespace Scripts
         public void Save(LevelSaveData levelSaveData)
         {
             if (levelSaveData == null) return;
-            string data = JsonConvert.SerializeObject(levelSaveData);
+            string data = JsonConvert.SerializeObject(_powerUps?.Recover(levelSaveData)??levelSaveData);
             PlayerPrefs.SetString(_saveGameKey, data);
             PlayerPrefs.Save();
         }
@@ -65,6 +67,7 @@ namespace Scripts
     public class LevelSaveData
     {
         public string RoundId;
+        public int PowerUpUseRevision;
         public List<List<int>> TriedCardsList;
         public List<int> TargetCards;
         public List<CardItemInfo> CardItemInfoList;

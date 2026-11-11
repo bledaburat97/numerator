@@ -57,10 +57,10 @@ public static partial class FruitLabTutorialEditorTools
                     foreach (string field in new[] { "_bombPowerUpCount", "_revealingPowerUpCount", "_lifePowerUpCount", "_helperPowerUpCount", "_pairPowerUpCount", "_splitPowerUpCount" }) Field(game.Tracker, field, 0);
                     game.BuildActors(); game.Gate.Clear();
                     game.Target.RevealMultiplayerAnswer(new[] {4,1,3,5,2}.Take(definition.NumOfBoardHolders).ToArray());
-                    var helper = new HelperEffect(game.Round, game.Target, game._saves);
-                    var pair = new PairEffect(game.Round, game.Target, game._saves, game._info, game.Tracker);
-                    Field(game._powers, "_helper", helper); Field(game._powers, "_pair", pair);
-                    Field(game.PowerMessages, "_helper", helper); Field(game.PowerMessages, "_pair", pair);
+                    var helper = game.Helper;
+                    var pair = game.Pair;
+
+
                     var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                     Field(snapshot, "_saveData", game._saves); Field(snapshot, "_levels", new TestLevel(definition)); Field(snapshot, "_tracker", game.Tracker);
                     using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
@@ -92,10 +92,10 @@ public static partial class FruitLabTutorialEditorTools
                             LevelPlaytestSchedule.PrepareTrialStock(game.Tracker, game._saves, definition);
                             Require(game.Tracker.GetPowerUpCount(type) == 1, "Preparation cannot accumulate extra stock");
                             if (type == RewardType.Helper) WrongGuess();
-                            if (type == RewardType.Life) for (int n = 0; n < 3; n++) WrongGuess();
+                            if (type == RewardType.Life) for (int n = 0; n < 2; n++) WrongGuess();
                             if (type == RewardType.Bomb)
                             {
-                                var bomb = new BombPowerUpController(game.PowerMessages, game.Board, game.Placement, game.Target, game._info, game._counts, game.Round);
+                                var bomb = game.Bomb;
                                 Field(bomb, "_pair", pair);
                             }
                             var button = (BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(type);
@@ -104,8 +104,8 @@ public static partial class FruitLabTutorialEditorTools
                             if (type == RewardType.Revealing) Require(game.Reveal.TryRequestRevealCard(0), "Reveal trial accepts a chosen slot");
                             if (type == RewardType.Life)
                             {
-                                Require(game.Round.GetRemainingGuessCount() == remaining + 3, "Extra lives commit before the visual animation");
-                                Require(snapshot.TryCreateSnapshot(out var lifeSave) && lifeSave.RemainingGuessCount == remaining + 3, "Pausing a life animation preserves the awarded lives");
+                                Require(game.Round.GetRemainingGuessCount() == remaining + 2, "Extra lives commit before the visual animation");
+                                Require(snapshot.TryCreateSnapshot(out var lifeSave) && lifeSave.RemainingGuessCount == remaining + 2, "Pausing a life animation preserves the awarded lives");
                             }
                             Tick(3.5f);
                             Require(game.Tracker.GetPowerUpCount(type) == 0, "Every trial actually consumes its prepared item");

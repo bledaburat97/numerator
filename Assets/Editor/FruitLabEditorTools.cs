@@ -264,6 +264,7 @@ public static class FruitLabEditorTools
                     reply.details = Render(5, 9, validation: FruitLabRetryValidation.Validate)
                         + "\n" + Render(2, 5, validation: FruitLabRetryValidation.Validate);
                     break;
+                case "powerup-use-review": FruitLabCardEditorTools.PrepareAssets();reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPowerUpUses,validateBeforeRender:true);break;
                 case "ice-review": FruitLabCardEditorTools.PrepareAssets();reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewIce,validateBeforeRender:true);break;
                 case "card-knowledge-review":
                     FruitLabCardEditorTools.PrepareAssets();

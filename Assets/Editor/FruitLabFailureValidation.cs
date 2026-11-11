@@ -63,7 +63,7 @@ public static class FruitLabFailureValidation
         var result = new ResultSource();
         var token = new TokenProbe();
         var life = new LifeProbe(token);
-        var manager = new GuessManager(result, life, null, null, new PowerSource(), new UiProbe(), round);
+        var manager = new GuessManager(result, life, new UiProbe(), round);
         int hints = 0, failures = 0;
         bool reveal = false;
         manager.HintRewardTokenEvent += (sender, args) => { hints++; reveal = args.CanRevealCard; };
@@ -180,11 +180,8 @@ public static class FruitLabFailureValidation
     }
     private class PowerSource : IPowerUpMessageController
     {
-        public event EventHandler RemoveBoardHolderEvent;
         public event EventHandler<GameUIButtonType> OpenPowerUpEvent;
         public event EventHandler<GameUIButtonType> ClosePowerUpEvent;
-        public event EventHandler AddLifeEvent;
-        public void Bomb() => RemoveBoardHolderEvent?.Invoke(this, EventArgs.Empty);
         public void CloseActivePowerUp() { }
     }
     private class TokenProbe : IRewardTokenView
@@ -283,7 +280,7 @@ public static class FruitLabFailureValidation
                         outlines[i] = (Image)new SerializedObject(card).FindProperty("resultOutline").objectReferenceValue;
                     }
                     Field(initial, "_normalCardItemControllerList", cards); Field(initial, "_numOfInitialHolders", cards.Length);
-                    var reveal = new RevealingPowerUpController(board, new PowerSource(), null, null, null, null,info);
+                    var reveal = new RevealingPowerUpController(board, new PowerSource(), null, null, null);
                     var placement = new CardPlacementCoordinator(board, null, new UiProbe(), indexes, indexes, reveal, initial, info);
                     Field(placement, "_numOfCards", cards.Length);
                     for (int i = 0; i < answer.Length; i++)
@@ -395,7 +392,7 @@ public static class FruitLabFailureValidation
             }
             Field(initial, "_normalCardItemControllerList", cards);
             Field(initial, "_numOfInitialHolders", fruitCount);
-            var reveal = new RevealingPowerUpController(board, powers, null, null, null, target,info);
+            var reveal = new RevealingPowerUpController(board, powers, null, null, target);
             var placement = new CardPlacementCoordinator(board, null, ui, indexes, indexes, reveal, initial, info);
             Field(placement, "_numOfCards", fruitCount);
             for (int i = 0; i < boardSize; i++)
@@ -416,9 +413,9 @@ public static class FruitLabFailureValidation
             bindings.Bind<ICardItemInfoManager>().FromInstance(info);
             bindings.Bind<IBoardHolderCountManager>().FromInstance(counts);
             bindings.Bind<IRoundStateManager>().FromInstance(round);
-            bindings.Instantiate<BombPowerUpController>();
+            var bomb=bindings.Instantiate<BombPowerUpController>();
             if (afterGuess) round.AddTriedCards(original);
-            powers.Bomb();
+            bomb.TryApply(saves.GetLevelSaveData());
             if (afterGuess || boardSize == 1)
             {
                 Require(counts.GetBoardHolderCount() == boardSize && target.GetTargetCardsList().SequenceEqual(original)
@@ -436,11 +433,11 @@ public static class FruitLabFailureValidation
             Require(info.GetCardItemInfoList().Count == fruitCount
                 && info.GetCardItemInfoList().All(card => card.possibleCardHolderIndicatorIndexes.All(index => index < expected.Count))
                 && info.GetCardItemInfoList()[0].possibleCardHolderIndicatorIndexes.SequenceEqual(new[] { 0 }), "Card notes remove only the vanished position without shifting other indexes");
-            powers.Bomb();
+            bomb.TryApply(saves.GetLevelSaveData());
             Require(target.GetTargetCardsList().SequenceEqual(expected) && counts.GetRemovedBoardHolderCount() == 1, "Repeated use cannot remove another fruit");
 
             var results = new BombResults();
-            var powerArea = new GamePowerUpAreaController(null, null, null, round, info, counts);
+            var powerArea = new GamePowerUpAreaController(null, null, null);
             var result = new ResultManager(ui, results, target, indexes, round, powerArea);
             int wins = 0, wrong = 0;
             result.LevelSuccessEvent += (sender, args) => wins++;
@@ -730,8 +727,15 @@ public static class FruitLabRetryValidation
             var powerView = canvas.GetComponentInChildren<PowerUpListHolderView>(true);
             var boardCounts = new BoardHolderCountManager(null, null);
             Field(boardCounts, "_boardHolderCount", canvas.GetComponentsInChildren<BoardHolderView>(true).Length);
-            var powers = new GamePowerUpAreaController(factory, powerView, tracker, round,
-                new CardItemInfoManager(null, null, null), boardCounts);
+            var powers = new GamePowerUpAreaController(factory, powerView, tracker);
+            var definition=new RetryPowerLevel(boardCounts.GetBoardHolderCount());
+            var state=new LevelSaveDataManager(definition);state.CreateDefaultLevelSaveData();
+            var info=new CardItemInfoManager(state,null,boardCounts);info.Initialize();
+            var target=objects.AddComponent<TargetNumberCreator>();
+            Field(target,"_targetCardsList",Enumerable.Range(1,boardCounts.GetBoardHolderCount()).ToList());
+            var uses=new PowerUpUseService(tracker,definition,state,round,info,boardCounts,target,null,null,null,null,()=>null);
+            container.Bind<PowerUpUseService>().FromInstance(uses);
+            Field(powers,"_uses",container.Resolve<LazyInject<PowerUpUseService>>());
             powers.Initialize();
             var view = canvas.GetComponentInChildren<GameUIView>(true);
             var ui = new GameUIController(factory, tracker, null, haptics, view, powers);
@@ -765,7 +769,7 @@ public static class FruitLabRetryValidation
             }
             // A retry unlocks the round; it must preserve inventory and bomb rules.
             Field(tracker, "_lifePowerUpCount", 0);
-            round.AddTriedCards(new List<int> { 1, 2 });
+            round.AddTriedCards(new List<int> { 2, 1 });
             ui.SetAllButtonsUnclickable();
             ui.Initialize(false);
             Press(buttons[3], pointer, canvas, camera);
@@ -785,6 +789,14 @@ public static class FruitLabRetryValidation
             Object.DestroyImmediate(events);
             Object.DestroyImmediate(objects);
         }
+    }
+
+    private sealed class RetryPowerLevel : ILevelDataCreator
+    {
+        private readonly LevelData _data;
+        public RetryPowerLevel(int count){_data=new LevelData {NumOfBoardHolders=count,NumOfCards=9,MaxNumOfTries=8};}
+        public LevelData GetLevelData()=>_data;
+        public void SetSinglePlayerLevelData(){}public void SetMultiplayerLevelData(){}
     }
 
     private static void Press(IBaseButtonView view, PointerEventData pointer, Canvas canvas, Camera camera)

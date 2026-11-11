@@ -94,7 +94,7 @@ namespace Scripts
             {
                 var type = definition.TrialPowerUp.Value;
                 string instruction = type == RewardType.Bomb ? "ilk tahminden önce"
-                    : type == RewardType.Life ? "3 hak harcadıktan sonra"
+                    : type == RewardType.Life ? PowerUpDefinition.Get(type).ExtraGuesses+" hak harcadıktan sonra"
                     : type == RewardType.Helper ? "bir tahminden sonra" : "denemeye hazır";
                 content = PowerUpTypeUtility.Name(type) + ": " + instruction;
             }

@@ -16,8 +16,7 @@ namespace Scripts
         private readonly IRoundStateManager _roundStateManager;
 
         [Inject]
-        public BombPowerUpController(IPowerUpMessageController powerUpMessageController,
-            IBoardAreaController boardAreaController,
+        public BombPowerUpController(IBoardAreaController boardAreaController,
             ICardPlacementCoordinator cardPlacementCoordinator,
             ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager,
@@ -30,27 +29,29 @@ namespace Scripts
             _cardItemInfoManager = cardItemInfoManager;
             _boardHolderCountManager = boardHolderCountManager;
             _roundStateManager = roundStateManager;
-            powerUpMessageController.RemoveBoardHolderEvent += OnRemoveBoardHolder;
         }
 
-        private void OnRemoveBoardHolder(object sender, EventArgs args)
+        public bool TryApply(LevelSaveData committed)
         {
             int boardCount = _boardHolderCountManager.GetBoardHolderCount();
             if (!_boardHolderCountManager.CanShrink || boardCount <= 1 || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || _roundStateManager.GetTriedCardsList().Count > 0
-                || _targetNumberCreator.GetTargetCardsList()?.Count != boardCount) return;
+                || _targetNumberCreator.GetTargetCardsList()?.Count != boardCount) return false;
 
             _cardPlacementCoordinator.TryResetPositionOfCardOnExplodedBoardHolder();
-            if (!_targetNumberCreator.TryRemoveLastTargetCard()) return;
+            if (!_targetNumberCreator.TryRemoveLastTargetCard()) return false;
             _boardAreaController.RemoveLastBoardHolder();
             _cardItemInfoManager.RemoveLastCardHolderIndicator();
+            if(committed.Dynamite!=null && _dynamite?.Current!=null)_dynamite.Current.BoardIndex=committed.Dynamite.BoardIndex;
             _dynamite?.Prepare();
             // Pair reconciliation can checkpoint; the hidden slot must already be valid.
-            _pair?.Reconcile();
+            _pair?.RestoreClue(committed.PairClue);
+            return true;
         }
     }
 
     public interface IBombPowerUpController
     {
+        bool TryApply(LevelSaveData committed);
     }
 }

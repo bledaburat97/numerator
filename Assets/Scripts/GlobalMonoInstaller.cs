@@ -9,6 +9,7 @@ namespace Scripts
         {
             Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>()
                 .To<BaseButtonController>();
+            Container.Bind<Economy.PowerUpUseJournal>().AsSingle();
             Container.Bind<IGameSaveService>().To<GameSaveService>().AsSingle();
             Container.Bind<Economy.IPlayerProfileRepository>().FromMethod(_=>Economy.PlayerProfileRuntime.Current).AsSingle();
             Container.Bind<Economy.IFruitInventoryService>().To<Economy.FruitInventoryService>().AsSingle();

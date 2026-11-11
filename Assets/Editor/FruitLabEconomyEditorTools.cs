@@ -160,7 +160,10 @@ public static class FruitLabEconomyEditorTools
                 Require(repository.Snapshot().Progress.LevelId==25 && tracker.GetCoinCount()==52 && tracker.GetCrystalProgressCount()==0
                     && repository.Snapshot().Collection[FruitId.Apple].Current==3,"Existing win/crystal conversion preserves collection");
                 int stock=tracker.GetPowerUpCount(RewardType.Revealing);
-                Require(tracker.TryConsumePowerUp(RewardType.Revealing) && repository.Snapshot().Wallet.PowerUps[RewardType.Revealing]==stock-1,"Existing powerup use saves through the shared profile");
+                var uses=new PowerUpUseJournal(repository);
+                var before=new LevelSaveData {RoundId=Guid.NewGuid().ToString("N")};
+                var after=new LevelSaveData {RoundId=before.RoundId,PowerUpUseRevision=1};
+                Require(uses.Commit(before,after,new PowerUpUseRequest(RewardType.Revealing))==ProfileCommitResult.Applied && repository.Snapshot().Wallet.PowerUps[RewardType.Revealing]==stock-1,"Common powerup journal refreshes the tracker wallet");
                 repository.Update(profile=>{profile.Wallet.Coins-=7;profile.Garden.Add("external-batch",new PlantingBatch {CellIndex=0,Fruit=FruitId.Apple,Quantity=7});});
                 Require(tracker.GetCoinCount()==45,"External transactions refresh the tracker wallet cache");
                 tracker.SavePlayerPrefs();
@@ -168,7 +171,8 @@ public static class FruitLabEconomyEditorTools
                 tracker.GrantIntroducedPowerUps();var introduced=repository.Snapshot();tracker.GrantIntroducedPowerUps();
                 Require(repository.Snapshot().Revision==introduced.Revision,"Introduced gifts and grant flags commit together and never repeat");
                 fail=true;stock=tracker.GetPowerUpCount(RewardType.Revealing);
-                Expect<IOException>(()=>tracker.TryConsumePowerUp(RewardType.Revealing));
+                before=new LevelSaveData {RoundId=Guid.NewGuid().ToString("N")};after=new LevelSaveData {RoundId=before.RoundId,PowerUpUseRevision=1};
+                Expect<IOException>(()=>uses.Commit(before,after,new PowerUpUseRequest(RewardType.Revealing)));
                 Require(tracker.GetPowerUpCount(RewardType.Revealing)==stock,"A failed save rolls the tracker back to its committed wallet");
                 fail=false;
             }

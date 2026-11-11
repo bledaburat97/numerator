@@ -55,7 +55,11 @@ namespace Scripts
         private List<PairClue> Candidates()
         {
             var answer = _target.GetTargetCardsList();
-            var info = _info.GetCardItemInfoList();
+            return Candidates(answer,_info.GetCardItemInfoList());
+        }
+
+        public static List<PairClue> Candidates(IReadOnlyList<int> answer,IReadOnlyList<CardItemInfo> info)
+        {
             var pairs = new List<PairClue>();
             for (int i = 1; i < answer.Count; i++)
             {
@@ -65,22 +69,38 @@ namespace Scripts
             return pairs;
         }
 
-        public bool TryApply(Func<bool> consumeInventory = null)
+        public static PairClue SelectClue(IReadOnlyList<int> answer,IReadOnlyList<CardItemInfo> info)
+        {
+            var candidates=Candidates(answer,info);
+            return candidates.Count>0?candidates[UnityEngine.Random.Range(0,candidates.Count)]:null;
+        }
+
+        public bool ApplyClue(PairClue selected)
+        {
+            if(!CanApply || selected==null || !selected.Matches(_target.GetTargetCardsList()))return false;
+            var state=_save.GetLevelSaveData();state.PairWasApplied=true;state.PairClue=selected;
+            Changed?.Invoke(this,selected);return true;
+        }
+
+        public bool TryApply()
         {
             if (!CanApply) return false;
             var candidates = Candidates();
             var selected = candidates[UnityEngine.Random.Range(0, candidates.Count)];
-            if (consumeInventory != null && !consumeInventory()) return false;
-            var state = _save.GetLevelSaveData();
-            state.PairWasApplied = true; state.PairClue = selected;
-            Changed?.Invoke(this, selected);
-            return true;
+            return ApplyClue(selected);
         }
 
         public bool Prepare(bool pairLevel)
         {
             Reconcile();
             return pairLevel && TryApply();
+        }
+
+        public void RestoreClue(PairClue clue)
+        {
+            var state=_save.GetLevelSaveData();state.PairClue=clue;
+            if(clue!=null)state.PairWasApplied=true;
+            Changed?.Invoke(this,clue);
         }
 
         // Bomb changes the answer before the first guess. Never leave a stale fruit in the clue.
