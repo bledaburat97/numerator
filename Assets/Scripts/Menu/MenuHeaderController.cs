@@ -10,11 +10,12 @@ namespace Scripts
         private bool _initialized;
         public MenuHeaderController(IMenuHeaderView view,IPlayerProfileRepository profiles)
         {
-            _view=view;_profiles=profiles;_profiles.Changed+=Refresh;
+            _view=view;_profiles=profiles;_profiles.Updated+=OnProfileChanged;
         }
         public void Initialize(ILevelTracker levelTracker){_initialized=true;Refresh();}
+        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Coins))Refresh();}
         private void Refresh(){if(_initialized)_view.Init(_profiles.Snapshot().Wallet.Coins);}
-        public void Dispose()=>_profiles.Changed-=Refresh;
+        public void Dispose()=>_profiles.Updated-=OnProfileChanged;
     }
     public interface IMenuHeaderController
     {

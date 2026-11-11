@@ -111,3 +111,71 @@ namespace Scripts.Economy
         }
     }
 }
+
+namespace Scripts.Economy
+{
+    public sealed class PendingDuelAward
+    {
+        public string MatchId;public int Round;public int[] Answer;public RewardType Reward;
+        public string Id=>MatchId+":"+Round;
+    }
+    public interface IPendingRewardStorage { string Read();void Write(string data); }
+    public sealed class PlayerPrefsRewardStorage : IPendingRewardStorage
+    {
+        private const string Key="pending_duel_rewards_v1";private readonly bool _isolated;private string _memory;
+        public PlayerPrefsRewardStorage(bool isolated=false){_isolated=isolated;}
+        public string Read()=>_isolated?_memory:UnityEngine.PlayerPrefs.GetString(Key,null);
+        public void Write(string data)
+        {if(_isolated){_memory=data;return;}UnityEngine.PlayerPrefs.SetString(Key,data);UnityEngine.PlayerPrefs.Save();}
+    }
+    // App-owned outbox: a failed award survives rematches, scene changes and relaunch.
+    public sealed class DuelRewardRecovery : Zenject.IInitializable,Zenject.ITickable
+    {
+        private readonly IGameWinRewardService _rewards;private readonly IPendingRewardStorage _storage;
+        private readonly Dictionary<string,PendingDuelAward> _records=new Dictionary<string,PendingDuelAward>();
+        private readonly Dictionary<string,Game.RewardSettlement<GameWinAward>> _jobs=new Dictionary<string,Game.RewardSettlement<GameWinAward>>();
+        private bool _loaded;
+        public DuelRewardRecovery(IGameWinRewardService rewards,IPendingRewardStorage storage){_rewards=rewards;_storage=storage;}
+        public void Initialize()
+        {
+            if(_loaded)return;_loaded=true;
+            try
+            {
+                var text=_storage.Read();if(string.IsNullOrEmpty(text))return;
+                foreach(var record in JsonConvert.DeserializeObject<List<PendingDuelAward>>(text)??new List<PendingDuelAward>())Register(record);
+            }
+            catch(Exception error){UnityEngine.Debug.LogWarning("Pending duel rewards could not load: "+error);}
+        }
+        public Game.RewardSettlement<GameWinAward> Register(PendingDuelAward record)
+        {
+            if(record==null || !Guid.TryParseExact(record.MatchId,"N",out _) || record.Round<1 || record.Answer==null || record.Answer.Length<2 || record.Answer.Length>5
+                || record.Answer.Any(fruit=>fruit<1 || fruit>9) || record.Answer.Distinct().Count()!=record.Answer.Length || record.Reward<0 || record.Reward>RewardType.Bomb)throw new ArgumentException("Invalid pending duel award.");
+            if(_jobs.TryGetValue(record.Id,out var existing))
+            {
+                if(_records.TryGetValue(record.Id,out var original) && (original.Reward!=record.Reward || !original.Answer.SequenceEqual(record.Answer)))throw new ArgumentException("Conflicting pending duel award.");
+                return existing;
+            }
+            record=new PendingDuelAward{MatchId=record.MatchId,Round=record.Round,Answer=(int[])record.Answer.Clone(),Reward=record.Reward};
+            _records[record.Id]=record;
+            var job=new Game.RewardSettlement<GameWinAward>(()=>{
+                Save(); // Persist the intention before attempting the wallet write.
+                var award=_rewards.Duel(record.MatchId,record.Round,record.Answer,record.Reward);
+                _records.Remove(record.Id);
+                try{Save();}catch{_records[record.Id]=record;throw;}
+                if(!award.IsReplay)ObserverNotification.Run(()=>GameTelemetry.Powerup(record.Reward,true,"duel"));
+                return award;
+            });
+            _jobs.Add(record.Id,job);return job;
+        }
+        private void Save()=>_storage.Write(JsonConvert.SerializeObject(_records.Values.ToArray()));
+        public void Tick()
+        {
+            foreach(var entry in _jobs.ToArray())
+            {
+                var job=entry.Value;
+                if(job.State==Game.RewardSaveState.Pending)job.Retry();else job.Tick();
+                if(job.State==Game.RewardSaveState.Completed)_jobs.Remove(entry.Key);
+            }
+        }
+    }
+}

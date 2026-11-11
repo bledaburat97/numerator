@@ -188,7 +188,7 @@ public static partial class FruitLabTutorialEditorTools
             foreach(var mode in new[]{GameOption.SinglePlayer,GameOption.MultiPlayer})
             {
                 var root=new GameObject("ContractBindingTracker");root.SetActive(false);SceneManager.MoveGameObjectToScene(root,scene);
-                ILevelSession session=null;PositionAssistanceController assistance=null;
+                ILevelSession session=null;PositionAssistanceController assistance=null;DisposableManager owner=null;
                 try
                 {
                     var tracker=root.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_gameOption",mode);
@@ -210,8 +210,15 @@ public static partial class FruitLabTutorialEditorTools
                     if(mode==GameOption.SinglePlayer)Require(ReferenceEquals(session,container.Resolve<ISinglePlayerProgression>()),"Progression belongs to the active singleplayer session");
                     else Require(!(session is ISinglePlayerProgression),"Multiplayer does not expose singleplayer progression");
                     assistance=container.Resolve<PositionAssistanceController>();container.ResolveRoots();
+                    var lifetimes=container.ResolveAll<IDisposable>();
+                    Require(lifetimes.Count==lifetimes.Distinct().Count() && lifetimes.Count(value=>ReferenceEquals(value,session))==1,
+                        "Scene services and the active session have exactly one disposal registration");
+                    Require(lifetimes.OfType<HintProvider>().Count()==1 && lifetimes.OfType<ResultManager>().Count()==1
+                        && lifetimes.OfType<PositionAssistanceView>().Count()==1 && lifetimes.OfType<TutorialBootstrapper>().Count()==1,
+                        "Input, hint, note-view and tutorial subscriptions belong to the scene container");
+                    owner=container.Instantiate<DisposableManager>();
                 }
-                finally {assistance?.Dispose();session?.Dispose();UnityEngine.Object.DestroyImmediate(root);}
+                finally {if(owner!=null)owner.Dispose();else{assistance?.Dispose();session?.Dispose();}UnityEngine.Object.DestroyImmediate(root);}
             }
         }
         finally {EditorSceneManager.ClosePreviewScene(scene);}
@@ -241,7 +248,7 @@ public static partial class FruitLabTutorialEditorTools
                 ClickContractGameButton(canvas);Require(session.State==LevelFlowState.Transitioning,"Next-level action enters the transition");
                 for(int i=0;i<15;i++)Tick(.1f);game.Gate.Clear();
                 Require(!session.IsGameOver && session.State==LevelFlowState.Playing && game.Tracker.GetLevelId()==2,"Next-level action builds a fresh playable round");
-                game._guess.FailRound();for(int i=0;i<35;i++)Tick(.1f);
+                game._guess.FailRound();session.FinishRound(false);for(int i=0;i<35;i++)Tick(.1f);
                 Require(popups.Ends==2 && !popups.LastOutcome && popups.EndLevel==2,"Failure ends its tutorial once without advancing the level");
                 Require(session.State==LevelFlowState.EndingFail && saves.Data==null,"Failure clears the old checkpoint without advancing progress");
                 ClickContractGameButton(canvas);for(int i=0;i<20;i++)Tick(.1f);game.Gate.Clear();
@@ -268,7 +275,7 @@ public static partial class FruitLabTutorialEditorTools
         }
     }
 
-    private static SinglePlayerSession CreateContractSession(Fixture game,LevelData definition)
+    private static SinglePlayerSession CreateContractSession(Fixture game,LevelData definition,Scripts.Economy.IPlayerProfileStorage storage=null)
     {
         var popups=new ContractPopups {Level=game.Tracker.GetLevelId};var cardInfo=new ContractCardInfo();
         var popup=new LevelEndPopupController(game.Canvas.GetComponentInChildren<LevelFinishPopupView>(true));
@@ -282,10 +289,11 @@ public static partial class FruitLabTutorialEditorTools
         var builder=new RoundBuilder(new TestLevel(definition),game._saves,game.Board,game._counts,game.Target,game._area,life,game.Initial,game.UI,game._powers,
             (ICardItemLocator)Get(game.Placement,"_cardItemLocator"),game._guess,game._info,cardInfo,game.Placement,(ICardInteractionManager)Get(game,"_interaction"),game.Results,game.Round,game._area.History);
         var saves=(MemorySave)Get(game,"_memory");
-        var rewards=CollectionFixtureRewards(game,out var profiles);
-        return new SinglePlayerSession(game.Tracker,new TestLevel(definition),saves,game._saves,game._counts,popups,game._guess,game.Results,game.Round,
+        var rewards=CollectionFixtureRewards(game,out var profiles,storage);
+        var session=new SinglePlayerSession(game.Tracker,new TestLevel(definition),saves,game._saves,game._counts,popups,game._guess,game.Results,game.Round,
             new SinglePlayerRoundCompletion(game.Tracker,game.Round,saves,game._saves,game.Target,rewards,new Scripts.Economy.AchievementService(profiles,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))),new SinglePlayerEndPresenter(popups,game.UI,game._area,game.Target,cardInfo,bar,popup,success,failure),
             null,builder,new LevelPresentation(popups,game._powers,bar,new ContractStartAnimation(),popup,failure,fade));
+        game.Results.TurnFlow.Outcome=session;return session;
     }
     private static void ClickContractGameButton(Canvas canvas)
     {
@@ -401,6 +409,9 @@ public static partial class FruitLabTutorialEditorTools
     }
     private sealed class ContractMultiplayer : IMultiplayerGameController
     {
+        public RewardSaveState RewardState=>RewardSaveState.Completed;
+        public void RetryReward(){}
+        public event EventHandler<RewardSaveState> RewardSaveChanged {add{}remove{}}
         public MultiplayerPublicState PublicState;
         public ulong LocalPlayerId=>1;public double ServerTime=>0;public MultiplayerPublicState State=>PublicState;
         public bool IsLocalTurn=>State.Phase==MultiplayerPhase.Playing && State.CurrentPlayer==LocalPlayerId;
@@ -557,5 +568,229 @@ public static partial class FruitLabTutorialEditorTools
         public void IncreaseRevealingPowerUpCount(){}public void IncreaseLifePowerUpCount(){}public void IncreaseBombPowerUpCount(){}
         public int GetGiftStarCount()=>0;public int GetCrystalProgressCount()=>0;public int GetStarCount()=>0;public int GetCoinCount()=>0;
         public int GetRevealingPowerUpCount()=>0;public int GetLifePowerUpCount()=>0;public int GetBombPowerUpCount()=>0;public int GetPowerUpCount(RewardType type)=>0;public RewardType GetCurrentRewardType()=>RewardType.Revealing;
+    }
+}
+
+public static partial class FruitLabTutorialEditorTools
+{
+    public static void ReviewEventFlows(Canvas canvas,Camera camera)
+    {
+        string prefs=Profile();var previous=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
+        var unexpected=new List<string>();int injected=0;
+        Application.LogCallback log=(message,stack,type)=>{
+            if(type!=LogType.Exception && type!=LogType.Error && type!=LogType.Assert)return;
+            if(message.Contains("Injected"))injected++;else unexpected.Add(message);
+        };
+        Application.logMessageReceived+=log;
+        try
+        {
+            ReviewTurnNotifications(canvas,camera);
+            ReviewTerminalMechanic(canvas,camera);
+            ReviewRewardWriteFailures(canvas,camera);
+            ReviewModalCancellation(canvas,camera);
+            ReviewNetworkObserverFailures(canvas,camera);
+            ReviewProfileAreas(canvas,camera);
+            Require(injected>=5,"Throwing observers and transport failures were exercised");
+            Require(unexpected.Count==0,"No unexpected event-flow errors: "+string.Join(" | ",unexpected));
+            Require(prefs==Profile(),"Event-flow regressions preserve real player preferences");
+            System.IO.File.WriteAllText(Folder+"/event-flow-review.json",Newtonsoft.Json.JsonConvert.SerializeObject(new {passed=true,injected_errors=injected,checks=new[]{"rules finish before UI notifications","single win file-write failure and same-ID retry","pending win checkpoint","duel result published despite failed reward write","durable duel outbox and replay","normal and pair drag cancelled by information modal","late drag rejected","critical powerup recovery precedes broken observer","network command precedes broken observer","typed profile areas ignore telemetry-only updates"}},Newtonsoft.Json.Formatting.Indented));
+        }
+        finally{Application.logMessageReceived-=log;DOTween.defaultUpdateType=previous;}
+    }
+    private static void ReviewTurnNotifications(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);var definition=new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9,Mechanic=LevelMechanic.Helper};
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
+            using(var rules=RulesFor(game,new LevelMechanicsController(game.Results,game.Helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker)))
+            {
+                rules.Begin(LevelMechanic.Helper);int notifications=0;
+                game._area.History.Changed+=()=>{
+                    notifications++;int turn=game.Round.GetTriedCardsList().Count;
+                    Require(game.Round.GetRemainingGuessCount()==9-turn,"UI sees already-consumed lives");
+                    if(turn==3)Require(game._saves.GetLevelSaveData().RevealedGuessNumbers.Contains(3) && game._area.History.GetHistoryEntry(2).hintStates!=null,"UI sees completed helper rules and evidence");
+                    throw new Exception("Injected result observer");
+                };
+                game.Results.WrongGuessEvent+=(s,e)=>throw new Exception("Injected wrong-guess observer");
+                for(int turn=0;turn<3;turn++){for(int card=3;card<6;card++)game.Place(card);game.Check();Tick(.5f);}
+                Require(notifications==3 && game.Round.GetRemainingGuessCount()==6,"A broken observer cannot prevent a complete turn");
+            }
+        }
+    }
+    private sealed class CountPreparedHints : IHintProvider
+    {public int Count;public Action<IRewardTokenView> PrepareHint(bool reveal){Count++;return null;}}
+    private static void ReviewTerminalMechanic(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);var definition=new LevelData{NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=9,Mechanic=LevelMechanic.Dynamite};
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4,5});
+            game._saves.GetLevelSaveData().Dynamite.BoardIndex=1;var danger=DangerFor(game,definition);
+            using(var rules=DangerRules(game,definition,danger))
+            {
+                rules.Begin(LevelMechanic.Dynamite);var hints=new CountPreparedHints();game.Results.TurnFlow.Hints=hints;
+                for(int turn=1;turn<=4;turn++)
+                {
+                    if(turn==4)Field(game.Round,"_remainingGuessCount",4);
+                    for(int index=0;index<5;index++)Require(game.Placement.TryPlaceCardOnBoard(new[]{5,6,7,8,0}[index],index),"Prepare a dynamite miss");
+                    game.Check();Tick(.5f);
+                }
+                Require(danger.Current.Exploded && game.Round.GetRemainingGuessCount()==0 && hints.Count==0,"Terminal mechanics finish before crystal help and cannot be rescued by that turn's hint");
+            }
+        }
+    }
+    private static void ReviewRewardWriteFailures(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);var definition=new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9};
+        string path=Folder+"/EventAwards/"+Guid.NewGuid().ToString("N")+".json";System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+        bool fail=false;var storage=new Scripts.Economy.AtomicPlayerProfileStorage(path,beforePublish:()=>{if(fail)throw new System.IO.IOException("Injected reward file write");});
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",1);
+            using(var session=CreateContractSession(game,definition,storage))
+            {
+                var di=new DiContainer();di.Bind<IGameSaveSnapshotProvider>().FromInstance(GrowingSnapshot(game,definition));Field(session,"_snapshots",di.Resolve<LazyInject<IGameSaveSnapshotProvider>>());
+                session.Begin(LevelEntryMode.New);Tick(.5f);game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
+                string id=game._saves.GetLevelSaveData().RoundId;fail=true;
+                for(int index=0;index<3;index++)Require(game.Placement.TryPlaceCardOnBoard(index,index),"Prepare the winning guess");
+                game.Check();
+                var save=(MemorySave)Get(game,"_memory");
+                Require(session.IsGameOver && session.RewardState==RewardSaveState.RetryRequired && save.Data.HasPendingWin() && save.Data.RoundId==id,"Failed award write preserves the won state and a durable same-ID result checkpoint");
+                Require(canvas.GetComponentInChildren<LevelFinishPopupView>(true).GetComponentsInChildren<TMPro.TMP_Text>().Any(text=>text.text=="Ödül kaydedilemedi."),"The player sees reward save failure");
+                session.GoToNextLevel();Require(session.State==LevelFlowState.EndingSuccess,"Progress cannot skip an unsettled reward");
+                session.Dispose();
+                using(var resumed=CreateContractSession(game,definition,storage))
+                {
+                    Field(resumed,"_snapshots",di.Resolve<LazyInject<IGameSaveSnapshotProvider>>());
+                    resumed.Begin(LevelEntryMode.Resume);
+                    Require(resumed.IsGameOver && resumed.RewardState==RewardSaveState.RetryRequired && game._saves.GetLevelSaveData().RoundId==id,"Reopening a won round restores its unsettled same-ID reward");
+                    fail=false;resumed.RetryReward();resumed.RetryReward();
+                    var profile=storage.Load();
+                    Require(resumed.RewardState==RewardSaveState.Completed && profile.Progress.LevelId==2 && profile.Transactions.Keys.Count(key=>key=="single:"+id)==1
+                        && profile.Collection[Scripts.Economy.FruitId.Apple].LifetimeEarned==1 && save.Data==null,"Retry records the exact won round once, then clears its checkpoint");
+                }
+            }
+        }
+        double clock=0;int attempts=0;
+        var retry=new RewardSettlement<int>(()=>{if(++attempts==1)throw new System.IO.IOException("Injected automatic retry");return 7;},()=>clock);
+        retry.Retry();clock=2;retry.Tick();retry.Tick();Require(retry.State==RewardSaveState.Completed && attempts==2 && retry.Value==7,"Automatic retries run without another win event");
+        var iceLevel=new TestLevel(new LevelData{NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=9,Mechanic=LevelMechanic.Ice});
+        var iceSave=new LevelSaveDataManager(iceLevel);iceSave.CreateDefaultLevelSaveData();var pendingIce=iceSave.GetLevelSaveData();
+        pendingIce.PendingWin=true;pendingIce.TargetCards=new List<int>{1,2,3,4,5};pendingIce.TriedCardsList=new List<List<int>>{new List<int>{1,2,3,4,5}};
+        pendingIce.Ice=new IceRoundState{TurnNumber=1};var iceRound=new RoundStateManager(iceLevel,iceSave);iceRound.Initialize();
+        var ice=new IceBoardService(iceLevel,new RulesTracker(),iceSave,iceRound);ice.PrepareTurn();
+        Require(!ice.IsFrozen && pendingIce.Ice.TurnNumber==1,"Resuming a won ice round cannot freeze a new turn before presenting its reward");
+    }
+    private static void ReviewModalCancellation(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);using(var game=new Fixture(canvas,camera,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}))
+        {
+            game.BuildActors();game.Gate.Clear();
+            using(var notes=new CardAnnotationController(game.Initial,game.Placement,game.UI,canvas.GetComponent<FruitLabGameLayout>(),game.Gate,null,()=>true,null,game.Initial,game.Board))
+            {
+                var events=((GameObject)Get(game,"_events")).GetComponent<UnityEngine.EventSystems.EventSystem>();
+                game.Initial.TryGetCardItem(0,out var card);var pointer=new UnityEngine.EventSystems.PointerEventData(events){pointerId=11,position=new Vector2(100,200)};
+                var move=card.GetCardMoveHandler();move.OnPointerDown(pointer);
+                var drag=typeof(CardViewHandler).GetMethod("OnDrag",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                drag.Invoke(card.GetCardViewHandler(),new object[]{pointer});Require(move.IsDragStarted(),"An actual card drag begins");
+                game.View.GetInformationButton().onClick.Invoke();
+                Tick(.4f);
+                var parent=card.GetRectTransform().parent;var position=card.GetRectTransform().anchoredPosition;
+                pointer.position+=new Vector2(70,30);drag.Invoke(card.GetCardViewHandler(),new object[]{pointer});move.OnPointerUp(pointer);
+                Require(!move.IsDragStarted() && parent!=game.Initial.GetDragParent() && card.GetRectTransform().parent==parent && card.GetRectTransform().anchoredPosition==position,"Modal cancellation restores placement and rejects late movement/release");
+                var query=(IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
+                using(var pair=new PairDragPresenter(game.Initial,game.Placement,game.Board,query,game.Gate,game.UI,()=>true))
+                {
+                    Require(pair.TryBegin(new PairClue(1,2),game.Initial.GetDragParent()),"A real grouped drag begins");
+                    game.View.GetInformationButton().onClick.Invoke();pair.End(0,false);
+                    Require(!pair.IsDragging && query.GetPlacedCardIndexesOnBoard().All(index=>index<0),"Information cancels a grouped drag before it can place into the board");
+                }
+            }
+        }
+    }
+    private sealed class EventInboxStorage : Scripts.Economy.IPendingRewardStorage
+    {public string Data;public string Read()=>Data;public void Write(string data)=>Data=data;}
+    private static void ReviewNetworkObserverFailures(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);using(var game=new Fixture(canvas,camera,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();Field(game.Round,"_remainingGuessCount",7);
+            var profiles=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>{var p=new Scripts.Economy.PlayerProfileData();p.Wallet.PowerUps[RewardType.Life]=1;return p;});
+            var journal=new Scripts.Economy.PowerUpUseJournal(profiles);var save=new PowerUseControlledSave();
+            var uses=new PowerUpUseService(game.Tracker,new TestLevel(new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}),game._saves,game.Round,game._info,game._counts,game.Target,journal,save,
+                ()=>GrowingSnapshot(game,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}),new PowerUpCatalog(new[]{new LifePowerUpEffect(()=>throw new System.IO.IOException("Injected live effect"))}),()=>null);
+            int recovery=0;uses.RecoveryRequired+=()=>recovery++;uses.Changed+=()=>throw new Exception("Injected power UI observer");
+            Require(uses.TryApply(RewardType.Life)==PowerUpUseResult.ResumeRequired && recovery==1 && profiles.Snapshot().Wallet.PowerUps[RewardType.Life]==0,"A bad UI observer cannot suppress committed powerup recovery or its return value");
+        }
+        var networkRoot=new GameObject("EventNetworkManager");var root=new GameObject("EventNetworkController");root.SetActive(false);
+        try
+        {
+            networkRoot.AddComponent<Unity.Netcode.NetworkManager>();
+            var controller=root.AddComponent<MultiplayerGameController>();int sent=0,states=0;
+            controller.StateChanged+=(s,e)=>throw new Exception("Injected network UI observer");controller.StateChanged+=(s,e)=>states++;
+            var send=typeof(MultiplayerGameController).GetMethod("SendGuess",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+            send.Invoke(controller,new object[]{(Action)(()=>sent++)});
+            Require(sent==1 && states==1 && (bool)Get(controller,"_pending"),"UI failure cannot block a submitted command");
+            send.Invoke(controller,new object[]{(Action)(()=>throw new System.IO.IOException("Injected transport failure"))});
+            Require(!(bool)Get(controller,"_pending"),"A failed send releases pending input");
+            var storage=new PowerUseFailingStorage();storage.Fail=false;
+            var profiles=new Scripts.Economy.PlayerProfileRepository(storage,()=>new Scripts.Economy.PlayerProfileData());profiles.Snapshot();storage.Fail=true;
+            var rewards=new Scripts.Economy.GameWinRewardService(profiles,Scripts.Economy.PlayerProfileRuntime.CreateRewardRules(),new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()));
+            var inbox=new EventInboxStorage();var jobs=new Scripts.Economy.DuelRewardRecovery(rewards,inbox);
+            Field(controller,"_rewardRecovery",jobs);Field(controller,"_initialized",true);string id=Guid.NewGuid().ToString("N");Field(controller,"_matchId",id);
+            ulong winner=controller.LocalPlayerId;Field(controller,"<State>k__BackingField",new MultiplayerPublicState(1,1,MultiplayerPhase.Finished,MultiplayerRules.NoPlayer,winner,0,0));
+            int ended=0;controller.MatchEnded+=(s,e)=>throw new Exception("Injected result UI observer");controller.MatchEnded+=(s,e)=>ended++;
+            var process=typeof(MultiplayerGameController).GetMethod("ProcessOutcome",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+            process.Invoke(controller,new object[]{id,1,winner,new[]{1,2,3},(byte)RewardType.Bomb});
+            Require(ended==1 && controller.RewardState==RewardSaveState.RetryRequired && !string.IsNullOrEmpty(inbox.Data),"The finished match is delivered even when wallet persistence fails, with a durable retry intent");
+            using(var game=new Fixture(canvas,camera,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}))
+            {
+                var view=canvas.GetComponentInChildren<LevelFinishPopupView>(true);var popup=new LevelEndPopupController(view);
+                var presenter=new MultiplayerRoundPresenter(new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)),game.Initial,game.UI,popup,controller,new ContractMultiplayerHud(),popup);
+                var outcome=new MultiplayerOutcome(1,winner,new[]{1,2,3},false,RewardType.Bomb);presenter.ShowOutcome(outcome,true);
+                Require(view.GetComponentsInChildren<TMPro.TMP_Text>().Any(text=>text.text=="Ödül kaydedilemedi."),"The real duel result popup exposes reward persistence failure");
+                storage.Fail=false;controller.RetryReward();presenter.RefreshRewardState(outcome,true);
+                Require(!view.GetComponentsInChildren<TMPro.TMP_Text>().Any(text=>text.text=="Ödül kaydedilemedi."),"A successful retry clears the duel result error");
+            }
+            process.Invoke(controller,new object[]{id,1,winner,new[]{1,2,3},(byte)RewardType.Bomb});
+            Require(controller.RewardState==RewardSaveState.Completed && ended==1 && profiles.Snapshot().Wallet.PowerUps[RewardType.Bomb]==1,"The same network outcome retries once and does not repeat the match event");
+            var second=jobs.Register(new Scripts.Economy.PendingDuelAward{MatchId=id,Round=2,Answer=new[]{1,2,3},Reward=RewardType.Life});storage.Fail=true;second.Retry();
+            storage.Fail=false;var reopened=new Scripts.Economy.DuelRewardRecovery(rewards,inbox);reopened.Initialize();reopened.Tick();reopened.Tick();
+            Require(profiles.Snapshot().Wallet.PowerUps[RewardType.Life]==1,"A pending duel award survives reopening its inbox and is applied once");
+        }
+        finally{UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(networkRoot);}
+    }
+    private sealed class CountingCollection : Menu.IFruitCollectionView
+    {
+        private readonly Menu.IFruitCollectionView _view;public int Renders,Badges;
+        public CountingCollection(Menu.IFruitCollectionView view){_view=view;}
+        public IBaseButtonView CloseButton=>_view.CloseButton;public bool IsVisible=>_view.IsVisible;public Menu.IGardenPanelView Garden=>_view.Garden;public Menu.ISeedPurchasePopupView Purchase=>_view.Purchase;
+        public event Action<Menu.GardenTab> TabChanged {add=>_view.TabChanged+=value;remove=>_view.TabChanged-=value;}
+        public void SetVisible(bool value)=>_view.SetVisible(value);public void SelectTab(Menu.GardenTab tab)=>_view.SelectTab(tab);public void FocusBadge(string id)=>_view.FocusBadge(id);
+        public void Render(IReadOnlyDictionary<Scripts.Economy.FruitId,Scripts.Economy.FruitBalance> data){Renders++;_view.Render(data);}
+        public void RenderAchievements(IReadOnlyList<Scripts.Economy.AchievementStatus> data){Badges++;_view.RenderAchievements(data);}
+    }
+    private static void ReviewProfileAreas(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);var root=UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/FruitCollection.prefab"),canvas.transform);
+        var noticeRoot=new GameObject("EventGardenNotice",typeof(RectTransform),typeof(Menu.GardenNoticeView));noticeRoot.transform.SetParent(canvas.transform,false);
+        try
+        {
+            var profiles=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>new Scripts.Economy.PlayerProfileData());
+            var settings=new Scripts.Economy.EconomySettings();var rules=new Scripts.Economy.AchievementRules(settings);var achievements=new Scripts.Economy.AchievementService(profiles,rules);
+            var inventory=new Scripts.Economy.FruitInventoryService(profiles,rules);var garden=new Scripts.Economy.GardenService(profiles,settings,new Scripts.Economy.SystemGardenClock(),rules);
+            var view=new CountingCollection(root.GetComponent<Menu.FruitCollectionView>());var di=new DiContainer();di.Bind<IHapticController>().To<HapticController>().AsSingle();di.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
+            using(var presenter=new Menu.FruitCollectionPresenter(inventory,profiles,view,di.Resolve<BaseButtonControllerFactory>(),garden,new Scripts.Economy.GardenVisitCoordinator(garden),noticeRoot.GetComponent<Menu.GardenNoticeView>(),achievements))
+            {
+                presenter.Open(Menu.GardenTab.Collection);int renders=view.Renders,badges=view.Badges;Scripts.Economy.ProfileArea areas=Scripts.Economy.ProfileArea.None;
+                profiles.Updated+=change=>areas=change.Areas;
+                profiles.Update(profile=>profile.TelemetryEngagement.ActiveDay++);
+                Require(areas==Scripts.Economy.ProfileArea.Telemetry && view.Renders==renders && view.Badges==badges,"Telemetry-only writes do not redraw fruit or badge collections");
+                inventory.Grant("event-fruit",Scripts.Economy.FruitGainSource.SinglePlayer,new Dictionary<Scripts.Economy.FruitId,long>{{Scripts.Economy.FruitId.Apple,1}});
+                Require(view.Renders==renders+1 && view.Badges==badges+1,"Actual collection changes redraw only their relevant data");
+            }
+        }
+        finally{UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(noticeRoot);}
     }
 }

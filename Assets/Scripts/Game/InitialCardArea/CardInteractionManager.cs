@@ -5,7 +5,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class CardInteractionManager : ICardInteractionManager
+    public class CardInteractionManager : ICardInteractionManager, IDisposable
     {
         private IGameUIController _gameUIController;
         private IBoardHolderClickRouter _boardHolderClickRouter;
@@ -110,8 +110,11 @@ namespace Scripts
             OpenCardItemInfoPopupEvent?.Invoke(this, (cardIndex > -1, cardIndex));
         }
         
-        public void Unsubscribe()
+        private bool _disposed;
+        public void Unsubscribe()=>Dispose();
+        public void Dispose()
         {
+            if(_disposed)return;_disposed=true;
             _initialCardAreaController.GetInvisibleClickHandler().OnInvisibleClicked -= OnInvisibleClicked;
             _cardPlacementCoordinator.OnCardDragStartedEvent -= RemoveSelection;
             _gameUIController.CheckFinalNumbers -= RemoveSelection;

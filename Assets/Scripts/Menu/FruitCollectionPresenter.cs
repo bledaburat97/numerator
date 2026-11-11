@@ -33,7 +33,7 @@ namespace Menu
             _gardenView.BuySeeds+=OpenPurchase;_purchase.FruitSelected+=SelectFruit;_purchase.QuantityChanged+=ChangeQuantity;
             _gardenView.HarvestRequested+=Harvest;
             _purchase.AdjustQuantity+=AdjustQuantity;_purchase.Confirm+=Purchase;_purchase.Cancel+=CancelPurchase;
-            _view.TabChanged+=TabChanged;_profiles.Changed+=Refresh;_visits.NoticeAvailable+=OnNoticeAvailable;
+            _view.TabChanged+=TabChanged;_profiles.Updated+=OnProfileChanged;_visits.NoticeAvailable+=OnNoticeAvailable;
             _view.SetVisible(false);_notice.Hide();
         }
         public void Open() => Open(GardenTab.Garden);
@@ -61,6 +61,15 @@ namespace Menu
             var pending=_visits.TakeNotice();if(pending!=null)_notice.ShowProgress(pending);
         }
         private void TabChanged(GardenTab tab)=>Refresh();
+        private void OnProfileChanged(ProfileChange change)
+        {
+            if(_disposed || !_view.IsVisible)return;
+            if(change.Includes(ProfileArea.Collection))_view.Render(_inventory.GetCollection());
+            if(change.Includes(ProfileArea.Collection|ProfileArea.Achievements))_view.RenderAchievements(_achievements.GetAchievements());
+            if(change.Includes(ProfileArea.Garden))_gardenView.Render(_garden.GetBatches());
+            if(change.Includes(ProfileArea.Coins))_gardenView.SetCoins(_profiles.Snapshot().Wallet.Coins);
+            if(_purchaseOpen && change.Includes(ProfileArea.Coins|ProfileArea.Garden))RefreshQuote();
+        }
         private void Refresh()
         {
             if(_disposed || !_view.IsVisible)return;
@@ -162,7 +171,7 @@ namespace Menu
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;
-            _profiles.Changed-=Refresh;_visits.NoticeAvailable-=OnNoticeAvailable;_view.TabChanged-=TabChanged;
+            _profiles.Updated-=OnProfileChanged;_visits.NoticeAvailable-=OnNoticeAvailable;_view.TabChanged-=TabChanged;
             _gardenView.BuySeeds-=OpenPurchase;_purchase.FruitSelected-=SelectFruit;_purchase.QuantityChanged-=ChangeQuantity;
             _gardenView.HarvestRequested-=Harvest;
             _purchase.AdjustQuantity-=AdjustQuantity;_purchase.Confirm-=Purchase;_purchase.Cancel-=CancelPurchase;

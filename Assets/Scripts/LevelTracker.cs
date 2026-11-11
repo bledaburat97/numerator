@@ -68,10 +68,10 @@ namespace Scripts
         {
             if(_profiles!=null)return;
             _profiles=PlayerProfileRuntime.Current;
-            _profiles.Changed+=OnProfileChanged;
+            _profiles.Updated+=OnProfileChanged;
         }
-        private void OnProfileChanged()=>ApplyProfile(_profiles.Snapshot());
-        private void OnDestroy() { if(_profiles!=null)_profiles.Changed-=OnProfileChanged; }
+        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Progress|ProfileArea.Wallet))ApplyProfile(_profiles.Snapshot());}
+        private void OnDestroy() { if(_profiles!=null)_profiles.Updated-=OnProfileChanged; }
         private void ApplyProfile(PlayerProfileData profile)
         {
             _levelId=profile.Progress.LevelId;_starCount=profile.Wallet.Coins;_giftStarCount=profile.Wallet.CrystalProgress;

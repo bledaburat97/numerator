@@ -17,14 +17,14 @@ namespace Scripts
         public int Generation {get;private set;}
         public int HistoryCount=>_entries.Count;
         public ResultBlockModel GetHistoryEntry(int index)=>_entries[index];
-        public void Add(ResultBlockModel row){_entries.Add(row.Snapshot());Changed?.Invoke();}
-        public void Clear(){_entries.Clear();Generation++;Changed?.Invoke();}
+        public void Add(ResultBlockModel row){_entries.Add(row.Snapshot());ObserverNotification.Send(Changed);}
+        public void Clear(){_entries.Clear();Generation++;ObserverNotification.Send(Changed);}
         public void LabelLatest(bool local,string name)
-        {if(_entries.Count==0)return;var row=_entries[_entries.Count-1];row.isLocalGuess=local;row.playerName=name;RowsUpdated?.Invoke();}
+        {if(_entries.Count==0)return;var row=_entries[_entries.Count-1];row.isLocalGuess=local;row.playerName=name;ObserverNotification.Send(RowsUpdated);}
         public void Reveal(GuessEvaluation guess)
         {
             if(guess.Number<1 || guess.Number>_entries.Count)return;
-            _entries[guess.Number-1].hintStates=guess.States;DetailsChanged?.Invoke(guess.Number-1);
+            _entries[guess.Number-1].hintStates=guess.States;ObserverNotification.Send(DetailsChanged,guess.Number-1);
         }
         public void Review(IReadOnlyList<int> answer)
         {
@@ -33,7 +33,7 @@ namespace Scripts
                 var partition=row.groups!=null && row.groups.Count==2?BoardPartition.ForCount(row.finalNumbers.Count):null;
                 row.reviewStates=new GuessEvaluation(0,GuessSubmission.FromHistory(row.finalNumbers),answer,partition).States;
             }
-            RowsUpdated?.Invoke();
+            ObserverNotification.Send(RowsUpdated);
         }
     }
     public class ResultAreaController : IResultAreaController, IDisposable
@@ -60,7 +60,7 @@ namespace Scripts
         public void RevealGuess(GuessEvaluation guess,bool animate=false)
         {History.Reveal(guess);if(animate && guess.Number>0 && guess.Number<=History.HistoryCount)_view.PlayHintForRow(guess.Number-1);}
         public void AddResultBlock(ResultBlockModel row,bool animate=true)
-        {History.Add(row);_view.SetScrollPositionToBottom();if(animate)_view.PlayFeedbackForRow(History.HistoryCount-1);}
+        {History.Add(row);int index=History.HistoryCount-1;ObserverNotification.Present(()=>{_view.SetScrollPositionToBottom();if(animate)_view.PlayFeedbackForRow(index);});}
         public void AddNewResultBlock(int number,int correct,int wrong)
         {
             var cards=new List<int>();while(number!=0){cards.Add(number%10);number/=10;}

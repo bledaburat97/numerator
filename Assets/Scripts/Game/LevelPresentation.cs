@@ -65,6 +65,7 @@ namespace Game
                 .AppendCallback(() => _fadePanelController.SetFadeImageStatus(false))
                 .AppendCallback(() => completed());
         }
-        public void Dispose() { _intro?.Kill(); _transition?.Kill(); }
+        public void Cancel() { _intro?.Kill(); _transition?.Kill(); }
+        public void Dispose()=>Cancel();
     }
 }

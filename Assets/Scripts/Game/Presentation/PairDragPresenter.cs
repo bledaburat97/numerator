@@ -27,7 +27,7 @@ namespace Scripts
             IBoardPlacementQuery query, TutorialInputGate gate, IGameUIController ui, Func<bool> canInteract)
         {
             _cards = cards; _placement = placement; _board = board; _query = query; _gate = gate; _ui = ui; _canInteract = canInteract;
-            _ui.OpenSettings += OnCancel; _ui.ResetNumbers += OnCancel; _ui.CheckFinalNumbers += OnCancel;
+            _ui.OpenSettings += OnCancel;_ui.OpenInformation+=OnCancel; _ui.ResetNumbers += OnCancel; _ui.CheckFinalNumbers += OnCancel;
         }
         public bool TryGetFruitRects(PairClue clue, out RectTransform a, out RectTransform b)
         {
@@ -56,7 +56,7 @@ namespace Scripts
         public void Dispose()
         {
             Cancel();
-            _ui.OpenSettings -= OnCancel; _ui.ResetNumbers -= OnCancel; _ui.CheckFinalNumbers -= OnCancel;
+            _ui.OpenSettings -= OnCancel;_ui.OpenInformation-=OnCancel; _ui.ResetNumbers -= OnCancel; _ui.CheckFinalNumbers -= OnCancel;
         }
     }
 }

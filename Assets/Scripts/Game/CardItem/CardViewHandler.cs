@@ -41,7 +41,7 @@ namespace Scripts
 
         private void OnDrag(PointerEventData data)
         {
-            if (_cardMoveHandler.IsMovementLocked()) return;
+            if (!_cardMoveHandler.CanHandleDrag(data)) return;
 
             if (!_cardMoveHandler.IsDragStarted())
             {

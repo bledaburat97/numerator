@@ -7,6 +7,8 @@ namespace Scripts
     {
         public override void InstallBindings()
         {
+            Container.Bind<Economy.IPendingRewardStorage>().FromMethod(_=>new Economy.PlayerPrefsRewardStorage(Economy.PlayerProfileRuntime.IsIsolated)).AsSingle();
+            Container.BindInterfacesAndSelfTo<Economy.DuelRewardRecovery>().AsSingle();
             Container.Bind<ISettingsPopupService>().To<SettingsPopupService>().AsSingle();
             Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>()
                 .To<BaseButtonController>();

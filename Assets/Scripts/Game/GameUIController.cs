@@ -245,7 +245,7 @@ namespace Scripts
 
         public void TriggerResetNumbers()
         {
-            ResetNumbers?.Invoke(this, EventArgs.Empty);
+            ObserverNotification.Send(ResetNumbers,this,EventArgs.Empty);
         }
         
         private void OnButtonClick(GameUIButtonType buttonType)
@@ -256,7 +256,7 @@ namespace Scripts
                 case GameUIButtonType.Check:
                     if (_levelTracker.GetGameOption() == GameOption.SinglePlayer || _turnOrderDeterminer.IsLocalTurn())
                     {
-                        CheckFinalNumbers?.Invoke(this, EventArgs.Empty);
+                        ObserverNotification.Send(CheckFinalNumbers,this,EventArgs.Empty);
                     }
                     else
                     {
@@ -267,9 +267,9 @@ namespace Scripts
                     TriggerResetNumbers();
                     break;
                 case GameUIButtonType.Information:
-                    _hapticController.Vibrate(HapticType.ButtonClick);OpenInformation?.Invoke(this,EventArgs.Empty);break;
+                    _hapticController.Vibrate(HapticType.ButtonClick);ObserverNotification.Send(OpenInformation,this,EventArgs.Empty);break;
                 case GameUIButtonType.Settings:
-                    OpenSettings?.Invoke(this,  EventArgs.Empty);
+                    ObserverNotification.Send(OpenSettings,this,EventArgs.Empty);
                     break;
                 default:
                     break;

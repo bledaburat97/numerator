@@ -125,6 +125,7 @@ public static partial class FruitLabTutorialEditorTools
     private static PositionAssistanceController AssistanceFor(Fixture game, LevelData definition, out PositionAssistanceView view,bool ultra=true)
     {
         view = new PositionAssistanceView(game.Initial, game.View, game.Canvas.GetComponentInChildren<ResultAreaView>(true), game.UI, null);
+        game.ExtraDisposables.Add(view);
         var assistance=new PositionAssistanceController(game._area.History, game.Initial, game._counts, new TestLevel(definition), game._info,
             (BoardSplitService)Get(game.Results, "_split"), view,game._saves);
         if(ultra)assistance.ActivateUltra();
@@ -347,6 +348,7 @@ public static partial class FruitLabTutorialEditorTools
                     var answer = Enumerable.Range(1,slots).ToArray();game.Target.RevealMultiplayerAnswer(answer);
                     var query = (IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
                     var hints = new HintProvider(game._guess,game.Target,game._info,game.Initial,query,game.Placement,game.Locks);
+                    game.Results.TurnFlow.Hints=hints;
                     Field(hints,"_round",game.Round);
                     Field(hints,"_eliminate",new EliminateFruitEffect(game.Target,game._info,game._saves));
                     CrystalView crystal = null;int flights=0;
@@ -683,6 +685,8 @@ public static partial class FruitLabTutorialEditorTools
         var profile=new Scripts.Economy.PlayerProfileData();profile.Wallet.CrystalProgress=previous;profile.Wallet.NextReward=reward;profile.Progress.LevelId=level;
         Scripts.Economy.PlayerProfileRuntime.CreateRewardRules().ApplySingle(profile,0,earned,out var plan);return plan;
     }
+    private static LevelMechanicsController RulesFor(Fixture game,LevelMechanicsController rules)
+    {game.Results.TurnFlow.Mechanics=rules;return rules;}
     private sealed class Fixture : IDisposable
     {
         public readonly Canvas Canvas; public readonly Camera Camera;
@@ -750,9 +754,10 @@ public static partial class FruitLabTutorialEditorTools
             _area = new ResultAreaController(canvas.GetComponentInChildren<ResultAreaView>(true));
             var results = Results = new ResultManager(UI, _area, Target, indexes, Round, _powers,_area.History);
             Field(results,"_split",split);
-            _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), UI, Round);
+            _guess = new GuessManager(new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), UI, Round);
+            results.ConfigureTurnFlow(new SinglePlayerTurnFlow(Round,_guess,null));
             _interaction = new CardInteractionManager(UI, new BoardHolderClickRouter(Board, reveal), Initial, haptic, Placement);
-            Helper=new HelperEffect(Round,Target,saves);Field(Helper,"_split",split);
+            Helper=new HelperEffect(Round,Target,saves);Field(Helper,"_split",split);Field(Helper,"_history",_area.History);
             Pair=new PairEffect(Round,Target,saves,_info,Tracker);
             Bomb=new BombPowerUpController(Board,Placement,Target,_info,counts);Field(Bomb,"_pair",Pair);
             var snapshot=new GameSaveSnapshotProvider(Target,_info,new PlayingFlow(),counts,Round);
@@ -967,6 +972,7 @@ public static partial class FruitLabTutorialEditorTools
     }
     private sealed class PlayingFlow : ILevelSession
     {
+        public void Tick(){}
         public void Begin(LevelEntryMode mode) { }
         public bool IsGameOver => false;
         public LevelFlowState State => LevelFlowState.Playing;

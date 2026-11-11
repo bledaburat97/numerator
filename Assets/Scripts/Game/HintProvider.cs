@@ -8,8 +8,9 @@ using Zenject;
 
 namespace Game
 {
-    public class HintProvider : IHintProvider
+    public class HintProvider : IHintProvider,IDisposable
     {
+        private readonly IGuessManager _guesses;
         [InjectOptional] private EliminateFruitEffect _eliminate;
         [InjectOptional] private IRoundStateManager _round;
         [InjectOptional] private IceBoardService _ice;
@@ -28,7 +29,7 @@ namespace Game
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
             IBoardPlacementQuery boardPlacementQuery, ICardPlacementCoordinator cardPlacementCoordinator,CardLockService locks)
         {
-            guessManager.HintRewardTokenEvent += OnHintRewardTokenEvent;
+            _guesses=guessManager;
             guessManager.LevelFailEvent += CancelPendingHints;
             _targetNumberCreator = targetNumberCreator;
             _eliminate = new EliminateFruitEffect(targetNumberCreator, cardItemInfoManager);
@@ -39,59 +40,34 @@ namespace Game
             _locks=locks;
         }
 
-        private void OnHintRewardTokenEvent(object sender, HintRewardTokenEventArgs args)
+        public Action<IRewardTokenView> PrepareHint(bool canReveal)
+            =>(canReveal?PrepareReveal(false)??PrepareDestroy(false):PrepareDestroy(false)??PrepareReveal(false))??ConsumeRewardItem;
+        private bool TryApplyRevealHint(IRewardTokenView token)
+        {var show=PrepareReveal(true);if(show==null)return false;show(token);return true;}
+        private Action<IRewardTokenView> PrepareReveal(bool save)
         {
-            bool hintApplied = args.CanRevealCard
-                ? TryApplyRevealHint(args.RewardTokenView) || TryApplyDestroyHint(args.RewardTokenView)
-                : TryApplyDestroyHint(args.RewardTokenView) || TryApplyRevealHint(args.RewardTokenView);
-
-            if (!hintApplied)
-            {
-                ConsumeRewardItem(args.RewardTokenView);
-            }
+            if(!TryGetExistedCardIndex(out int card,out int slot) || !_locks.TryLock(slot,card))return null;
+            if(save)Checkpoint();
+            return token=>{
+                if(!_initialCardAreaController.TryGetCardItem(card,out var item)){ConsumeRewardItem(token);return;}
+                Track(token,new RewardTokenAnimationManager().RevealCard(token,item.GetRectTransform(),()=>_cardPlacementCoordinator.PresentLockedCard(slot,card)));
+            };
         }
-
-        private bool TryApplyRevealHint(IRewardTokenView rewardTokenView)
+        private bool TryApplyDestroyHint(IRewardTokenView token)
+        {var show=PrepareDestroy(true);if(show==null)return false;show(token);return true;}
+        private Action<IRewardTokenView> PrepareDestroy(bool save)
         {
-            if (!TryGetExistedCardIndex(out int cardIndex, out int boardHolderIndex))
-            {
-                return false;
-            }
-
-            if(!_locks.TryLock(boardHolderIndex,cardIndex))return false;
-            Checkpoint();
-            if(!_initialCardAreaController.TryGetCardItem(cardIndex,out var card)){ConsumeRewardItem(rewardTokenView);return true;}
-            RectTransform cardRectTransform=card.GetRectTransform();
-            Action revealAndLockCardAction = () => _cardPlacementCoordinator.PresentLockedCard(boardHolderIndex, cardIndex);
-
-            Track(rewardTokenView, new RewardTokenAnimationManager().RevealCard(rewardTokenView, cardRectTransform, revealAndLockCardAction));
-            return true;
-        }
-
-        private bool TryApplyDestroyHint(IRewardTokenView rewardTokenView)
-        {
-            var history = _round?.GetTriedCardsList();
-            IReadOnlyList<int> preferred = history != null && history.Count > 0 ? history[history.Count - 1]
-                : _boardPlacementQuery.GetOccupiedCardIndexesOnBoard().Where(i => i >= 0).Select(i => i + 1).ToArray();
-            if (!_eliminate.TryApply(preferred, history?.Count ?? 0, out int cardIndex))
-            {
-                return false;
-            }
-
-            _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
-            Checkpoint();
-            if(!_initialCardAreaController.TryGetCardItem(cardIndex,out var card)){ConsumeRewardItem(rewardTokenView);return true;}
-            RectTransform cardRectTransform=card.GetRectTransform();
-            if (_initialCardAreaController.TryGetCardItem(cardIndex, out var eliminated))
-            {
-                eliminated.GetCardMoveHandler().SetMovementLocked(true);
-                // The elimination is already committed, so the normal wrong-guess reset skips this card.
-                // Start its return explicitly; the crystal follows it and impacts at its initial holder.
-                eliminated.GetCardViewHandler().MoveToInitialParent();
-            }
-            Action destroyCardAction = () => { _initialCardAreaController.DestroyCard(cardIndex); };
-            Track(rewardTokenView, new RewardTokenAnimationManager().DestroyCard(rewardTokenView, cardRectTransform, destroyCardAction));
-            return true;
+            var history=_round?.GetTriedCardsList();
+            IReadOnlyList<int> preferred=history!=null && history.Count>0?history[history.Count-1]
+                :_boardPlacementQuery.GetOccupiedCardIndexesOnBoard().Where(i=>i>=0).Select(i=>i+1).ToArray();
+            if(!_eliminate.TryApply(preferred,history?.Count??0,out int card))return null;
+            _cardPlacementCoordinator.TryRemoveCardFromBoard(card);
+            if(save)Checkpoint();
+            return token=>{
+                if(!_initialCardAreaController.TryGetCardItem(card,out var item)){ConsumeRewardItem(token);return;}
+                item.GetCardMoveHandler().SetMovementLocked(true);item.GetCardViewHandler().MoveToInitialParent();
+                Track(token,new RewardTokenAnimationManager().DestroyCard(token,item.GetRectTransform(),()=>_initialCardAreaController.DestroyCard(card)));
+            };
         }
 
         private static void ConsumeRewardItem(IRewardTokenView rewardTokenView)
@@ -120,6 +96,7 @@ namespace Game
             }
             _activeHints.Clear();
         }
+        public void Dispose(){_guesses.LevelFailEvent-=CancelPendingHints;CancelPendingHints(this,EventArgs.Empty);}
 
         private bool TryGetExistedCardIndex( out int cardIndex, out int boardHolderIndex)
         {
@@ -184,5 +161,6 @@ namespace Game
     
     public interface IHintProvider
     {
+        Action<IRewardTokenView> PrepareHint(bool canReveal);
     }
 }

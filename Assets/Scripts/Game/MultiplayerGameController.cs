@@ -14,6 +14,16 @@ namespace Game
     {
         [Inject] private ILevelTracker _tracker;
         [Inject] private IGameWinRewardService _rewards;
+        [Inject] private DuelRewardRecovery _rewardRecovery;
+        private RewardSettlement<GameWinAward> _award;
+        public RewardSaveState RewardState=>_award?.State??RewardSaveState.Completed;
+        public event EventHandler<RewardSaveState> RewardSaveChanged;
+        public void RetryReward()=>_award?.Retry();
+        private void OnAwardChanged()
+        {
+            StatusNotice=RewardState==RewardSaveState.RetryRequired?"Ödül kaydedilemedi.":RewardState==RewardSaveState.Saving?"Ödül kaydediliyor…":null;
+            _noticeUntil=double.MaxValue;ObserverNotification.Send(RewardSaveChanged,this,RewardState);
+        }
         private string _matchId;
         private readonly HashSet<ulong> _joined = new HashSet<ulong>();
         private MultiplayerMatchState _match;
@@ -91,6 +101,7 @@ namespace Game
             _matchId=matchId;
             _difficulty = MultiplayerRules.For((Difficulty)difficulty).Difficulty;
             _roundPlayers = players; _announcedRound = number; _lastFeedbackTurn = 0; _pending = false;
+            if(_award!=null)_award.Changed-=OnAwardChanged;_award=null;
             StatusNotice = null; DisconnectMessage = null;
             foreach (ulong player in players)
             {
@@ -106,7 +117,7 @@ namespace Game
             if (!_initialized || _builtRound >= _announcedRound) return;
             _tracker.SetMultiplayerLevelDifficulty(_difficulty);
             _builtRound = _announcedRound;
-            RoundPreparing?.Invoke(this, _announcedRound);
+            ObserverNotification.Send(RoundPreparing,this,_announcedRound);
         }
         public void BoardReady(int round) { if (_initialized && IsSpawned) BoardReadyServerRpc(round); }
         [ServerRpc(RequireOwnership = false)]
@@ -123,8 +134,14 @@ namespace Game
         public void SubmitGuess(int[] cards)
         {
             if (!IsLocalTurn || cards == null) return;
-            _pending = true; StateChanged?.Invoke(this, State);
-            SubmitGuessServerRpc(State.Round, State.Turn, cards);
+            SendGuess(()=>SubmitGuessServerRpc(State.Round,State.Turn,cards));
+        }
+        private void SendGuess(Action send)
+        {
+            _pending=true;
+            try{send();}
+            catch(Exception error){_pending=false;Debug.LogException(error);ObserverNotification.Send(RequestRejected,this,"Tahmin gönderilemedi. Tekrar dene.");}
+            finally{ObserverNotification.Send(StateChanged,this,State);}
         }
         [ServerRpc(RequireOwnership = false)]
         private void SubmitGuessServerRpc(int round, int turn, int[] cards, ServerRpcParams rpc = default)
@@ -153,11 +170,11 @@ namespace Game
         {
             if (!_initialized || round != State.Round || turn <= _lastFeedbackTurn) return;
             _lastFeedbackTurn = turn; _pending = false;
-            GuessAccepted?.Invoke(this, new MultiplayerFeedback(round, turn, player, cards, correct, misplaced));
+            ObserverNotification.Send(GuessAccepted,this,new MultiplayerFeedback(round, turn, player, cards, correct, misplaced));
         }
         [ClientRpc]
         private void RejectClientRpc(string error, ClientRpcParams rpc = default)
-        { if (!_initialized) return; _pending = false; StateChanged?.Invoke(this, State); RequestRejected?.Invoke(this, error); }
+        { if (!_initialized) return; _pending = false; ObserverNotification.Send(StateChanged,this,State); ObserverNotification.Send(RequestRejected,this,error); }
         private void BroadcastState()
         {
             var s = _match.Snapshot;
@@ -169,22 +186,24 @@ namespace Game
             if (!_initialized || round < State.Round) return;
             if (round != State.Round || turn != State.Turn || (MultiplayerPhase)phase != MultiplayerPhase.Playing) _pending = false;
             State = new MultiplayerPublicState(round, turn, (MultiplayerPhase)phase, player, winner, deadline, votes);
-            StateChanged?.Invoke(this, State);
+            ObserverNotification.Send(StateChanged,this,State);
         }
         [ClientRpc]
         private void OutcomeClientRpc(string matchId,int round, ulong winner, int[] answer, byte reward)
+            =>ProcessOutcome(matchId,round,winner,answer,reward);
+        private void ProcessOutcome(string matchId,int round,ulong winner,int[] answer,byte reward)
         {
             if (!_initialized || matchId!=_matchId || round != State.Round || round <= _lastOutcomeRound || State.Phase != MultiplayerPhase.Finished
                 || State.Winner != winner || reward > (byte)RewardType.Bomb) return;
-            var type = (RewardType)reward;
-            if (winner == NetworkManager.LocalClientId)
+            if(answer==null || answer.Length!=MultiplayerRules.For(_difficulty).BoardCount)return;
+            var type=(RewardType)reward;
+            _lastOutcomeRound=round;_pending=false;
+            if(winner==LocalPlayerId)
             {
-                if(answer==null || answer.Length!=MultiplayerRules.For(_difficulty).BoardCount)return;
-                var award=_rewards.Duel(matchId,round,answer,type);
-                if(!award.IsReplay)GameTelemetry.Powerup(type,true,"duel");
+                _award=_rewardRecovery.Register(new PendingDuelAward{MatchId=matchId,Round=round,Answer=(int[])answer.Clone(),Reward=type});
+                _award.Changed+=OnAwardChanged;_award.Retry();
             }
-            _lastOutcomeRound = round;
-            _pending = false; MatchEnded?.Invoke(this, new MultiplayerOutcome(round, winner, answer, false, type));
+            ObserverNotification.Send(MatchEnded,this,new MultiplayerOutcome(round,winner,answer,false,type));
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public void RepeatProbeOutcome()
@@ -194,7 +213,7 @@ namespace Game
         }
 #endif
         public void RequestRematch()
-        { if (_initialized && IsSpawned && State.Phase == MultiplayerPhase.Finished) RematchServerRpc(State.Round); }
+        { if(RewardState!=RewardSaveState.Completed){OnAwardChanged();return;}if (_initialized && IsSpawned && State.Phase == MultiplayerPhase.Finished) RematchServerRpc(State.Round); }
         [ServerRpc(RequireOwnership = false)]
         private void RematchServerRpc(int round, ServerRpcParams rpc = default)
         {
@@ -209,7 +228,7 @@ namespace Game
             if (!_initialized) return;
             TryHello();
             if (StatusNotice != null && Time.realtimeSinceStartupAsDouble >= _noticeUntil)
-            { StatusNotice = null; StateChanged?.Invoke(this, State); }
+            { StatusNotice = null; ObserverNotification.Send(StateChanged,this,State); }
             if (IsServer && _match != null && _match.Tick(NetworkManager.ServerTime.Time)) BroadcastState();
             if (State.Phase == MultiplayerPhase.Preparing && Time.realtimeSinceStartupAsDouble - _waitingSince > 35)
                 EndDisconnected();
@@ -247,7 +266,7 @@ namespace Game
             if (!_initialized) return;
             StatusNotice = playerName + " oyundan ayrıldı.";
             _noticeUntil = Time.realtimeSinceStartupAsDouble + 4;
-            StateChanged?.Invoke(this, State);
+            ObserverNotification.Send(StateChanged,this,State);
         }
         [ClientRpc]
         private void DisconnectedClientRpc(string message, int[] answer) => EndDisconnected(message, answer);
@@ -257,11 +276,12 @@ namespace Game
             DisconnectMessage = message ?? "Bağlantı kesildi. Maç sona erdi.";
             _match?.Disconnect();
             State = new MultiplayerPublicState(State.Round, State.Turn, MultiplayerPhase.Disconnected, MultiplayerRules.NoPlayer, MultiplayerRules.NoPlayer, 0, 0);
-            _pending = false; StateChanged?.Invoke(this, State);
-            MatchEnded?.Invoke(this, new MultiplayerOutcome(State.Round, MultiplayerRules.NoPlayer, answer ?? (IsServer ? _match?.RevealAnswer() : null), true));
+            _pending = false; ObserverNotification.Send(StateChanged,this,State);
+            ObserverNotification.Send(MatchEnded,this,new MultiplayerOutcome(State.Round, MultiplayerRules.NoPlayer, answer ?? (IsServer ? _match?.RevealAnswer() : null), true));
         }
         public void Stop()
         {
+            if(_award!=null)_award.Changed-=OnAwardChanged;
             _initialized = false;
             if (_registered && NetworkManager != null) NetworkManager.OnClientDisconnectCallback -= OnDisconnected;
             _registered = false;
@@ -286,6 +306,9 @@ namespace Game
         void SubmitGuess(int[] cards);
         void RequestRematch();
         void Stop();
+        RewardSaveState RewardState {get;}
+        void RetryReward();
+        event EventHandler<RewardSaveState> RewardSaveChanged;
         event EventHandler<int> RoundPreparing;
         event EventHandler<MultiplayerFeedback> GuessAccepted;
         event EventHandler<MultiplayerPublicState> StateChanged;

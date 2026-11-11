@@ -7,12 +7,18 @@ using Zenject;
 
 namespace Scripts
 {
-    public class ResultManager : IResultManager
+    public class ResultManager : IResultManager,IDisposable
     {
+        private readonly IGameUIController _ui;
         [InjectOptional] private ILevelTracker _levelTracker;
         [InjectOptional] private IMultiplayerGameController _multiplayer;
         [InjectOptional] private BoardSplitService _split;
         [InjectOptional] private IceBoardService _ice;
+        [InjectOptional] private LazyInject<SinglePlayerTurnFlow> _turnFlow;
+        private SinglePlayerTurnFlow _configuredFlow;
+        private bool _processing;
+        public void ConfigureTurnFlow(SinglePlayerTurnFlow flow)=>_configuredFlow=flow;
+        public SinglePlayerTurnFlow TurnFlow=>_configuredFlow??_turnFlow?.Value;
         private readonly IResultAreaController _resultAreaController;
         private readonly RoundHistory _history;
         private readonly ITargetNumberCreator _targetNumberCreator;
@@ -30,6 +36,7 @@ namespace Scripts
             IBoardPlacementQuery boardPlacementQuery, IRoundStateManager roundStateManager,
             IGamePowerUpAreaController gamePowerUpAreaController,RoundHistory history)
         {
+            _ui=gameUIController;
             gameUIController.CheckFinalNumbers += CheckFinalCards;
             _resultAreaController = resultAreaController;_history=history;
             _targetNumberCreator = targetNumberCreator;
@@ -61,6 +68,7 @@ namespace Scripts
 
         private void CheckFinalCards(object sender, EventArgs args)
         {
+            if(_processing)return;
             IReadOnlyList<int> finalCardIndexes = _boardPlacementQuery.GetPlacedCardIndexesOnBoard();
             List<int> finalCards = new List<int>();
             for (int i = 0; i < finalCardIndexes.Count; i++)
@@ -87,25 +95,47 @@ namespace Scripts
             var submission=_ice?.IsActive==true?_ice.Capture(finalCards):GuessSubmission.FullBoard(finalCards,_targetNumberCreator.GetTargetCardsList().Count);
             var evaluation=_split!=null?_split.Evaluate(_roundStateManager.GetTriedCardsList().Count+1,submission,_targetNumberCreator.GetTargetCardsList())
                 :new GuessEvaluation(_roundStateManager.GetTriedCardsList().Count+1,submission,_targetNumberCreator.GetTargetCardsList());
-            _roundStateManager.AddTriedCards(finalCards);
-            GameTelemetry.GuessAccepted(_roundStateManager.GetTriedCardsList().Count);
-            _gamePowerUpAreaController.Refresh();
-            DetermineAction(finalCards, evaluation);
-            GuessResolved?.Invoke(this, evaluation);
-            _gamePowerUpAreaController.Refresh();
+            var flow=TurnFlow??throw new InvalidOperationException("Single-player turn flow is not configured.");
+            _processing=true;
+            try
+            {
+                using(var notifications=ObserverNotification.Defer())
+                {
+                    _roundStateManager.AddTriedCards(finalCards);
+                    _resultAreaController.AddResultBlock(CreateRow(finalCards,evaluation));
+                    flow.Process(evaluation);
+                    ObserverNotification.Present(()=>{GameTelemetry.GuessAccepted(evaluation.Number);_gamePowerUpAreaController.Refresh();});
+                    if(evaluation.Won)ObserverNotification.Send(LevelSuccessEvent,this,EventArgs.Empty);
+                    else ObserverNotification.Send(WrongGuessEvent,this,EventArgs.Empty);
+                    ObserverNotification.Send(GuessResolved,this,evaluation);
+                    notifications.Complete();
+                }
+            }
+            finally{_processing=false;}
         }
-
-        private void DetermineAction(List<int> finalCards, GuessEvaluation evaluation)
+        public void Dispose()=>_ui.CheckFinalNumbers-=CheckFinalCards;
+    }
+    public interface ISinglePlayerOutcomeSink {void FinishRound(bool won);}
+    // Executes rules explicitly. Events describe a completed turn; they do not advance it.
+    public sealed class SinglePlayerTurnFlow
+    {
+        private readonly IRoundStateManager _round;private readonly IGuessManager _guesses;
+        public IHintProvider Hints {get;set;}
+        [InjectOptional] private LazyInject<ISinglePlayerOutcomeSink> _outcome;
+        public LevelMechanicsController Mechanics {get;set;}
+        public ISinglePlayerOutcomeSink Outcome {get;set;}
+        public SinglePlayerTurnFlow(IRoundStateManager round,IGuessManager guesses,IHintProvider hints,LevelMechanicsController mechanics=null)
+        {_round=round;_guesses=guesses;Hints=hints;Mechanics=mechanics;}
+        public void Process(GuessEvaluation guess)
         {
-            _resultAreaController.AddResultBlock(CreateRow(finalCards,evaluation));
-            if (evaluation.Won)
-            {
-                LevelSuccessEvent?.Invoke(this, EventArgs.Empty);
-            }
-            else
-            {
-                WrongGuessEvent?.Invoke(this, EventArgs.Empty);
-            }
+            var loss=guess.Won?null:_guesses.ConsumeWrongGuess();
+            Mechanics?.ApplyGuess(guess);
+            bool failed=!guess.Won && _round.GetRemainingGuessCount()<=0;
+            var hint=loss!=null && loss.Crystal && !failed?Hints?.PrepareHint(loss.CanReveal):null;
+            Mechanics?.CompleteTurn(guess);
+            if(failed){if(loss!=null)loss.Remaining=0;_guesses.FailRound();}
+            _guesses.PresentWrongGuess(loss,hint);
+            if(guess.Won || failed)(Outcome??_outcome?.Value)?.FinishRound(guess.Won);
         }
     }
 

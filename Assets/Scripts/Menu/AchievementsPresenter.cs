@@ -17,7 +17,7 @@ namespace Menu
         {
             _achievements=achievements;_profiles=profiles;_view=view;
             _button=buttons.Create(entry,Open);_button.SetText("Başarılar");_button.SetClickOnRelease(true);
-            view.Close+=Close;profiles.Changed+=Refresh;view.SetVisible(false);
+            view.Close+=Close;profiles.Updated+=OnProfileChanged;view.SetVisible(false);
         }
         public void Open()
         {
@@ -28,11 +28,12 @@ namespace Menu
             Refresh();
         }
         public void Close(){if(!_disposed)_view.SetVisible(false);}
+        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Achievements|ProfileArea.Collection))Refresh();}
         private void Refresh(){if(!_disposed && _view.IsVisible)_view.Render(_achievements.GetAchievements());}
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;
-            _profiles.Changed-=Refresh;_view.Close-=Close;_button.SetAction(null);_view.SetVisible(false);
+            _profiles.Updated-=OnProfileChanged;_view.Close-=Close;_button.SetAction(null);_view.SetVisible(false);
         }
     }
 }

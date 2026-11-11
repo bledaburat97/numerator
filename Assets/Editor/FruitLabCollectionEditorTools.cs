@@ -110,9 +110,9 @@ public static partial class FruitLabTutorialEditorTools
         container.Bind<IGameWinRewardService>().To<GameWinRewardService>().AsSingle();
     }
     private static IGameWinRewardService CollectionTestRewards(Fixture game)=>CollectionFixtureRewards(game,out _);
-    private static IGameWinRewardService CollectionFixtureRewards(Fixture game,out IPlayerProfileRepository repository)
+    private static IGameWinRewardService CollectionFixtureRewards(Fixture game,out IPlayerProfileRepository repository,IPlayerProfileStorage storage=null)
     {
-        var profile=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>{
+        var profile=new PlayerProfileRepository(storage??new MemoryPlayerProfileStorage(),()=>{
             var data=new PlayerProfileData();data.Progress.LevelId=game.Tracker.GetLevelId();
             data.Wallet.Coins=game.Tracker.GetCoinCount();data.Wallet.CrystalProgress=game.Tracker.GetCrystalProgressCount();data.Wallet.NextReward=game.Tracker.GetCurrentRewardType();
             foreach(RewardType type in Enum.GetValues(typeof(RewardType)))data.Wallet.PowerUps[type]=game.Tracker.GetPowerUpCount(type);

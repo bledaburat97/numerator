@@ -63,13 +63,13 @@ public static class FruitLabFailureValidation
         var result = new ResultSource();
         var token = new TokenProbe();
         var life = new LifeProbe(token);
-        var manager = new GuessManager(result, life, new UiProbe(), round);
+        var manager = new GuessManager(life, new UiProbe(), round);
         int hints = 0, failures = 0;
         bool reveal = false;
         manager.HintRewardTokenEvent += (sender, args) => { hints++; reveal = args.CanRevealCard; };
         manager.LevelFailEvent += (sender, args) => failures++;
         Vector3 position = token.Rect.position;
-        result.Wrong();
+        var loss=manager.ConsumeWrongGuess();manager.PresentWrongGuess(loss,null);if(round.GetRemainingGuessCount()==0)manager.FailRound();
         Require(hints == (expectedHint ? 1 : 0), "Only non-terminal crystal boundaries emit hints");
         if (expectedHint) Require(reveal == expectedReveal, "First crystal eliminates; second reveals");
         if (remaining == 1)
@@ -77,7 +77,7 @@ public static class FruitLabFailureValidation
             Require(token.Fades == 0 && token.Rect.position == position, "Final crystal must not fade or move to a card");
             Require(token.Destroyed == (crystalCount == 3), "Final crystal is removed at its boundary; coin behavior stays unchanged");
             life.Progress.Complete(true);
-            result.Wrong();
+            manager.ConsumeWrongGuess();if(round.GetRemainingGuessCount()==0)manager.FailRound();
             Require(failures == 1 && round.GetRemainingGuessCount() == 0, "Terminal guesses cannot trigger a second failure or negative lives");
         }
         else life.Progress.Kill();
@@ -505,6 +505,7 @@ public static class FruitLabFailureValidation
     }
     private sealed class BombFlow : ILevelSession
     {
+        public void Tick(){}
         public void Begin(LevelEntryMode mode) { }
         public bool IsGameOver => false;
         public LevelFlowState State => LevelFlowState.Playing;

@@ -26,6 +26,7 @@ namespace Scripts
         private LevelMechanic _mechanic;
         private ILevelMechanicsPresentation _presentation;
         private Action _checkpoint;
+        private bool _disposed;
 
         public LevelMechanicsController(IResultManager results, HelperEffect helper, IRoundStateManager round,
             ILevelSaveDataManager save, ITargetNumberCreator target, IResultAreaController area,
@@ -34,7 +35,6 @@ namespace Scripts
             _results = results; _helper = helper; _round = round; _save = save;
             _target = target; _area = area; _powers = powers; _tracker = tracker; _pair = pair;
             _split = split; _board = board; _growing = growing; _dynamite = dynamite;
-            _results.GuessResolved += OnGuess;
             _helper.Applied += OnHelper;
             if (_pair != null) _pair.Changed += OnPair;
             if (_split != null) _split.Applied += OnSplit;
@@ -48,7 +48,7 @@ namespace Scripts
             _mechanic = LevelMechanicRules.Normalize(mechanic);
             _dynamite?.Prepare();
             _ice?.PrepareTurn();
-            _icePresentation?.Render();
+            ObserverNotification.Present(()=>_icePresentation?.Render());
             UpdateDynamiteView();
             RestoreDetails();
             UpdateStatus();
@@ -73,7 +73,7 @@ namespace Scripts
             _checkpoint?.Invoke();
         }
 
-        private void OnGuess(object sender, GuessEvaluation guess)
+        public void ApplyGuess(GuessEvaluation guess)
         {
             if (_tracker.GetGameOption() != GameOption.SinglePlayer) return;
             if (LevelMechanicRules.ShouldTrigger(_mechanic, guess, _round.GetRemainingGuessCount()) && _helper.TryApply())
@@ -82,8 +82,12 @@ namespace Scripts
                 GameTelemetry.Mechanic("mechanic_triggered",LevelMechanic.Growing);
             if (_dynamite?.Resolve(guess) == true) GameTelemetry.Mechanic("mechanic_triggered",LevelMechanic.Dynamite);
             _ice?.AfterGuess(guess);
-            UpdateStatus(); _powers.Refresh();
-            if (!guess.Won && _round.GetRemainingGuessCount() > 0) _checkpoint?.Invoke();
+            ObserverNotification.Present(()=>{UpdateStatus();_powers.Refresh();});
+        }
+        public void CompleteTurn(GuessEvaluation guess)
+        {
+            _dynamite?.SynchronizeKnowledge();
+            if (!guess.Won && _round.GetRemainingGuessCount() > 0) ObserverNotification.Run(()=>_checkpoint?.Invoke());
         }
 
         private void OnDynamite(object sender,DynamiteUpdateReason reason)
@@ -116,10 +120,11 @@ namespace Scripts
 
         public void Dispose()
         {
-            _results.GuessResolved -= OnGuess; _helper.Applied -= OnHelper;
+            if(_disposed)return;_disposed=true;
+            _helper.Applied -= OnHelper;
             if (_pair != null) _pair.Changed -= OnPair;
             if (_split != null) _split.Applied -= OnSplit;
-            if (_dynamite != null) { _dynamite.Changed -= OnDynamite; _dynamite.Dispose(); }
+            if (_dynamite != null) _dynamite.Changed -= OnDynamite;
             _checkpoint = null; _presentation = null;
         }
     }
@@ -160,7 +165,7 @@ namespace Scripts
                 if (!card.isLocked && card.isExisted && !card.possibleCardHolderIndicatorIndexes.Contains(newIndex))
                     card.possibleCardHolderIndicatorIndexes.Add(newIndex);
             _counts.AddBoardHolder();_placements.AddBoardHolder();
-            Advanced?.Invoke();
+            ObserverNotification.Send(Advanced);
             return true;
         }
     }
@@ -219,7 +224,7 @@ namespace Scripts
         public void ApplyCommitted(DynamiteRoundState state)
         {
             if(state==null)return;
-            _save.GetLevelSaveData().Dynamite=state.Copy();Changed?.Invoke(this,DynamiteUpdateReason.Prepared);
+            _save.GetLevelSaveData().Dynamite=state.Copy();ObserverNotification.Send(Changed,this,DynamiteUpdateReason.Prepared);
         }
 
         public void Prepare()
@@ -232,7 +237,7 @@ namespace Scripts
             int fruit = answer[state.BoardIndex]-1;
             var info = _info.GetCardItemInfoList()[fruit];
             if (!state.Exploded && info.isLocked && info.possibleCardHolderIndicatorIndexes.Contains(state.BoardIndex)) state.Disarmed = true;
-            Changed?.Invoke(this,DynamiteUpdateReason.Prepared);
+            ObserverNotification.Send(Changed,this,DynamiteUpdateReason.Prepared);
         }
 
         public bool Resolve(GuessEvaluation guess)
@@ -240,6 +245,7 @@ namespace Scripts
             var state = Current;
             if (state == null || state.Exploded || guess.Number <= state.LastProcessedGuess) return false;
             if (state.BoardIndex < 0) Prepare();
+            OnKnowledge();
             state.LastProcessedGuess = guess.Number;
             if (state.Disarmed) return false;
             state.GuessesUsed = System.Math.Min(DynamiteRoundState.GuessLimit,guess.Number);
@@ -251,7 +257,7 @@ namespace Scripts
             }
             else if (state.GuessesUsed == DynamiteRoundState.GuessLimit) state.Exploded = true;
             if(state.Exploded)_round.ExhaustGuesses();
-            Changed?.Invoke(this,DynamiteUpdateReason.Guess);
+            ObserverNotification.Send(Changed,this,DynamiteUpdateReason.Guess);
             return true;
         }
 
@@ -261,8 +267,9 @@ namespace Scripts
             if(state==null || state.Disarmed || state.Exploded || state.BoardIndex<0 || state.BoardIndex>=_target.GetTargetCardsList().Count)return;
             var fact=_info.GetCardItemInfoList()[_target.GetTargetCardsList()[state.BoardIndex]-1];
             if(!fact.isLocked || !fact.possibleCardHolderIndicatorIndexes.Contains(state.BoardIndex))return;
-            state.Disarmed=true;Changed?.Invoke(this,DynamiteUpdateReason.Lock);
+            state.Disarmed=true;ObserverNotification.Send(Changed,this,DynamiteUpdateReason.Lock);
         }
+        public void SynchronizeKnowledge()=>OnKnowledge();
         public void Dispose(){if(_knowledge!=null)_knowledge.Changed-=OnKnowledge;}
 
     }

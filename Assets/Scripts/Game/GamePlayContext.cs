@@ -57,6 +57,7 @@ namespace Scripts
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
             _powerUpUses.RecoveryRequired+=QueuePowerUpRecovery;
+            _gameUi.OpenSettings+=OnModalOpening;_gameUi.OpenInformation+=OnModalOpening;
             InitializePowerUpUi();
             InitializeGame();
             _positionAssistance.Refresh();
@@ -73,6 +74,7 @@ namespace Scripts
         private void QueuePowerUpRecovery()=>_powerUpRecoveryPending=true;
         private void Update()
         {
+            _session?.Tick();
             if(_powerUpRecoveryPending)
             {
                 _powerUpRecoveryPending=false;CancelCardGestures();
@@ -132,20 +134,16 @@ namespace Scripts
 
         private void OnDestroy()
         {
+            _gameUi.OpenSettings-=OnModalOpening;_gameUi.OpenInformation-=OnModalOpening;
             if(_powerUpUses!=null)_powerUpUses.RecoveryRequired-=QueuePowerUpRecovery;
             Annotations?.Dispose();
-            _positionAssistance?.Dispose();            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
-            _mechanics?.Dispose();
-            (_guessManager as System.IDisposable)?.Dispose();
+            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
             if (_presentation != null) _presentation.LayoutChanged -= OnLayoutChanged;
-            _cardPlacementCoordinator?.Unsubscribe();
-            _cardInteractionManager?.Unsubscribe();
-            _cardItemInfoPopupController?.Unsubscribe();
-            _session?.Dispose();
         }
         
         private void CancelCardGestures()
         {
+            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.CancelDrag();
             _powerMessages?.CloseActivePowerUp();
             Annotations?.CancelAllGestures();
             _positionAssistance?.Suspend();
@@ -153,6 +151,7 @@ namespace Scripts
             for (int i = 0; i < _initialCardAreaController.GetCardCount(); i++)
                 if (_initialCardAreaController.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().CancelPress();
         }
+        private void OnModalOpening(object sender,System.EventArgs args)=>CancelCardGestures();
 
         private void TrySave()
         {

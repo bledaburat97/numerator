@@ -20,6 +20,9 @@ public class CardMoveHandler : ICardMoveHandler
     private bool _isDragStart;
     private bool _isMovementLocked;
     private int _cardIndex;
+    private int _pointerId=int.MinValue;
+    public bool CanHandleDrag(PointerEventData data)=>_isPressed && !_isMovementLocked
+        && (_pointerId==int.MinValue || data!=null && data.pointerId==_pointerId);
 
     public CardMoveHandler(IHapticController hapticController, int cardIndex)
     {
@@ -29,7 +32,7 @@ public class CardMoveHandler : ICardMoveHandler
 
     public void HandleDrag(Vector2 position)
     {
-        if (_isMovementLocked) return;
+        if (_isMovementLocked || !_isPressed) return;
         CancelHoldTimer();
 
         if (!_isDragStart)
@@ -51,7 +54,11 @@ public class CardMoveHandler : ICardMoveHandler
     { CancelPress(); _onLongPress = onLongPress; }
     private void CancelHoldTimer() { _holdTween?.Kill(); _holdTween = null; }
     public void CancelPress()
-    { CancelHoldTimer(); _isPressed = _isDragStart = _longPressConsumed = false; }
+    {
+        bool dragging=_isDragStart;
+        CancelHoldTimer(); _isPressed = _isDragStart = _longPressConsumed = false;_pointerId=int.MinValue;
+        if(dragging)_onMoveToInitialRequested?.Invoke(_cardIndex);
+    }
     
     public void SetOnDragComplete(Func<int, int> onDragComplete)
     {
@@ -80,7 +87,7 @@ public class CardMoveHandler : ICardMoveHandler
     
     public void OnPointerUp(PointerEventData data)
     {
-        if (!_isPressed) return;
+        if (!_isPressed || data!=null && _pointerId!=int.MinValue && data.pointerId!=_pointerId) return;
         CancelHoldTimer(); _isPressed = false;
         if (_isMovementLocked) return;
         if (_longPressConsumed && !_isDragStart) { _longPressConsumed = false; return; }
@@ -117,6 +124,7 @@ public class CardMoveHandler : ICardMoveHandler
         if (_isMovementLocked) return;
 
         _isPressed = true;
+        _pointerId=data?.pointerId??int.MinValue;
         if (_onLongPress != null)
             _holdTween = DOVirtual.DelayedCall(.5f, () => {
                 _holdTween = null;
@@ -142,6 +150,7 @@ public class CardMoveHandler : ICardMoveHandler
 
 public interface ICardMoveHandler
 {
+    bool CanHandleDrag(PointerEventData data);
     bool IsDragStarted();
     void OnPointerDown(PointerEventData data);
     void OnPointerUp(PointerEventData data);

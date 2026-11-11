@@ -33,7 +33,7 @@ namespace Scripts
             Container.BindInterfacesAndSelfTo<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
             Container.Bind<RoundHistory>().AsSingle();
             Container.Bind<IResultHistorySource>().To<RoundHistory>().FromResolve();
-            Container.Bind<IPositionAssistanceView>().To<PositionAssistanceView>().AsSingle().WithArguments(gameUI, resultAreaView);
+            Container.BindInterfacesAndSelfTo<PositionAssistanceView>().AsSingle().WithArguments(gameUI, resultAreaView);
             Container.Bind<PositionAssistanceController>().AsSingle();
             Container.Bind<Economy.UltraActivationService>().FromMethod(context=>new Economy.UltraActivationService(context.Container.Resolve<Economy.IPlayerProfileRepository>())).AsSingle();
             Container.Bind<UltraPowerUpController>().AsSingle();
@@ -56,10 +56,10 @@ namespace Scripts
             Container.Bind<HelperEffect>().AsSingle();
             Container.Bind<EliminateFruitEffect>().AsSingle();
             Container.Bind<LevelMechanicsController>().AsSingle();
-            Container.Bind<IResultManager>().To<ResultManager>().AsSingle();
+            Container.BindInterfacesAndSelfTo<ResultManager>().AsSingle();
             Container.Bind<ILifeBarController>().To<LifeBarController>().AsSingle()
                 .WithArguments(lifeBarView);
-            Container.Bind<IGuessManager>().To<GuessManager>().AsSingle();
+            Container.BindInterfacesAndSelfTo<GuessManager>().AsSingle();
             Container.Bind<IBoardLayoutManager>().To<BoardLayoutManager>().AsSingle();
             Container.Bind<IBoardHolderCountManager>().To<BoardHolderCountManager>().AsSingle();
             Container.Bind<BoardAreaController>().AsSingle();
@@ -68,14 +68,14 @@ namespace Scripts
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();
             Container.Bind<CardLockService>().AsSingle();
             Container.BindInterfacesAndSelfTo<CardKnowledgePresenter>().AsSingle().NonLazy();
-            Container.Bind<ICardItemInfoPopupController>().To<CardItemInfoPopupController>().AsSingle()
+            Container.BindInterfacesAndSelfTo<CardItemInfoPopupController>().AsSingle()
                 .WithArguments(cardItemInfoPopupView);
             Container.Bind<IInitialCardAreaLayoutManager>().To<InitialCardAreaLayoutManager>().AsSingle();
             Container.Bind<IInitialCardAreaFactory>().To<InitialCardAreaFactory>().AsSingle();
             Container.Bind<InitialCardAreaController>().AsSingle();
             Container.Bind<IInitialCardAreaController>().To<InitialCardAreaController>().FromResolve();
             Container.Bind<IInitialCardAreaPresentation>().To<InitialCardAreaController>().FromResolve();
-            Container.Bind<ICardInteractionManager>().To<CardInteractionManager>().AsSingle();
+            Container.BindInterfacesAndSelfTo<CardInteractionManager>().AsSingle();
             Container.Bind<IFadePanelController>().To<FadePanelController>().AsSingle().WithArguments(fadePanelView);
             Container.Bind<IGamePopupCreator>().To<GamePopupCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ICardItemLocator>().To<CardItemLocator>().AsSingle();
@@ -97,9 +97,9 @@ namespace Scripts
             Container.Bind<IPowerUpMessageController>().To<PowerUpMessageController>().AsSingle();
             Container.Bind<IRevealingPowerUpController>().To<RevealingPowerUpController>().AsSingle().NonLazy();
             Container.Bind<IBombPowerUpController>().To<BombPowerUpController>().AsSingle().NonLazy();
-            Container.Bind<IHintProvider>().To<HintProvider>().AsSingle().NonLazy();
-            Container.Bind<ICardPlacementCoordinator>().To<CardPlacementCoordinator>().AsSingle();
-            Container.Bind<ITutorialBootstrapper>().To<TutorialBootstrapper>().AsSingle();
+            Container.BindInterfacesAndSelfTo<HintProvider>().AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<CardPlacementCoordinator>().AsSingle();
+            Container.BindInterfacesAndSelfTo<TutorialBootstrapper>().AsSingle();
             Container.Bind<LevelEndPopupController>().AsSingle().WithArguments(levelFinishPopup);
             Container.Bind<ILevelEndPopupController>().To<LevelEndPopupController>().FromResolve();
             Container.Bind<IMultiplayerResultPresentation>().To<LevelEndPopupController>().FromResolve();
@@ -116,12 +116,17 @@ namespace Scripts
             Container.Bind<SinglePlayerRoundCompletion>().AsSingle();
             Container.Bind<SinglePlayerEndPresenter>().AsSingle();
             Container.Bind<SinglePlayerSession>().AsSingle();
+            Container.Bind<SinglePlayerTurnFlow>().AsSingle();
+            Container.Bind<ISinglePlayerOutcomeSink>().To<SinglePlayerSession>().FromResolve();
             Container.Bind<ISinglePlayerProgression>().To<SinglePlayerSession>().FromResolve();
             Container.Bind<MultiplayerSession>().AsSingle();
             Container.Bind<ILevelSession>().FromMethod(context =>
                 context.Container.Resolve<ILevelTracker>().GetGameOption() == GameOption.MultiPlayer
                     ? (ILevelSession)context.Container.Resolve<MultiplayerSession>()
                     : context.Container.Resolve<SinglePlayerSession>()).AsSingle();
+            foreach(var type in new[]{typeof(PositionAssistanceController),typeof(LevelMechanicsController),typeof(DynamiteService),typeof(SinglePlayerEndPresenter),typeof(LevelPresentation)})
+                Container.Bind<System.IDisposable>().To(type).FromResolve();
+            Container.Bind<System.IDisposable>().FromMethod(context=>context.Container.Resolve<ILevelSession>()).AsCached();
             Container.Bind<BoardCardIndexManager>().AsSingle();
             Container.Bind<IBoardPlacementQuery>().To<BoardCardIndexManager>().FromResolve();
             Container.Bind<IBoardPlacementCommands>().To<BoardCardIndexManager>().FromResolve();

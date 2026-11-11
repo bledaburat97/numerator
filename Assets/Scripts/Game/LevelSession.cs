@@ -7,6 +7,7 @@ namespace Game
         LevelFlowState State { get; }
         bool IsGameOver { get; }
         void Begin(LevelEntryMode mode);
+        void Tick();
     }
 
     public interface ISinglePlayerProgression

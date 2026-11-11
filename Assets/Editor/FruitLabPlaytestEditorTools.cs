@@ -63,8 +63,8 @@ public static partial class FruitLabTutorialEditorTools
 
                     var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                     Field(snapshot, "_saveData", game._saves); Field(snapshot, "_levels", new TestLevel(definition)); Field(snapshot, "_tracker", game.Tracker);
-                    using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
-                        game.Target, game._area, game._powers, game.Tracker, pair,(BoardSplitService)Get(game.Results,"_split"),game.Board))
+                    using (var rules = RulesFor(game,new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
+                        game.Target, game._area, game._powers, game.Tracker, pair,(BoardSplitService)Get(game.Results,"_split"),game.Board)))
                     {
                         Field(rules, "_levels", new TestLevel(definition)); rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), null);
                         LevelPlaytestSchedule.PrepareTrialStock(game.Tracker, game._saves, definition);

@@ -70,7 +70,7 @@ namespace Scripts
         {
             if(selected==null)return false;
             var state=_save.GetLevelSaveData();state.PairWasApplied=true;state.PairClue=selected;
-            Changed?.Invoke(this,selected);return true;
+            ObserverNotification.Send(Changed,this,selected);return true;
         }
         public bool TryApply()=>CanApply && ApplyCommitted(SelectClue(_target.GetTargetCardsList(),_info.GetCardItemInfoList()));
 
@@ -84,7 +84,7 @@ namespace Scripts
         {
             var state=_save.GetLevelSaveData();state.PairClue=clue;
             if(clue!=null)state.PairWasApplied=true;
-            Changed?.Invoke(this,clue);
+            ObserverNotification.Send(Changed,this,clue);
         }
 
         // Bomb changes the answer before the first guess. Never leave a stale fruit in the clue.

@@ -16,6 +16,7 @@ namespace Scripts.Economy
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void PreserveJsonCollections()
         {
+            AotHelper.EnsureList<PendingDuelAward>();
             AotHelper.EnsureList<RewardType>();
             AotHelper.EnsureList<GardenBatchChange>();
             AotHelper.EnsureList<AchievementDefinition>();
@@ -36,6 +37,18 @@ namespace Scripts.Economy
 #if UNITY_EDITOR
         private static IPlayerProfileRepository _test;
 #endif
+        public static bool IsIsolated
+        {
+            get {
+#if UNITY_EDITOR
+                if(_test!=null)return true;
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if(MultiplayerNetworkProbe.IsRunning)return true;
+#endif
+                return false;
+            }
+        }
         public static IPlayerProfileRepository Current
         {
             get
@@ -54,7 +67,7 @@ namespace Scripts.Economy
                     var storage=new AtomicPlayerProfileStorage(Path.Combine(Application.persistentDataPath,"player-profile.json"),Debug.LogWarning);
                     var repository=new PlayerProfileRepository(storage,ReadLegacy,observerError:Debug.LogException,
                         commitPolicy:new ProfileTelemetryJournal(TelemetryRuntime.EconomyContext,error=>Debug.LogWarning("Economy telemetry deferred: "+error.GetType().Name)));
-                    repository.Changed+=()=>MirrorLegacy(repository.Snapshot());
+                    repository.Updated+=change=>{if(change.Includes(ProfileArea.Progress|ProfileArea.Wallet))MirrorLegacy(repository.Snapshot());};
                     _persistent=repository;
                 }
                 return _persistent;

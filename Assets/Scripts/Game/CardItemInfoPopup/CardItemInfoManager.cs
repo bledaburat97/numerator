@@ -22,7 +22,7 @@ namespace Scripts
         public void Initialize()
         {
             _cardItemInfoList = _levelSaveDataManager.GetLevelSaveData().CardItemInfoList;
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
 
         public void RemoveLastCardHolderIndicator()
@@ -32,7 +32,7 @@ namespace Scripts
             {
                 cardItemInfo.possibleCardHolderIndicatorIndexes.RemoveAll(index => index >= boardCount);
             }
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
 
         public List<CardItemInfo> GetCardItemInfoList()
@@ -44,20 +44,20 @@ namespace Scripts
         {
             for(int index=0;index<_cardItemInfoList.Count;index++)
                 _cardItemInfoList[index].possibleCardHolderIndicatorIndexes=new List<int>(planned[index].possibleCardHolderIndicatorIndexes);
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
 
         public void MakeCardNotExisted(int cardIndex)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
             cardItemInfo.isExisted = false;
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
         
         public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)
         {
             SetCertain(_cardItemInfoList[cardIndex],possibleCardHolderIndicatorIndexes);
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
 
         public static void SetCertain(CardItemInfo card,List<int> positions)
@@ -68,7 +68,7 @@ namespace Scripts
             if (IsCardLocked(activeCardIndex)) return;
 
             ChangeTheCardInfoByProbability(activeCardIndex, probabilityType);
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
 
         public void OnHolderIndicatorClicked(int activeCardIndex, int holderIndicatorIndex)
@@ -76,7 +76,7 @@ namespace Scripts
             if (IsCardLocked(activeCardIndex)) return;
 
             ChangeTheCardInfoByHolderIndicator(activeCardIndex, holderIndicatorIndex);
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
 
         private void ChangeTheCardInfoByProbability(int cardIndex, ProbabilityType probabilityType)

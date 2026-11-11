@@ -24,10 +24,10 @@ namespace Scripts
                 if (data.Definition?.Mechanic == LevelMechanic.Growing)
                 {
                     GrowingBoardState.UpgradeLegacy(data);
-                    if (!GrowingBoardState.IsValid(data)) return null;
+                    if (!data.HasPendingWin() && !GrowingBoardState.IsValid(data)) return null;
                 }
-                if (data.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(data)) return null;
-                if(data.Definition?.Mechanic==LevelMechanic.Ice && !IceRoundState.IsValid(data))return null;
+                if (data.Definition?.Mechanic == LevelMechanic.Dynamite && !data.HasPendingWin() && !DynamiteRoundState.IsValid(data)) return null;
+                if(data.Definition?.Mechanic==LevelMechanic.Ice && !data.HasPendingWin() && !IceRoundState.IsValid(data))return null;
                 if(data.Definition?.Mechanic!=LevelMechanic.Ice && data.TriedCardsList.Any(row=>row==null || row.Any(fruit=>fruit<=0)))return null;
                 data.RevealedGuessNumbers ??= new List<int>();
                 return data;
@@ -68,6 +68,13 @@ namespace Scripts
     {
         public string RoundId;
         public int PowerUpUseRevision;
+        public bool PendingWin;
+        public bool HasPendingWin()
+        {
+            if(!PendingWin || TargetCards==null || TriedCardsList==null || TriedCardsList.Count==0 || RemainingGuessCount<=0)return false;
+            try{return new GuessEvaluation(TriedCardsList.Count,GuessSubmission.FromHistory(TriedCardsList[TriedCardsList.Count-1]),TargetCards).Won;}
+            catch(System.ArgumentException){return false;}
+        }
         public List<List<int>> TriedCardsList;
         public List<int> TargetCards;
         public List<CardItemInfo> CardItemInfoList;

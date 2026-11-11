@@ -4,7 +4,7 @@ using Zenject;
 
 namespace Game
 {
-    public sealed class SinglePlayerSession : ILevelSession, ISinglePlayerProgression
+    public sealed class SinglePlayerSession : ILevelSession, ISinglePlayerProgression,ISinglePlayerOutcomeSink
     {
         private readonly ILevelTracker _levelTracker;
         private readonly ILevelDataCreator _levelDataCreator;
@@ -21,7 +21,12 @@ namespace Game
         private readonly RoundBuilder _builder;
         private readonly LevelPresentation _presentation;
         private LevelFlowState _state = LevelFlowState.Idle;
-        private bool _isGameOver, _disposed;
+        private bool _isGameOver, _disposed,_endPresented;
+        private RewardSettlement<SinglePlayerRoundResult> _settlement;
+        [InjectOptional] private LazyInject<IGameSaveSnapshotProvider> _snapshots;
+        public RewardSaveState RewardState=>_settlement?.State??RewardSaveState.Pending;
+        public void Tick(){if(!_disposed)_settlement?.Tick();}
+        public void RetryReward(){if(!_disposed)_settlement?.Retry();}
         [Inject]
         public SinglePlayerSession(
             ILevelTracker levelTracker,
@@ -53,8 +58,6 @@ namespace Game
             _mechanics = mechanics;
             _builder = builder;
             _presentation = presentation;
-            _resultManager.LevelSuccessEvent += OnLevelSuccess;
-            _guessManager.LevelFailEvent += OnLevelFail;
         }
 
         public LevelFlowState State => _state;
@@ -62,20 +65,21 @@ namespace Game
         public void Begin(LevelEntryMode mode)
         {
             if (_disposed) return;
+            _settlement=null;_endPresented=false;
             _endPresenter.PrepareRound();
             _presentation.PrepareRound(); _isGameOver = false; _state = LevelFlowState.Building;
             BeginSinglePlayer(mode);
         }
         public void Retry()
         {
-            if (_disposed || _state == LevelFlowState.Transitioning) return;
+            if (_disposed || _state == LevelFlowState.Transitioning || _settlement!=null && _settlement.State!=RewardSaveState.Completed) return;
             _state = LevelFlowState.Transitioning;
             _endPresenter.PrepareRound();
             _presentation.Retry(() => Begin(LevelEntryMode.Retry));
         }
         public void GoToNextLevel()
         {
-            if (_disposed || _state == LevelFlowState.Transitioning) return;
+            if (_disposed || _state == LevelFlowState.Transitioning || _settlement!=null && _settlement.State!=RewardSaveState.Completed) return;
             _state = LevelFlowState.Transitioning;
             _endPresenter.PrepareRound();
             _presentation.Next(() => Begin(LevelEntryMode.NextLevel));
@@ -96,6 +100,8 @@ namespace Game
                 _roundStateManager.GetTriedCardsList().Count, _levelDataCreator.GetLevelData().Mechanic);
 
             _mechanics?.Begin(_levelDataCreator.GetLevelData().Mechanic);
+            if(_levelSaveDataManager.GetLevelSaveData().HasPendingWin())
+            {_state=LevelFlowState.Playing;OnLevelSuccess(this,EventArgs.Empty);return;}
             if (isResumeFlow)
             {
                 _state = LevelFlowState.Playing;
@@ -116,14 +122,14 @@ namespace Game
             {
                 LevelSaveData savedLevel = _gameSaveService.GetSavedLevel();
                 if (savedLevel?.Definition?.Mechanic == LevelMechanic.Growing) GrowingBoardState.UpgradeLegacy(savedLevel);
-                if (savedLevel != null && (!_levelTracker.IsFirstLevelTutorial()
+                if (savedLevel != null && (savedLevel.HasPendingWin() || !_levelTracker.IsFirstLevelTutorial()
                     || FirstLevelTutorialController.CanResume(savedLevel, _levelDataCreator.GetLevelData().MaxNumOfTries)))
                 {
                     if ((savedLevel.LevelId >= 0 && savedLevel.LevelId != _levelTracker.GetLevelId())
-                        || !LevelPlaytestSchedule.CanResume(_levelTracker.GetLevelId(), savedLevel.Definition)
-                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Growing && !GrowingBoardState.IsValid(savedLevel))
-                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Dynamite && !DynamiteRoundState.IsValid(savedLevel))
-                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Ice && !IceRoundState.IsValid(savedLevel)))
+                        || (!savedLevel.HasPendingWin() && !LevelPlaytestSchedule.CanResume(_levelTracker.GetLevelId(), savedLevel.Definition))
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Growing && !savedLevel.HasPendingWin() && !GrowingBoardState.IsValid(savedLevel))
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Dynamite && !savedLevel.HasPendingWin() && !DynamiteRoundState.IsValid(savedLevel))
+                        || (savedLevel.Definition?.Mechanic == LevelMechanic.Ice && !savedLevel.HasPendingWin() && !IceRoundState.IsValid(savedLevel)))
                     { _gameSaveService.DeleteSave(); _levelSaveDataManager.CreateDefaultLevelSaveData(); return false; }
                     if (savedLevel.Definition != null) (_levelDataCreator as LevelDataCreator)?.RestoreDefinition(savedLevel.Definition);
                     if(string.IsNullOrEmpty(savedLevel.RoundId) || savedLevel.LevelId<0)
@@ -142,34 +148,40 @@ namespace Game
             _levelSaveDataManager.CreateDefaultLevelSaveData();
             return false;
         }
-        private void OnLevelSuccess(object sender, EventArgs args)
+        private void OnLevelSuccess(object sender,EventArgs args)=>FinishRound(true);
+        private void OnLevelFail(object sender,EventArgs args)=>FinishRound(false);
+        public void FinishRound(bool won)
         {
-            if (_levelTracker.GetGameOption() != GameOption.SinglePlayer || _isGameOver) return;
-
-            _isGameOver = true;
-            _state = LevelFlowState.EndingSuccess;
-            CompleteRound(true);
+            if(_disposed || _levelTracker.GetGameOption()!=GameOption.SinglePlayer || _isGameOver)return;
+            LevelSaveData pending=null;
+            if(won && _snapshots!=null && _snapshots.Value.TryCreateSnapshot(out pending,true))pending.PendingWin=true;
+            _isGameOver=true;_state=won?LevelFlowState.EndingSuccess:LevelFlowState.EndingFail;
+            ObserverNotification.Run(()=>_gamePopupCreator.EndTutorials(won));
+            bool saved=false;
+            _settlement=new RewardSettlement<SinglePlayerRoundResult>(()=>{
+                if(pending!=null && !saved){_gameSaveService.Save(pending);saved=true;}
+                return _completion.Complete(won);
+            });
+            _settlement.Changed+=OnSettlementChanged;_settlement.Retry();
         }
-        private void OnLevelFail(object sender, EventArgs args)
+        private void OnSettlementChanged()
         {
-            if (_levelTracker.GetGameOption() != GameOption.SinglePlayer || _isGameOver) return;
-
-            _isGameOver = true;
-            _state = LevelFlowState.EndingFail;
-            CompleteRound(false);
-        }
-        private void CompleteRound(bool won)
-        {
-            _gamePopupCreator.EndTutorials(won);
-            var result = _completion.Complete(won);
-            GameTelemetry.Finish(result.Won ? "win" : "fail", result.GuessCount, result.EarnedCoins, result.EarnedCrystals);
-            _endPresenter.Present(result, this);
+            if(_disposed)return;
+            if(_settlement.State!=RewardSaveState.Completed)
+            {
+                if(_settlement.State==RewardSaveState.RetryRequired)_endPresenter.PresentPendingReward(_settlement.State,RetryReward,_state==LevelFlowState.EndingSuccess);
+                return;
+            }
+            if(_endPresented)return;_endPresented=true;
+            var result=_settlement.Value;
+            ObserverNotification.Run(()=>GameTelemetry.Finish(result.Won?"win":"fail",result.GuessCount,result.EarnedCoins,result.EarnedCrystals));
+            _endPresenter.Present(result,this);
         }
         public void Dispose()
         {
             if (_disposed) return; _disposed = true;
-            _resultManager.LevelSuccessEvent -= OnLevelSuccess; _guessManager.LevelFailEvent -= OnLevelFail;
-            _endPresenter.Dispose(); _presentation.Dispose(); GameTelemetry.Abandon("scene_exit");
+            if(_settlement!=null)_settlement.Changed-=OnSettlementChanged;
+            _endPresenter.PrepareRound(); _presentation.Cancel(); GameTelemetry.Abandon("scene_exit");
         }
     }
 }

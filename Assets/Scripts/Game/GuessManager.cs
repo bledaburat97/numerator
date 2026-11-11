@@ -19,11 +19,10 @@ namespace Game
         public event EventHandler<HintRewardTokenEventArgs> HintRewardTokenEvent;
 
         [Inject]
-        public GuessManager(IResultManager resultManager, ILifeBarController lifeBarController,
+        public GuessManager(ILifeBarController lifeBarController,
             IGameUIController gameUIController,
             IRoundStateManager roundStateManager)
         {
-            resultManager.WrongGuessEvent += OnWrongGuess;
             _lifeBarController = lifeBarController;
             _gameUIController = gameUIController;
             _roundStateManager = roundStateManager;
@@ -41,58 +40,38 @@ namespace Game
                 deferRewardIntroAnimation);
         }
         
-        private void OnWrongGuess(object sender, EventArgs args)
+        public GuessLifeChange ConsumeWrongGuess()
         {
-            _lifeGainAnimation?.Kill();
-            if (_roundStateManager.GetRemainingGuessCount() <= 0) return;
+            if(_roundStateManager.GetRemainingGuessCount()<=0)return null;
             _roundStateManager.DecreaseRemainingGuessCount();
-            int remainingGuessCount = _roundStateManager.GetRemainingGuessCount();
-            IReadOnlyList<LifeBarRewardInfo> lifeBarRewardInfoList = _roundStateManager.GetLifeBarRewardInfoList();
-            for (int i = 0; i < lifeBarRewardInfoList.Count; i++)
+            var change=new GuessLifeChange {Remaining=_roundStateManager.GetRemainingGuessCount(),Maximum=_roundStateManager.GetMaxGuessCount(),RewardIndex=-1};
+            var rewards=_roundStateManager.GetLifeBarRewardInfoList();
+            for(int index=0;index<rewards.Count;index++)
             {
-                if (remainingGuessCount == lifeBarRewardInfoList[i].BoundaryIndex)
-                {
-                    if (!lifeBarRewardInfoList[i].IsActive) break;
-
-                    bool isCrystal = lifeBarRewardInfoList[i].IsCrystal;
-
-                    _roundStateManager.SetLifeBarRewardStatus(i, false);
-                    
-                    if (isCrystal && remainingGuessCount > 0)
-                    {
-                        IRewardTokenView rewardTokenView = _lifeBarController.GetRewardToken(lifeBarRewardInfoList[i].BoundaryIndex);
-                        if (rewardTokenView == null)
-                        {
-                            Debug.LogError("Reward token view is null");
-                            _lifeBarController.SetRewardStatus(false, i);
-                        }
-                        else
-                        {
-                            bool canRevealCard = i % 2 == 1;
-                            HintRewardTokenEvent?.Invoke(this, new HintRewardTokenEventArgs(rewardTokenView, canRevealCard));
-                        }
-                    }
-                    else
-                    {
-                        _lifeBarController.SetRewardStatus(false, i);
-                        // The final crystal has no hint: remove it at its boundary.
-                        if (isCrystal) _lifeBarController.GetRewardToken(lifeBarRewardInfoList[i].BoundaryIndex)?.Destroy();
-                    }
-
-                    break;
-                }
+                var reward=rewards[index];
+                if(change.Remaining!=reward.BoundaryIndex || !reward.IsActive)continue;
+                _roundStateManager.SetLifeBarRewardStatus(index,false);
+                change.RewardIndex=index;change.Boundary=reward.BoundaryIndex;change.Crystal=reward.IsCrystal;change.CanReveal=index%2==1;break;
             }
-            
-            _lifeBarController.UpdateProgressBar(
-                (float)remainingGuessCount / _roundStateManager.GetMaxGuessCount(),
-                1f,
-                null).Play();
-
-
-            _gameUIController.TriggerResetNumbers();
-            if (remainingGuessCount == 0) FailRound();
+            return change;
         }
-        
+        public void PresentWrongGuess(GuessLifeChange change,Action<IRewardTokenView> hint)
+        {
+            if(change==null)return;
+            ObserverNotification.Present(()=>{
+                _lifeGainAnimation?.Kill();
+                if(change.RewardIndex>=0)
+                {
+                    var token=_lifeBarController.GetRewardToken(change.Boundary);
+                    if(change.Crystal && change.Remaining>0 && token!=null)
+                    {hint?.Invoke(token);ObserverNotification.Send(HintRewardTokenEvent,this,new HintRewardTokenEventArgs(token,change.CanReveal));}
+                    else{_lifeBarController.SetRewardStatus(false,change.RewardIndex);if(change.Crystal)token?.Destroy();}
+                }
+                _lifeBarController.UpdateProgressBar((float)change.Remaining/change.Maximum,1f,null).Play();
+                _gameUIController.TriggerResetNumbers();
+            });
+        }
+
         public bool GrantExtraLives(int amount,bool expandCapacity = false)
         {
             int remaining = _roundStateManager.GetRemainingGuessCount(), maximum = _roundStateManager.GetMaxGuessCount();
@@ -121,8 +100,8 @@ namespace Game
             _lifeGainAnimation?.Kill();
             bool hadLives = _roundStateManager.GetRemainingGuessCount() > 0;
             _roundStateManager.ExhaustGuesses();
-            if (hadLives) _lifeBarController.UpdateProgressBar(0f,.2f,null).Play();
-            LevelFailEvent?.Invoke(this,EventArgs.Empty);
+            if (hadLives) ObserverNotification.Present(()=>_lifeBarController.UpdateProgressBar(0f,.2f,null).Play());
+            ObserverNotification.Send(LevelFailEvent,this,EventArgs.Empty);
             return true;
         }
 
@@ -131,6 +110,8 @@ namespace Game
 
     public interface IGuessManager
     {
+        GuessLifeChange ConsumeWrongGuess();
+        void PresentWrongGuess(GuessLifeChange change,Action<IRewardTokenView> hint);
         bool FailRound();
         bool GrantExtraLives(int amount,bool expandCapacity = false);
         bool ApplyCommittedLives(int expectedBefore,int plannedRemaining);
@@ -139,6 +120,11 @@ namespace Game
         event EventHandler<HintRewardTokenEventArgs> HintRewardTokenEvent;
     }
 
+    public sealed class GuessLifeChange
+    {
+        public int Remaining,Maximum,RewardIndex,Boundary;
+        public bool Crystal,CanReveal;
+    }
     public class HintRewardTokenEventArgs : EventArgs
     {
         public IRewardTokenView RewardTokenView { get; set; }

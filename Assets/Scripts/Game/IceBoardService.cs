@@ -66,17 +66,19 @@ namespace Scripts
         public bool IsBlocked(int slot)=>slot>=0 && slot==FrozenIndex;
         public void PrepareTurn()
         {
-            if(!IsActive){Changed?.Invoke();return;}
+            if(!IsActive){ObserverNotification.Send(Changed);return;}
             var data=_save.GetLevelSaveData();int number=_round.GetTriedCardsList().Count+1;
+            if(data.HasPendingWin())
+            {_finishedRound=data;ObserverNotification.Send(Changed);return;}
             if(data.Ice==null || data.Ice.TurnNumber!=number)
                 data.Ice=new IceRoundState {TurnNumber=number,Frozen=number%2==0 && _round.GetRemainingGuessCount()>1,
                     FinalThaw=number%2==0 && _round.GetRemainingGuessCount()<=1};
-            Changed?.Invoke();
+            ObserverNotification.Send(Changed);
         }
         public void AfterGuess(GuessEvaluation guess)
         {
             if(!IsActive)return;
-            if(guess.Won){_finishedRound=_save.GetLevelSaveData();Changed?.Invoke();return;}
+            if(guess.Won){_finishedRound=_save.GetLevelSaveData();ObserverNotification.Send(Changed);return;}
             PrepareTurn();
         }
         public GuessSubmission Capture(IReadOnlyList<int> cards)

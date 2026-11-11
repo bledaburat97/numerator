@@ -89,8 +89,8 @@ public static partial class FruitLabTutorialEditorTools
                 var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                 Field(snapshot, "_saveData", game._saves); Field(snapshot, "_tracker", game.Tracker);
                 var memory = new MemorySave();
-                using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
-                    game.Target, game._area, game._powers, game.Tracker))
+                using (var rules = RulesFor(game,new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
+                    game.Target, game._area, game._powers, game.Tracker)))
                 {
                     rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), () => { if (snapshot.TryCreateSnapshot(out var data)) memory.Save(data); });
                     rules.Begin(LevelMechanic.Helper); game._powers.Refresh();
@@ -134,8 +134,8 @@ public static partial class FruitLabTutorialEditorTools
             {
                 game.BuildActors(); game.Gate.Clear(); Field(game.Tracker, "_levelId", 24);
                 var helper = game.Helper;
-                using (var rules = new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
-                    game.Target, game._area, game._powers, game.Tracker))
+                using (var rules = RulesFor(game,new LevelMechanicsController(game.Results, helper, game.Round, game._saves,
+                    game.Target, game._area, game._powers, game.Tracker)))
                 {
                     rules.Attach(new LevelMechanicsPresenter(game.View, game.Board), null); rules.Begin(LevelMechanic.LegacyElimination);
                     for (int i = 0; i < 3; i++) { game.Place(0); game.Place(1); game.Check(); Tick(.6f); }
@@ -391,7 +391,7 @@ public static partial class FruitLabTutorialEditorTools
     private static LevelMechanicsController GrowingRules(Fixture game,LevelData definition,GrowingBoardService growth)
     {
         var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
-        var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,(BoardSplitService)Get(game.Results,"_split"),game.Board,growth);
+        var rules = RulesFor(game,new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,(BoardSplitService)Get(game.Results,"_split"),game.Board,growth));
         Field(rules,"_levels",new TestLevel(definition)); return rules;
     }
     private static GameSaveSnapshotProvider GrowingSnapshot(Fixture game,LevelData definition)
@@ -709,7 +709,7 @@ public static partial class FruitLabTutorialEditorTools
     private static LevelMechanicsController DangerRules(Fixture game,LevelData definition,DynamiteService danger,PairEffect pair = null)
     {
         var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
-        var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,pair,(BoardSplitService)Get(game.Results,"_split"),game.Board,null,danger);
+        var rules = RulesFor(game,new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,pair,(BoardSplitService)Get(game.Results,"_split"),game.Board,null,danger));
         Field(rules,"_levels",new TestLevel(definition)); rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); return rules;
     }
     private static void AssertDynamiteCardPinned(Fixture game,int frame = -1)
@@ -749,8 +749,8 @@ public static partial class FruitLabTutorialEditorTools
             Helper=game.Helper;Field(Helper,"_split",Get(game.Results,"_split"));
 
             View=new IceBoardPresenter(Service,game.Board,game.Initial,game._info);
-            Rules=new LevelMechanicsController(game.Results,Helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,
-                null,(BoardSplitService)Get(game.Results,"_split"),game.Board);
+            Rules=RulesFor(game,new LevelMechanicsController(game.Results,Helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,
+                null,(BoardSplitService)Get(game.Results,"_split"),game.Board));
             Field(Rules,"_levels",new TestLevel(definition));Field(Rules,"_ice",Service);Field(Rules,"_icePresentation",View);
             Rules.Attach(new LevelMechanicsPresenter(game.View,game.Board),null);
         }

@@ -300,7 +300,7 @@ public static partial class FruitLabTutorialEditorTools
             {
                 game.BuildActors();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
                 var helper=game.Helper;
-                using(var rules=new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
+                using(var rules=RulesFor(game,new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker)))
                 using(var notes=AssistanceFor(game,definition,out var noteView,false))
                 {
                     rules.Attach(new LevelMechanicsPresenter(game.View,game.Board),null);rules.Begin(mechanic);notes.Refresh();

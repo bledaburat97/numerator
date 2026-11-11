@@ -617,7 +617,7 @@ public static partial class FruitLabTutorialEditorTools
                     var helper = game.Helper; Field(helper,"_split",split);
                     var provider = new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
                     Field(provider,"_saveData",game._saves); Field(provider,"_levels",new TestLevel(definition)); Field(provider,"_tracker",game.Tracker);
-                    using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,split,game.Board))
+                    using (var rules = RulesFor(game,new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker,null,split,game.Board)))
                     {
                         rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),() => provider.TryCreateSnapshot(out checkpoint)); rules.Begin(LevelMechanic.Normal);
                         if (oldGuesses > 0)

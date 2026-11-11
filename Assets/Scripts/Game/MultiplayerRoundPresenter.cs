@@ -74,7 +74,7 @@ namespace Game
                 _hud.SetMultiplayerAvatar(_multiplayer.GetPlayerAvatar(state.CurrentPlayer));
             _hud.SetMultiplayerTurn(status, state.Deadline,
                 state.Phase == MultiplayerPhase.Playing && state.CurrentPlayer == _multiplayer.LocalPlayerId);
-            if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0 && !_levelEndPopupController.IsRewardPresentationActive)
+            if (state.Phase == MultiplayerPhase.Finished && state.RematchVotes != 0 && _multiplayer.RewardState==RewardSaveState.Completed && !_levelEndPopupController.IsRewardPresentationActive)
             {
                 _levelEndPopupController.InitButton(LevelFinishButtonType.Game, _multiplayer.LocalRematchRequested ? "Oyuncular bekleniyor…" : "Teklifi kabul et",
                     _multiplayer.LocalRematchRequested ? (Action)(() => { }) : _multiplayer.RequestRematch);
@@ -93,9 +93,23 @@ namespace Game
             _levelEndPopupController.SetPopupStatus(true);
             if (_multiplayer.State.Phase == MultiplayerPhase.Disconnected) ShowDisconnected();
             _levelEndPopupController.ScaleUpText(.2f);
+            if(won && _multiplayer.RewardState!=RewardSaveState.Completed){RefreshRewardState(outcome,won);return;}
             if(won && outcome.Reward.HasValue && !outcome.Disconnected)
                 _levelEndPopupController.PresentPowerUpReward(outcome.Reward.Value);
             else _levelEndPopupController.ChangeFadeButtons(.2f, 1);
+        }
+        public void RefreshRewardState(MultiplayerOutcome outcome,bool won)
+        {
+            if(!won || outcome.Disconnected)return;
+            if(_multiplayer.RewardState!=RewardSaveState.Completed)
+            {
+                _levelEndPopupController.SetSaveStatus(_multiplayer.RewardState==RewardSaveState.Saving?"Ödül kaydediliyor…":"Ödül kaydedilemedi.");
+                _levelEndPopupController.InitButton(LevelFinishButtonType.Game,"Tekrar kaydet",_multiplayer.RetryReward);
+                _levelEndPopupController.ChangeFadeButtons(0,1).Complete(true);return;
+            }
+            _levelEndPopupController.SetSaveStatus(null);
+            _levelEndPopupController.InitButton(LevelFinishButtonType.Game,"Tekrar oyna",_multiplayer.RequestRematch);
+            if(outcome.Reward.HasValue)_levelEndPopupController.PresentPowerUpReward(outcome.Reward.Value);
         }
         public void ShowDisconnected() => _result.SetMultiplayerOpponentLeft(_multiplayer.DisconnectMessage);
     }

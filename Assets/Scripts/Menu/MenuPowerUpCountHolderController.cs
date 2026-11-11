@@ -18,7 +18,7 @@ namespace Scripts
         {
             _view = view;
             _levelTracker = levelTracker;
-            _profiles=profiles;_profiles.Changed+=OnProfileChanged;
+            _profiles=profiles;_profiles.Updated+=OnProfileChanged;
         }
 
         public void Initialize()
@@ -45,8 +45,9 @@ namespace Scripts
                 _view.SetPowerUpAlpha(rewardType, count > 0 ? EnabledAlpha : DisabledAlpha);
             }
         }
+        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.PowerUps|ProfileArea.Progress))OnProfileChanged();}
         private void OnProfileChanged(){if(_initialized)Refresh();}
-        public void Dispose()=>_profiles.Changed-=OnProfileChanged;
+        public void Dispose()=>_profiles.Updated-=OnProfileChanged;
     }
 
     public interface IMenuPowerUpCountHolderController

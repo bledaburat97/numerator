@@ -7,6 +7,38 @@ using UnityEngine;
 
 namespace Scripts
 {
+    // Isolates observers; it neither routes commands nor owns subscriptions.
+    public static class ObserverNotification
+    {
+        [ThreadStatic] private static Scope _scope;
+        public sealed class Scope : IDisposable
+        {
+            private readonly Scope _parent;private readonly System.Collections.Generic.List<Action> _notifications=new System.Collections.Generic.List<Action>();
+            private bool _closed;
+            internal Scope(){_parent=_scope;_scope=this;}
+            internal void Add(Action action)=>_notifications.Add(action);
+            public void Complete()
+            {
+                if(_closed)return;_closed=true;_scope=_parent;
+                foreach(var action in _notifications)Present(action);
+            }
+            public void Dispose(){if(!_closed){_scope=_parent;_closed=true;}}
+        }
+        public static Scope Defer()=>new Scope();
+        public static void Present(Action action){if(_scope!=null)_scope.Add(action);else Run(action);}
+        public static void Run(Action action)
+        {try{action?.Invoke();}catch(Exception error){Debug.LogException(error);}}
+        public static void Send(Action handlers)
+        {if(handlers!=null)foreach(Action handler in handlers.GetInvocationList())Present(handler);}
+        public static void SendImmediately(Action handlers)
+        {if(handlers!=null)foreach(Action handler in handlers.GetInvocationList())Run(handler);}
+        public static void Send<T>(Action<T> handlers,T value)
+        {if(handlers!=null)foreach(Action<T> handler in handlers.GetInvocationList())Present(()=>handler(value));}
+        public static void Send(EventHandler handlers,object sender,EventArgs args)
+        {if(handlers!=null)foreach(EventHandler handler in handlers.GetInvocationList())Present(()=>handler(sender,args));}
+        public static void Send<T>(EventHandler<T> handlers,object sender,T value)
+        {if(handlers!=null)foreach(EventHandler<T> handler in handlers.GetInvocationList())Present(()=>handler(sender,value));}
+    }
     public enum PowerUpUseResult { Unavailable, Applied, AlreadyActive, StorageFailed, ResumeRequired }
 
     public sealed class PowerUpUseService
@@ -81,8 +113,9 @@ namespace Scripts
             }
             finally
             {
-                _busy=false;Changed?.Invoke();
-                if(ReferenceEquals(_failedState,_state.GetLevelSaveData()))RecoveryRequired?.Invoke();
+                _busy=false;
+                if(ReferenceEquals(_failedState,_state.GetLevelSaveData()))ObserverNotification.SendImmediately(RecoveryRequired);
+                ObserverNotification.Send(Changed);
             }
         }
     }

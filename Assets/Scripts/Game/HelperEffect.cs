@@ -10,6 +10,7 @@ namespace Scripts
     public sealed class HelperEffect
     {
         [InjectOptional] private BoardSplitService _split;
+        [InjectOptional] private RoundHistory _history;
         private readonly IRoundStateManager _round;
         private readonly ITargetNumberCreator _target;
         private readonly ILevelSaveDataManager _save;
@@ -36,7 +37,7 @@ namespace Scripts
         public bool ApplyCommitted(GuessEvaluation inspection)
         {
             if(inspection==null)return false;
-            if(Record(_save.GetLevelSaveData(),inspection.Number))Applied?.Invoke(this,inspection);
+            if(Record(_save.GetLevelSaveData(),inspection.Number)){_history?.Reveal(inspection);ObserverNotification.Send(Applied,this,inspection);}
             return true;
         }
 

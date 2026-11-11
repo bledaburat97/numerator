@@ -6,7 +6,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class CardPlacementCoordinator : ICardPlacementCoordinator
+    public class CardPlacementCoordinator : ICardPlacementCoordinator, IDisposable
     {
         [InjectOptional] private IceBoardService _ice;
         private bool _restoringLocks;
@@ -335,8 +335,11 @@ namespace Scripts
             }
         }
         
-        public void Unsubscribe()
+        private bool _disposed;
+        public void Unsubscribe()=>Dispose();
+        public void Dispose()
         {
+            if(_disposed)return;_disposed=true;
             _gameUIController.ResetNumbers -= ResetPositionsOfCardItems;
         }
         

@@ -92,7 +92,13 @@ namespace Scripts
         public void StartTutorials() => _tutorialBootstrapper.StartRound();
         public void EndTutorials(bool success) { _powerMessages.CloseActivePowerUp(); _tutorialBootstrapper.RoundEnded(success); }
         public void ShowRewardTutorials(int coins, int crystals) => _tutorialBootstrapper.ShowRewards(coins, crystals);
-        private void OnDestroy() => _tutorialBootstrapper?.Dispose();
+        private void OnDestroy()
+        {
+            if(_gameUIController==null)return;
+            _gameUIController.OpenSettings-=CreateSettingsPopup;
+            _gameUIController.OpenInformation-=CreateInformationPopup;
+            _gameUIController.NotAbleToCheck-=CreateNotAbleToMovePopup;
+        }
 
         public RectTransform GetCanvasRectTransform()
         {

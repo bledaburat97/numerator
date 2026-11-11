@@ -23,6 +23,7 @@ namespace Game
         private readonly MultiplayerRoundPresenter _hud;
         private bool _subscribed, _isGameOver, _disposed;
         private Sequence _multiplayerReveal;
+        private MultiplayerOutcome _outcome;
         private LevelFlowState _state = LevelFlowState.Idle;
         [Inject]
         public MultiplayerSession(
@@ -58,6 +59,7 @@ namespace Game
         }
 
         public LevelFlowState State => _state;
+        public void Tick() { }
         public bool IsGameOver => _isGameOver;
         public void Begin(LevelEntryMode mode)
         {
@@ -68,7 +70,7 @@ namespace Game
             {
                 _multiplayer.RoundPreparing += OnMultiplayerRound; _multiplayer.GuessAccepted += OnMultiplayerFeedback;
                 _multiplayer.StateChanged += OnMultiplayerState; _multiplayer.MatchEnded += OnMultiplayerEnd;
-                _multiplayer.RequestRejected += OnMultiplayerError; _subscribed = true;
+                _multiplayer.RequestRejected += OnMultiplayerError;_multiplayer.RewardSaveChanged+=OnRewardChanged; _subscribed = true;
             }
             _gamePopupCreator.StartTutorials(); _multiplayer.Initialize();
         }
@@ -101,8 +103,11 @@ namespace Game
         }
         private void OnMultiplayerState(object sender, MultiplayerPublicState state) => _hud.RefreshState(state);
         private void OnMultiplayerError(object sender, string error) => _hud.ShowError(error);
+        private void OnRewardChanged(object sender,RewardSaveState state)
+        {if(_isGameOver && (_multiplayerReveal==null || !_multiplayerReveal.IsActive()))_hud.RefreshRewardState(_outcome,_outcome.Winner==_multiplayer.LocalPlayerId);}
         private void OnMultiplayerEnd(object sender, MultiplayerOutcome outcome)
         {
+            _outcome=outcome;
             GameTelemetry.Finish(outcome.Disconnected ? "disconnected" : outcome.Winner == _multiplayer.LocalPlayerId ? "win" : "lose",
                 _roundStateManager.GetTriedCardsList().Count);
             if (outcome.Disconnected && _isGameOver)
@@ -134,11 +139,11 @@ namespace Game
         public void Dispose()
         {
             if (_disposed) return; _disposed = true;
-            _multiplayerReveal?.Kill(); _presentation.Dispose(); GameTelemetry.Abandon("scene_exit");
+            _multiplayerReveal?.Kill(); _presentation.Cancel(); GameTelemetry.Abandon("scene_exit");
             if (!_subscribed) return;
             _multiplayer.RoundPreparing -= OnMultiplayerRound; _multiplayer.GuessAccepted -= OnMultiplayerFeedback;
             _multiplayer.StateChanged -= OnMultiplayerState; _multiplayer.MatchEnded -= OnMultiplayerEnd;
-            _multiplayer.RequestRejected -= OnMultiplayerError; _multiplayer.Stop(); _subscribed = false;
+            _multiplayer.RequestRejected -= OnMultiplayerError;_multiplayer.RewardSaveChanged-=OnRewardChanged; _multiplayer.Stop(); _subscribed = false;
         }
     }
 }

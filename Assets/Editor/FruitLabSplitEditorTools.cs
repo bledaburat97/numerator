@@ -72,7 +72,7 @@ public static partial class FruitLabTutorialEditorTools
                     var helper = game.Helper;
                     Field(helper,"_split",Get(game.Results,"_split"));
 
-                    using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
+                    using (var rules = RulesFor(game,new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker)))
                     {
                         rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Split);
                         var partial = answer.ToArray(); (partial[count-2],partial[count-1]) = (partial[count-1],partial[count-2]);
@@ -138,7 +138,7 @@ public static partial class FruitLabTutorialEditorTools
                     var groups = (IReadOnlyList<GuessGroupFeedback>)Get(rows[0],"_groups");
                     Require(groups[0].Correct == 2 && groups[1].Correct == count-4,"Resumed local counts match the original submitted guess");
                     var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
-                    using (var rules = new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker))
+                    using (var rules = RulesFor(game,new LevelMechanicsController(game.Results,helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker)))
                     {
                         rules.Attach(new LevelMechanicsPresenter(game.View, game.Board),null); rules.Begin(LevelMechanic.Split);
                         var details = helper.EvaluateGuess(6);

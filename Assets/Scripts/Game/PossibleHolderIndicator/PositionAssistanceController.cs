@@ -219,7 +219,6 @@ namespace Scripts
             if(_actors!=null)_actors.Rebuilt-=Invalidate;
             if(_knowledge!=null)_knowledge.Changed-=Invalidate;
             if(_split!=null)_split.Applied-=OnSplit;
-            _view.Dispose();
         }
     }
 }

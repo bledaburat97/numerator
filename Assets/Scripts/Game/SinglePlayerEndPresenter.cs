@@ -81,6 +81,15 @@ namespace Game
             });
         }
 
+        public void PresentPendingReward(RewardSaveState state,Action retry,bool won=true)
+        {
+            _ui.SetAllButtonsUnclickable();_history.RevealAnswer(_target.GetHistoryTargetCards());
+            _popup.SetAllStatusFalse();_popup.SetOutcome(won);_popup.SetPopupStatus(true);_popup.InitText(won?"Çözdün!":"Tekrar dene");
+            _popup.SetSaveStatus(state==RewardSaveState.Saving?"Sonuç kaydediliyor…":won?"Ödül kaydedilemedi.":"Sonuç kaydedilemedi.");
+            if(state==RewardSaveState.RetryRequired)_popup.InitButton(LevelFinishButtonType.Game,"Tekrar kaydet",retry);
+            _popup.ChangeFadeButtons(0,1).Complete(true);
+        }
+
         public void Dispose()
         {
             if (_disposed) return;

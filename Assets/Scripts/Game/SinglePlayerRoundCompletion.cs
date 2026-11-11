@@ -5,6 +5,27 @@ using System.Collections.Generic;
 
 namespace Game
 {
+    public enum RewardSaveState { Pending, Saving, RetryRequired, Completed }
+    public sealed class RewardSettlement<T>
+    {
+        private readonly Func<T> _save;private readonly Func<double> _clock;
+        private double _next;private int _failures;
+        public RewardSaveState State {get;private set;}=RewardSaveState.Pending;
+        public T Value {get;private set;}
+        public event Action Changed;
+        public RewardSettlement(Func<T> save,Func<double> clock=null)
+        {_save=save;_clock=clock??(()=>System.Diagnostics.Stopwatch.GetTimestamp()/(double)System.Diagnostics.Stopwatch.Frequency);}
+        public void Tick(){if(State==RewardSaveState.RetryRequired && _clock()>=_next)Retry();}
+        public void Retry()
+        {
+            if(State==RewardSaveState.Saving || State==RewardSaveState.Completed)return;
+            State=RewardSaveState.Saving;ObserverNotification.Send(Changed);
+            try{Value=_save();State=RewardSaveState.Completed;}
+            catch(Exception error)
+            {State=RewardSaveState.RetryRequired;_next=_clock()+Math.Min(10,Math.Pow(2,_failures++));UnityEngine.Debug.LogWarning("Reward settlement deferred: "+error);}
+            ObserverNotification.Send(Changed);
+        }
+    }
     // Owns the durable outcome. Presenters only consume the resulting snapshot.
     public sealed class SinglePlayerRoundCompletion
     {
@@ -36,7 +57,7 @@ namespace Game
 
         public SinglePlayerRoundResult Complete(bool won)
         {
-            if (_completed != null) return _completed;
+            if (_completed != null) {DeleteFinishedSave();return _completed;}
 
             int coins = 0, crystals = 0;
             CrystalRewardPlan crystalPlan=null;
@@ -66,9 +87,13 @@ namespace Game
                 won?_achievements.ClosestFor(_target.GetTargetCardsList()):null,
                 won?_target.GetTargetCardsList():null,_checkpoint.GetLevelSaveData().Definition,
                 won?_checkpoint.GetLevelSaveData().Definition?.BonusReward:null,crystalPlan);
+            DeleteFinishedSave();
+            return _completed;
+        }
+        private void DeleteFinishedSave()
+        {
             var saved=_saves.GetSavedLevel();
             if(saved==null || string.IsNullOrEmpty(saved.RoundId) || saved.RoundId==_checkpoint.GetLevelSaveData().RoundId)_saves.DeleteSave();
-            return _completed;
         }
     }
 

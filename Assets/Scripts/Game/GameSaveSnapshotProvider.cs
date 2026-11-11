@@ -46,6 +46,7 @@ namespace Scripts
 
             levelSaveData = new LevelSaveData
             {
+                PendingWin=_saveData?.GetLevelSaveData().PendingWin??false,
                 RoundId = _saveData?.GetLevelSaveData().RoundId,
                 PowerUpUseRevision = _saveData?.GetLevelSaveData().PowerUpUseRevision ?? 0,
                 TriedCardsList = CreateTriedCardsSnapshot(),

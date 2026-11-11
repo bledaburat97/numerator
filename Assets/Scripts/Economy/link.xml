@@ -1,5 +1,9 @@
 <linker>
   <assembly fullname="Assembly-CSharp">
+    <type fullname="Scripts.SinglePlayerTurnFlow" preserve="all" />
+    <type fullname="Scripts.Economy.PendingDuelAward" preserve="all" />
+    <type fullname="Scripts.Economy.DuelRewardRecovery" preserve="all" />
+    <type fullname="Scripts.Economy.PlayerPrefsRewardStorage" preserve="all" />
     <type fullname="Scripts.Economy.CrystalRewardPlan" preserve="all" />
     <type fullname="Scripts.RoundHistory" preserve="all" />
     <type fullname="Scripts.CardLockService" preserve="all" />

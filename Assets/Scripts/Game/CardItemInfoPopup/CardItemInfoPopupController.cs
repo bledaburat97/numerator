@@ -6,7 +6,7 @@ using Zenject;
 
 namespace Scripts
 {
-    public class CardItemInfoPopupController : ICardItemInfoPopupController
+    public class CardItemInfoPopupController : ICardItemInfoPopupController, IDisposable
     {
         private BaseButtonControllerFactory _baseButtonControllerFactory;
         private ICardInteractionManager _cardInteractionManager;
@@ -151,8 +151,11 @@ namespace Scripts
             SetCardItemInfoPopupStatus(args.Item1, args.Item2);
         }
 
-        public void Unsubscribe()
+        private bool _disposed;
+        public void Unsubscribe()=>Dispose();
+        public void Dispose()
         {
+            if(_disposed)return;_disposed=true;
             _cardInteractionManager.OpenCardItemInfoPopupEvent -= OpenCardItemInfoPopup;
         }
     }
