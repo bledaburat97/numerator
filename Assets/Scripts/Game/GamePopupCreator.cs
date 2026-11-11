@@ -18,23 +18,17 @@ namespace Scripts
         [Inject] private IPositionNotesSettings _notes;
         [Inject] private IPowerUpMessageController _powerMessages;
         [Inject] private ILevelDataCreator _levels;
+        [Inject] private ISettingsPopupService _settings;
+        [Inject] private LazyInject<IGameInteractionCancellation> _interactions;
         private GameInformationPopup _information;
         
-        [SerializeField] private MultiplayerLevelEndPopupView multiplayerLevelEndPopupPrefab;
         [SerializeField] private SettingsPopupView settingsPopupPrefab;
         [SerializeField] private DisconnectionPopupView disconnectionPopupPrefab;
-        [SerializeField] private WaitingOpponentPopupView waitingOpponentPopupPrefab;
         [SerializeField] private MessagePopupView messagePopupPrefab;
         [SerializeField] private HandTutorialView handTutorialPrefab;
         [SerializeField] private TutorialMessagePopupView tutorialMessagePopupPrefab;
 
-        private MultiplayerLevelEndPopupControllerFactory _multiplayerLevelEndPopupControllerFactory;
-        private MultiplayerLevelEndPopupViewFactory _multiplayerLevelEndPopupViewFactory;
-        private SettingsPopupControllerFactory _settingsPopupControllerFactory;
-        private SettingsPopupViewFactory _settingsPopupViewFactory;
         private DisconnectionPopupViewFactory _disconnectionPopupViewFactory;
-        private WaitingOpponentPopupControllerFactory _waitingOpponentPopupControllerFactory;
-        private WaitingOpponentPopupViewFactory _waitingOpponentPopupViewFactory;
         private MessagePopupViewFactory _messagePopupViewFactory;
 
         private Action _saveGameAction = null;
@@ -44,7 +38,6 @@ namespace Scripts
         
         private IMessagePopupView _newGameOfferPopup;
         private IMessagePopupView _notAbleToMovePopup;
-        private IMessagePopupView _ableToMovePopup;
         private bool _initialized;
         
         public void Initialize()
@@ -52,13 +45,7 @@ namespace Scripts
             if (_initialized) return;
             _initialized = true;
 
-            _settingsPopupControllerFactory = new SettingsPopupControllerFactory();
-            _settingsPopupViewFactory = new SettingsPopupViewFactory();
             _disconnectionPopupViewFactory = new DisconnectionPopupViewFactory();
-            _multiplayerLevelEndPopupControllerFactory = new MultiplayerLevelEndPopupControllerFactory();
-            _multiplayerLevelEndPopupViewFactory = new MultiplayerLevelEndPopupViewFactory();
-            _waitingOpponentPopupControllerFactory = new WaitingOpponentPopupControllerFactory();
-            _waitingOpponentPopupViewFactory = new WaitingOpponentPopupViewFactory();
             _messagePopupViewFactory = new MessagePopupViewFactory();
     
             _gameUIController.OpenSettings += CreateSettingsPopup;
@@ -114,24 +101,6 @@ namespace Scripts
             _notAbleToMovePopup.Animate(1f, OnClose);
         }
 
-        public void CreateAbleToMovePopup()
-        {
-            void OnClose() => _ableToMovePopup = null;
-            _ableToMovePopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
-            _ableToMovePopup.Init("It's your turn.", 0f, new Vector2(0, 318));
-            _ableToMovePopup.SetColor(ConstantValues.ABLE_TO_MOVE_TEXT_COLOR);
-            _ableToMovePopup.Animate(3f, OnClose);
-        }
-
-        public void CreateWaitingOpponentPopup(Action onPlayerUnReady)
-        {
-            IWaitingOpponentPopupController waitingOpponentPopupController =
-                _waitingOpponentPopupControllerFactory.Spawn();
-            IWaitingOpponentPopupView waitingOpponentPopupView =
-                _waitingOpponentPopupViewFactory.Spawn(transform, waitingOpponentPopupPrefab);
-            waitingOpponentPopupController.Initialize(waitingOpponentPopupView, onPlayerUnReady, _baseButtonControllerFactory);
-        }
-
         public void CreateNewGameOfferPopup()
         {
             _newGameOfferPopup = _messagePopupViewFactory.Spawn(transform, messagePopupPrefab);
@@ -139,17 +108,6 @@ namespace Scripts
             _newGameOfferPopup.Init("Opponent offers a new game.", 1f, new Vector2(0,200));
         }
         
-        public void CreateMultiplayerLevelEnd(bool isSuccess, IUserReady userReady, Action onPlayerReady)
-        {
-            _fadePanelController.SetFadeImageStatus(true);
-            _fadePanelController.SetFadeImageAlpha(0f);
-            IMultiplayerLevelEndPopupController multiplayerLevelEndPopupController =
-                _multiplayerLevelEndPopupControllerFactory.Spawn();
-            IMultiplayerLevelEndPopupView multiplayerLevelEndPopupView =
-                _multiplayerLevelEndPopupViewFactory.Spawn(transform, multiplayerLevelEndPopupPrefab);
-            if(!isSuccess) _hapticController.Vibrate(HapticType.Failure);
-            multiplayerLevelEndPopupController.Initialize(multiplayerLevelEndPopupView, isSuccess, userReady, onPlayerReady, _baseButtonControllerFactory, _fadePanelController);
-        }
         
         public void CreateDisconnectionPopup()
         {
@@ -170,14 +128,6 @@ namespace Scripts
             }
         }
         
-        public void CloseAbleToMovePopup()
-        {
-            if (_ableToMovePopup != null)
-            {
-                _ableToMovePopup.Close();
-            }
-        }
-
         public void CloseNewGameOfferPopup()
         {
             if (_newGameOfferPopup != null)
@@ -189,21 +139,15 @@ namespace Scripts
         private void CreateInformationPopup(object sender,EventArgs args)
         {
             if(_information!=null)return;
-            _powerMessages.CloseActivePowerUp();
+            _interactions.Value.CancelCurrentInteractions();
             _information=GameInformationPopup.Open(safeAreaRectTransform,_levels.GetLevelData().Mechanic,()=>_information=null);
         }
 
         private void CreateSettingsPopup(object sender, EventArgs args)
         {
-            _fadePanelController.SetFadeImageStatus(true);
-            ISettingsPopupController settingsPopupController = _settingsPopupControllerFactory.Spawn();
-            ISettingsPopupView settingsPopupView = _settingsPopupViewFactory.Spawn(transform, settingsPopupPrefab);
-            settingsPopupController.Initialize(settingsPopupView, OnClosePopup, _saveGameAction, _deleteSaveAction, _levelTracker, _baseButtonControllerFactory,_notes);
-        }
-
-        private void OnClosePopup()
-        {
-            _fadePanelController.SetFadeImageStatus(false);
+            _settings.Show(new SettingsPopupRequest {
+                Prefab=settingsPopupPrefab,Parent=canvasRectTransform,OverlayName="GameSettingsOverlay",Context=SettingsPopupContext.Game,
+                CancelInteractions=_interactions.Value.CancelCurrentInteractions,Save=_saveGameAction,Reset=_deleteSaveAction,Notes=_notes});
         }
 
         private void TrySaveGame()
@@ -222,13 +166,9 @@ namespace Scripts
         void StartTutorials();
         void EndTutorials(bool success);
         void ShowRewardTutorials(int coins, int crystals);
-        void CreateAbleToMovePopup();
-        void CreateWaitingOpponentPopup(Action onPlayerUnReady);
-        void CreateMultiplayerLevelEnd(bool isSuccess, IUserReady userReady, Action onPlayerReady);
         void CreateNewGameOfferPopup();
         void CreateDisconnectionPopup();
         void CloseNotAbleToMovePopup();
-        void CloseAbleToMovePopup();
         void CloseNewGameOfferPopup();
         RectTransform GetSafeAreaRectTransform();
         RectTransform GetCanvasRectTransform();

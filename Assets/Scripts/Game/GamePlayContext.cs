@@ -5,7 +5,8 @@ using Zenject;
 
 namespace Scripts
 {
-    public class GamePlayContext : MonoBehaviour
+    public interface IGameInteractionCancellation { void CancelCurrentInteractions(); }
+    public class GamePlayContext : MonoBehaviour,IGameInteractionCancellation
     {
         [Inject] private IGameSaveService _gameSaveService;
         [Inject] private IGameSaveSnapshotProvider _gameSaveSnapshotProvider;
@@ -57,7 +58,6 @@ namespace Scripts
             InitializeGameClock();
             InitializeTurnOrderDeterminer();
             _powerUpUses.RecoveryRequired+=QueuePowerUpRecovery;
-            _gameUi.OpenSettings+=OnModalOpening;_gameUi.OpenInformation+=OnModalOpening;
             InitializePowerUpUi();
             InitializeGame();
             _positionAssistance.Refresh();
@@ -77,7 +77,7 @@ namespace Scripts
             _session?.Tick();
             if(_powerUpRecoveryPending)
             {
-                _powerUpRecoveryPending=false;CancelCardGestures();
+                _powerUpRecoveryPending=false;CancelCurrentInteractions();
                 _session.Begin(LevelEntryMode.Resume);_positionAssistance.Refresh();_ultra.Restore();
             }
             _positionAssistance?.Tick();
@@ -134,14 +134,13 @@ namespace Scripts
 
         private void OnDestroy()
         {
-            _gameUi.OpenSettings-=OnModalOpening;_gameUi.OpenInformation-=OnModalOpening;
             if(_powerUpUses!=null)_powerUpUses.RecoveryRequired-=QueuePowerUpRecovery;
             Annotations?.Dispose();
             GetComponentInChildren<GameUIView>(true)?.GetPairView()?.Unbind();
             if (_presentation != null) _presentation.LayoutChanged -= OnLayoutChanged;
         }
         
-        private void CancelCardGestures()
+        public void CancelCurrentInteractions()
         {
             GetComponentInChildren<GameUIView>(true)?.GetPairView()?.CancelDrag();
             _powerMessages?.CloseActivePowerUp();
@@ -151,7 +150,6 @@ namespace Scripts
             for (int i = 0; i < _initialCardAreaController.GetCardCount(); i++)
                 if (_initialCardAreaController.TryGetCardItem(i, out var card)) card.GetCardMoveHandler().CancelPress();
         }
-        private void OnModalOpening(object sender,System.EventArgs args)=>CancelCardGestures();
 
         private void TrySave()
         {
@@ -178,7 +176,7 @@ namespace Scripts
         {
             if (!hasFocus)
             {
-                CancelCardGestures();
+                CancelCurrentInteractions();
                 TrySave();
             }
 #else
@@ -186,7 +184,7 @@ namespace Scripts
         {
             if (pauseStatus)
             {
-                CancelCardGestures();
+                CancelCurrentInteractions();
                 TrySave();
             }
 #endif

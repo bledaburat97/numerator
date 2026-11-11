@@ -17398,10 +17398,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ed62185f27c4631a93c9f56fcc4993d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  multiplayerLevelEndPopupPrefab: {fileID: 5430632394534682159, guid: fb8590374c1a58544af60d7794c56ad9, type: 3}
   settingsPopupPrefab: {fileID: 4628369059448461370, guid: fa6a4ab1c02057a46913bc501673af0e, type: 3}
   disconnectionPopupPrefab: {fileID: 3574926180861131745, guid: ce64fb251df716b44bf4150bf741eafe, type: 3}
-  waitingOpponentPopupPrefab: {fileID: 2977186154892670492, guid: eb1a2ddee7cc48e43840355924a7472d, type: 3}
   messagePopupPrefab: {fileID: 1794011495472088801, guid: b6a52420f49a4804ba861b8007091243, type: 3}
   handTutorialPrefab: {fileID: 6016333092749220106, guid: 9844bfe245f971a4d806b6e75c10d3c4, type: 3}
   tutorialMessagePopupPrefab: {fileID: 1522502369497219775, guid: b9b8962c1b01e57469fb97f65b3fff1c, type: 3}

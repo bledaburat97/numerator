@@ -460,8 +460,10 @@ public static partial class FruitLabTutorialEditorTools
                 scroll.verticalNormalizedPosition = 1; scroll.onValueChanged.Invoke(Vector2.up);
                 first = area.GetVisibleRow(0);
                 Require(game._area.History.GetHistoryEntry(0).reviewStates[0] == CardResultState.Correct
-                    && game._area.History.GetHistoryEntry(0).reviewStates[1] == CardResultState.Misplaced,
-                    "End review persists correct and misplaced states for offscreen rows");
+                    && game._area.History.GetHistoryEntry(0).reviewStates[1] == CardResultState.Absent
+                    && game._area.History.GetHistoryEntry(0).reviewStates[2] == CardResultState.Absent
+                    && game._area.History.GetHistoryEntry(1).reviewStates[1] == CardResultState.Misplaced,
+                    "Offscreen review preserves group-local exclusion for split rows and misplaced status for normal rows");
                 Require(area.AllocatedRowCount == allocated, "Scrolling and review reuse the existing row pool");
                 game._area.History.Clear();
                 Require(area.VisibleRowCount == 0 && game._area.HistoryCount == 0, "Rematch clears history and releases visible rows");

@@ -377,10 +377,8 @@ public static partial class FruitLabTutorialEditorTools
         public void EndTutorials(bool success){LastOutcome=success;Ends++;EndLevel=Level?.Invoke()??-1;}
         public void ShowRewardTutorials(int coins,int crystals)=>RewardTips++;
         public void Initialize(){}public void PrepareTutorials(){}public void StartTutorials(){}
-        public void CreateAbleToMovePopup(){}public void CreateWaitingOpponentPopup(Action action){}
-        public void CreateMultiplayerLevelEnd(bool success,IUserReady ready,Action action){}
         public void CreateNewGameOfferPopup(){}public void CreateDisconnectionPopup(){}
-        public void CloseNotAbleToMovePopup(){}public void CloseAbleToMovePopup(){}public void CloseNewGameOfferPopup(){}
+        public void CloseNotAbleToMovePopup(){}public void CloseNewGameOfferPopup(){}
         public RectTransform GetSafeAreaRectTransform()=>null;public RectTransform GetCanvasRectTransform()=>null;
     }
     private sealed class ContractInitialPresentation : IInitialCardAreaPresentation
@@ -792,5 +790,140 @@ public static partial class FruitLabTutorialEditorTools
             }
         }
         finally{UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(noticeRoot);}
+    }
+}
+
+public static partial class FruitLabTutorialEditorTools
+{
+    public static void ReviewFactories(Canvas canvas,Camera camera)
+    {
+        string prefs=Profile();var previous=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
+        var errors=new List<string>();int isolated=0;
+        Application.LogCallback log=(message,stack,type)=>{if(type!=LogType.Error && type!=LogType.Exception && type!=LogType.Assert)return;if(message.Contains("Injected settings"))isolated++;else errors.Add(message);};
+        Application.logMessageReceived+=log;
+        try
+        {
+            ReviewSettingsCreation(canvas,camera);
+            ReviewDirectModalCommand(canvas,camera);
+            Require(errors.Count==0 && isolated==1,"No unexpected factory errors: "+string.Join(" | ",errors));
+            Require(prefs==Profile(),"Factory checks preserve real player preferences");
+            System.IO.File.WriteAllText(Folder+"/factory-review.json",Newtonsoft.Json.JsonConvert.SerializeObject(new{passed=true,checks=new[]{
+                "one settings creation path for menu/online/single/multiplayer","local UI transforms with a scaled parent","duplicate-open guard","release-only close and input restoration","save/reset/navigation/collection callbacks remain distinct","privacy listener detached on close","external destruction cleans overlay","failure before creation leaves no overlay","direct game modal cancels normal/pair/note/power interactions without UI event subscriptions","bad power-close observer isolated","legacy world-transform default preserved"}},Newtonsoft.Json.Formatting.Indented));
+        }
+        finally{Application.logMessageReceived-=log;DOTween.defaultUpdateType=previous;}
+    }
+    private static void ReviewSettingsCreation(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);using(var game=new Fixture(canvas,camera,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}))
+        {
+            game.BuildActors();game.Gate.Clear();
+            var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<SettingsPopupView>("Assets/Prefabs/SettingsPopup.prefab");
+            var parent=new GameObject("SettingsScaledParent",typeof(RectTransform));parent.transform.SetParent(canvas.transform,false);
+            FruitLabStyle.Stretch((RectTransform)parent.transform);parent.transform.localScale=Vector3.one*.8f;
+            var scenes=new List<string>();int cancelled=0,closed=0,saved=0,reset=0,collection=0,privacy=0,shutdown=0;
+            var buttons=(BaseButtonControllerFactory)Get(game,"_buttons");
+            var factory=new SettingsPopupService(game.Tracker,buttons,scene=>scenes.Add(scene),()=>shutdown++,()=>privacy++);
+            SettingsPopupRequest Request(SettingsPopupContext context)=>new SettingsPopupRequest{Prefab=prefab,Parent=parent.transform,OverlayName="SettingsTestOverlay",Context=context,
+                CancelInteractions=()=>{Require(parent.transform.Find("SettingsTestOverlay")==null,"Cancel precedes overlay creation");cancelled++;},Closed=()=>closed++,Save=()=>saved++,Reset=()=>reset++,Collection=()=>collection++};
+            try
+            {
+                foreach(var context in new[]{SettingsPopupContext.Menu,SettingsPopupContext.Online,SettingsPopupContext.Game})
+                {
+                    int cancellations=cancelled,closes=closed;
+                    var request=Request(context);var handle=factory.Show(request);
+                    Require(handle!=null && handle.View.transform.localScale==Vector3.one && handle.View.transform.parent.localScale==Vector3.one,"The creator applies local UI transforms");
+                    Require(factory.Show(request)==null && cancelled==cancellations+1,"Repeated opens do not create or cancel twice");
+                    var view=handle.View;
+                    Require(((Component)view.GetRetryButton()).gameObject.activeSelf==(context==SettingsPopupContext.Game),"Retry is available only in a single-player game, even when online opens from a single-player profile");
+                    var privacyButton=view.GetComponentsInChildren<UnityEngine.UI.Button>(true).Single(button=>button.name=="PrivacyButton");
+                    privacyButton.onClick.Invoke();Require(privacy==cancellations+1,"Privacy uses the shared controller dependency");
+                    if(context==SettingsPopupContext.Menu)
+                        view.GetComponentsInChildren<UnityEngine.UI.Button>(true).Single(button=>button.name=="AchievementsButton").onClick.Invoke();
+                    else
+                    {
+                        var button=(BaseButtonView)view.GetCloseButton();button.OnPointerDown(null);Require(!handle.IsClosed,"Close waits for pointer release");button.OnPointerUp(null);button.OnPointerClick(null);
+                    }
+                    handle.Close();
+                    Require(handle.IsClosed && closed==closes+1 && parent.transform.Find("SettingsTestOverlay")==null,"Close cleans the owned overlay once");
+                }
+                Require(saved==0 && reset==0 && scenes.Count==0 && collection==1,"Closing and opening collection do not save, reset or navigate");
+                foreach(bool menu in new[]{true,false})
+                {
+                    using(var handle=factory.Show(Request(SettingsPopupContext.Game)))Click((BaseButtonView)(menu?handle.View.GetMenuButton():handle.View.GetRetryButton()));
+                }
+                Require(scenes.SequenceEqual(new[]{"Menu","Game"}) && saved==1 && reset==1 && shutdown==1,"Settings use the explicit save/reset callbacks and correct destination");
+                Field(game.Tracker,"_gameOption",GameOption.MultiPlayer);
+                using(var handle=factory.Show(Request(SettingsPopupContext.Game)))
+                {Require(!((Component)handle.View.GetRetryButton()).gameObject.activeSelf,"Multiplayer game settings never expose restart");Click((BaseButtonView)handle.View.GetMenuButton());}
+                Require(saved==1 && shutdown==2 && scenes.Last()=="Menu","Multiplayer menu does not write a single-player checkpoint");
+                var external=factory.Show(Request(SettingsPopupContext.Online));int before=closed;
+                // Preview-scene objects do not receive normal Play-mode lifecycle messages.
+                typeof(SettingsPopupView).GetMethod("OnDestroy",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(external.View,null);
+                Require(external.IsClosed && closed==before+1 && parent.transform.Find("SettingsTestOverlay")==null
+                    && Get(external.View,"PrivacyRequested")==null,"External view destruction also disposes the controller and overlay");
+                var broken=Request(SettingsPopupContext.Online);broken.CancelInteractions=()=>throw new InvalidOperationException("Cancel must finish before opening");
+                try{factory.Show(broken);throw new Exception("Expected cancellation failure");}catch(InvalidOperationException){}
+                Require(parent.transform.Find("SettingsTestOverlay")==null,"A failed mandatory action leaves no half-open overlay");
+                var original=new GameObject("TransformProbe",typeof(RectTransform));
+                try
+                {
+                    original.transform.localScale=Vector3.one*.9f;
+                    var objects=new Factory.BaseObjectFactory<GameObject,GameObject>();
+                    var world=objects.Spawn(parent.transform,original);var local=objects.Spawn(parent.transform,original,false);
+                    try{Require((world.transform.lossyScale-original.transform.lossyScale).sqrMagnitude<.0001f && local.transform.localScale==original.transform.localScale,"Factory transform policy preserves legacy world behavior and supports explicit local behavior");}
+                    finally{UnityEngine.Object.DestroyImmediate(world);UnityEngine.Object.DestroyImmediate(local);}
+                }
+                finally{UnityEngine.Object.DestroyImmediate(original);}
+            }
+            finally{UnityEngine.Object.DestroyImmediate(parent);}
+        }
+    }
+    private static void ReviewDirectModalCommand(Canvas canvas,Camera camera)
+    {
+        ClearPreviewActors(canvas);using(var game=new Fixture(canvas,camera,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9}))
+        using(var assistance=AssistanceFor(game,new LevelData{NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9},out _,false))
+        using(var annotations=new CardAnnotationController(game.Initial,game.Placement,game.UI,canvas.GetComponent<FruitLabGameLayout>(),game.Gate,null,()=>true,assistance,game.Initial,game.Board))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();
+            var context=canvas.gameObject.AddComponent<GamePlayContext>();var popup=Find<GamePopupCreator>(canvas.gameObject.scene);
+            var mutations=new List<(object owner,string field,object previous)>();
+            void Set(object owner,string field,object value){mutations.Add((owner,field,Get(owner,field)));Field(owner,field,value);}
+            try
+            {
+                Set(context,"_initialCardAreaController",game.Initial);Set(context,"_powerMessages",game.PowerMessages);Set(context,"_positionAssistance",assistance);Set(context,"<Annotations>k__BackingField",annotations);
+                var di=new DiContainer();di.Bind<IGameInteractionCancellation>().FromInstance(context);
+                var factory=new SettingsPopupService(game.Tracker,(BaseButtonControllerFactory)Get(game,"_buttons"),_=>{},()=>{},()=>{});
+                Set(popup,"_settings",factory);Set(popup,"_interactions",di.Resolve<LazyInject<IGameInteractionCancellation>>());Set(popup,"_saveGameAction",(Action)(()=>{}));Set(popup,"_deleteSaveAction",(Action)(()=>{}));Set(popup,"_notes",assistance);
+                var query=(IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
+                var pair=new PairDragPresenter(game.Initial,game.Placement,game.Board,query,game.Gate,game.UI,()=>true);game.View.GetPairView().Configure(pair);
+                game.Initial.TryGetCardItem(0,out var card);var pointer=new UnityEngine.EventSystems.PointerEventData(((GameObject)Get(game,"_events")).GetComponent<UnityEngine.EventSystems.EventSystem>()){pointerId=9,position=new Vector2(70,130)};
+                card.GetCardMoveHandler().OnPointerDown(pointer);var drag=typeof(CardViewHandler).GetMethod("OnDrag",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);drag.Invoke(card.GetCardViewHandler(),new object[]{pointer});
+                Require(pair.TryBegin(new PairClue(2,3),game.Initial.GetDragParent()),"Start a group drag beside a normal drag");
+                Require(annotations.TrySelect(3),"Open a manual note selection");
+                Field(game.PowerMessages,"_activePowerUpType",GameUIButtonType.RevealingPowerUp);
+                game.PowerMessages.ClosePowerUpEvent+=(s,e)=>throw new Exception("Injected settings power-close observer");
+                typeof(GamePopupCreator).GetMethod("CreateSettingsPopup",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(popup,new object[]{null,EventArgs.Empty});
+                Tick(.4f);
+                var overlay=canvas.transform.Find("GameSettingsOverlay");
+                Require(overlay!=null && !card.GetCardMoveHandler().IsDragStarted() && !pair.IsDragging && !annotations.IsSelecting
+                    && (GameUIButtonType)Get(game.PowerMessages,"_activePowerUpType")==GameUIButtonType.Default,"Direct modal creation clears all interactions before opening, without publishing OpenSettings");
+                Layer(canvas.transform);Draw(camera);
+                var eventData=new UnityEngine.EventSystems.PointerEventData(((GameObject)Get(game,"_events")).GetComponent<UnityEngine.EventSystems.EventSystem>()) {
+                    position=RectTransformUtility.WorldToScreenPoint(camera,game.UI.GetCheckButtonRectTransform().position)};
+                var hits=new List<UnityEngine.EventSystems.RaycastResult>();canvas.GetComponent<UnityEngine.UI.GraphicRaycaster>().Raycast(eventData,hits);
+                Require(hits.Count>0 && hits[0].gameObject.transform.IsChildOf(overlay),"The settings overlay blocks underlying gameplay input");
+                var view=overlay.GetComponentInChildren<SettingsPopupView>();Click((BaseButtonView)view.GetCloseButton());
+                Require(canvas.transform.Find("GameSettingsOverlay")==null,"Closing game settings removes the modal input blocker");
+                int turn=game.Round.GetTriedCardsList().Count;pointer.position+=Vector2.one*50;drag.Invoke(card.GetCardViewHandler(),new object[]{pointer});card.GetCardMoveHandler().OnPointerUp(pointer);pair.End(0,false);
+                Require(query.GetPlacedCardIndexesOnBoard().All(index=>index<0) && game.Round.GetTriedCardsList().Count==turn,"Late pointer/group release cannot place a card or submit a guess");
+            }
+            finally
+            {
+                game.View.GetPairView().Unbind();
+                var overlay=canvas.transform.Find("GameSettingsOverlay");if(overlay!=null)UnityEngine.Object.DestroyImmediate(overlay.gameObject);
+                foreach(var mutation in mutations.AsEnumerable().Reverse())Field(mutation.owner,mutation.field,mutation.previous);
+                UnityEngine.Object.DestroyImmediate(context);
+            }
+        }
     }
 }

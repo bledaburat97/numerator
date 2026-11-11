@@ -13,6 +13,8 @@ namespace Scripts
         [SerializeField] private TMP_Text title;
         [SerializeField] private TMP_Text description;
         public event System.Action PrivacyRequested;
+        public event System.Action Destroyed;
+        private void OnDestroy()=>Destroyed?.Invoke();
         private bool _singlePlayer = true, _menuContext;
         private RectTransform _achievements;
         public void ConfigureForMenu(System.Action openCollection)
@@ -138,7 +140,7 @@ namespace Scripts
 
         public void Close()
         {
-            Destroy(gameObject);
+            TutorialObjectUtility.Destroy(gameObject);
         }
 
         public IBaseButtonView GetRetryButton()

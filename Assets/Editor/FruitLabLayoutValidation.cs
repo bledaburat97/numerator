@@ -51,7 +51,7 @@ public static class FruitLabLayoutValidation
                 var gameView = Find<GameUIView>();
                 var popups = new SerializedObject(Find<GamePopupCreator>());
                 foreach (string field in new[] { "settingsPopupPrefab", "messagePopupPrefab", "handTutorialPrefab", "tutorialMessagePopupPrefab",
-                    "multiplayerLevelEndPopupPrefab", "disconnectionPopupPrefab", "waitingOpponentPopupPrefab" })
+                    "disconnectionPopupPrefab" })
                     Require(popups.FindProperty(field).objectReferenceValue != null, "Retained popup/tutorial prefab: " + field);
                 Require(new SerializedObject(Find<UnmaskServiceAreaView>()).FindProperty("unmaskServicePrefab").objectReferenceValue != null,
                     "Tutorial must retain its working UnmaskService prefab");

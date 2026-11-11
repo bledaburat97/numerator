@@ -28,7 +28,8 @@ namespace Menu
             var canvas=GetComponentInParent<Canvas>();canvas.GetComponent<FruitLabMenuLayout>().SetHomeVisible(visible);
             canvas.GetComponentInChildren<MenuHeaderView>(true).gameObject.SetActive(header);
         }
-        public void ShowSettings(ISettingsPopupService service,Action collection)=>service.Show(settingsPrefab,transform.parent,"MainSettingsOverlay",collection,true);
+        public void ShowSettings(ISettingsPopupService service,Action collection)=>service.Show(new SettingsPopupRequest {
+            Prefab=settingsPrefab,Parent=transform.parent,OverlayName="MainSettingsOverlay",Context=SettingsPopupContext.Menu,Collection=collection});
         public const float BarHeight = 68;
         [SerializeField] private SettingsPopupView settingsPrefab;
         [NonSerialized] private RectTransform _safe, _bar;

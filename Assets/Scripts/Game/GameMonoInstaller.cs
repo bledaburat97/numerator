@@ -19,6 +19,7 @@ namespace Scripts
         [SerializeField] private LevelFinishPopupView levelFinishPopup;
         public override void InstallBindings()
         {
+            Container.Bind<IGameInteractionCancellation>().To<GamePlayContext>().FromComponentInHierarchy().AsSingle();
             Container.Bind<TutorialInputGate>().AsSingle();
             Container.Bind<LevelEnvironmentView>().FromInstance(LevelEnvironmentView.Ensure(canvas)).AsSingle();
             Container.BindInterfacesAndSelfTo<PowerUpRewardPresenter>().AsSingle()

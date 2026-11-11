@@ -56,8 +56,4 @@ namespace Scripts
         void SetButtonStatus(bool status);
     }
     
-    public class FadeButtonControllerFactory : PlaceholderFactory<IFadeButtonView, IFadeButtonController>
-    {
-            
-    }
 }

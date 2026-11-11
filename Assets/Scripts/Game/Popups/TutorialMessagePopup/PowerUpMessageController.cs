@@ -41,7 +41,7 @@ namespace Scripts
             {
                 _activePowerUpType=powerUpType;
                 _fadePanelController.SetBoardFadeImageStatus(true);
-                OpenPowerUpEvent?.Invoke(this,powerUpType);
+                ObserverNotification.Send(OpenPowerUpEvent,this,powerUpType);
                 return;
             }
             _uses.Value.TryApply(reward);
@@ -51,9 +51,10 @@ namespace Scripts
         public void CloseActivePowerUp()
         {
             if (_activePowerUpType == GameUIButtonType.Default) return;
-            _fadePanelController.SetBoardFadeImageStatus(false);
-            ClosePowerUpEvent?.Invoke(this, _activePowerUpType);
+            var closing=_activePowerUpType;
             _activePowerUpType = GameUIButtonType.Default;
+            ObserverNotification.Run(()=>_fadePanelController.SetBoardFadeImageStatus(false));
+            ObserverNotification.Send(ClosePowerUpEvent,this,closing);
         }
 
         private void CancelOnAction(object sender,EventArgs args)=>CloseActivePowerUp();

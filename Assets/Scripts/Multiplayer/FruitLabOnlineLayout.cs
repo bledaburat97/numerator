@@ -40,7 +40,8 @@ namespace Scripts
             if (popup != null) { popup.ApplyOnlineLayout(); popup.transform.SetAsLastSibling(); }
         }
         public void OpenSettings(ISettingsPopupService settings)
-            =>settings.Show(settingsPopupPrefab,transform,"OnlineSettingsOverlay");
+            =>settings.Show(new SettingsPopupRequest {
+                Prefab=settingsPopupPrefab,Parent=transform,OverlayName="OnlineSettingsOverlay",Context=SettingsPopupContext.Online});
         public static RectTransform Rect(string name, Transform parent)
         {
             var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
