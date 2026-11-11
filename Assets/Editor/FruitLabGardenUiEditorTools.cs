@@ -66,8 +66,8 @@ public static partial class FruitLabTutorialEditorTools
                 Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-purpose.png");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
                 TapGarden(canvas,camera,eventSystem,popup.FruitButton(FruitId.Strawberry));popup.QuantityInput.text="10";
-                Require(popup.ConfirmButton.interactable && popup.transform.Find("Panel/TotalCounter/Value").GetComponent<TMP_Text>().text=="2"
-                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 48"),"Purchase preview shows fruit, quantity, total and remaining coins");
+                Require(popup.ConfirmButton.interactable && popup.transform.Find("Panel/TotalCounter/Value").GetComponent<TMP_Text>().text=="5"
+                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 45"),"Purchase preview shows fruit, quantity, total and remaining coins");
                 TapGarden(canvas,camera,eventSystem,popup.CancelButton);
                 Require(profiles.Snapshot().Wallet.Coins==50 && garden.GetBatches().Count==0,"Cancel never spends coins");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
@@ -81,9 +81,9 @@ public static partial class FruitLabTutorialEditorTools
                 popup.QuantityInput.text="10";
                 Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-seed-purchase.png");
                 TapGarden(canvas,camera,eventSystem,popup.ConfirmButton);popup.ConfirmButton.onClick.Invoke();
-                Require(!popup.gameObject.activeSelf && profiles.Snapshot().Wallet.Coins==48 && garden.GetBatches().Single().Value.Quantity==10,
+                Require(!popup.gameObject.activeSelf && profiles.Snapshot().Wallet.Coins==45 && garden.GetBatches().Single().Value.Quantity==10,
                     "Actual UI purchase debits once, creates a batch and ignores a duplicate confirmation");
-                Require(clone.GetComponentInChildren<MenuHeaderView>(true).GetComponentsInChildren<TMP_Text>(true).Any(t=>t.text=="48"),"Menu coin counter refreshes after purchase");
+                Require(clone.GetComponentInChildren<MenuHeaderView>(true).GetComponentsInChildren<TMP_Text>(true).Any(t=>t.text=="45"),"Menu coin counter refreshes after purchase");
                 var planted=panel.Plots.Single(plot=>plot.Fruit==FruitId.Strawberry);
                 Require(planted.CellCount(0).text=="10" && planted.CellArt(0).sprite.name=="Seed","New batch is displayed with its real amount and seed artwork");
                 notice.Hide();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-seeds.png");

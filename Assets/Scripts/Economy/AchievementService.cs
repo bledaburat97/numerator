@@ -5,6 +5,7 @@ namespace Scripts.Economy
 {
     public interface IAchievementService
     {
+        long BadgeCount {get;}
         void Reconcile();
         IReadOnlyList<AchievementStatus> GetAchievements();
         AchievementStatus Closest();
@@ -19,20 +20,15 @@ namespace Scripts.Economy
         // Also evaluates collections earned before badges were introduced. A
         // repeated startup makes no write once the persisted state is current.
         public void Reconcile()=>_profiles.Update(_rules.Apply);
-        public IReadOnlyList<AchievementStatus> GetAchievements()
-        {
-            var goals=_rules.Read(_profiles.Snapshot());
-            return AchievementPriority.Pending(goals).Concat(goals.Where(goal=>goal.Unlocked)).ToArray();
-        }
-        public AchievementStatus Closest()=>GetAchievements().FirstOrDefault(goal=>!goal.Unlocked && goal.Progress<goal.Target);
-        public AchievementStatus ClosestFor(IReadOnlyList<int> fruits)=>GetAchievements()
-            .Where(goal=>!goal.Unlocked && (!goal.Source.HasValue || goal.Source==FruitGainSource.SinglePlayer)
-                && (!goal.Fruit.HasValue || fruits.Contains((int)goal.Fruit.Value)))
-            .FirstOrDefault();
+        public long BadgeCount=>_profiles.Snapshot().Missions.Badges;
+        public IReadOnlyList<AchievementStatus> GetAchievements()=>_rules.Read(_profiles.Snapshot());
+        public AchievementStatus Closest()=>AchievementPriority.Pending(GetAchievements()).FirstOrDefault();
+        public AchievementStatus ClosestFor(IReadOnlyList<int> fruits)=>AchievementPriority.Pending(GetAchievements())
+            .FirstOrDefault(goal=>(!goal.Source.HasValue || goal.Source==FruitGainSource.SinglePlayer) && (!goal.Fruit.HasValue || fruits.Contains((int)goal.Fruit.Value)));
     }
     public static class AchievementPriority
     {
-        public static IOrderedEnumerable<AchievementStatus> Pending(IEnumerable<AchievementStatus> goals)=>goals.Where(goal=>!goal.Unlocked)
+        public static IOrderedEnumerable<AchievementStatus> Pending(IEnumerable<AchievementStatus> goals)=>goals.Where(goal=>goal.Visible && !goal.Unlocked)
             .OrderByDescending(goal=>(decimal)goal.Progress/goal.Target).ThenBy(goal=>goal.Target-goal.Progress).ThenBy(goal=>goal.Id,System.StringComparer.Ordinal);
     }
 

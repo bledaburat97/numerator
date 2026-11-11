@@ -1,49 +1,40 @@
 {
-  "SeedsPerPack": 5,
+  "SeedsPerPack": 2,
   "SeedPackCoinPrice": 1,
   "RequiredGrowthVisits": 4,
-  "Achievements": [
-    {
-      "Id": "strawberry-grower-100",
-      "Title": "Çilek Yetiştiricisi",
-      "Description": "100 çilek topla.",
-      "Target": 100,
-      "RewardKind": 1,
-      "RewardCount": 1,
-      "Fruit": 3
-    },
-    {
-      "Id": "watermelon-grower-100",
-      "Title": "Karpuz Yetiştiricisi",
-      "Description": "100 karpuz topla.",
-      "Target": 100,
-      "RewardKind": 1,
-      "RewardCount": 1,
-      "Fruit": 8
-    },
-    {
-      "Id": "farmer-apprentice-500",
-      "Title": "Çırak Çiftçi",
-      "Description": "Toplam 500 meyve topla.",
-      "Target": 500,
-      "RewardKind": 1,
-      "RewardCount": 1
-    },
-    {
-      "Id": "farmer-master-1500",
-      "Title": "Usta Çiftçi",
-      "Description": "Toplam 1500 meyve topla.",
-      "Target": 1500,
-      "RewardKind": 1,
-      "RewardCount": 1
-    },
-    {
-      "Id": "garden-owner-10",
-      "Title": "Bahçe Sahibi",
-      "Description": "Toplam 10 meyve topla.",
-      "Target": 10,
-      "RewardKind": 1,
-      "RewardCount": 1
-    }
-  ]
+  "Missions": {
+    "FirstFruit": 3,
+    "SecondFruit": 4,
+    "FruitTargets": [
+      10,
+      20,
+      50,
+      100
+    ],
+    "FruitStep": 50,
+    "LevelTargets": [
+      10,
+      20,
+      50,
+      100
+    ],
+    "LevelStep": 50,
+    "HarvestTargets": [
+      5,
+      15,
+      30,
+      50,
+      100
+    ],
+    "HarvestStep": 50,
+    "DuelTargets": [
+      1,
+      5,
+      10,
+      20,
+      30,
+      40
+    ],
+    "DuelStep": 10
+  }
 }

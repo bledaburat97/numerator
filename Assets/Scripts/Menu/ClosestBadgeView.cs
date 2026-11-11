@@ -27,14 +27,14 @@ namespace Menu
             _fruit=GardenUi.Icon(transform,"Fruit","Apple");_badge=GardenUi.Icon(transform,"Badge","Badge");
             _title=GardenUi.Text(transform,"Name",17,FruitLabStyle.Text);
             _title.alignment=TextAlignmentOptions.MidlineLeft;_title.enableAutoSizing=true;_title.fontSizeMin=16;_title.fontSizeMax=17;
-            _amount=GardenUi.Text(transform,"Progress",18,FruitLabStyle.Mint);_amount.alignment=TextAlignmentOptions.MidlineRight;
+            _amount=GardenUi.Text(transform,"Progress",18,FruitLabStyle.Mint);_amount.alignment=TextAlignmentOptions.MidlineRight;_amount.enableAutoSizing=true;_amount.fontSizeMin=14;_amount.fontSizeMax=18;
             _track=FruitLabStyle.Detail(transform,"Track",FruitLabStyle.Recess);_fill=FruitLabStyle.Detail(_track.transform,"Fill",FruitLabStyle.Mint);
         }
         public void Render(AchievementStatus goal)
         {
             EnsureUi();gameObject.SetActive(goal!=null);
             if(goal==null)return;
-            _title.text=goal.Title;
+            _title.text=goal.Fruit.HasValue?FruitCollectionView.FruitName(goal.Fruit.Value):goal.Kind==MissionKind.Level?"Bölüm tamamla":goal.Kind==MissionKind.Harvest?"Meyve hasat et":"Düello kazan";
             _amount.text=FruitCollectionView.FormatCount(goal.Progress)+"/"+FruitCollectionView.FormatCount(goal.Target);
             _fruit.gameObject.SetActive(goal.Fruit.HasValue);
             if(goal.Fruit.HasValue)FruitLabStyle.SetIcon(_fruit,goal.Fruit.Value.ToString());
@@ -51,8 +51,8 @@ namespace Menu
             FruitLabStyle.Place(_fruit.rectTransform,transform,43,13,24,24);
             float left=_fruit.gameObject.activeSelf?73:58;
             FruitLabStyle.Place(_title.rectTransform,transform,left,27,width-left-10,26);
-            FruitLabStyle.Place(_amount.rectTransform,transform,width-100,5,88,24);
-            FruitLabStyle.Place(_track.rectTransform,transform,left,13,Mathf.Max(12,width-left-116),5);
+            FruitLabStyle.Place(_amount.rectTransform,transform,width-118,5,106,24);
+            FruitLabStyle.Place(_track.rectTransform,transform,left,13,Mathf.Max(12,width-left-134),5);
         }
         private void OnDestroy(){if(_button!=null)_button.onClick.RemoveAllListeners();Selected=null;}
     }

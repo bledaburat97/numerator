@@ -13,8 +13,8 @@ namespace Scripts
             _view=view;_profiles=profiles;_profiles.Updated+=OnProfileChanged;
         }
         public void Initialize(ILevelTracker levelTracker){_initialized=true;Refresh();}
-        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Coins))Refresh();}
-        private void Refresh(){if(_initialized)_view.Init(_profiles.Snapshot().Wallet.Coins);}
+        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Coins|ProfileArea.Achievements))Refresh();}
+        private void Refresh(){if(!_initialized)return;var profile=_profiles.Snapshot();_view.Init(profile.Wallet.Coins);_view.SetBadges(profile.Missions.Badges);}
         public void Dispose()=>_profiles.Updated-=OnProfileChanged;
     }
     public interface IMenuHeaderController

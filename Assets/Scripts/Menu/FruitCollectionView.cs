@@ -32,6 +32,7 @@ namespace Menu
         void Render(IReadOnlyDictionary<FruitId,FruitBalance> fruits);
         void RenderAchievements(IReadOnlyList<AchievementStatus> achievements);
         void FocusBadge(string id);
+        void SetBadgeCount(long count);
     }
 
     public sealed class FruitCollectionView : MonoBehaviour,IFruitCollectionView
@@ -47,6 +48,8 @@ namespace Menu
         private UnityEngine.UI.Button _gardenTab,_collectionTab;
         private UnityEngine.UI.ScrollRect _collectionScroll;
         private CollectionBadgesView _badges;
+        private BadgeCounterView _badgeCounter;
+        public void SetBadgeCount(long count){Initialize();_badgeCounter.Render(count);}
         private GardenPanelView _garden;
         private SeedPurchasePopupView _purchase;
         private GardenTab _tab;
@@ -72,6 +75,7 @@ namespace Menu
             _gardenTab.onClick.AddListener(()=>Choose(GardenTab.Garden));
             _collectionTab.onClick.AddListener(()=>Choose(GardenTab.Collection));
             _collectionScroll=GardenUi.Scroll(transform,"CollectionScroll");
+            _badgeCounter=new BadgeCounterView(transform);
             _badges=new CollectionBadgesView(_collectionScroll.content);
             foreach(var cell in cells)
             {
@@ -132,7 +136,9 @@ namespace Menu
             var surface = GetComponent<UnityEngine.UI.Image>();
             if (surface != null) surface.color = _embedded && _tab == GardenTab.Garden ? Color.clear : FruitLabStyle.Background;
             if (_embedded) title.text = _tab == GardenTab.Garden ? "Bahçe" : "Koleksiyon";
-            FruitLabStyle.Place(title.rectTransform,rect,20,height-62,width-40,32);
+            FruitLabStyle.Place(title.rectTransform,rect,20,height-62,width-(_embedded?40:140),32);title.fontSize=24;
+            _badgeCounter.Root.gameObject.SetActive(_tab==GardenTab.Collection && !_embedded);
+            FruitLabStyle.Place(_badgeCounter.Root,rect,width-110,height-66,94,40);
             FruitLabStyle.Place((RectTransform)_gardenTab.transform,rect,20,height-118,(width-48)*.5f,44);
             FruitLabStyle.Place((RectTransform)_collectionTab.transform,rect,28+(width-48)*.5f,height-118,(width-48)*.5f,44);
             FruitLabStyle.Place(summary.rectTransform,rect,20,height-(_embedded?96:154),width-40,26);

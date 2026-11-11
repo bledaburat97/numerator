@@ -65,7 +65,8 @@ namespace Menu
         {
             if(_disposed || !_view.IsVisible)return;
             if(change.Includes(ProfileArea.Collection))_view.Render(_inventory.GetCollection());
-            if(change.Includes(ProfileArea.Collection|ProfileArea.Achievements))_view.RenderAchievements(_achievements.GetAchievements());
+            if(change.Includes(ProfileArea.Collection|ProfileArea.Achievements|ProfileArea.Progress))_view.RenderAchievements(_achievements.GetAchievements());
+            if(change.Includes(ProfileArea.Achievements))_view.SetBadgeCount(_achievements.BadgeCount);
             if(change.Includes(ProfileArea.Garden))_gardenView.Render(_garden.GetBatches());
             if(change.Includes(ProfileArea.Coins))_gardenView.SetCoins(_profiles.Snapshot().Wallet.Coins);
             if(_purchaseOpen && change.Includes(ProfileArea.Coins|ProfileArea.Garden))RefreshQuote();
@@ -73,7 +74,7 @@ namespace Menu
         private void Refresh()
         {
             if(_disposed || !_view.IsVisible)return;
-            _view.Render(_inventory.GetCollection());_view.RenderAchievements(_achievements.GetAchievements());_gardenView.Render(_garden.GetBatches());
+            _view.SetBadgeCount(_achievements.BadgeCount);_view.Render(_inventory.GetCollection());_view.RenderAchievements(_achievements.GetAchievements());_gardenView.Render(_garden.GetBatches());
             _gardenView.SetCoins(_profiles.Snapshot().Wallet.Coins);
             if(_gardenView.IsVisible)_gardenView.PlayGrowth(_visits.TakeVisualChanges());
             if(_purchaseOpen)RefreshQuote();
@@ -158,7 +159,7 @@ namespace Menu
             try
             {
                 var result=_garden.Harvest(batchId);
-                if(result.Status==ProfileCommitResult.Applied){_gardenView.PlayHarvest(visual);_notice.ShowHarvest(result.Fruit,result.Quantity);}
+                if(result.Status==ProfileCommitResult.Applied){_gardenView.PlayHarvest(visual);_notice.ShowHarvest(result.Fruit,result.Quantity,result.BadgesEarned);}
                 else Refresh();
             }
             catch(Exception error) when(error is IOException || error is InvalidOperationException || error is OverflowException)

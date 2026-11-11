@@ -19,7 +19,10 @@ namespace Menu
 
     public sealed class MainNavigationView : MonoBehaviour
     {
-        private MenuUIView Home=>GetComponentInParent<Canvas>().GetComponentInChildren<MenuUIView>(true);
+        private MenuUIView Home
+        {
+            get{var canvas=GetComponentInParent<Canvas>();return canvas!=null?canvas.GetComponentInChildren<MenuUIView>(true):null;}
+        }
         public void FrameCollection()=>FramePage((RectTransform)Collection.transform);
         public bool HasHome=>Home!=null;
         public FruitCollectionView Collection=>Home?.GetCollectionView();

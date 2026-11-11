@@ -1,5 +1,8 @@
 <linker>
   <assembly fullname="Assembly-CSharp">
+    <type fullname="Scripts.Economy.MissionState" preserve="all" />
+    <type fullname="Scripts.Economy.MissionProgress" preserve="all" />
+    <type fullname="Scripts.Economy.MissionSettings" preserve="all" />
     <type fullname="Scripts.SinglePlayerTurnFlow" preserve="all" />
     <type fullname="Scripts.Economy.PendingDuelAward" preserve="all" />
     <type fullname="Scripts.Economy.DuelRewardRecovery" preserve="all" />

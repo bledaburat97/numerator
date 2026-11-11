@@ -17,6 +17,7 @@ namespace Scripts.Economy
             var a=JObject.FromObject(before);var b=JObject.FromObject(after);ProfileArea changed=ProfileArea.None;
             void Compare(string name,ProfileArea area){if(!JToken.DeepEquals(a[name],b[name]))changed|=area;}
             Compare("Progress",ProfileArea.Progress);Compare("Collection",ProfileArea.Collection);Compare("Garden",ProfileArea.Garden);Compare("Achievements",ProfileArea.Achievements);
+            Compare("Missions",ProfileArea.Achievements);
             Compare("Transactions",ProfileArea.Transactions);Compare("TelemetryOutbox",ProfileArea.Telemetry);Compare("TelemetryEngagement",ProfileArea.Telemetry);Compare("PowerUpCheckpoint",ProfileArea.PowerUpCheckpoint);
             if(!JToken.DeepEquals(a["Wallet"]["Coins"],b["Wallet"]["Coins"]))changed|=ProfileArea.Coins;
             foreach(var name in new[]{"CrystalProgress","NextReward"})if(!JToken.DeepEquals(a["Wallet"][name],b["Wallet"][name]))changed|=ProfileArea.Crystals;

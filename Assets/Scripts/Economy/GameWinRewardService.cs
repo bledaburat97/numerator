@@ -21,6 +21,7 @@ namespace Scripts.Economy
         public int NextLevelNumber;
         public List<RewardType> PowerUps=new List<RewardType>();
         public CrystalRewardPlan Crystals;
+        public long BadgesEarned;
         [JsonIgnore] public bool IsReplay;
     }
 
@@ -71,6 +72,7 @@ namespace Scripts.Economy
             string request=JsonConvert.SerializeObject(new {round,answer=answer.ToArray(),reward});
             return Commit("duel:"+matchId+":"+round,"duel_win",request,profile=>{
                 var result=Before(profile);
+                profile.Progress.DuelWins=checked(profile.Progress.DuelWins+1);
                 profile.Wallet.PowerUps[reward]=checked(profile.Wallet.PowerUps[reward]+1);result.PowerUps.Add(reward);
                 FruitInventoryService.ApplyGrant(profile,FruitGainSource.Duel,fruits,_achievements);
                 return result;
@@ -80,7 +82,9 @@ namespace Scripts.Economy
         private GameWinAward Commit(string id,string kind,string request,Func<PlayerProfileData,GameWinAward> apply)
         {
             GameWinAward award=null;
-            var status=_profiles.Commit(id,kind,request,profile=>{award=apply(profile);return true;},()=>JsonConvert.SerializeObject(award));
+            var status=_profiles.Commit(id,kind,request,profile=>{
+                long before=profile.Missions.Badges;award=apply(profile);award.BadgesEarned=profile.Missions.Badges-before;return true;
+            },()=>JsonConvert.SerializeObject(award));
             if(status==ProfileCommitResult.AlreadyApplied)
             {
                 var receipt=_profiles.Snapshot().Transactions[id];

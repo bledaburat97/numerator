@@ -169,6 +169,13 @@ public static class FruitLabNavigationEditorTools
             Set(tracker, "_levelId", 0);
             controller.Select(MainTab.Multiplayer); Require(requests.Count == 0, "Level lock protects direct multiplayer routing");
             Set(tracker, "_levelId", 5); controller.Select(MainTab.Multiplayer); Require(requests.SequenceEqual(new[] { "Lobby" }), "Unlocked tab opens Lobby");
+            // Scene objects may lose their parent before Zenject disposes the controller.
+            // Teardown must use the original subscription target, not rediscover Home.
+            view.transform.SetParent(null, false);
+            Require(view.Collection == null, "Detached navigation no longer has a home canvas");
+            controller.Dispose();
+            Object.DestroyImmediate(view.gameObject);
+            controller.Dispose();
         }
         finally { EditorSceneManager.CloseScene(scene, true); EditorSceneManager.ClosePreviewScene(source); }
     }

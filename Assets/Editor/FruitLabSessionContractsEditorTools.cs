@@ -175,7 +175,7 @@ public static partial class FruitLabTutorialEditorTools
             ValidateSessionLifecycle(canvas,camera);
             ValidateAlternatePresentations(canvas,camera);
             Require(errors.Count==0,"No Unity errors in session contracts review: "+string.Join(" | ",errors));
-            Debug.Log("FRUIT_LAB_SESSION_CONTRACTS_PASS: "+outcomes+" outcomes; zero/full rewards, overflow, duplicate completion, real buttons, cancellation, alternate HUD/result/indicator implementations.");
+            Debug.Log("FRUIT_LAB_SESSION_CONTRACTS_PASS: "+outcomes+" outcomes; real-installer new/resumed games, first-level cards and settings, deferred powerup lookups, zero/full rewards, overflow, duplicate completion, real buttons, cancellation, alternate HUD/result/indicator implementations.");
         }
         finally {DOTween.defaultUpdateType=previous;Application.logMessageReceived-=collect;}
     }
@@ -187,15 +187,23 @@ public static partial class FruitLabTutorialEditorTools
         {
             foreach(var mode in new[]{GameOption.SinglePlayer,GameOption.MultiPlayer})
             {
+                using var isolatedProfile=Scripts.Economy.PlayerProfileRuntime.UseForTests(
+                    new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>{
+                        var profile=new Scripts.Economy.PlayerProfileData();profile.Progress.LevelId=20;
+                        foreach(RewardType type in Enum.GetValues(typeof(RewardType)))profile.Wallet.PowerUps[type]=3;
+                        return profile;
+                    }));
                 var root=new GameObject("ContractBindingTracker");root.SetActive(false);SceneManager.MoveGameObjectToScene(root,scene);
                 ILevelSession session=null;PositionAssistanceController assistance=null;DisposableManager owner=null;
                 try
                 {
                     var tracker=root.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_gameOption",mode);
+                    Field(tracker,"_levelId",20);Field(tracker,"_revealingPowerUpCount",3);Field(tracker,"_bombPowerUpCount",3);
                     var container=new DiContainer();
                     container.Bind<Context>().FromInstance(Find<SceneContext>(scene));
                     container.Bind<ILevelTracker>().FromInstance(tracker);container.Bind<IGameSaveService>().FromInstance(new MemorySave());
                     BindCollectionTestRewards(container);
+                    container.Bind<Scripts.Economy.PowerUpUseJournal>().AsSingle();
                     container.Bind<IHapticController>().To<HapticController>().AsSingle();
                     container.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
                     var installer=Find<GameMonoInstaller>(scene);
@@ -217,11 +225,55 @@ public static partial class FruitLabTutorialEditorTools
                         && lifetimes.OfType<PositionAssistanceView>().Count()==1 && lifetimes.OfType<TutorialBootstrapper>().Count()==1,
                         "Input, hint, note-view and tutorial subscriptions belong to the scene container");
                     owner=container.Instantiate<DisposableManager>();
+                    if(mode==GameOption.SinglePlayer)ValidateInstallerStartup(container,session);
                 }
                 finally {if(owner!=null)owner.Dispose();else{assistance?.Dispose();session?.Dispose();}UnityEngine.Object.DestroyImmediate(root);}
             }
         }
         finally {EditorSceneManager.ClosePreviewScene(scene);}
+    }
+
+    private static void ValidateInstallerStartup(DiContainer container,ILevelSession session)
+    {
+        // SceneContext injects scene components separately from resolving its bindings.
+        container.Inject(container.Resolve<ILevelDataCreator>());
+        container.Inject(container.Resolve<ITargetNumberCreator>());
+        container.Resolve<IGamePowerUpAreaController>().Initialize();
+        // FromMethod has already returned and its pooled InjectContext was reset.
+        // Use the real scene installer: hand-built service closures miss this failure.
+        session.Begin(LevelEntryMode.New);
+        for(int i=0;i<35;i++)Tick(.1f);
+        container.Resolve<TutorialInputGate>().Clear();
+        Require(session.State==LevelFlowState.Playing,"Real installer finishes the game-scene intro");
+        var uses=container.Resolve<PowerUpUseService>();
+        Require(uses.CanUse(RewardType.Revealing,0),"Deferred ice-state lookup survives InjectContext disposal");
+        var profile=Scripts.Economy.PlayerProfileRuntime.Current;
+        profile.Update(data=>data.Wallet.PowerUps[RewardType.Revealing]=3);
+        Require(uses.TryApply(RewardType.Revealing,0)==PowerUpUseResult.Applied,
+            "Deferred snapshot lookup resolves and commits a powerup after game startup");
+        var save=container.Resolve<IGameSaveService>().GetSavedLevel();
+        Require(save!=null && save.PowerUpUseRevision==1 && save.CardItemInfoList.Any(card=>card.isLocked),
+            "Live installer stores the revealed card and powerup revision");
+        session.Begin(LevelEntryMode.Resume);
+        container.Resolve<TutorialInputGate>().Clear();
+        Require(session.State==LevelFlowState.Playing && !uses.CanUse(RewardType.Revealing,0),
+            "Re-entering the saved game restores the locked card without a startup error");
+        var tracker=(LevelTracker)container.Resolve<ILevelTracker>();
+        container.Resolve<IGameSaveService>().DeleteSave();Field(tracker,"_levelId",0);
+        session.Begin(LevelEntryMode.New);for(int i=0;i<35;i++)Tick(.1f);
+        Require(session.State==LevelFlowState.Playing
+            && container.Resolve<IBoardHolderCountManager>().GetBoardHolderCount()==2
+            && container.Resolve<ITargetNumberCreator>().GetTargetCardsList().SequenceEqual(new[]{4,1})
+            && container.Resolve<ICardItemInfoManager>().GetCardItemInfoList().Count==5,
+            "Level one creates its tutorial board, fixed answer and all five fruit cards");
+        var ui=container.Resolve<IGameUIController>();int opened=0;
+        EventHandler onSettings=(_,__)=>opened++;ui.OpenSettings+=onSettings;
+        try
+        {
+            var view=(IGameUIView)Get(ui,"_view");Click((BaseButtonView)view.GetSettingsButton());
+            Require(opened==1,"Settings remains clickable after a new game-scene startup");
+        }
+        finally {ui.OpenSettings-=onSettings;}
     }
 
     private static void ValidateSessionLifecycle(Canvas canvas,Camera camera)
@@ -768,6 +820,7 @@ public static partial class FruitLabTutorialEditorTools
         public void SetVisible(bool value)=>_view.SetVisible(value);public void SelectTab(Menu.GardenTab tab)=>_view.SelectTab(tab);public void FocusBadge(string id)=>_view.FocusBadge(id);
         public void Render(IReadOnlyDictionary<Scripts.Economy.FruitId,Scripts.Economy.FruitBalance> data){Renders++;_view.Render(data);}
         public void RenderAchievements(IReadOnlyList<Scripts.Economy.AchievementStatus> data){Badges++;_view.RenderAchievements(data);}
+        public void SetBadgeCount(long count)=>_view.SetBadgeCount(count);
     }
     private static void ReviewProfileAreas(Canvas canvas,Camera camera)
     {

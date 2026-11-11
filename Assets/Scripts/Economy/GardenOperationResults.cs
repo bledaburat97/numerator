@@ -57,6 +57,7 @@ namespace Scripts.Economy
     }
     public sealed class GardenHarvestResult
     {
+        public long BadgesEarned;
         public string BatchId;
         public FruitId Fruit;
         public long Quantity;

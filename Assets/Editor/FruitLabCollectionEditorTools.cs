@@ -57,7 +57,7 @@ public static partial class FruitLabTutorialEditorTools
                 Field(view,"cardPrefab",AssetDatabase.LoadAssetAtPath<NonDraggableCardItemView>("Assets/Prefabs/NonDraggableCardItem.prefab"));
                 ((RectTransform)root.transform).sizeDelta=new Vector2(375,812);
                 view.Render(new PlayerProfileData().Collection);
-                view.RenderAchievements(new AchievementRules(PlayerProfileRuntime.LoadSettings()).Read(new PlayerProfileData()));view.ApplyLayout();
+                view.SetBadgeCount(0);view.RenderAchievements(new AchievementRules(PlayerProfileRuntime.LoadSettings()).Read(new PlayerProfileData()));view.ApplyLayout();
                 ConnectGardenCardPrefabs(root);
                 foreach(var graphic in root.GetComponentsInChildren<Graphic>(true))graphic.gameObject.layer=5;
                 root.SetActive(false);PrefabUtility.SaveAsPrefabAsset(root,CollectionPath);
@@ -72,6 +72,7 @@ public static partial class FruitLabTutorialEditorTools
             Set(menu,"collectionButton",entry);Set(menu,"collectionView",collection.GetComponent<FruitCollectionView>());
             menu.GetGardenNoticeView().ApplyLayout();menu.GetGardenNoticeView().Hide();
             Find<FruitLabMenuLayout>(source).ApplyLayout();
+            Find<MenuHeaderView>(source).SetBadges(0);
             ClosestBadgeView.Ensure(Find<FruitLabMenuLayout>(source).HomeContent).Render(new AchievementRules(PlayerProfileRuntime.LoadSettings()).Read(new PlayerProfileData()).OrderBy(goal=>goal.Target).FirstOrDefault());
             foreach(var component in source.GetRootGameObjects().SelectMany(go=>go.GetComponentsInChildren<Component>(true)))
                 if(component!=null){EditorUtility.SetDirty(component);if(PrefabUtility.IsPartOfPrefabInstance(component))PrefabUtility.RecordPrefabInstancePropertyModifications(component);}
@@ -338,7 +339,7 @@ public static partial class FruitLabTutorialEditorTools
             Require(before==Profile(),"Real player preferences are unchanged");
             Require(errors.Count==0,"No collection errors: "+string.Join("; ",errors));
             File.WriteAllText(Folder+"/collection-hub-review.json",JsonConvert.SerializeObject(new {passed=true,goals=5,sizes=new[]{568,667,812,932},
-                checks=new[]{"single/duel/manual harvest lifetime totals","exclude adjustments and unharvested crops","five badge-only goals","legacy reward receipts preserved","restart and failed-write rollback","home closest unfinished target","home click focuses badge","garden album and footer reset to fruit summary","one scroll and reused rows","pending to earned live movement","all completed hides home goal","real pointer clicks","real player preferences unchanged"}},Formatting.Indented));
+                checks=new[]{"single/duel/manual harvest lifetime totals","exclude adjustments and unharvested crops","five independent recurring mission channels","legacy reward receipts preserved","restart and failed-write rollback","home closest unfinished target","home click focuses badge","garden album and footer reset to fruit summary","one scroll and reused rows","completed goal immediately renews without history","home remains active with a single goal","real pointer clicks","real player preferences unchanged"}},Formatting.Indented));
         }
         finally {Application.logMessageReceived-=collect;}
     }
@@ -378,7 +379,7 @@ public static partial class FruitLabTutorialEditorTools
                 rect.sizeDelta=size;clone.GetComponent<FruitLabMenuLayout>().ApplyLayout();navigation.ApplyLayout();
                 camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2*camera.aspect));
                 controller.Select(MainTab.Home);Layer(clone.transform);Draw(camera);
-                Require(home.gameObject.activeInHierarchy && home.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="9/10"),"One nearest home goal counts duel and retains spent fruit");
+                Require(home.gameObject.activeInHierarchy && home.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="8/10"),"One tracked fruit goal retains spent fruit and lifetime progress");
                 var card=(RectTransform)home.transform;var play=menu.GetSinglePlayerButton().GetButtonRectTransform();
                 Require(card.rect.height>=48 && card.rect.height<play.rect.height && card.rect.width<play.rect.width,"Home target is smaller than Play with a comfortable tap area");
                 var powerRect=clone.GetComponentInChildren<PowerUpListHolderView>(true).GetRectTransform();
@@ -395,7 +396,7 @@ public static partial class FruitLabTutorialEditorTools
                 Capture(camera,Folder+"/preview-collection-home-"+(int)size.y+".png");
                 TapGarden(canvas,camera,eventSystem,home.GetComponent<Button>());view.ApplyLayout();Layer(clone.transform);Draw(camera);
                 var scroll=view.GetComponentsInChildren<ScrollRect>().Single();
-                var focused=scroll.content.Find("Achievement-garden-owner-10") as RectTransform;
+                var focused=scroll.content.Find("Achievement-fruit-a") as RectTransform;
                 Require(view.IsVisible && !view.IsGardenSelected && scroll.verticalNormalizedPosition<.99f,"Home opens and scrolls directly to the selected badge");
                 var rowCorners=new Vector3[4];focused.GetWorldCorners(rowCorners);
                 Require(rowCorners.All(point=>Expanded(scroll.viewport.rect,1).Contains((Vector2)scroll.viewport.InverseTransformPoint(point))),"Focused goal is fully visible at every phone size");
@@ -404,8 +405,8 @@ public static partial class FruitLabTutorialEditorTools
                 Require(scroll.verticalNormalizedPosition>.99f,"Collection footer opens at fruit summary");
                 var cells=(FruitCollectionCell[])Get(view,"cells");
                 Require(cells.Length==9 && cells.Single(cell=>cell.Fruit==FruitId.Strawberry).Amount.text=="8" && cells.Single(cell=>cell.Fruit==FruitId.Apple).Amount.text=="1","Fruit grid uses eligible lifetime totals, including duel but excluding adjustment");
-                Require(scroll.content.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Sıradaki rozetler"),"Pending badges share the fruit scroll");
-                var pending=service.GetAchievements().Where(goal=>!goal.Unlocked).ToArray();
+                Require(scroll.content.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Görevler"),"Pending badges share the fruit scroll");
+                var pending=service.GetAchievements().Where(goal=>goal.Visible && !goal.Unlocked).ToArray();
                 var rendered=pending.OrderByDescending(goal=>((RectTransform)scroll.content.Find("Achievement-"+goal.Id)).anchoredPosition.y).Select(goal=>goal.Id);
                 Require(rendered.SequenceEqual(pending.Select(goal=>goal.Id)) && pending[0].Id==service.Closest().Id,"The view preserves the service's badge order and matches the home goal");
                 foreach(var text in view.GetComponentsInChildren<TMP_Text>()){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Collection text fits: "+text.text);}
@@ -416,17 +417,23 @@ public static partial class FruitLabTutorialEditorTools
                 TapGarden(canvas,camera,eventSystem,((GardenPanelView)view.Garden).CollectionButton);
                 Require(view.IsVisible && !view.IsGardenSelected && scroll.verticalNormalizedPosition>.99f,"Garden album routes to the common collection at fruit summary");
             }
-            inventory.Grant("complete-nearest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Apple,1}});
-            Require(service.GetAchievements().Count(goal=>goal.Unlocked)==1,"Completed harvest unlocks the ten-fruit badge");
+            inventory.Grant("complete-nearest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Strawberry,2}});
+            Require(service.BadgeCount==1 && service.GetAchievements().All(goal=>!goal.Unlocked),"Completed goal grants a medal and renews immediately");
             var content=view.GetComponentsInChildren<ScrollRect>().Single().content;
-            var owner=content.Find("Achievement-garden-owner-10");
-            Require(owner.gameObject.activeSelf && !owner.Find("Progress").gameObject.activeSelf,"Completed badge moves to the earned collection without progress or power-up claim");
-            Require(content.Cast<Transform>().Count(child=>child.name.StartsWith("Achievement-"))==5,"Repeated page opens and awards reuse exactly five badge rows");
-            controller.OpenCollection("garden-owner-10");Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-collection-earned.png");
-            inventory.Grant("finish-all",FruitGainSource.Duel,new Dictionary<FruitId,long>{{FruitId.Strawberry,92},{FruitId.Watermelon,100},{FruitId.Apple,1298}});
-            controller.Select(MainTab.Home);Require(!home.gameObject.activeSelf,"Home card disappears when all five badges have been earned");
-            Require(profiles.Snapshot().Wallet.PowerUps.Values.All(amount=>amount==0),"No extra power-ups are awarded for the five badge-only goals");
-            controller.OpenCollection();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-collection-all-earned.png");
+            var owner=content.Find("Achievement-fruit-a");
+            Require(owner.gameObject.activeSelf && owner.Find("Progress").gameObject.activeSelf,"Renewed goal stays active with progress instead of an earned-history row");
+            Require(!content.Find("EarnedBadgesTitle").gameObject.activeSelf,"Completed history is hidden");
+            profiles.Update(profile=>{profile.Progress.LevelId=MenuProgression.MultiplayerUnlockLevel-1;rules.Apply(profile);});
+            collection.Open(GardenTab.Collection);
+            Require(content.Cast<Transform>().Count(child=>child.name.StartsWith("Achievement-") && child.gameObject.activeSelf)==5,"Unlocking multiplayer reveals the fifth independent mission");
+            Require(view.transform.Find("BadgeCounter/Count").GetComponent<TMP_Text>().text=="1","Collection header displays total medals: text="+view.transform.Find("BadgeCounter/Count").GetComponent<TMP_Text>().text+" profile="+service.BadgeCount);
+            controller.Select(MainTab.Home);Require(home.gameObject.activeSelf,"Home always has one ongoing goal");
+            var headerView=clone.GetComponentInChildren<MenuHeaderView>(true);
+            using(var header=new MenuHeaderController(headerView,profiles))
+            {header.Initialize(tracker);Require(headerView.transform.Find("BadgeCounter/Count").GetComponent<TMP_Text>().text=="1","Home header uses the same medal total");}
+            Require(profiles.Snapshot().Wallet.PowerUps.Values.All(amount=>amount==0),"Recurring tasks grant medals without inventing powerups");
+            controller.OpenCollection();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-collection-missions.png");
+
         }
         finally
         {

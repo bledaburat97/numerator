@@ -12,11 +12,12 @@ namespace Scripts.Economy
 
     public sealed class PlayerProfileData
     {
-        public const int CurrentVersion = 5;
+        public const int CurrentVersion = 6;
         [JsonProperty(Required=Required.Always)] public int Version = CurrentVersion;
         public long Revision;
         // Optional additive field: older v5 profiles default to no pending powerup checkpoint.
         public string PowerUpCheckpoint;
+        public MissionState Missions = new MissionState();
         [JsonProperty(Required=Required.Always)] public PlayerProgressData Progress = new PlayerProgressData();
         [JsonProperty(Required=Required.Always)] public PlayerWalletData Wallet = new PlayerWalletData();
         [JsonProperty(Required=Required.Always)] public Dictionary<FruitId,FruitBalance> Collection = EmptyCollection();
@@ -36,7 +37,7 @@ namespace Scripts.Economy
         }
     }
 
-    public sealed class PlayerProgressData { public int LevelId; }
+    public sealed class PlayerProgressData { public int LevelId; public long DuelWins; }
 
     public sealed class PlayerWalletData
     {
@@ -72,6 +73,21 @@ namespace Scripts.Economy
         // -1 is reserved for the migration-only queue. New purchases always own a cell.
         public int CellIndex = -1;
         public bool IsLegacyOverflow;
+    }
+
+    public enum MissionKind { FruitA=0, FruitB=1, Level=2, Harvest=3, Duel=4 }
+    public sealed class MissionState
+    {
+        public bool Initialized;
+        public long Badges;
+        public List<MissionProgress> Active = new List<MissionProgress>();
+    }
+    public sealed class MissionProgress
+    {
+        public MissionKind Kind;
+        public FruitId? Fruit;
+        public long Target;
+        public bool Exhausted;
     }
 
     public sealed class AchievementProgress

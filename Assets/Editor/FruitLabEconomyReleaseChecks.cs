@@ -22,13 +22,13 @@ public static class FruitLabEconomyReleaseChecks
         var journal=new ProfileTelemetryJournal(capture);
         var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>Initial(100),commitPolicy:journal);
         var rules=new AchievementRules(settings);var garden=new GardenService(profiles,settings,clock,rules);
-        string beforeConsent=Id();garden.PurchaseSeeds(beforeConsent,FruitId.Apple,5);
+        string beforeConsent=Id();garden.PurchaseSeeds(beforeConsent,FruitId.Apple,2);
         Require(profiles.Snapshot().TelemetryOutbox.Count==0,"No events are collected before consent");
-        allowed=true;garden.PurchaseSeeds(beforeConsent,FruitId.Apple,5);
+        allowed=true;garden.PurchaseSeeds(beforeConsent,FruitId.Apple,2);
         Require(profiles.Snapshot().TelemetryOutbox.Count==0,"Opt-in never replays old purchases");
         string purchase=Id();garden.PurchaseSeeds(purchase,FruitId.Strawberry,10);garden.PurchaseSeeds(purchase,FruitId.Strawberry,10);
         var data=profiles.Snapshot();var seed=data.TelemetryOutbox.Single().Value;
-        Require(seed.Action=="seed_purchased" && seed.Fruit==FruitId.Strawberry && seed.Amount==10 && seed.CoinCost==2 && seed.Balance==97 && !seed.First,"A committed purchase yields one correctly priced event");
+        Require(seed.Action=="seed_purchased" && seed.Fruit==FruitId.Strawberry && seed.Amount==10 && seed.CoinCost==5 && seed.Balance==94 && !seed.First,"A committed purchase yields one correctly priced event");
         long revision=data.Revision;
         Require(garden.PurchaseSeeds(Id(),FruitId.Kiwi,1000).Status==ProfileCommitResult.Rejected && profiles.Snapshot().Revision==revision,"Insufficient funds creates neither a success event nor a receipt");
         garden.ProcessVisit();Require(profiles.Snapshot().TelemetryOutbox.Count==1,"Planting-day visits do not emit growth");
@@ -41,11 +41,11 @@ public static class FruitLabEconomyReleaseChecks
         Require(data.Garden.Count==2 && data.Collection[FruitId.Strawberry].Current==0 && !data.TelemetryOutbox.Values.Any(ev=>ev.Action=="garden_harvested"),"Growth never emits a harvest before the crop is tapped");
         foreach(string batch in data.Garden.Keys.ToArray())garden.Harvest(batch);
         data=profiles.Snapshot();
-        Require(data.Garden.Count==0 && data.Collection[FruitId.Strawberry].Current==10 && data.Wallet.PowerUps.Values.All(amount=>amount==0) && data.Achievements["garden-owner-10"].RewardGranted,"Manual harvest pays fruit and earned badges once");
+        Require(data.Garden.Count==0 && data.Collection[FruitId.Strawberry].Current==10 && data.Wallet.PowerUps.Values.All(amount=>amount==0) && data.Missions.Badges==2,"Manual harvest pays fruit and earned badges once");
         var events=data.TelemetryOutbox.Values.ToList();
         Require(events.Count(ev=>ev.Action=="garden_grown")==4 && events.Where(ev=>ev.Action=="garden_grown").All(ev=>ev.Batches==2),"A long absence advances one step and emits one growth observation per visit");
         Require(events.Count(ev=>ev.Action=="garden_harvested")==2 && events.Count(ev=>ev.Action=="garden_harvested" && ev.First)==1,"A grouped first harvest emits quantities for both fruit types");
-        Require(events.Count(ev=>ev.Action=="achievement_unlocked")==1 && events.Where(ev=>ev.Action=="achievement_unlocked").All(ev=>ev.Source=="garden" && !ev.Powerup.HasValue && !ev.Parameters().ContainsKey("flPowerup")),"Achievement events come from actual newly committed reward receipts");
+        Require(events.Count(ev=>ev.Action=="achievement_unlocked")==2 && events.Where(ev=>ev.Action=="achievement_unlocked").All(ev=>ev.Source=="garden" && !ev.Powerup.HasValue && !ev.Parameters().ContainsKey("flPowerup")),"Achievement events come from actual newly committed reward receipts");
         revision=data.Revision;new AchievementService(profiles,rules).Reconcile();
         Require(profiles.Snapshot().Revision==revision,"Reopening badge evaluation cannot duplicate events or rewards");
 
@@ -68,7 +68,7 @@ public static class FruitLabEconomyReleaseChecks
         string priorScope=context.ConsentScope;context.ConsentScope=Id();
         sent.Clear();delivery.Drain(context.ConsentScope,ev=>{sent.Add(ev.EventId);return true;});
         Require(sent.Count==0 && profiles.Snapshot().TelemetryOutbox.Count==0,"A new consent scope discards older queued data without sending it");
-        allowed=false;garden.PurchaseSeeds(Id(),FruitId.Banana,5);engagement.Record(PlayerActivity.ActiveDay);
+        allowed=false;garden.PurchaseSeeds(Id(),FruitId.Banana,2);engagement.Record(PlayerActivity.ActiveDay);
         Require(profiles.Snapshot().TelemetryOutbox.Count==0,"Revoked consent collects neither transactions nor activity");
         allowed=true;engagement.Record(PlayerActivity.ActiveDay);
         Require(profiles.Snapshot().TelemetryOutbox.Values.Single().ConsentScope==context.ConsentScope,"Re-enabling analytics starts a fresh consent scope");
@@ -87,7 +87,7 @@ public static class FruitLabEconomyReleaseChecks
         var profiles=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>Initial(int.MaxValue),commitPolicy:new ProfileTelemetryJournal(()=>context));
         var garden=new GardenService(profiles,settings,new Clock(),rules);string identity=Id();
         var tasks=Enumerable.Range(0,8).Select(_=>Task.Run(()=>garden.PurchaseSeeds(identity,FruitId.Kiwi,1000000))).ToArray();Task.WaitAll(tasks);
-        var data=profiles.Snapshot();Require(data.Garden.Count==1 && data.Garden.Single().Value.Quantity==1000000 && data.Wallet.Coins==int.MaxValue-200000 && data.TelemetryOutbox.Count==1,"Concurrent duplicate and large purchases debit, plant and enqueue once");
+        var data=profiles.Snapshot();Require(data.Garden.Count==1 && data.Garden.Single().Value.Quantity==1000000 && data.Wallet.Coins==int.MaxValue-500000 && data.TelemetryOutbox.Count==1,"Concurrent duplicate and large purchases debit, plant and enqueue once");
         examples.Add(data.TelemetryOutbox.Single().Value);
         for(int day=20000;day<20300;day++){context.UtcDay=day;new PlayerEngagementService(profiles,()=>context).Record(PlayerActivity.ActiveDay);}
         Require(profiles.Snapshot().TelemetryOutbox.Count==ProfileTelemetryJournal.Capacity,"Long offline histories have a bounded telemetry queue");
@@ -109,7 +109,7 @@ public static class FruitLabEconomyReleaseChecks
         Require(profiles.Snapshot().TelemetryOutbox.Count==1,"Interrupted delivery acknowledgement retains the event for retry");
         fail=false;new ProfileTelemetryDelivery(reopened).Drain(context.ConsentScope,ev=>{seen.Add(ev.EventId);return true;});
         Require(seen.Count==2 && seen[0]==seen[1] && reopened.Snapshot().TelemetryOutbox.Count==0,"The same stable event id allows analytics deduplication after an interrupted acknowledgement");
-        Require(reopened.Snapshot().Wallet.Coins==98 && reopened.Snapshot().Garden.Single().Value.Quantity==10,"Delivery and retries never alter the economy outcome");
+        Require(reopened.Snapshot().Wallet.Coins==95 && reopened.Snapshot().Garden.Single().Value.Quantity==10,"Delivery and retries never alter the economy outcome");
     }
     private static void Migration(string folder)
     {

@@ -13,7 +13,7 @@ namespace Menu
     {
         void ShowProgress(GardenVisitNotice notice);
         void ShowPurchase(FruitId fruit,long amount);
-        void ShowHarvest(FruitId fruit,long amount);
+        void ShowHarvest(FruitId fruit,long amount,long badges=0);
         void ShowError(string message);
         void Hide();
     }
@@ -65,7 +65,7 @@ namespace Menu
             }
         }
         public void ShowPurchase(FruitId fruit,long amount) {Show("Ekim tamam!",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" tohumu bahçende.",fruit);_dismissAt=Time.unscaledTime+3f;}
-        public void ShowHarvest(FruitId fruit,long amount) {Show("Toplandı!",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" koleksiyonuna eklendi.",fruit);_dismissAt=Time.unscaledTime+3f;}
+        public void ShowHarvest(FruitId fruit,long amount,long badges=0) {Show(badges>0?"+"+FruitCollectionView.FormatCount(badges)+" rozet!":"Toplandı!",FruitCollectionView.FormatCount(amount)+" "+FruitCollectionView.FruitName(fruit).ToLowerInvariant()+" koleksiyonuna eklendi.",fruit);_dismissAt=Time.unscaledTime+3f;}
         public void ShowError(string message) => Show("Kaydedilemedi",message,null);
         private void Show(string title,string body,FruitId? fruit)
         {

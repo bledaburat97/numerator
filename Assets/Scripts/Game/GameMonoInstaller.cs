@@ -39,12 +39,7 @@ namespace Scripts
             Container.Bind<Economy.UltraActivationService>().FromMethod(context=>new Economy.UltraActivationService(context.Container.Resolve<Economy.IPlayerProfileRepository>())).AsSingle();
             Container.Bind<UltraPowerUpController>().AsSingle();
             BindPowerUpEffects(Container);
-            Container.Bind<PowerUpUseService>().FromMethod(context=>new PowerUpUseService(
-                context.Container.Resolve<ILevelTracker>(),context.Container.Resolve<ILevelDataCreator>(),context.Container.Resolve<ILevelSaveDataManager>(),
-                context.Container.Resolve<IRoundStateManager>(),context.Container.Resolve<ICardItemInfoManager>(),context.Container.Resolve<IBoardHolderCountManager>(),
-                context.Container.Resolve<ITargetNumberCreator>(),context.Container.Resolve<Economy.PowerUpUseJournal>(),context.Container.Resolve<IGameSaveService>(),
-                ()=>context.Container.Resolve<IGameSaveSnapshotProvider>(),context.Container.Resolve<IPowerUpCatalog>(),
-                ()=>context.Container.Resolve<IceBoardService>())).AsSingle();
+            Container.Bind<PowerUpUseService>().FromMethod(context=>CreatePowerUpUseService(context.Container)).AsSingle();
             Container.Bind<IPositionNotesSettings>().To<PositionAssistanceController>().FromResolve();
             Container.Bind<PairEffect>().AsSingle();
             Container.Bind<BoardSplitService>().AsSingle();
@@ -133,6 +128,15 @@ namespace Scripts
             Container.Bind<IBoardPlacementCommands>().To<BoardCardIndexManager>().FromResolve();
         }
 
+        private static PowerUpUseService CreatePowerUpUseService(DiContainer container)
+        {
+            // InjectContext is pooled by Zenject. Deferred delegates retain the scene
+            // container, never the temporary context used to create this service.
+            return new PowerUpUseService(container.Resolve<ILevelTracker>(),container.Resolve<ILevelDataCreator>(),container.Resolve<ILevelSaveDataManager>(),
+                container.Resolve<IRoundStateManager>(),container.Resolve<ICardItemInfoManager>(),container.Resolve<IBoardHolderCountManager>(),
+                container.Resolve<ITargetNumberCreator>(),container.Resolve<Economy.PowerUpUseJournal>(),container.Resolve<IGameSaveService>(),
+                ()=>container.Resolve<IGameSaveSnapshotProvider>(),container.Resolve<IPowerUpCatalog>(),()=>container.Resolve<IceBoardService>());
+        }
         public static void BindPowerUpEffects(DiContainer container)
         {
             container.Bind<IPowerUpEffect>().FromMethod(_=>new LifePowerUpEffect(()=>container.Resolve<IGuessManager>())).AsCached();

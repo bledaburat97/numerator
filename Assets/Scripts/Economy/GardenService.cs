@@ -119,8 +119,10 @@ namespace Scripts.Economy
                 result.UtcDay=GardenDay.FromUtc(_clock.UtcNow);
                 // Inventory, badge rewards, the freed cell, promoted legacy batches
                 // and the replay receipt are published as ONE durable snapshot.
+                long previousBadges=profile.Missions.Badges;
                 FruitInventoryService.ApplyGrant(profile,FruitGainSource.Garden,
                     new Dictionary<FruitId,long> {{batch.Fruit,batch.Quantity}},_achievements);
+                result.BadgesEarned=profile.Missions.Badges-previousBadges;
                 profile.Garden.Remove(batchId);
                 GardenCellAllocator.PromoteWaiting(profile.Garden,batch.Fruit);
                 return true;

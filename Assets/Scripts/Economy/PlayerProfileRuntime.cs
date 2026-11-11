@@ -16,6 +16,8 @@ namespace Scripts.Economy
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void PreserveJsonCollections()
         {
+            AotHelper.EnsureList<long>();
+            AotHelper.EnsureList<MissionProgress>();
             AotHelper.EnsureList<PendingDuelAward>();
             AotHelper.EnsureList<RewardType>();
             AotHelper.EnsureList<GardenBatchChange>();

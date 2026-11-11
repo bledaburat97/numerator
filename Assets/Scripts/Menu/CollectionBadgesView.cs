@@ -9,8 +9,8 @@ using UnityEngine.UI;
 
 namespace Menu
 {
-    // Shares the fruit summary's scroll content. Stable IDs let a completed row
-    // move to the earned group without creating another row or claim action.
+    // Five stable channel rows share the fruit summary scroll. Completed goals
+    // replace their own row; historical achievements never enter this view.
     internal sealed class CollectionBadgesView
     {
         private readonly RectTransform _content;
@@ -21,18 +21,21 @@ namespace Menu
         public CollectionBadgesView(RectTransform content)
         {
             _content = content;
+            foreach(Transform child in content)if(child.name.StartsWith("Achievement-",StringComparison.Ordinal))child.gameObject.SetActive(false);
             _pendingTitle = GardenUi.Text(content, "PendingBadgesTitle", 21, FruitLabStyle.Text);
             _earnedTitle = GardenUi.Text(content, "EarnedBadgesTitle", 21, FruitLabStyle.Text);
             _pendingTitle.alignment = _earnedTitle.alignment = TextAlignmentOptions.MidlineLeft;
-            _pendingTitle.text = "Sıradaki rozetler"; _earnedTitle.text = "Kazanılan rozetler";
+            _pendingTitle.text = "Görevler"; _earnedTitle.gameObject.SetActive(false);
             _empty = GardenUi.Text(content, "EarnedBadgesEmpty", 17, FruitLabStyle.Muted, true);
-            _empty.text = "İlk rozetin seni bekliyor.";
+            _empty.gameObject.SetActive(false);
         }
         public void Render(IReadOnlyList<AchievementStatus> items)
         {
-            _items = items;
+            foreach(var child in _content.Cast<Transform>().Where(child=>child.name.StartsWith("Achievement-",StringComparison.Ordinal) && !items.Any(item=>child.name=="Achievement-"+item.Id)).ToArray())
+                TutorialObjectUtility.Destroy(child.gameObject);
+            _items = items.Where(item=>item.Visible && !item.Unlocked).ToArray();
             foreach (var row in _rows.Values) row.Root.gameObject.SetActive(false);
-            foreach (var item in items)
+            foreach (var item in _items)
             {
                 if (!_rows.TryGetValue(item.Id, out var row)) _rows.Add(item.Id, row = new Row(_content, item.Id));
                 row.Root.gameObject.SetActive(true); row.Bind(item, item.Id == _focused);
@@ -40,20 +43,11 @@ namespace Menu
         }
         public float Layout(float width, float top)
         {
-            var pending = _items.Where(item => !item.Unlocked).ToArray();
-            _pendingTitle.gameObject.SetActive(pending.Length > 0);
-            if (pending.Length > 0)
-            {
-                Top(_pendingTitle.rectTransform, width, top, 34); top += 42;
-                foreach (var item in pending) { _rows[item.Id].Layout(width, top, false); top += 104; }
-                top += 14;
-            }
-            Top(_earnedTitle.rectTransform, width, top, 34); top += 42;
-            var earned = _items.Where(item => item.Unlocked).ToArray();
-            _empty.gameObject.SetActive(earned.Length == 0);
-            if (earned.Length == 0) { Top(_empty.rectTransform, width, top, 36); top += 44; }
-            foreach (var item in earned) { _rows[item.Id].Layout(width, top, true); top += 82; }
-            return top + 12;
+            _pendingTitle.gameObject.SetActive(_items.Count>0);
+            _earnedTitle.gameObject.SetActive(false);_empty.gameObject.SetActive(false);
+            if(_items.Count>0){Top(_pendingTitle.rectTransform,width,top,34);top+=42;}
+            foreach(var item in _items){_rows[item.Id].Layout(width,top,false);top+=120;}
+            return top+12;
         }
         public RectTransform Focus(string id)
         {
@@ -77,7 +71,7 @@ namespace Menu
                 Root = GardenUi.Rect(parent, "Achievement-" + id);
                 _surface = FruitLabStyle.AddSurface(Root.gameObject, FruitLabStyle.Panel);
                 _badge = GardenUi.Icon(Root, "Badge", "Badge");
-                _name = GardenUi.Text(Root, "Name", 19, FruitLabStyle.Text);
+                _name = GardenUi.Text(Root, "Name", 19, FruitLabStyle.Text,true);
                 _name.alignment = TextAlignmentOptions.MidlineLeft;
                 _name.enableAutoSizing = true; _name.fontSizeMin = 17; _name.fontSizeMax = 19;
                 _progress = GardenUi.Text(Root, "Progress", 20, FruitLabStyle.Mint);
@@ -97,10 +91,10 @@ namespace Menu
             }
             public void Layout(float width, float offset, bool earned)
             {
-                float height = earned ? 74 : 96;
+                float height = 112;
                 Top(Root, width, offset, height);
                 FruitLabStyle.Place(_badge.rectTransform, Root, 10, (height - 56) * .5f, 56, 56);
-                FruitLabStyle.Place(_name.rectTransform, Root, 78, earned ? 8 : 57, width - 90, earned ? 58 : 30);
+                FruitLabStyle.Place(_name.rectTransform, Root, 78, 52, width - 90, 52);
                 _progress.gameObject.SetActive(!earned); _track.gameObject.SetActive(!earned);
                 FruitLabStyle.Place(_progress.rectTransform, Root, 78, 28, width - 90, 26);
                 FruitLabStyle.Place(_track.rectTransform, Root, 78, 16, width - 94, 6);

@@ -33,12 +33,27 @@ namespace Scripts.Economy
                 GardenCellAllocator.MigrateLegacy(data.Garden);
                 data.Version=5;
             }
+            if(data?.Version==5)
+            {
+                data.Missions ??= new MissionState();
+                if(data.Progress!=null && data.Transactions!=null)
+                    data.Progress.DuelWins=Math.Max(data.Progress.DuelWins,data.Transactions.Values.LongCount(item=>item.Kind=="duel_win"));
+                data.Version=6;
+            }
         }
         public static void Validate(PlayerProfileData data)
         {
             if(data == null) throw new InvalidDataException("Missing player profile.");
             if(data.Version != PlayerProfileData.CurrentVersion) throw new UnsupportedProfileVersionException(data.Version);
-            Require(data.Revision >= 0 && data.Progress != null && data.Progress.LevelId >= 0,"progress");
+            Require(data.Revision >= 0 && data.Progress != null && data.Progress.LevelId >= 0 && data.Progress.DuelWins>=0,"progress");
+            Require(data.Missions!=null && data.Missions.Badges>=0 && data.Missions.Active!=null,"missions");
+            if(data.Missions.Initialized)
+            {
+                Require(data.Missions.Active.Count==5 && data.Missions.Active.Select(goal=>goal?.Kind).Distinct().Count()==5,"mission channels");
+                foreach(var goal in data.Missions.Active)Require(goal!=null && Enum.IsDefined(typeof(MissionKind),goal.Kind) && goal.Target>0
+                    && ((goal.Kind==MissionKind.FruitA || goal.Kind==MissionKind.FruitB)?goal.Fruit.HasValue && Enum.IsDefined(typeof(FruitId),goal.Fruit.Value):!goal.Fruit.HasValue),"mission goal");
+            }
+            else Require(data.Missions.Active.Count==0 && data.Missions.Badges==0,"uninitialized missions");
             var wallet = data.Wallet;
             Require(wallet != null && wallet.Coins >= 0 && wallet.CrystalProgress >= 0
                 && Enum.IsDefined(typeof(RewardType),wallet.NextReward) && wallet.PowerUps != null && wallet.IntroductionGrants != null,"wallet");

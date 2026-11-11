@@ -18,6 +18,8 @@ namespace Menu
         private readonly Action<string> _load;
         private readonly Action _shutdown;
         private bool _navigating;
+        private bool _disposed;
+        private FruitCollectionView _collectionView;
         [Inject]
         public MainNavigationController(MainNavigationView view, ILevelTracker tracker, BaseButtonControllerFactory buttons,
             [InjectOptional] IFruitCollectionPresenter collection = null,[InjectOptional] ISettingsPopupService settings=null)
@@ -30,12 +32,14 @@ namespace Menu
         }
         public void Initialize()
         {
+            if(_disposed)return;
             bool homeScene = _home;
             _view.Initialize(Select, OpenSettings, MenuProgression.IsMultiplayerUnlocked(_tracker.GetLevelId()), homeScene);
             if (homeScene)
             {
-                _view.Collection.SetEmbedded(true);
-                _view.Collection.TabChanged += SelectCollectionTab;
+                _collectionView=_view.Collection;
+                _collectionView.SetEmbedded(true);
+                _collectionView.TabChanged += SelectCollectionTab;
                 _view.FrameCollection();
                 Select(MainNavigationState.RequestedTab == MainTab.Multiplayer ? MainTab.Home : MainNavigationState.RequestedTab);
             }
@@ -43,7 +47,7 @@ namespace Menu
         }
         public void Select(MainTab tab)
         {
-            if (_navigating || tab == MainTab.Market || (tab == MainTab.Multiplayer && !MenuProgression.IsMultiplayerUnlocked(_tracker.GetLevelId()))) return;
+            if (_disposed || _navigating || tab == MainTab.Market || (tab == MainTab.Multiplayer && !MenuProgression.IsMultiplayerUnlocked(_tracker.GetLevelId()))) return;
             if (!_home)
             {
                 if (tab == MainTab.Multiplayer) return;
@@ -62,12 +66,14 @@ namespace Menu
             _view.Render(tab); _view.BringForward();
         }
         public void OpenCollection(string badgeId = null)
-        { Select(MainTab.Collection); if(_home)_collection.FocusBadge(badgeId); }
+        { if(_disposed)return;Select(MainTab.Collection); if(_home)_collection.FocusBadge(badgeId); }
         private void SelectCollectionTab(GardenTab tab) => Select(tab == GardenTab.Garden ? MainTab.Garden : MainTab.Collection);
         private void OpenSettings()=>_view.ShowSettings(_settings,()=>{OpenCollection();_view.BringForward();});
         public void Dispose()
         {
-            if (_home) _view.Collection.TabChanged -= SelectCollectionTab;
+            if(_disposed)return;_disposed=true;
+            if (_collectionView != null) _collectionView.TabChanged -= SelectCollectionTab;
+            _collectionView=null;
             if (_view != null) _view.Unbind();
         }
     }

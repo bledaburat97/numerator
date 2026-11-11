@@ -6,20 +6,18 @@ namespace Scripts.Economy
 {
     public sealed class EconomySettings
     {
-        public int SeedsPerPack = 5;
+        public int SeedsPerPack = 2;
         public int SeedPackCoinPrice = 1;
         public int RequiredGrowthVisits = 4;
-        public AchievementDefinition[] Achievements = {
-            new AchievementDefinition {Id="strawberry-grower-100",Title="Çilek Yetiştiricisi",Description="100 çilek topla.",Target=100,Fruit=FruitId.Strawberry,RewardKind=AchievementRewardKind.Badge},
-            new AchievementDefinition {Id="watermelon-grower-100",Title="Karpuz Yetiştiricisi",Description="100 karpuz topla.",Target=100,Fruit=FruitId.Watermelon,RewardKind=AchievementRewardKind.Badge},
-            new AchievementDefinition {Id="farmer-apprentice-500",Title="Çırak Çiftçi",Description="Toplam 500 meyve topla.",Target=500,RewardKind=AchievementRewardKind.Badge},
-            new AchievementDefinition {Id="farmer-master-1500",Title="Usta Çiftçi",Description="Toplam 1500 meyve topla.",Target=1500,RewardKind=AchievementRewardKind.Badge},
-            new AchievementDefinition {Id="garden-owner-10",Title="Bahçe Sahibi",Description="Toplam 10 meyve topla.",Target=10,RewardKind=AchievementRewardKind.Badge}
-        };
+        // Legacy configuration/receipt DTOs remain readable; current tasks use Missions.
+        public AchievementDefinition[] Achievements = Array.Empty<AchievementDefinition>();
+        public MissionSettings Missions = new MissionSettings();
         public void Validate()
         {
             if(SeedsPerPack<=0 || SeedPackCoinPrice<=0 || RequiredGrowthVisits!=4)
                 throw new InvalidOperationException("Economy settings require a positive seed price and four growth visits.");
+            Missions?.Validate();
+            if(Missions==null)throw new InvalidOperationException("Mission settings are required.");
             if(Achievements==null)throw new InvalidOperationException("Achievement settings are required.");
             var ids=new HashSet<string>(StringComparer.Ordinal);
             foreach(var goal in Achievements)
