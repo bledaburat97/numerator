@@ -43,6 +43,13 @@ namespace Scripts
             return _cardItemInfoList;
         }
         
+        public void ApplyPositionOptions(IReadOnlyList<CardItemInfo> planned)
+        {
+            for(int index=0;index<_cardItemInfoList.Count;index++)
+                _cardItemInfoList[index].possibleCardHolderIndicatorIndexes=new List<int>(planned[index].possibleCardHolderIndicatorIndexes);
+            Changed?.Invoke();
+        }
+
         public void MakeCardNotExisted(int cardIndex)
         {
             CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
@@ -52,12 +59,12 @@ namespace Scripts
         
         public void MakeCardCertain(int cardIndex, List<int> possibleCardHolderIndicatorIndexes)
         {
-            CardItemInfo cardItemInfo = _cardItemInfoList[cardIndex];
-            cardItemInfo.isLocked = true;
-            cardItemInfo.probabilityType = ProbabilityType.Certain;
-            cardItemInfo.possibleCardHolderIndicatorIndexes = possibleCardHolderIndicatorIndexes;
+            SetCertain(_cardItemInfoList[cardIndex],possibleCardHolderIndicatorIndexes);
             Changed?.Invoke();
         }
+
+        public static void SetCertain(CardItemInfo card,List<int> positions)
+        {card.isLocked=true;card.probabilityType=ProbabilityType.Certain;card.possibleCardHolderIndicatorIndexes=new List<int>(positions);}
 
         public void OnProbabilityButtonClicked(int activeCardIndex, ProbabilityType probabilityType)
         {
@@ -162,6 +169,7 @@ namespace Scripts
         void OnProbabilityButtonClicked(int activeCardIndex, ProbabilityType probabilityType);
         void OnHolderIndicatorClicked(int activeCardIndex, int holderIndicatorIndex);
         void RemoveLastCardHolderIndicator();
+        void ApplyPositionOptions(IReadOnlyList<CardItemInfo> planned);
     }
 
 

@@ -103,11 +103,15 @@ namespace Game
                 maximum = _roundStateManager.GetMaxGuessCount();
                 _lifeBarController.ResizeCapacity(maximum,remaining);
             }
-            // Commit before animation so an immediate pause preserves the grant.
-            _roundStateManager.IncreaseRemainingGuessCount(amount);
-            _lifeGainAnimation = _lifeBarController.AnimateGain((float)(remaining+amount)/maximum,amount);
-            _lifeGainAnimation.Play();
-            return true;
+            return ApplyCommittedLives(remaining,remaining+amount);
+        }
+        public bool ApplyCommittedLives(int expectedBefore,int plannedRemaining)
+        {
+            if(_roundStateManager.GetRemainingGuessCount()!=expectedBefore)return false;
+            int amount=plannedRemaining-expectedBefore;
+            _lifeGainAnimation?.Kill();_roundStateManager.IncreaseRemainingGuessCount(amount);
+            _lifeGainAnimation=_lifeBarController.AnimateGain((float)plannedRemaining/_roundStateManager.GetMaxGuessCount(),amount);
+            _lifeGainAnimation.Play();return true;
         }
         public bool FailRound()
         {
@@ -128,6 +132,7 @@ namespace Game
     {
         bool FailRound();
         bool GrantExtraLives(int amount,bool expandCapacity = false);
+        bool ApplyCommittedLives(int expectedBefore,int plannedRemaining);
         void Initialize(bool deferRewardIntroAnimation = false);
         event EventHandler LevelFailEvent;
         event EventHandler<HintRewardTokenEventArgs> HintRewardTokenEvent;

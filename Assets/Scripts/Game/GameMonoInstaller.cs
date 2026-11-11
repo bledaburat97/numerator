@@ -37,12 +37,12 @@ namespace Scripts
             Container.Bind<PositionAssistanceController>().AsSingle();
             Container.Bind<Economy.UltraActivationService>().FromMethod(context=>new Economy.UltraActivationService(context.Container.Resolve<Economy.IPlayerProfileRepository>())).AsSingle();
             Container.Bind<UltraPowerUpController>().AsSingle();
-            Container.Bind<PowerUpRuntimeEffects>().AsSingle();
+            BindPowerUpEffects(Container);
             Container.Bind<PowerUpUseService>().FromMethod(context=>new PowerUpUseService(
                 context.Container.Resolve<ILevelTracker>(),context.Container.Resolve<ILevelDataCreator>(),context.Container.Resolve<ILevelSaveDataManager>(),
                 context.Container.Resolve<IRoundStateManager>(),context.Container.Resolve<ICardItemInfoManager>(),context.Container.Resolve<IBoardHolderCountManager>(),
                 context.Container.Resolve<ITargetNumberCreator>(),context.Container.Resolve<Economy.PowerUpUseJournal>(),context.Container.Resolve<IGameSaveService>(),
-                ()=>context.Container.Resolve<IGameSaveSnapshotProvider>(),()=>context.Container.Resolve<PowerUpRuntimeEffects>(),
+                ()=>context.Container.Resolve<IGameSaveSnapshotProvider>(),context.Container.Resolve<IPowerUpCatalog>(),
                 ()=>context.Container.Resolve<IceBoardService>())).AsSingle();
             Container.Bind<IPositionNotesSettings>().To<PositionAssistanceController>().FromResolve();
             Container.Bind<PairEffect>().AsSingle();
@@ -121,6 +121,18 @@ namespace Scripts
             Container.Bind<BoardCardIndexManager>().AsSingle();
             Container.Bind<IBoardPlacementQuery>().To<BoardCardIndexManager>().FromResolve();
             Container.Bind<IBoardPlacementCommands>().To<BoardCardIndexManager>().FromResolve();
+        }
+
+        public static void BindPowerUpEffects(DiContainer container)
+        {
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new LifePowerUpEffect(()=>container.Resolve<IGuessManager>())).AsCached();
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new BombPowerUpEffect(()=>container.Resolve<IBombPowerUpController>())).AsCached();
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new RevealPowerUpEffect(()=>container.Resolve<ICardPlacementCoordinator>())).AsCached();
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new InspectPowerUpEffect(()=>container.Resolve<HelperEffect>())).AsCached();
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new PairPowerUpEffect(()=>container.Resolve<PairEffect>())).AsCached();
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new SplitPowerUpEffect(()=>container.Resolve<BoardSplitService>())).AsCached();
+            container.Bind<IPowerUpEffect>().FromMethod(_=>new UltraPowerUpEffect(()=>container.Resolve<UltraPowerUpController>())).AsCached();
+            container.Bind<IPowerUpCatalog>().To<PowerUpCatalog>().AsSingle();
         }
 
         private PowerUpListHolderView ResolvePowerUpAreaView()

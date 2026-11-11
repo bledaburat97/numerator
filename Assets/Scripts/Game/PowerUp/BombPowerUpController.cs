@@ -1,5 +1,3 @@
-using System;
-using Game;
 using Zenject;
 
 namespace Scripts
@@ -13,45 +11,36 @@ namespace Scripts
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IBoardHolderCountManager _boardHolderCountManager;
-        private readonly IRoundStateManager _roundStateManager;
 
         [Inject]
         public BombPowerUpController(IBoardAreaController boardAreaController,
             ICardPlacementCoordinator cardPlacementCoordinator,
             ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager,
-            IBoardHolderCountManager boardHolderCountManager,
-            IRoundStateManager roundStateManager)
+            IBoardHolderCountManager boardHolderCountManager)
         {
             _boardAreaController = boardAreaController;
             _cardPlacementCoordinator = cardPlacementCoordinator;
             _targetNumberCreator = targetNumberCreator;
             _cardItemInfoManager = cardItemInfoManager;
             _boardHolderCountManager = boardHolderCountManager;
-            _roundStateManager = roundStateManager;
         }
 
-        public bool TryApply(LevelSaveData committed)
+        public bool ApplyCommitted(int expectedBefore,LevelSaveData committed)
         {
-            int boardCount = _boardHolderCountManager.GetBoardHolderCount();
-            if (!_boardHolderCountManager.CanShrink || boardCount <= 1 || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
-                || _roundStateManager.GetTriedCardsList().Count > 0
-                || _targetNumberCreator.GetTargetCardsList()?.Count != boardCount) return false;
-
+            // These are scene consistency checks, not a second availability decision.
+            if(_boardHolderCountManager.GetBoardHolderCount()!=expectedBefore || _targetNumberCreator.GetTargetCardsList()?.Count!=expectedBefore)return false;
             _cardPlacementCoordinator.TryResetPositionOfCardOnExplodedBoardHolder();
-            if (!_targetNumberCreator.TryRemoveLastTargetCard()) return false;
-            _boardAreaController.RemoveLastBoardHolder();
-            _cardItemInfoManager.RemoveLastCardHolderIndicator();
-            if(committed.Dynamite!=null && _dynamite?.Current!=null)_dynamite.Current.BoardIndex=committed.Dynamite.BoardIndex;
-            _dynamite?.Prepare();
-            // Pair reconciliation can checkpoint; the hidden slot must already be valid.
-            _pair?.RestoreClue(committed.PairClue);
-            return true;
+            _targetNumberCreator.ApplyCommittedTarget(committed.TargetCards);
+            if(!_boardAreaController.ApplyCommittedShrink(expectedBefore,committed.TargetCards.Count))return false;
+            _cardItemInfoManager.ApplyPositionOptions(committed.CardItemInfoList);
+            _dynamite?.ApplyCommitted(committed.Dynamite);
+            _pair?.RestoreClue(committed.PairClue);return true;
         }
     }
 
     public interface IBombPowerUpController
     {
-        bool TryApply(LevelSaveData committed);
+        bool ApplyCommitted(int expectedBefore,LevelSaveData committed);
     }
 }

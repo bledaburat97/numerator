@@ -12,40 +12,18 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private PowerUpButtonView buttonPrefab;
         public PowerUpButtonView ButtonPrefab=>buttonPrefab;
-        [SerializeField] private PowerUpButtonView revealingPowerUpButton;
-        [SerializeField] private PowerUpButtonView lifePowerUpButton;
-        [SerializeField] private PowerUpButtonView bombPowerUpButton;
+        [SerializeField] private PowerUpButtonCollection buttons=new PowerUpButtonCollection();
+        public PowerUpButtonCollection Buttons=>buttons;
 
-        [SerializeField] private PowerUpButtonView helperPowerUpButton;
-        [SerializeField] private PowerUpButtonView pairPowerUpButton;
-        [SerializeField] private PowerUpButtonView splitPowerUpButton;
-        [SerializeField] private PowerUpButtonView ultraPowerUpButton;
         private bool _ultraActive;
         private CanvasGroup _canvasGroup;
-        private static readonly RewardType[] DisplayOrder = { RewardType.Bomb, RewardType.Revealing, RewardType.Life, RewardType.Helper, RewardType.Pair, RewardType.Split, RewardType.Ultra };
+        private static IReadOnlyList<RewardType> DisplayOrder=>PowerUpDefinition.DisplayOrder;
         private int _levelId = int.MaxValue - 1;
         private float _width, _height;
         private int _rows = 1;
 
         private void EnsureExtraButtons()
-        {
-            Ensure(ref revealingPowerUpButton,RewardType.Revealing);
-            Ensure(ref lifePowerUpButton,RewardType.Life);
-            Ensure(ref bombPowerUpButton,RewardType.Bomb);
-            Ensure(ref helperPowerUpButton,RewardType.Helper);
-            Ensure(ref pairPowerUpButton,RewardType.Pair);
-            Ensure(ref splitPowerUpButton,RewardType.Split);
-            Ensure(ref ultraPowerUpButton,RewardType.Ultra);
-        }
-        private void Ensure(ref PowerUpButtonView button,RewardType type)
-        {
-            if(button==null)
-            {
-                if(buttonPrefab==null)throw new System.InvalidOperationException("Powerup list requires its shared button prefab.");
-                button=Instantiate(buttonPrefab,transform,false);button.name=type+"PowerUpButton";
-                button.ConfigureType(type);button.CountText.text="0";
-            }
-        }
+        {foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)buttons.GetOrCreate(type,buttonPrefab,transform);}
 
         public void SetProgression(int levelId)
         {
@@ -93,17 +71,17 @@ namespace Scripts
 
         public IBaseButtonView GetRevealingPowerUpButton()
         {
-            return revealingPowerUpButton;
+            return GetPowerUpButton(RewardType.Revealing);
         }
         
         public IBaseButtonView GetLifePowerUpButton()
         {
-            return lifePowerUpButton;
+            return GetPowerUpButton(RewardType.Life);
         }
         
         public IBaseButtonView GetBombPowerUpButton()
         {
-            return bombPowerUpButton;
+            return GetPowerUpButton(RewardType.Bomb);
         }
 
         public RectTransform GetRectTransform()
@@ -130,24 +108,7 @@ namespace Scripts
         {
             EnsureExtraButtons();return GetAssignedButton(rewardType);
         }
-        public PowerUpButtonView GetAssignedButton(RewardType rewardType)
-        {
-            switch (rewardType)
-            {
-                case RewardType.Ultra: return ultraPowerUpButton;
-                case RewardType.Pair: return pairPowerUpButton;
-                case RewardType.Split: return splitPowerUpButton;
-                case RewardType.Helper: return helperPowerUpButton;
-                case RewardType.Revealing:
-                    return revealingPowerUpButton;
-                case RewardType.Life:
-                    return lifePowerUpButton;
-                case RewardType.Bomb:
-                    return bombPowerUpButton;
-                default:
-                    return revealingPowerUpButton;
-            }
-        }
+        public PowerUpButtonView GetAssignedButton(RewardType type)=>buttons.Get(type);
 
         public void SetPowerUpCount(RewardType rewardType, int count)
         {

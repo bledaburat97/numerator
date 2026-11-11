@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using Game;
 
 namespace Scripts
@@ -7,14 +9,16 @@ namespace Scripts
     public sealed class PowerUpDefinition
     {
         public RewardType Type { get; }
+        public GameUIButtonType ButtonType { get; }
+        public bool NeedsBoardTarget { get; }
         public string Name { get; }
         public string Description { get; }
         public string IconName { get; }
         public string TutorialKey { get; }
         public int ExtraGuesses { get; }
         private readonly bool _unscheduled;
-        private PowerUpDefinition(RewardType type,string name,string description,string icon,string tutorial,int guesses=0,bool unscheduled=false)
-        {Type=type;Name=name;Description=description;IconName=icon;TutorialKey=tutorial;ExtraGuesses=guesses;_unscheduled=unscheduled;}
+        private PowerUpDefinition(RewardType type,GameUIButtonType button,string name,string description,string icon,string tutorial,int guesses=0,bool unscheduled=false,bool boardTarget=false)
+        {Type=type;ButtonType=button;NeedsBoardTarget=boardTarget;Name=name;Description=description;IconName=icon;TutorialKey=tutorial;ExtraGuesses=guesses;_unscheduled=unscheduled;}
 
         public int UnlockLevel
         {
@@ -27,14 +31,18 @@ namespace Scripts
             }
         }
         private static readonly PowerUpDefinition[] All={
-            new PowerUpDefinition(RewardType.Revealing,"Göster","Bir alan seç. Doğru meyve oraya yerleşir ve sabitlenir.","Reveal",TutorialProgress.Reveal),
-            new PowerUpDefinition(RewardType.Life,"Can","2 ek tahmin hakkı verir. 2 hak harcadığında kullanabilirsin.","Life",TutorialProgress.Life,2),
-            new PowerUpDefinition(RewardType.Bomb,"Bomba","İlk tahminden önce son alanı kaldırır.","Bomb",TutorialProgress.Bomb),
-            new PowerUpDefinition(RewardType.Helper,"İpucu","Son tahminindeki meyvelerin ayrıntısını gösterir.","Helper",TutorialProgress.Helper,unscheduled:true),
-            new PowerUpDefinition(RewardType.Pair,"Bağlı","Cevapta yan yana bulunan iki meyveyi bağlar.","Pair",TutorialProgress.Pair,unscheduled:true),
-            new PowerUpDefinition(RewardType.Split,"Bölme","İlk tahminden önce tahtayı böler. Sonuçlar ayrı hesaplanır.","Split",TutorialProgress.Split,unscheduled:true),
-            new PowerUpDefinition(RewardType.Ultra,"Ultra","Bu bölümde konum notlarını otomatik hesaplar.","Ultra",TutorialProgress.Ultra)
+            new PowerUpDefinition(RewardType.Revealing,GameUIButtonType.RevealingPowerUp,"Göster","Bir alan seç. Doğru meyve oraya yerleşir ve sabitlenir.","Reveal",TutorialProgress.Reveal,boardTarget:true),
+            new PowerUpDefinition(RewardType.Life,GameUIButtonType.LifePowerUp,"Can","2 ek tahmin hakkı verir. 2 hak harcadığında kullanabilirsin.","Life",TutorialProgress.Life,2),
+            new PowerUpDefinition(RewardType.Bomb,GameUIButtonType.BombPowerUp,"Bomba","İlk tahminden önce son alanı kaldırır.","Bomb",TutorialProgress.Bomb),
+            new PowerUpDefinition(RewardType.Helper,GameUIButtonType.HelperPowerUp,"İpucu","Son tahminindeki meyvelerin ayrıntısını gösterir.","Helper",TutorialProgress.Helper,unscheduled:true),
+            new PowerUpDefinition(RewardType.Pair,GameUIButtonType.PairPowerUp,"Bağlı","Cevapta yan yana bulunan iki meyveyi bağlar.","Pair",TutorialProgress.Pair,unscheduled:true),
+            new PowerUpDefinition(RewardType.Split,GameUIButtonType.SplitPowerUp,"Bölme","İlk tahminden önce tahtayı böler. Sonuçlar ayrı hesaplanır.","Split",TutorialProgress.Split,unscheduled:true),
+            new PowerUpDefinition(RewardType.Ultra,GameUIButtonType.UltraPowerUp,"Ultra","Bu bölümde konum notlarını otomatik hesaplar.","Ultra",TutorialProgress.Ultra)
         };
+        public static IReadOnlyList<RewardType> RewardOrder {get;}=Array.AsReadOnly(All.Select(definition=>definition.Type).ToArray());
+        public static IReadOnlyList<RewardType> DisplayOrder {get;}=Array.AsReadOnly(All.OrderBy(definition=>definition.Type==RewardType.Bomb?-1:(int)definition.Type).Select(definition=>definition.Type).ToArray());
+        public static bool TryGet(GameUIButtonType button,out PowerUpDefinition definition)
+        {definition=All.FirstOrDefault(item=>item.ButtonType==button);return definition!=null;}
         public static PowerUpDefinition Get(RewardType type)
         {foreach(var definition in All)if(definition.Type==type)return definition;throw new ArgumentOutOfRangeException(nameof(type));}
     }

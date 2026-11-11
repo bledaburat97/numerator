@@ -37,20 +37,11 @@ namespace Scripts
             ICardItemInfoManager info, ILevelTracker tracker)
         { _round = round; _target = target; _save = save; _info = info; _tracker = tracker; }
 
-        public bool CanApply => IsPlayable && !_save.GetLevelSaveData().PairWasApplied && Current == null
-            && _target.GetTargetCardsList().Count >= 2 && Candidates().Count > 0;
-
-        private bool IsPlayable
-        {
-            get
-            {
-                if (_tracker.GetGameOption() != GameOption.SinglePlayer || _round.GetRemainingGuessCount() <= 0) return false;
-                var answer = _target.GetTargetCardsList();
-                if (answer == null) return false;
-                var history = _round.GetTriedCardsList();
-                return history.Count == 0 || !history[history.Count - 1].SequenceEqual(answer);
-            }
-        }
+        public static bool CanPlan(bool single,int remaining,IReadOnlyList<List<int>> history,IReadOnlyList<int> answer,IReadOnlyList<CardItemInfo> info,LevelSaveData state)
+            =>single && remaining>0 && answer!=null && answer.Count>=2 && !state.PairWasApplied && state.PairClue==null
+                && (history.Count==0 || !history[history.Count-1].SequenceEqual(answer)) && Candidates(answer,info).Count>0;
+        public bool CanApply=>CanPlan(_tracker.GetGameOption()==GameOption.SinglePlayer,_round.GetRemainingGuessCount(),_round.GetTriedCardsList(),
+            _target.GetTargetCardsList(),_info.GetCardItemInfoList(),_save.GetLevelSaveData());
 
         private List<PairClue> Candidates()
         {
@@ -75,20 +66,13 @@ namespace Scripts
             return candidates.Count>0?candidates[UnityEngine.Random.Range(0,candidates.Count)]:null;
         }
 
-        public bool ApplyClue(PairClue selected)
+        public bool ApplyCommitted(PairClue selected)
         {
-            if(!CanApply || selected==null || !selected.Matches(_target.GetTargetCardsList()))return false;
+            if(selected==null)return false;
             var state=_save.GetLevelSaveData();state.PairWasApplied=true;state.PairClue=selected;
             Changed?.Invoke(this,selected);return true;
         }
-
-        public bool TryApply()
-        {
-            if (!CanApply) return false;
-            var candidates = Candidates();
-            var selected = candidates[UnityEngine.Random.Range(0, candidates.Count)];
-            return ApplyClue(selected);
-        }
+        public bool TryApply()=>CanApply && ApplyCommitted(SelectClue(_target.GetTargetCardsList(),_info.GetCardItemInfoList()));
 
         public bool Prepare(bool pairLevel)
         {

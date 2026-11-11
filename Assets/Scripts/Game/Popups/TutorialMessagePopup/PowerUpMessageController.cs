@@ -31,15 +31,13 @@ namespace Scripts
         {
             if (_levelTracker.GetGameOption() == GameOption.MultiPlayer) return;
             if (_tutorialGate != null && !_tutorialGate.AllowsButton(powerUpType)) return;
-            if(powerUpType!=GameUIButtonType.BombPowerUp && powerUpType!=GameUIButtonType.RevealingPowerUp
-                && powerUpType!=GameUIButtonType.LifePowerUp && powerUpType!=GameUIButtonType.HelperPowerUp
-                && powerUpType!=GameUIButtonType.PairPowerUp && powerUpType!=GameUIButtonType.SplitPowerUp && powerUpType!=GameUIButtonType.UltraPowerUp)return;
-            if(_activePowerUpType==GameUIButtonType.RevealingPowerUp && powerUpType==_activePowerUpType){CloseActivePowerUp();return;}
+            if(!PowerUpDefinition.TryGet(powerUpType,out var definition))return;
+            if(_activePowerUpType!=GameUIButtonType.Default && powerUpType==_activePowerUpType){CloseActivePowerUp();return;}
             var reward=PowerUpTypeUtility.ToRewardType(powerUpType);
             if(!_uses.Value.CanUse(reward))return;
             CloseActivePowerUp();
             if (_tutorialGate != null && _tutorialGate.TryExplain(powerUpType)) return;
-            if(powerUpType==GameUIButtonType.RevealingPowerUp)
+            if(definition.NeedsBoardTarget)
             {
                 _activePowerUpType=powerUpType;
                 _fadePanelController.SetBoardFadeImageStatus(true);

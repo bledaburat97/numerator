@@ -72,6 +72,8 @@ namespace Scripts
             return true;
         }
 
+        public void ApplyCommittedTarget(IReadOnlyList<int> cards)=>_targetCardsList=new List<int>(cards);
+
         public bool TryRemoveLastTargetCard()
         {
             if (_targetCardsList == null || _targetCardsList.Count <= 1) return false;
@@ -138,6 +140,7 @@ namespace Scripts
         IReadOnlyList<int> GetProtectedTargetCards();
         bool TryAppendTargetCard(int card);
         bool TryRemoveLastTargetCard();
+        void ApplyCommittedTarget(IReadOnlyList<int> cards);
         void SetTargetNumber(int numOfBoardHolders);
     }
 }

@@ -282,6 +282,13 @@ namespace Scripts
             DeleteOneBoardHolder();
         }
 
+        public bool ApplyCommittedShrink(int expectedBefore,int finalCount)
+        {
+            if(_boardHolderControllerList.Count!=expectedBefore || finalCount<1 || finalCount>expectedBefore)return false;
+            while(_boardHolderControllerList.Count>finalCount)DeleteOneBoardHolder();
+            return true;
+        }
+
         private void DeleteOneBoardHolder()
         {
             _boardHolderCountManager.RemoveLastBoardHolder();
@@ -331,6 +338,7 @@ namespace Scripts
         void CleanupTutorialModeOnShinyBoardHolders();
         void AddBoardHolder();
         void RemoveLastBoardHolder();
+        bool ApplyCommittedShrink(int expectedBefore,int finalCount);
         void CreateBoard();
         Sequence MoveBoardHoldersToOutsideScene(float duration);
         void ClearBoardHolders();

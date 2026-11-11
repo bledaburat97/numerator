@@ -43,8 +43,8 @@ namespace Scripts
         public bool IndicatorsVisible=>_indicatorsVisible || UltraActive;
         public bool CanResetNotes=>!UltraActive;
         public bool CanEditNotes=>!UltraActive;
-        public bool SupportsAutomatic=>_levels.GetLevelData()?.Mechanic!=LevelMechanic.Growing
-            && _levels.GetLevelData()?.Mechanic!=LevelMechanic.Split && !(_split?.IsActive??false);
+        public static bool Supports(LevelMechanic mechanic,bool split)=>mechanic!=LevelMechanic.Growing && mechanic!=LevelMechanic.Split && !split;
+        public bool SupportsAutomatic=>Supports(_levels.GetLevelData()?.Mechanic??LevelMechanic.Normal,_split?.IsActive??false);
         private bool SupportsSplit=>_levels.GetLevelData()?.Mechanic==LevelMechanic.Ice;
         public event Action Changed;
         private bool CanDeduce=>UltraActive && SupportsAutomatic;

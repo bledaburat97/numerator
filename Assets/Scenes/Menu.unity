@@ -2575,13 +2575,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 245432132}
   buttonPrefab: {fileID: 118300581505652930, guid: 385ec7526b4a3439ba600648c700575d, type: 3}
-  revealingPowerUpButton: {fileID: 1460037190}
-  lifePowerUpButton: {fileID: 1010787347}
-  bombPowerUpButton: {fileID: 171136265}
-  helperPowerUpButton: {fileID: 1407262402}
-  pairPowerUpButton: {fileID: 1440047428}
-  splitPowerUpButton: {fileID: 1033814053}
-  ultraPowerUpButton: {fileID: 1679853688}
+  buttons:
+    views:
+    - {fileID: 1460037190}
+    - {fileID: 1010787347}
+    - {fileID: 171136265}
+    - {fileID: 1407262402}
+    - {fileID: 1440047428}
+    - {fileID: 1033814053}
+    - {fileID: 1679853688}
 --- !u!1 &248991674
 GameObject:
   m_ObjectHideFlags: 0

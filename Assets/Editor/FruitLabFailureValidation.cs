@@ -415,7 +415,12 @@ public static class FruitLabFailureValidation
             bindings.Bind<IRoundStateManager>().FromInstance(round);
             var bomb=bindings.Instantiate<BombPowerUpController>();
             if (afterGuess) round.AddTriedCards(original);
-            bomb.TryApply(saves.GetLevelSaveData());
+            var planned=Newtonsoft.Json.JsonConvert.DeserializeObject<LevelSaveData>(Newtonsoft.Json.JsonConvert.SerializeObject(saves.GetLevelSaveData()));
+            planned.TargetCards=new List<int>(target.GetTargetCardsList());
+            var rule=new BombPowerUpEffect(()=>bomb);
+            var context=new PowerUpContext {State=saves.GetLevelSaveData(),Answer=target.GetTargetCardsList(),History=round.GetTriedCardsList(),Cards=info.GetCardItemInfoList(),
+                Remaining=round.GetRemainingGuessCount(),Capacity=round.GetMaxGuessCount(),Slots=counts.GetBoardHolderCount(),Removed=counts.GetRemovedBoardHolderCount(),CanShrink=counts.CanShrink};
+            if(rule.TryPrepare(context,planned,-1,out var prepared))prepared.ApplyCommitted();
             if (afterGuess || boardSize == 1)
             {
                 Require(counts.GetBoardHolderCount() == boardSize && target.GetTargetCardsList().SequenceEqual(original)
@@ -433,7 +438,8 @@ public static class FruitLabFailureValidation
             Require(info.GetCardItemInfoList().Count == fruitCount
                 && info.GetCardItemInfoList().All(card => card.possibleCardHolderIndicatorIndexes.All(index => index < expected.Count))
                 && info.GetCardItemInfoList()[0].possibleCardHolderIndicatorIndexes.SequenceEqual(new[] { 0 }), "Card notes remove only the vanished position without shifting other indexes");
-            bomb.TryApply(saves.GetLevelSaveData());
+            context.Slots=counts.GetBoardHolderCount();context.Removed=counts.GetRemovedBoardHolderCount();
+            Require(!rule.TryPrepare(context,planned,-1,out _),"Repeated bomb rule refuses a second plan");
             Require(target.GetTargetCardsList().SequenceEqual(expected) && counts.GetRemovedBoardHolderCount() == 1, "Repeated use cannot remove another fruit");
 
             var results = new BombResults();
@@ -733,7 +739,8 @@ public static class FruitLabRetryValidation
             var info=new CardItemInfoManager(state,null,boardCounts);info.Initialize();
             var target=objects.AddComponent<TargetNumberCreator>();
             Field(target,"_targetCardsList",Enumerable.Range(1,boardCounts.GetBoardHolderCount()).ToList());
-            var uses=new PowerUpUseService(tracker,definition,state,round,info,boardCounts,target,null,null,null,null,()=>null);
+            GameMonoInstaller.BindPowerUpEffects(container);
+            var uses=new PowerUpUseService(tracker,definition,state,round,info,boardCounts,target,null,null,null,container.Resolve<IPowerUpCatalog>(),()=>null);
             container.Bind<PowerUpUseService>().FromInstance(uses);
             Field(powers,"_uses",container.Resolve<LazyInject<PowerUpUseService>>());
             powers.Initialize();

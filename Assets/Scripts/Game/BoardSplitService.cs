@@ -37,26 +37,16 @@ namespace Scripts
         public event EventHandler Applied;
         public bool IsActive => _tracker.GetGameOption() == GameOption.SinglePlayer
             && (_levels.GetLevelData()?.Mechanic == LevelMechanic.Split || (_save?.GetLevelSaveData().BoardSplitApplied ?? false));
-        public bool CanApply
+        public static bool CanActivate(bool single,bool active,bool ultra,int remaining,int slots,int historyCount)
+            =>single && !active && !ultra && remaining>0 && slots>=4 && slots<=5 && historyCount==0;
+        public bool CanApply=>_save!=null && _target!=null && _round!=null && CanActivate(_tracker.GetGameOption()==GameOption.SinglePlayer,
+            IsActive,_save.GetLevelSaveData().UltraActive,_round.GetRemainingGuessCount(),_target.GetTargetCardsList()?.Count??0,_round.GetTriedCardsList().Count);
+        public bool ApplyCommitted(bool applied)
         {
-            get
-            {
-                if (_tracker.GetGameOption() != GameOption.SinglePlayer || IsActive || _save == null || _target == null || _round == null
-                    || _round.GetRemainingGuessCount() <= 0 || _save.GetLevelSaveData().UltraActive) return false;
-                var answer = _target.GetTargetCardsList();
-                if (answer == null || answer.Count < 4 || answer.Count > 5) return false;
-                var history = _round.GetTriedCardsList();
-                return history.Count == 0;
-            }
+            var state=_save.GetLevelSaveData();bool changed=state.BoardSplitApplied!=applied;state.BoardSplitApplied=applied;
+            if(changed)Applied?.Invoke(this,EventArgs.Empty);return true;
         }
-
-        public bool TryApply()
-        {
-            if (!CanApply) return false;
-            _save.GetLevelSaveData().BoardSplitApplied = true;
-            Applied?.Invoke(this,EventArgs.Empty);
-            return true;
-        }
+        public bool TryApply()=>CanApply && ApplyCommitted(true);
 
         public BoardPartition PartitionFor(int count)
         {

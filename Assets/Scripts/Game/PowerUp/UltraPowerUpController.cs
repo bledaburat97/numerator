@@ -30,7 +30,6 @@ namespace Scripts
         }
         public bool ApplyCommitted()
         {
-            if(!CanApply)return false;
             _save.GetLevelSaveData().UltraActive=true;Notes.ActivateUltra();return true;
         }
     }

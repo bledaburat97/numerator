@@ -149,6 +149,11 @@ public static class ButtonPrefabEditorTools
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         File.WriteAllText(Folder+"/button-reference-remap.complete","Original prefab object references remapped.");
     }
+    private static void UpgradeButtonCollection(Component owner,PowerUpButtonCollection collection)
+    {
+        if(collection.Views.Count>0)return;
+        collection.SetViews(owner.GetComponentsInChildren<PowerUpButtonView>(true));EditorUtility.SetDirty(owner);
+    }
     private static void UpgradeTree(GameObject root,PowerUpButtonView template)
     {
         // Opening a scene can unload an asset held only on the C# stack.
@@ -157,7 +162,7 @@ public static class ButtonPrefabEditorTools
             if(button is PowerUpButtonView power)BindPower(power);else BindBase(button);
         foreach(var list in root.GetComponentsInChildren<PowerUpListHolderView>(true))
         {
-            Set(list,"buttonPrefab",template);
+            UpgradeButtonCollection(list,list.Buttons);Set(list,"buttonPrefab",template);
             foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
             {
                 var button=(PowerUpButtonView)list.GetPowerUpButton(type);button.ConfigureType(type);
@@ -166,7 +171,7 @@ public static class ButtonPrefabEditorTools
             EditorUtility.SetDirty(list);
         }
         foreach(var bar in root.GetComponentsInChildren<VerticalCrystalProgressView>(true))
-        {Set(bar,"buttonPrefab",template);bar.ApplyLabStyle();EditorUtility.SetDirty(bar);}
+        {UpgradeButtonCollection(bar,bar.Buttons);Set(bar,"buttonPrefab",template);bar.ApplyLabStyle();EditorUtility.SetDirty(bar);}
         foreach(var component in root.GetComponentsInChildren<Component>(true))
             if(component!=null && PrefabUtility.IsPartOfPrefabInstance(component))PrefabUtility.RecordPrefabInstancePropertyModifications(component);
     }
@@ -233,6 +238,14 @@ public static class ButtonPrefabEditorTools
         }
         finally{EditorSceneManager.RestoreSceneManagerSetup(setup);}
     }
+    private static void ValidateCollection(PowerUpButtonCollection collection,string path,List<string> errors)
+    {
+        var views=collection.Views;
+        if(views.Count!=PowerUpTypeUtility.OrderedRewardTypes.Count || views.Any(view=>view==null)
+            || views.Where(view=>view!=null).Select(view=>view.Type).Distinct().Count()!=PowerUpTypeUtility.OrderedRewardTypes.Count
+            || PowerUpTypeUtility.OrderedRewardTypes.Any(type=>!views.Any(view=>view!=null && view.Type==type)))
+            errors.Add(path+": missing, duplicate or wrong power type mapping");
+    }
     public static void ValidateTree(GameObject root,string path,List<string> errors)
     {
         foreach(var button in root.GetComponentsInChildren<BaseButtonView>(true))
@@ -260,11 +273,13 @@ public static class ButtonPrefabEditorTools
         foreach(var list in root.GetComponentsInChildren<PowerUpListHolderView>(true))
         {
             if(list.ButtonPrefab==null || AssetDatabase.GetAssetPath(list.ButtonPrefab)!=SharedPower)errors.Add(path+": list uses the wrong power template");
-            var buttons=PowerUpTypeUtility.OrderedRewardTypes.Select(list.GetAssignedButton).ToArray();
-            if(buttons.Distinct().Count()!=buttons.Length || buttons.Where((button,index)=>button==null || button.Type!=PowerUpTypeUtility.OrderedRewardTypes[index]).Any())errors.Add(path+": duplicate or wrong power type");
+            ValidateCollection(list.Buttons,path+"/"+list.name,errors);
         }
         foreach(var bar in root.GetComponentsInChildren<VerticalCrystalProgressView>(true))
+        {
             if(bar.ButtonPrefab==null || AssetDatabase.GetAssetPath(bar.ButtonPrefab)!=SharedPower)errors.Add(path+": reward preview uses the wrong power template");
+            ValidateCollection(bar.Buttons,path+"/"+bar.name,errors);
+        }
         foreach(var component in root.GetComponentsInChildren<Component>(true))
         {
             if(component==null){errors.Add(path+": missing script");continue;}
@@ -277,7 +292,7 @@ public static class ButtonPrefabEditorTools
     [MenuItem("Tools/UI/Validate Button Prefabs")]
     private static void ValidateFromMenu()=>Debug.Log(ValidateAssets());
 
-    public static string ValidateAssets()
+    public static string ValidateAssets(string reportDirectory=Folder)
     {
         var errors=new List<string>();
         Require(File.Exists(SharedPower),"Shared power button has not been migrated.");
@@ -294,7 +309,8 @@ public static class ButtonPrefabEditorTools
             finally{EditorSceneManager.ClosePreviewScene(scene);}
         }
         Require(errors.Count==0,"Button asset validation failed:\n"+string.Join("\n",errors.Distinct()));
-        File.WriteAllText(Folder+"/button-prefab-validation.json",JsonConvert.SerializeObject(new {passed=true,standard_variants=StandardVariants.Length,power_compatibility_variants=PowerVariants.Length,shared_power_template=SharedPower},Formatting.Indented));
+        Directory.CreateDirectory(reportDirectory);
+        File.WriteAllText(Path.Combine(reportDirectory,"button-prefab-validation.json"),JsonConvert.SerializeObject(new {passed=true,standard_variants=StandardVariants.Length,power_compatibility_variants=PowerVariants.Length,shared_power_template=SharedPower},Formatting.Indented));
         return "Button prefab and scene bindings passed.";
     }
 }
@@ -313,7 +329,14 @@ public static partial class FruitLabTutorialEditorTools
         Application.logMessageReceived+=collect;
         try
         {
-            ButtonPrefabEditorTools.ValidateAssets();
+            string clean=Path.Combine(Path.GetTempPath(),"numerator-buttons-"+Guid.NewGuid().ToString("N"),"reports");
+            try
+            {
+                Require(!Directory.Exists(clean),"The clean-build report directory does not exist before validation");
+                ButtonPrefabEditorTools.ValidateAssets(clean);
+                Require(File.Exists(Path.Combine(clean,"button-prefab-validation.json")),"Validation creates its own report directory on a clean install");
+            }
+            finally{if(Directory.Exists(Path.GetDirectoryName(clean)))Directory.Delete(Path.GetDirectoryName(clean),true);}
             ClearPreviewActors(canvas);
             using(var game=new Fixture(canvas,camera,new LevelData {NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=9}))
             {
@@ -366,7 +389,7 @@ public static partial class FruitLabTutorialEditorTools
             finally{Object.DestroyImmediate(root);}
             Require(prefs==Profile(),"Button checks preserve real player preferences");Require(errors.Count==0,"No button runtime errors: "+string.Join(" | ",errors));
             File.WriteAllText(Folder+"/button-prefab-review.json",JsonConvert.SerializeObject(new {passed=true,
-                checks=new[]{"typed appearance survives renamed objects","one callback per press","press/release surfaces","seven common power instances","typed icons/counts","two-row home layout","stable instance count","explicit references survive renamed children","read-only missing-binding validation","scene/prefab GUID references","real preferences preserved"}},Formatting.Indented));
+                checks=new[]{"report directory created on clean install","typed appearance survives renamed objects","one callback per press","press/release surfaces","seven common power instances","typed icons/counts","two-row home layout","stable instance count","explicit references survive renamed children","read-only missing-binding validation","scene/prefab GUID references","real preferences preserved"}},Formatting.Indented));
         }
         finally{Application.logMessageReceived-=collect;}
     }

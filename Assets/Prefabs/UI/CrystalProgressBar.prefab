@@ -3470,15 +3470,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Scripts.VerticalCrystalProgressView
   rectTransform: {fileID: 957368365574184349}
   buttonPrefab: {fileID: 118300581505652930, guid: 385ec7526b4a3439ba600648c700575d, type: 3}
+  buttons:
+    views:
+    - {fileID: 1624921465856954009}
+    - {fileID: 4533563894266161533}
+    - {fileID: 3082742298667589448}
+    - {fileID: 6505080397492242377}
+    - {fileID: 1439702178024727930}
+    - {fileID: 7541268189323768482}
+    - {fileID: 7740992530041796427}
   canvasGroup: {fileID: 8735614351004632540}
   progressImage: {fileID: 37698147125155782}
-  revealingPowerUpButton: {fileID: 1624921465856954009}
-  lifePowerUpButton: {fileID: 4533563894266161533}
-  bombPowerUpButton: {fileID: 3082742298667589448}
-  helperPowerUpButton: {fileID: 6505080397492242377}
-  pairPowerUpButton: {fileID: 1439702178024727930}
-  splitPowerUpButton: {fileID: 7541268189323768482}
-  ultraPowerUpButton: {fileID: 7740992530041796427}
   completedParticle: {fileID: 0}
   crystalIcon: {fileID: 6549525103497216743}
 --- !u!1 &6083165165640831075

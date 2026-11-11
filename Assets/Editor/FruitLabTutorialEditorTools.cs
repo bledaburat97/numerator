@@ -746,7 +746,7 @@ public static partial class FruitLabTutorialEditorTools
             _interaction = new CardInteractionManager(UI, new BoardHolderClickRouter(Board, reveal), Initial, haptic, Placement);
             Helper=new HelperEffect(Round,Target,saves);Field(Helper,"_split",split);
             Pair=new PairEffect(Round,Target,saves,_info,Tracker);
-            Bomb=new BombPowerUpController(Board,Placement,Target,_info,counts,Round);Field(Bomb,"_pair",Pair);
+            Bomb=new BombPowerUpController(Board,Placement,Target,_info,counts);Field(Bomb,"_pair",Pair);
             var snapshot=new GameSaveSnapshotProvider(Target,_info,new PlayingFlow(),counts,Round);
             Field(snapshot,"_saveData",saves);Field(snapshot,"_levels",level);Field(snapshot,"_tracker",Tracker);
             var profiles=PowerProfiles=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>new Scripts.Economy.PlayerProfileData());
@@ -755,13 +755,20 @@ public static partial class FruitLabTutorialEditorTools
                 foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)Field(Tracker,PowerStockField(type),stock[type]);
             };
             PowerContainer=new DiContainer();
+            PowerContainer.Bind<IGuessManager>().FromInstance(_guess);
+            PowerContainer.Bind<IBombPowerUpController>().FromInstance(Bomb);
+            PowerContainer.Bind<ICardPlacementCoordinator>().FromInstance(Placement);
+            PowerContainer.Bind<HelperEffect>().FromInstance(Helper);PowerContainer.Bind<PairEffect>().FromInstance(Pair);
+            PowerContainer.Bind<BoardSplitService>().FromInstance(split);
+            PowerContainer.Bind<UltraPowerUpController>().FromMethod(_=>(UltraPowerUpController)Get(_powers,"_ultra"));
+            GameMonoInstaller.BindPowerUpEffects(PowerContainer);
             Uses=new PowerUpUseService(Tracker,level,saves,Round,_info,counts,Target,new Scripts.Economy.PowerUpUseJournal(profiles),_memory,
                 ()=>{
                     var countsNow=PowerUpTypeUtility.OrderedRewardTypes.ToDictionary(type=>type,Tracker.GetPowerUpCount);
                     profiles.Update(profile=>{foreach(var entry in countsNow)profile.Wallet.PowerUps[entry.Key]=entry.Value;});
                     return snapshot;
                 },
-                ()=>new PowerUpRuntimeEffects(Bomb,_guess,Placement,Helper,Pair,split,(UltraPowerUpController)Get(_powers,"_ultra")),
+                PowerContainer.Resolve<IPowerUpCatalog>(),
                 ()=>new IceBoardService(level,Tracker,saves,Round));
             PowerContainer.Bind<PowerUpUseService>().FromInstance(Uses);
             Field(_powers,"_uses",PowerContainer.Resolve<LazyInject<PowerUpUseService>>());

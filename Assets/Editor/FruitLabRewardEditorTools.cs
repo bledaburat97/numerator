@@ -119,10 +119,10 @@ public static class FruitLabRewardEditorTools
             Require(clicks == 1, "Modern level-end controller must resolve through DI and retain its button callback after legacy cleanup");
             endController.SetAllStatusFalse();
             var view = (VerticalCrystalProgressView)popup.GetVerticalCrystalProgressView();
-            foreach (string field in new[] { "revealingPowerUpButton", "lifePowerUpButton", "bombPowerUpButton", "helperPowerUpButton", "pairPowerUpButton", "splitPowerUpButton" })
+            foreach (var type in PowerUpTypeUtility.OrderedRewardTypes)
             {
-                var preview = (PowerUpButtonView)new SerializedObject(view).FindProperty(field).objectReferenceValue;
-                Require(preview != null && preview.transform.IsChildOf(view.transform), "Powerup preview must be a local scene instance: " + field);
+                var preview = view.Buttons.Get(type);
+                Require(preview != null && preview.transform.IsChildOf(view.transform), "Powerup preview must be a local scene instance: " + type);
             }
             trackerObject = new GameObject("RewardPreviewTracker");
             trackerObject.SetActive(false);
@@ -145,7 +145,7 @@ public static class FruitLabRewardEditorTools
                 int capacity = ConstantValues.NUM_OF_STARS_FOR_WILD;
                 Require(view.transform.Find("CrystalCount").GetComponent<TMPro.TMP_Text>().text == (total % capacity) + " / " + capacity,
                     "Animated crystal count must carry remaining crystals after overflow");
-                RewardType next = (RewardType)(((int)type + total / capacity) % PowerUpTypeUtility.OrderedRewardTypes.Length);
+                RewardType next = (RewardType)(((int)type + total / capacity) % PowerUpTypeUtility.OrderedRewardTypes.Count);
                 var preview = view.GetRewardPreviewRectTransform(next);
                 Require(preview != null && preview.gameObject.activeSelf,
                     "Upcoming reward follows the existing rotation");

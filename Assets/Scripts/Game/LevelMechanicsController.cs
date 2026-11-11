@@ -184,6 +184,12 @@ namespace Scripts
             _placement.CardLockedEvent += OnLocked;
         }
 
+        public void ApplyCommitted(DynamiteRoundState state)
+        {
+            if(state==null)return;
+            _save.GetLevelSaveData().Dynamite=state.Copy();Changed?.Invoke(this,DynamiteUpdateReason.Prepared);
+        }
+
         public void Prepare()
         {
             var state = Current; var answer = _target.GetTargetCardsList();

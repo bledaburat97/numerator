@@ -268,6 +268,14 @@ public static class FruitLabEditorTools
                 case "button-prefab-review": reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewButtonPrefabs,validateBeforeRender:true);break;
                 case "button-prefab-validate": reply.details=ButtonPrefabEditorTools.ValidateAssets();break;
                 case "powerup-use-review": FruitLabCardEditorTools.PrepareAssets();reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPowerUpUses,validateBeforeRender:true);break;
+                case "powerup-regression-review":
+                    reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewIce,validateBeforeRender:true)
+                        + "\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewSplit,validateBeforeRender:true)
+                        + "\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPair,validateBeforeRender:true)
+                        + "\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPowerUpRewardPresentation,validateBeforeRender:true)
+                        + "\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewAchievements,validateBeforeRender:true);
+                    FruitLabRewardEditorTools.ValidateRewards();
+                    break;
                 case "ice-review": FruitLabCardEditorTools.PrepareAssets();reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewIce,validateBeforeRender:true);break;
                 case "card-knowledge-review":
                     FruitLabCardEditorTools.PrepareAssets();

@@ -40,8 +40,7 @@ namespace Menu
         }
         public float Layout(float width, float top)
         {
-            var pending = _items.Where(item => !item.Unlocked).OrderByDescending(item => (decimal)item.Progress / item.Target)
-                .ThenBy(item => item.Target - item.Progress).ThenBy(item => item.Id, StringComparer.Ordinal).ToArray();
+            var pending = _items.Where(item => !item.Unlocked).ToArray();
             _pendingTitle.gameObject.SetActive(pending.Length > 0);
             if (pending.Length > 0)
             {

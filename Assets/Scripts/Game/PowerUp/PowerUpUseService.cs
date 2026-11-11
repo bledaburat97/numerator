@@ -21,7 +21,7 @@ namespace Scripts
         private readonly PowerUpUseJournal _journal;
         private readonly IGameSaveService _saves;
         private readonly Func<IGameSaveSnapshotProvider> _snapshots;
-        private readonly Func<PowerUpRuntimeEffects> _runtime;
+        private readonly IPowerUpCatalog _effects;
         private readonly Func<IceBoardService> _ice;
         private bool _busy;
         private LevelSaveData _failedState;
@@ -30,11 +30,11 @@ namespace Scripts
 
         public PowerUpUseService(ILevelTracker tracker,ILevelDataCreator levels,ILevelSaveDataManager state,IRoundStateManager round,
             ICardItemInfoManager cards,IBoardHolderCountManager board,ITargetNumberCreator target,PowerUpUseJournal journal,IGameSaveService saves,
-            Func<IGameSaveSnapshotProvider> snapshots,Func<PowerUpRuntimeEffects> runtime,Func<IceBoardService> ice)
-        {_tracker=tracker;_levels=levels;_state=state;_round=round;_cards=cards;_board=board;_target=target;_journal=journal;_saves=saves;_snapshots=snapshots;_runtime=runtime;_ice=ice;}
+            Func<IGameSaveSnapshotProvider> snapshots,IPowerUpCatalog effects,Func<IceBoardService> ice)
+        {_tracker=tracker;_levels=levels;_state=state;_round=round;_cards=cards;_board=board;_target=target;_journal=journal;_saves=saves;_snapshots=snapshots;_effects=effects;_ice=ice;}
 
         private PowerUpContext Context()=>new PowerUpContext {State=_state.GetLevelSaveData(),Answer=_target.GetTargetCardsList(),
-            History=_round.GetTriedCardsList(),Cards=_cards.GetCardItemInfoList(),Remaining=_round.GetRemainingGuessCount(),Capacity=_round.GetMaxGuessCount(),
+            History=_round.GetTriedCardsList(),HistoryAnswer=_target.GetHistoryTargetCards(),Cards=_cards.GetCardItemInfoList(),Remaining=_round.GetRemainingGuessCount(),Capacity=_round.GetMaxGuessCount(),
             Slots=_board.GetBoardHolderCount(),Removed=_board.GetRemovedBoardHolderCount(),CanShrink=_board.CanShrink,
             Mechanic=_levels.GetLevelData().Mechanic,FrozenIndex=_ice?.Invoke()?.FrozenIndex??-1};
 
@@ -45,20 +45,20 @@ namespace Scripts
                 || _tracker.GetPowerUpCount(type)<=0)return false;
             var c=Context();
             if(c.History.Count>0 && c.History[c.History.Count-1].SequenceEqual(c.Answer))return false;
-            return PowerUpEffects.Get(type)?.CanUse(c,boardIndex)==true;
+            return _effects.Get(type)?.CanUse(c,boardIndex)==true;
         }
 
         public PowerUpUseResult TryApply(RewardType type,int boardIndex=-1)
         {
             if(_busy || _tracker.GetGameOption()!=GameOption.SinglePlayer)return PowerUpUseResult.Unavailable;
-            if(type==RewardType.Ultra && _state.GetLevelSaveData().UltraActive)return PowerUpUseResult.AlreadyActive;
-            if(!CanUse(type,boardIndex) || (type==RewardType.Revealing && boardIndex<0))return PowerUpUseResult.Unavailable;
+            if(_effects.Get(type)?.IsAlreadyActive(Context())==true)return PowerUpUseResult.AlreadyActive;
+            if(!CanUse(type,boardIndex) || (PowerUpDefinition.Get(type).NeedsBoardTarget && boardIndex<0))return PowerUpUseResult.Unavailable;
             _busy=true;bool committed=false;
             try
             {
                 if(!_snapshots().TryCreateSnapshot(out var before,true))return PowerUpUseResult.Unavailable;
                 var after=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));
-                if(!PowerUpEffects.Get(type).TryApply(Context(),after,boardIndex))return PowerUpUseResult.Unavailable;
+                if(!_effects.Get(type).TryPrepare(Context(),after,boardIndex,out var prepared))return PowerUpUseResult.Unavailable;
                 after.PowerUpUseRevision=checked(before.PowerUpUseRevision+1);
                 // A resumable base must exist before the durable profile debit.
                 _saves.Save(before);
@@ -66,7 +66,7 @@ namespace Scripts
                 var result=_journal.Commit(before,after,request);
                 if(result==ProfileCommitResult.Rejected)return PowerUpUseResult.Unavailable;
                 committed=true;
-                if(result==ProfileCommitResult.AlreadyApplied || !_runtime().TryApply(request,after))
+                if(result==ProfileCommitResult.AlreadyApplied || !prepared.ApplyCommitted())
                 {_failedState=_state.GetLevelSaveData();return PowerUpUseResult.ResumeRequired;}
                 _state.GetLevelSaveData().PowerUpUseRevision=after.PowerUpUseRevision;
                 _saves.Save(after);

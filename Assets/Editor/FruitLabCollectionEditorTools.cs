@@ -405,6 +405,9 @@ public static partial class FruitLabTutorialEditorTools
                 var cells=(FruitCollectionCell[])Get(view,"cells");
                 Require(cells.Length==9 && cells.Single(cell=>cell.Fruit==FruitId.Strawberry).Amount.text=="8" && cells.Single(cell=>cell.Fruit==FruitId.Apple).Amount.text=="1","Fruit grid uses eligible lifetime totals, including duel but excluding adjustment");
                 Require(scroll.content.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Sıradaki rozetler"),"Pending badges share the fruit scroll");
+                var pending=service.GetAchievements().Where(goal=>!goal.Unlocked).ToArray();
+                var rendered=pending.OrderByDescending(goal=>((RectTransform)scroll.content.Find("Achievement-"+goal.Id)).anchoredPosition.y).Select(goal=>goal.Id);
+                Require(rendered.SequenceEqual(pending.Select(goal=>goal.Id)) && pending[0].Id==service.Closest().Id,"The view preserves the service's badge order and matches the home goal");
                 foreach(var text in view.GetComponentsInChildren<TMP_Text>()){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Collection text fits: "+text.text);}
                 Capture(camera,Folder+"/preview-collection-hub-"+(int)size.y+".png");
                 scroll.verticalNormalizedPosition=0;Layer(clone.transform);Draw(camera);

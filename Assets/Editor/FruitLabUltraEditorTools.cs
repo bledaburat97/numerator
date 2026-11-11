@@ -350,15 +350,76 @@ public static partial class FruitLabTutorialEditorTools
                     Require(!game.Uses.CanUse(RewardType.Split) && !((BoardSplitService)Get(game.Results,"_split")).CanApply,"Both UI and effect reject Split after Ultra");
                 }
             }
+            ReviewPowerUpPreparation(canvas,camera,definition);
             ReviewPowerUpInterruption(canvas,camera,definition);
             Require(prefs==Profile(),"Powerup use review preserves real player preferences");
             Require(errors.Count==0,"No powerup runtime errors: "+string.Join(" | ",errors));
             File.WriteAllText(Folder+"/powerup-use-review.json",JsonConvert.SerializeObject(new {passed=true,life_grant=2,
-                checks=new[]{"seven shared CanUse/TryApply effects","central definitions","same-write stock and checkpoint","interruption recovery","duplicate receipts","later checkpoints preserved","other rounds isolated","storage failure leaves stock unchanged","actual Bomb and Reveal","cancel without charge","actual Helper Pair Split Ultra","Life +2 animation","mutual exclusion","multiplayer blocked","scene DI","real preferences preserved"}},Formatting.Indented));
+                checks=new[]{"injected strategy catalog and custom effect","prepared Helper Split Bomb results reused without recalculation","seven shared CanUse/TryApply effects","central definitions","same-write stock and checkpoint","interruption recovery","duplicate receipts","later checkpoints preserved","other rounds isolated","storage failure leaves stock unchanged","actual Bomb and Reveal","cancel without charge","actual Helper Pair Split Ultra","Life +2 animation","mutual exclusion","multiplayer blocked","scene DI","real preferences preserved"}},Formatting.Indented));
         }
         finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=previous;}
     }
 
+    private static void ReviewPowerUpPreparation(Canvas canvas,Camera camera,LevelData definition)
+    {
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
+            Require(GrowingSnapshot(game,definition).TryCreateSnapshot(out var before,true),"Prepare a real resumable round");
+            var context=new PowerUpContext {State=before,Answer=before.TargetCards,History=before.TriedCardsList,Cards=before.CardItemInfoList,
+                Remaining=9,Capacity=9,Slots=4,CanShrink=true};
+            var split=(BoardSplitService)Get(game.Results,"_split");
+            var splitAfter=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));
+            Require(game.PowerContainer.Resolve<IPowerUpCatalog>().Get(RewardType.Split).TryPrepare(context,splitAfter,-1,out var preparedSplit),"Prepare Split once before any guess");
+            before.TriedCardsList.Add(new List<int>{8,2,1,4});game.Round.AddTriedCards(new List<int>{8,2,1,4});
+            var inspected=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));GuessEvaluation published=null;
+            game.Helper.Applied+=(sender,guess)=>published=guess;
+            Require(game.PowerContainer.Resolve<IPowerUpCatalog>().Get(RewardType.Helper).TryPrepare(context,inspected,-1,out var preparedHelper),"Prepare the first detailed inspection");
+            before.TriedCardsList.Add(new List<int>{4,3,2,1});game.Round.AddTriedCards(new List<int>{4,3,2,1});
+            Require(preparedHelper.ApplyCommitted() && published?.Number==1 && published.Cards.SequenceEqual(new[]{8,2,1,4})
+                && game._saves.GetLevelSaveData().RevealedGuessNumbers.SequenceEqual(inspected.RevealedGuessNumbers),"Helper publishes the approved row and marker rather than recomputing the latest row");
+            Require(!split.CanApply && preparedSplit.ApplyCommitted() && split.IsActive==splitAfter.BoardSplitApplied,"Split publishes the approved flag without a second eligibility decision");
+        }
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3,4});
+            Require(GrowingSnapshot(game,definition).TryCreateSnapshot(out var before,true),"Snapshot for prepared Bomb");
+            var context=new PowerUpContext {State=before,Answer=before.TargetCards,History=before.TriedCardsList,Cards=before.CardItemInfoList,
+                Remaining=9,Capacity=9,Slots=4,CanShrink=true};
+            var after=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));
+            Require(game.PowerContainer.Resolve<IPowerUpCatalog>().Get(RewardType.Bomb).TryPrepare(context,after,-1,out var prepared),"Prepare Bomb's shortened answer");
+            game.Target.RevealMultiplayerAnswer(new[]{8,7,6,5});
+            Require(prepared.ApplyCommitted() && game.Target.GetTargetCardsList().SequenceEqual(after.TargetCards)
+                && after.TargetCards.SequenceEqual(new[]{1,2,3}) && game._counts.GetBoardHolderCount()==3,"Bomb projects the saved answer rather than shortening a second live answer");
+        }
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});Field(game.Round,"_remainingGuessCount",8);
+            var effect=new ReviewLifeEffect(game._guess);var catalog=new PowerUpCatalog(new[]{effect});
+            var profile=new PlayerProfileRepository(new MemoryPlayerProfileStorage(),()=>{var p=new PlayerProfileData();p.Wallet.PowerUps[RewardType.Life]=1;return p;});
+            var save=new PowerUseControlledSave();var snapshots=GrowingSnapshot(game,definition);
+            var service=new PowerUpUseService(game.Tracker,new TestLevel(definition),game._saves,game.Round,game._info,game._counts,game.Target,
+                new PowerUpUseJournal(profile),save,()=>snapshots,catalog,()=>null);
+            Require(!game.Uses.CanUse(RewardType.Life) && service.CanUse(RewardType.Life),"Availability uses the injected strategy rather than a static catalog");
+            Require(service.TryApply(RewardType.Life)==PowerUpUseResult.Applied && effect.Prepared==1 && effect.Published==1
+                && game.Round.GetRemainingGuessCount()==9 && save.Data.RemainingGuessCount==9 && profile.Snapshot().Wallet.PowerUps[RewardType.Life]==0,
+                "The coordinator commits and projects a custom strategy without a runtime type switch");
+            bool rejected=false;try{new PowerUpCatalog(new[]{effect,effect});}catch(ArgumentException){rejected=true;}
+            Require(rejected && catalog.Get(RewardType.Bomb)==null,"Duplicate registrations fail and missing effects stay unavailable");
+        }
+    }
+    private sealed class ReviewLifeEffect : PowerUpEffect
+    {
+        private readonly IGuessManager _live;public int Prepared,Published;
+        public ReviewLifeEffect(IGuessManager live){_live=live;}
+        public override RewardType Type=>RewardType.Life;
+        public override bool CanUse(PowerUpContext c,int slot=-1)=>c.Remaining>0 && c.Capacity-c.Remaining>=1;
+        protected override PreparedPowerUp Prepare(PowerUpContext c,LevelSaveData after,int slot)
+        {Prepared++;int before=c.Remaining;after.RemainingGuessCount=before+1;return new PreparedPowerUp(()=>{Published++;return _live.ApplyCommittedLives(before,before+1);});}
+    }
     private sealed class PowerUseFailingStorage : IPlayerProfileStorage
     {
         private readonly MemoryPlayerProfileStorage _inner=new MemoryPlayerProfileStorage();
@@ -379,8 +440,9 @@ public static partial class FruitLabTutorialEditorTools
             var context=new PowerUpContext {State=before,Answer=before.TargetCards,History=before.TriedCardsList,Cards=before.CardItemInfoList,
                 Remaining=before.RemainingGuessCount,Capacity=9,Slots=5,CanShrink=true};
             var after=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));
-            var effect=PowerUpEffects.Get(type);int slot=type==RewardType.Revealing?2:-1;
-            Require(effect.CanUse(context,slot) && effect.TryApply(context,after,slot),"Effect can prepare without spending or changing live state: "+type);
+            var bindings=new Zenject.DiContainer();GameMonoInstaller.BindPowerUpEffects(bindings);
+            var effect=bindings.Resolve<IPowerUpCatalog>().Get(type);int slot=type==RewardType.Revealing?2:-1;
+            Require(effect.CanUse(context,slot) && effect.TryPrepare(context,after,slot,out _),"Effect can prepare without spending or changing live state: "+type);
             after.PowerUpUseRevision=1;
             var storage=new PowerUseFailingStorage();
             var repository=new PlayerProfileRepository(storage,()=>{var profile=new PlayerProfileData();profile.Wallet.PowerUps[type]=2;return profile;});
@@ -427,8 +489,7 @@ public static partial class FruitLabTutorialEditorTools
                 var journal=new PowerUpUseJournal(profile);var saves=new PowerUseControlledSave {FailOn=failure};
                 var snapshots=GrowingSnapshot(game,definition);var split=(BoardSplitService)Get(game.Results,"_split");
                 var service=new PowerUpUseService(game.Tracker,new TestLevel(definition),game._saves,game.Round,game._info,game._counts,game.Target,journal,saves,
-                    ()=>snapshots,()=>failure==0?throw new IOException("Interrupted before live effect"):
-                        new PowerUpRuntimeEffects(game.Bomb,game._guess,game.Placement,game.Helper,game.Pair,split,null),()=>null);
+                    ()=>snapshots,new PowerUpCatalog(new IPowerUpEffect[]{new LifePowerUpEffect(()=>failure==0?throw new IOException("Interrupted before live effect"):game._guess),new RevealPowerUpEffect(()=>game.Placement)}),()=>null);
                 int recovery=0;service.RecoveryRequired+=()=>recovery++;
                 var outcome=service.TryApply(RewardType.Life);
                 if(failure==1)

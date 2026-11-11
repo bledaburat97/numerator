@@ -12,15 +12,10 @@ namespace Scripts
         [SerializeField] private RectTransform rectTransform;
         [SerializeField] private PowerUpButtonView buttonPrefab;
         public PowerUpButtonView ButtonPrefab=>buttonPrefab;
+        [SerializeField] private PowerUpButtonCollection buttons=new PowerUpButtonCollection();
+        public PowerUpButtonCollection Buttons=>buttons;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private SlicedFilledImage progressImage;
-        [SerializeField] private PowerUpButtonView revealingPowerUpButton;
-        [SerializeField] private PowerUpButtonView lifePowerUpButton;
-        [SerializeField] private PowerUpButtonView bombPowerUpButton;
-        [SerializeField] private PowerUpButtonView helperPowerUpButton;
-        [SerializeField] private PowerUpButtonView pairPowerUpButton;
-        [SerializeField] private PowerUpButtonView splitPowerUpButton;
-        [SerializeField] private PowerUpButtonView ultraPowerUpButton;
         [SerializeField] private ParticleSystem completedParticle;
         [SerializeField] private Image crystalIcon;
 
@@ -91,15 +86,8 @@ namespace Scripts
                 item.transform.SetParent(transform, false); holder = item.transform;
             }
             FruitLabStyle.Place((RectTransform)holder, transform, width - 60f, 27f, 44f, 44f);
-            ResolvePreview(ref splitPowerUpButton,holder,RewardType.Split);
-            ResolvePreview(ref ultraPowerUpButton,holder,RewardType.Ultra);
-            ResolvePreview(ref pairPowerUpButton,holder,RewardType.Pair);
-            ResolvePreview(ref helperPowerUpButton,holder,RewardType.Helper);
-            ResolvePreview(ref revealingPowerUpButton,holder,RewardType.Revealing);
-            ResolvePreview(ref lifePowerUpButton,holder,RewardType.Life);
-            ResolvePreview(ref bombPowerUpButton,holder,RewardType.Bomb);
-            var assigned = new System.Collections.Generic.HashSet<PowerUpButtonView> {
-                bombPowerUpButton,revealingPowerUpButton,lifePowerUpButton,helperPowerUpButton,pairPowerUpButton,splitPowerUpButton,ultraPowerUpButton };
+            foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)ResolvePreview(holder,type);
+            var assigned=new System.Collections.Generic.HashSet<PowerUpButtonView>(buttons.Views);
             foreach(var old in GetComponentsInChildren<PowerUpButtonView>(true))
                 if(!assigned.Contains(old))old.gameObject.SetActive(false);
             ShowRewardPreview(_rewardType);
@@ -129,13 +117,9 @@ namespace Scripts
             FruitLabStyle.Place((RectTransform)holder, transform, width - 40f, (height - 28f) * .5f, 28f, 28f);
         }
 
-        private void ResolvePreview(ref PowerUpButtonView preview, Transform holder, RewardType type)
+        private void ResolvePreview(Transform holder,RewardType type)
         {
-            if(preview==null || !preview.transform.IsChildOf(transform))
-            {
-                if(buttonPrefab==null)throw new InvalidOperationException("Crystal progress requires its shared powerup button prefab.");
-                preview=Instantiate(buttonPrefab,holder,false);preview.name=type+"RewardPreview";
-            }
+            var preview=buttons.GetOrCreate(type,buttonPrefab,holder);
             if(preview.GetButtonRectTransform()!=_presentedRewardPreview && preview.transform.parent!=holder)
                 preview.transform.SetParent(holder,false);
             FruitLabStyle.Stretch(preview.GetButtonRectTransform());
@@ -322,13 +306,7 @@ namespace Scripts
         public void ShowRewardPreview(RewardType rewardType)
         {
             _rewardType = rewardType;
-            SetPowerUpButtonStatus(revealingPowerUpButton, rewardType == RewardType.Revealing);
-            SetPowerUpButtonStatus(lifePowerUpButton, rewardType == RewardType.Life);
-            SetPowerUpButtonStatus(bombPowerUpButton, rewardType == RewardType.Bomb);
-            SetPowerUpButtonStatus(helperPowerUpButton, rewardType == RewardType.Helper);
-            SetPowerUpButtonStatus(pairPowerUpButton, rewardType == RewardType.Pair);
-            SetPowerUpButtonStatus(splitPowerUpButton,rewardType == RewardType.Split);
-            SetPowerUpButtonStatus(ultraPowerUpButton,rewardType == RewardType.Ultra);
+            foreach(var view in buttons.Views)SetPowerUpButtonStatus(view,view!=null && view.Type==rewardType);
         }
 
         public RectTransform GetRewardPreviewRectTransform(RewardType rewardType)
@@ -366,24 +344,7 @@ namespace Scripts
             _presentedRewardOriginalParent = null;
         }
 
-        private IBaseButtonView GetPowerUpButton(RewardType rewardType)
-        {
-            switch (rewardType)
-            {
-                case RewardType.Pair: return pairPowerUpButton;
-                case RewardType.Ultra:return ultraPowerUpButton;
-                case RewardType.Split: return splitPowerUpButton;
-                case RewardType.Helper: return helperPowerUpButton;
-                case RewardType.Revealing:
-                    return revealingPowerUpButton;
-                case RewardType.Life:
-                    return lifePowerUpButton;
-                case RewardType.Bomb:
-                    return bombPowerUpButton;
-                default:
-                    return revealingPowerUpButton;
-            }
-        }
+        private IBaseButtonView GetPowerUpButton(RewardType type)=>buttons.Get(type);
 
         private RectTransform GetRewardPreviewButtonRectTransform(RewardType rewardType)
         {

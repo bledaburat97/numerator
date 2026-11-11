@@ -75,6 +75,16 @@ public static class FruitLabAchievementRuleChecks
 
     public static void ReviewCollectionBadges(EconomySettings settings)
     {
+        var priorities=new[]{
+            new AchievementStatus {Id="less",Progress=1,Target=10},
+            new AchievementStatus {Id="longer",Progress=10,Target=20},
+            new AchievementStatus {Id="b",Progress=5,Target=10},
+            new AchievementStatus {Id="a",Progress=5,Target=10},
+            new AchievementStatus {Id="closest",Progress=9,Target=10},
+            new AchievementStatus {Id="earned",Progress=10,Target=10,Unlocked=true}
+        };
+        Require(AchievementPriority.Pending(priorities).Select(goal=>goal.Id).SequenceEqual(new[]{"closest","a","b","longer","less"}),
+            "Badge priority shares ratio, remaining amount and ordinal ID tie breakers, excluding earned badges");
         Require(settings.Achievements.Length==5 && settings.Achievements.All(item=>item.RewardKind==AchievementRewardKind.Badge),"Exactly five badge-only goals");
         var rules=new AchievementRules(settings);
         var storage=new MemoryPlayerProfileStorage();var profiles=new PlayerProfileRepository(storage,()=>new PlayerProfileData());
@@ -84,6 +94,8 @@ public static class FruitLabAchievementRuleChecks
         Require(service.GetAchievements().All(item=>item.Progress==0) && FruitCollectionTotals.Earned(profiles.Snapshot().Collection)==0,"Administrative grants are excluded from totals and goals");
         inventory.Grant("single",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,60}});
         inventory.Grant("duel",FruitGainSource.Duel,new Dictionary<FruitId,long>{{FruitId.Strawberry,39}});
+        Require(service.Closest().Id==service.GetAchievements().First(goal=>!goal.Unlocked).Id
+            && service.ClosestFor(new[]{(int)FruitId.Strawberry}).Id==service.Closest().Id,"Home, relevant round target and collection consume the same prepared pending order");
         Require(service.GetAchievements().Single(item=>item.Id=="strawberry-grower-100").Progress==99,"Duels count toward fruit goals");
         inventory.Grant("harvest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Strawberry,1},{FruitId.Watermelon,100},{FruitId.Apple,1300}});
         inventory.Grant("harvest",FruitGainSource.Garden,new Dictionary<FruitId,long>{{FruitId.Strawberry,1},{FruitId.Watermelon,100},{FruitId.Apple,1300}});
