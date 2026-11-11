@@ -29,7 +29,7 @@ namespace Menu
             _singlePlayerButtonController.SetText(GetLevelText());
             _singlePlayerButtonController.SetClickOnRelease(true);
             if(_view.GetSinglePlayerButton() is BaseButtonView button)
-                button.ApplyLevelIdentity(LevelDefinitionPreview.Resolve(_levelTracker.GetLevelId(),_gameSaveService));
+                ButtonAppearance.For(button).ApplyLevelIdentity(LevelDefinitionPreview.Resolve(_levelTracker.GetLevelId(),_gameSaveService));
 
         }
 

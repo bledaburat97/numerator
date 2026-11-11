@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &793448202940925220
 RectTransform:
   m_ObjectHideFlags: 0
@@ -883,7 +883,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 3339962776652519937}
   m_Father: {fileID: 7474481794283707045}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1104,11 +1105,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 2708667389411348344}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 5008163080988932991}
+  image: {fileID: 2708667389411348344}
+  presentation: {fileID: 0}
+  type: 2
+  countHolder: {fileID: 3760139553328061810}
+  countText: {fileID: 4004398808877158757}
+  powerGlyph: {fileID: 7559009248881264467}
 --- !u!1 &2238302605404139545
 GameObject:
   m_ObjectHideFlags: 0
@@ -1295,11 +1298,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 8140169155115834412}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 948261714086653231}
+  image: {fileID: 8140169155115834412}
+  presentation: {fileID: 0}
+  type: 4
+  countHolder: {fileID: 7744229665240067335}
+  countText: {fileID: 5229610147406420115}
+  powerGlyph: {fileID: 4017618312053467046}
 --- !u!1 &2378044194319768162
 GameObject:
   m_ObjectHideFlags: 0
@@ -1453,6 +1458,72 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 250
+--- !u!1 &2759501458602144841
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8769620425818893693}
+  - component: {fileID: 3206004798587926746}
+  - component: {fileID: 3947608456978637144}
+  m_Layer: 0
+  m_Name: PowerGlyph
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &8769620425818893693
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2759501458602144841}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5760996130539438777}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &3206004798587926746
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2759501458602144841}
+  m_CullTransparentMesh: 1
+--- !u!114 &3947608456978637144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2759501458602144841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b37ac4e01df4db4a5d45a5c5203a004, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.FruitLabGlyph
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  Type: 15
 --- !u!1 &2998612632509017008
 GameObject:
   m_ObjectHideFlags: 0
@@ -1562,11 +1633,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 3768405225082698566}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 6799943948372732051}
+  image: {fileID: 3768405225082698566}
+  presentation: {fileID: 0}
+  type: 6
+  countHolder: {fileID: 4325591405232598641}
+  countText: {fileID: 2647941421363263578}
+  powerGlyph: {fileID: 4376238086014542669}
 --- !u!1 &3079375964858667491
 GameObject:
   m_ObjectHideFlags: 0
@@ -1584,7 +1657,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8874038410811684665
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2283,6 +2356,72 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1.5
+--- !u!1 &3606087998932093534
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3339962776652519937}
+  - component: {fileID: 8659210204886184940}
+  - component: {fileID: 7559009248881264467}
+  m_Layer: 0
+  m_Name: PowerGlyph
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &3339962776652519937
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3606087998932093534}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9216765051176420282}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &8659210204886184940
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3606087998932093534}
+  m_CullTransparentMesh: 1
+--- !u!114 &7559009248881264467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3606087998932093534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b37ac4e01df4db4a5d45a5c5203a004, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.FruitLabGlyph
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  Type: 15
 --- !u!1 &3671960540468474390
 GameObject:
   m_ObjectHideFlags: 0
@@ -2467,11 +2606,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 897254274258893939}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 4750637205234938653}
+  image: {fileID: 897254274258893939}
+  presentation: {fileID: 0}
+  type: 3
+  countHolder: {fileID: 100823820541725757}
+  countText: {fileID: 579519724890604474}
+  powerGlyph: {fileID: 4729229000585971762}
 --- !u!1 &3977331695665952648
 GameObject:
   m_ObjectHideFlags: 0
@@ -2501,7 +2642,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8769620425818893693}
   m_Father: {fileID: 203559631905316700}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2564,7 +2706,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &3280301522316780922
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2582,7 +2724,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -4, y: -4}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &143508810458206163
 CanvasRenderer:
@@ -2605,7 +2747,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Scripts.FruitLabGlyph
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9529412, g: 0.73333335, b: 0.30588236, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2872,11 +3014,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 7946526558343434251}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 6988549268920137016}
+  image: {fileID: 7946526558343434251}
+  presentation: {fileID: 0}
+  type: 0
+  countHolder: {fileID: 2647599270944448982}
+  countText: {fileID: 7280407123966823181}
+  powerGlyph: {fileID: 2959611841741278566}
 --- !u!1 &5175706159088448653
 GameObject:
   m_ObjectHideFlags: 0
@@ -3061,11 +3205,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 8163003566221436196}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 4461131678050163123}
+  image: {fileID: 8163003566221436196}
+  presentation: {fileID: 0}
+  type: 1
+  countHolder: {fileID: 5395037014836891886}
+  countText: {fileID: 1151689634591627644}
+  powerGlyph: {fileID: 3947608456978637144}
 --- !u!1 &5522345514897362156
 GameObject:
   m_ObjectHideFlags: 0
@@ -3083,7 +3229,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7932901459958141465
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3323,6 +3469,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Scripts.VerticalCrystalProgressView
   rectTransform: {fileID: 957368365574184349}
+  buttonPrefab: {fileID: 118300581505652930, guid: 385ec7526b4a3439ba600648c700575d, type: 3}
   canvasGroup: {fileID: 8735614351004632540}
   progressImage: {fileID: 37698147125155782}
   revealingPowerUpButton: {fileID: 1624921465856954009}
@@ -3410,6 +3557,72 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 100
+--- !u!1 &6253114187585205026
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1501726740300861385}
+  - component: {fileID: 7154573377356490876}
+  - component: {fileID: 2959611841741278566}
+  m_Layer: 0
+  m_Name: PowerGlyph
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1501726740300861385
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6253114187585205026}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1283496299516143393}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &7154573377356490876
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6253114187585205026}
+  m_CullTransparentMesh: 1
+--- !u!114 &2959611841741278566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6253114187585205026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b37ac4e01df4db4a5d45a5c5203a004, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.FruitLabGlyph
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  Type: 15
 --- !u!1 &6259109387555702929
 GameObject:
   m_ObjectHideFlags: 0
@@ -4118,7 +4331,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1501726740300861385}
   m_Father: {fileID: 3806749956636366038}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4181,7 +4395,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &3197768937962840827
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4199,7 +4413,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -4, y: -4}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7315574430380314300
 CanvasRenderer:
@@ -4222,7 +4436,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Scripts.FruitLabGlyph
   m_Material: {fileID: 0}
-  m_Color: {r: 0.83137256, g: 0.7019608, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4566,11 +4780,13 @@ MonoBehaviour:
   text: {fileID: 0}
   outerBg: {fileID: 0}
   shadow: {fileID: 0}
-  innerBg: {fileID: 448972083574168237}
-  image: {fileID: 0}
-  useLabActionStyle: 0
-  primaryLabAction: 0
-  useLabSettingsStyle: 0
+  innerBg: {fileID: 461373211201855514}
+  image: {fileID: 448972083574168237}
+  presentation: {fileID: 0}
+  type: 5
+  countHolder: {fileID: 5839721598662788162}
+  countText: {fileID: 484642394783900906}
+  powerGlyph: {fileID: 8717326766573110556}
 --- !u!1 &8504144985425529084
 GameObject:
   m_ObjectHideFlags: 0
@@ -5022,7 +5238,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &6936180659270626960
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5040,7 +5256,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -6, y: -6}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4804344538360314749
 CanvasRenderer:
@@ -5063,11 +5279,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Scripts.FruitLabGlyph
   m_Material: {fileID: 0}
-  m_Color: {r: 0.5294118, g: 0.9019608, b: 0.7764706, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  Type: 0
+  Type: 15

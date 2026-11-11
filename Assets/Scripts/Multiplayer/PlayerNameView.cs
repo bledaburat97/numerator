@@ -50,7 +50,7 @@ namespace Scripts
             _canKick = canKick;
             if (!canKick) _menuOpen = false;
             _role.text = isLocal ? "Sen" : "";
-            kickButton.ApplyLabActionStyle(false); kickButton.SetText("Çıkar");
+            ButtonAppearance.For(kickButton).SetActionStyle(false); kickButton.SetText("Çıkar");
             ApplyRowLayout();
         }
         public void ApplyRowLayout()

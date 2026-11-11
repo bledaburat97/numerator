@@ -70,7 +70,7 @@ namespace Scripts
             foreach (var old in new[] { menu.GetMultiplayerButton(), menu.GetCollectionButton(), menu.GetAchievementsButton() })
                 if (old != null) ((Component)old).gameObject.SetActive(false);
             var privacy = actions.Find("PrivacyButton"); if (privacy != null) privacy.gameObject.SetActive(false);
-            play.ApplyLabActionStyle(true);
+            ButtonAppearance.For(play).SetActionStyle(true);
             var goal=ClosestBadgeView.Ensure(_homeContent);
             FruitLabStyle.Place((RectTransform)goal.transform,_homeContent,36f,actions.anchoredPosition.y+44f,width-48f,60f);
             goal.ApplyLayout();

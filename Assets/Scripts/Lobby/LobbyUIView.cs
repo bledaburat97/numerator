@@ -141,7 +141,7 @@ namespace Scripts
             selectedDifficulty = difficulty; EnsureDialogs();
             for (int i = 0; i < 3; i++)
             {
-                difficultyButtons[i].ApplyLabActionStyle(i == (int)difficulty);
+                ButtonAppearance.For(difficultyButtons[i]).SetActionStyle(i == (int)difficulty);
                 difficultyButtons[i].SetText(MultiplayerRules.For((Difficulty)i).Name);
                 difficultyButtons[i].gameObject.SetActive(true);
             }
@@ -204,7 +204,7 @@ namespace Scripts
             FruitLabStyle.Place(joinError.rectTransform, joinPopup, 20, 78, popupWidth - 40, 42);
             joinError.textWrappingMode = TextWrappingModes.Normal;
             FruitLabStyle.Place(joinCloseButton.GetButtonRectTransform(), joinPopup, popupWidth - 56, joinPopup.rect.height - 56, 44, 44);
-            joinCloseButton.ApplyLabActionStyle(false); joinCloseButton.SetText("×");
+            ButtonAppearance.For(joinCloseButton).SetActionStyle(false); joinCloseButton.SetText("×");
             FruitLabOnlineLayout.Settings(menuButton, canvas);
             if (!Application.isPlaying) { playerNameInputField.SetTextWithoutNotify(""); codeInputField.SetTextWithoutNotify(""); }
             ApplySectionVisibility();

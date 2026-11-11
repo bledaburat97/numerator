@@ -10,21 +10,16 @@ namespace Scripts
     public class PowerUpListHolderView : MonoBehaviour, IPowerUpListHolderView
     {
         [SerializeField] private RectTransform rectTransform;
+        [SerializeField] private PowerUpButtonView buttonPrefab;
+        public PowerUpButtonView ButtonPrefab=>buttonPrefab;
         [SerializeField] private PowerUpButtonView revealingPowerUpButton;
         [SerializeField] private PowerUpButtonView lifePowerUpButton;
         [SerializeField] private PowerUpButtonView bombPowerUpButton;
-        [SerializeField] private TMP_Text revealingPowerUpCount;
-        [SerializeField] private TMP_Text lifePowerUpCount;
-        [SerializeField] private TMP_Text bombPowerUpCount;
 
         [SerializeField] private PowerUpButtonView helperPowerUpButton;
-        [SerializeField] private TMP_Text helperPowerUpCount;
         [SerializeField] private PowerUpButtonView pairPowerUpButton;
-        [SerializeField] private TMP_Text pairPowerUpCount;
         [SerializeField] private PowerUpButtonView splitPowerUpButton;
-        [SerializeField] private TMP_Text splitPowerUpCount;
         [SerializeField] private PowerUpButtonView ultraPowerUpButton;
-        [SerializeField] private TMP_Text ultraPowerUpCount;
         private bool _ultraActive;
         private CanvasGroup _canvasGroup;
         private static readonly RewardType[] DisplayOrder = { RewardType.Bomb, RewardType.Revealing, RewardType.Life, RewardType.Helper, RewardType.Pair, RewardType.Split, RewardType.Ultra };
@@ -34,18 +29,21 @@ namespace Scripts
 
         private void EnsureExtraButtons()
         {
-            Create(ref helperPowerUpButton, ref helperPowerUpCount, "HelperPowerUpButton");
-            Create(ref pairPowerUpButton, ref pairPowerUpCount, "PairPowerUpButton");
-            Create(ref splitPowerUpButton, ref splitPowerUpCount, "SplitPowerUpButton");
-            Create(ref ultraPowerUpButton, ref ultraPowerUpCount, "UltraPowerUpButton");
-            void Create(ref PowerUpButtonView button, ref TMP_Text count, string objectName)
+            Ensure(ref revealingPowerUpButton,RewardType.Revealing);
+            Ensure(ref lifePowerUpButton,RewardType.Life);
+            Ensure(ref bombPowerUpButton,RewardType.Bomb);
+            Ensure(ref helperPowerUpButton,RewardType.Helper);
+            Ensure(ref pairPowerUpButton,RewardType.Pair);
+            Ensure(ref splitPowerUpButton,RewardType.Split);
+            Ensure(ref ultraPowerUpButton,RewardType.Ultra);
+        }
+        private void Ensure(ref PowerUpButtonView button,RewardType type)
+        {
+            if(button==null)
             {
-                if (button != null) return;
-                button = transform.Find(objectName)?.GetComponent<PowerUpButtonView>();
-                if (button == null) button = Instantiate(revealingPowerUpButton, revealingPowerUpButton.transform.parent, false);
-                button.name = objectName;
-                count = button.transform.Find("CountHolder")?.GetComponentInChildren<TMP_Text>(true);
-                if (count != null) count.text = "0";
+                if(buttonPrefab==null)throw new System.InvalidOperationException("Powerup list requires its shared button prefab.");
+                button=Instantiate(buttonPrefab,transform,false);button.name=type+"PowerUpButton";
+                button.ConfigureType(type);button.CountText.text="0";
             }
         }
 
@@ -84,18 +82,15 @@ namespace Scripts
                 float left = (width - rowCount * buttonWidth - (rowCount - 1) * gap) * .5f;
                 FruitLabStyle.Place(button.GetButtonRectTransform(), transform, left + column * (buttonWidth + gap),
                     (_rows - row - 1) * (buttonHeight + gap), buttonWidth, buttonHeight);
-                button.ApplyLabLayout(PowerUpTypeUtility.IconName(type), PowerUpTypeUtility.Name(type), CountText(type), buttonWidth, buttonHeight);
+                button.ApplyLayout(type,buttonWidth,buttonHeight);
                 index++;
             }
         }
 
         public void SetUltraActive(bool active){if(_ultraActive==active)return;_ultraActive=active;if(_width>0)ApplyLabLayout(_width,_height,_rows);}
 
-        private TMP_Text CountText(RewardType type) => type == RewardType.Ultra ? ultraPowerUpCount : type == RewardType.Split ? splitPowerUpCount : type == RewardType.Pair ? pairPowerUpCount : type == RewardType.Helper ? helperPowerUpCount
-            : type == RewardType.Bomb ? bombPowerUpCount : type == RewardType.Life ? lifePowerUpCount : revealingPowerUpCount;
+        private TMP_Text CountText(RewardType type)=>GetAssignedButton(type).CountText;
 
-
-        
         public IBaseButtonView GetRevealingPowerUpButton()
         {
             return revealingPowerUpButton;
@@ -118,22 +113,25 @@ namespace Scripts
         
         public void SetRevealingPowerUpCount(string count)
         {
-            revealingPowerUpCount.SetText(count);
+            CountText(RewardType.Revealing).SetText(count);
         }
         
         public void SetLifePowerUpCount(string count)
         {
-            lifePowerUpCount.SetText(count);
+            CountText(RewardType.Life).SetText(count);
         }
         
         public void SetBombPowerUpCount(string count)
         {
-            bombPowerUpCount.SetText(count);
+            CountText(RewardType.Bomb).SetText(count);
         }
 
         public IBaseButtonView GetPowerUpButton(RewardType rewardType)
         {
-            EnsureExtraButtons();
+            EnsureExtraButtons();return GetAssignedButton(rewardType);
+        }
+        public PowerUpButtonView GetAssignedButton(RewardType rewardType)
+        {
             switch (rewardType)
             {
                 case RewardType.Ultra: return ultraPowerUpButton;

@@ -79,7 +79,7 @@ namespace Scripts
             button.name = "SettingsButton";
             float topInset = Application.isPlaying && Screen.height > 0 ? (Screen.height - Screen.safeArea.yMax) / Screen.height * canvas.rect.height : 0;
             FruitLabStyle.Place(button.GetButtonRectTransform(), canvas, canvas.rect.width - 58, canvas.rect.height - Mathf.Max(62, topInset + 56), 44, 44);
-            button.ApplyLabSettingsStyle(); button.gameObject.SetActive(true);
+            ButtonAppearance.For(button).SetSettingsStyle(); button.gameObject.SetActive(true);
         }
         public static void Input(TMP_InputField input, Transform parent, float y, float width, string placeholder)
         {
@@ -100,7 +100,7 @@ namespace Scripts
         public static void Button(IBaseButtonView view, Transform parent, float y, float width, bool primary)
         {
             FruitLabStyle.Place(view.GetButtonRectTransform(), parent, 20, y, width - 40, 48);
-            (view as BaseButtonView)?.ApplyLabActionStyle(primary);
+            if(view is BaseButtonView button)ButtonAppearance.For(button).SetActionStyle(primary);
         }
     }
 }

@@ -180,8 +180,8 @@ namespace Scripts
             FruitLabStyle.Place(settingsButton.GetButtonRectTransform(), header, width - 48f, headerHeight - 48f, 48f, 48f);
             var information=GetInformationButton();
             FruitLabStyle.Place((RectTransform)information.transform,header,width-100f,headerHeight-48f,48f,48f);
-            settingsButton.ApplyLabStyle();
-            settingsButton.SetLabIconInset(6f);
+            ButtonAppearance.For(settingsButton).SetSettingsStyle();
+            ButtonAppearance.For(settingsButton).SetIconInset(6f);
             if (coinCountHolder != null)
             {
                 RectTransform counter = (RectTransform)coinCountHolder.transform;
@@ -207,9 +207,9 @@ namespace Scripts
             FruitLabStyle.SetIcon(coinImage, "Coin");
             if (_multiplayerMode) SetCoinCounterStatus(false);
             FruitLabStyle.Place(checkButton.GetButtonRectTransform(), actionArea, width - actionWidth, 0f, actionWidth, actionHeight);
-            checkButton.ApplyLabStyle(true);
+            ButtonAppearance.For(checkButton).SetIconAction(ButtonVisualKind.Confirm,true);
             FruitLabStyle.Place(resetButton.GetButtonRectTransform(), actionArea, 0f, 0f, actionWidth, actionHeight);
-            resetButton.ApplyLabStyle();
+            ButtonAppearance.For(resetButton).SetIconAction(ButtonVisualKind.Clear,false);
         }
 
         public CanvasGroup GetTopButtonsCanvasGroup() => topButtonsCanvasGroup;

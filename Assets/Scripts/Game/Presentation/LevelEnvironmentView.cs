@@ -61,7 +61,7 @@ namespace Scripts
             if(_board.parent!=null)FruitLabStyle.AddSurface(_board.parent.gameObject,Color.Lerp(identity.Background,FruitLabStyle.Panel,.35f));
             FruitLabStyle.AddSurface(_board.gameObject,identity.Panel);
             var rim=_board.Find("LabRim")?.GetComponent<Image>();if(rim!=null)rim.color=identity.Accent*.7f;
-            if(_game.GetCheckButton() is BaseButtonView check)check.ApplyActionAccent(identity.Accent);
+            if(_game.GetCheckButton() is BaseButtonView check)ButtonAppearance.For(check).ApplyActionAccent(identity.Accent);
             RefreshMechanic(identity);RefreshFuture(identity);
         }
         private void RefreshMechanic(LevelIdentity identity)

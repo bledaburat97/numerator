@@ -113,9 +113,9 @@ namespace Scripts
             FruitLabStyle.Surface(content.GetComponent<Image>(), FruitLabStyle.Panel);
             GetComponent<Image>().raycastTarget = true;
             content.GetComponent<Image>().raycastTarget = true;
-            closeButton.ApplyLabActionStyle(true);
-            retryButton.ApplyLabActionStyle(false);
-            menuButton.ApplyLabActionStyle(false);
+            ButtonAppearance.For(closeButton).SetActionStyle(true);
+            ButtonAppearance.For(retryButton).SetActionStyle(false);
+            ButtonAppearance.For(menuButton).SetActionStyle(false);
             foreach (TMP_Text label in new[] { title, description })
             {
                 label.font = FruitLabStyle.Font != null ? FruitLabStyle.Font : TMP_Settings.defaultFontAsset;

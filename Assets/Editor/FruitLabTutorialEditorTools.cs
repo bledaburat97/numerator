@@ -970,7 +970,7 @@ public static partial class FruitLabTutorialEditorTools
     private static BaseButtonView Button(Transform parent, string name, bool primary)
     {
         var view = ((GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(ButtonPath), parent)).GetComponent<BaseButtonView>();
-        view.name = name; view.ApplyLabActionStyle(primary); return view;
+        view.name = name; ButtonAppearance.For(view).SetActionStyle(primary); return view;
     }
     private static void Click(BaseButtonView button) { button.OnPointerDown(null); button.OnPointerUp(null); button.OnPointerClick(null); }
     private static void Tick(float seconds) => DOTween.ManualUpdate(seconds, seconds);

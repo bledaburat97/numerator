@@ -187,8 +187,8 @@ namespace Scripts
                 }
                 FruitLabStyle.Place(rect, rect.parent, x, 8f, buttonWidth,
                     _success ? (hasFruits?44f:32f) : Mathf.Min(40f, height * .44f));
-                var action=button.buttonView.GetComponent<BaseButtonView>();action.ApplyLabActionStyle(!menu);
-                if(button.buttonType==LevelFinishButtonType.Game)action.ApplyLevelIdentity(_multiplayer?null:_continuation);
+                var action=button.buttonView.GetComponent<BaseButtonView>();ButtonAppearance.For(action).SetActionStyle(!menu);
+                if(button.buttonType==LevelFinishButtonType.Game)ButtonAppearance.For(action).ApplyLevelIdentity(_multiplayer?null:_continuation);
             }
         }
 

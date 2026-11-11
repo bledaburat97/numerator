@@ -18,7 +18,7 @@ namespace Scripts
             FruitLabStyle.Place(text.rectTransform, transform, 16, 80, width - 32, 64);
             text.color = FruitLabStyle.Text; text.fontSize = 21; text.enableAutoSizing = true; text.fontSizeMin = 15; text.fontSizeMax = 21;
             FruitLabStyle.Place(menuButtonView.GetButtonRectTransform(), transform, 16, 16, width - 32, 44);
-            menuButtonView.ApplyLabActionStyle(true);
+            ButtonAppearance.For(menuButtonView).SetActionStyle(true);
         }
 
         public void SetText(string text)

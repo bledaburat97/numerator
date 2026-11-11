@@ -10,6 +10,8 @@ namespace Scripts
     public class VerticalCrystalProgressView : MonoBehaviour, IVerticalCrystalProgressView
     {
         [SerializeField] private RectTransform rectTransform;
+        [SerializeField] private PowerUpButtonView buttonPrefab;
+        public PowerUpButtonView ButtonPrefab=>buttonPrefab;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private SlicedFilledImage progressImage;
         [SerializeField] private PowerUpButtonView revealingPowerUpButton;
@@ -89,31 +91,13 @@ namespace Scripts
                 item.transform.SetParent(transform, false); holder = item.transform;
             }
             FruitLabStyle.Place((RectTransform)holder, transform, width - 60f, 27f, 44f, 44f);
-            if(ultraPowerUpButton==null && revealingPowerUpButton!=null)
-            {ultraPowerUpButton=Instantiate(revealingPowerUpButton,holder,false);ultraPowerUpButton.name="UltraRewardPreview";}
-            // Older scenes serialized prefab assets here. Always animate local instances.
-            if (helperPowerUpButton == null && revealingPowerUpButton != null)
-            {
-                helperPowerUpButton = Instantiate(revealingPowerUpButton, holder, false);
-                helperPowerUpButton.name = "HelperRewardPreview";
-            }
-            if (pairPowerUpButton == null && revealingPowerUpButton != null)
-            {
-                pairPowerUpButton = Instantiate(revealingPowerUpButton, holder, false);
-                pairPowerUpButton.name = "PairRewardPreview";
-            }
-            if (splitPowerUpButton == null && revealingPowerUpButton != null)
-            {
-                splitPowerUpButton = Instantiate(revealingPowerUpButton,holder,false);
-                splitPowerUpButton.name = "SplitRewardPreview";
-            }
-            ResolvePreview(ref splitPowerUpButton,holder,"Split");
-            ResolvePreview(ref ultraPowerUpButton,holder,"Ultra");
-            ResolvePreview(ref pairPowerUpButton, holder, "Pair");
-            ResolvePreview(ref helperPowerUpButton, holder, "Helper");
-            ResolvePreview(ref revealingPowerUpButton, holder, "Reveal");
-            ResolvePreview(ref lifePowerUpButton, holder, "Life");
-            ResolvePreview(ref bombPowerUpButton, holder, "Bomb");
+            ResolvePreview(ref splitPowerUpButton,holder,RewardType.Split);
+            ResolvePreview(ref ultraPowerUpButton,holder,RewardType.Ultra);
+            ResolvePreview(ref pairPowerUpButton,holder,RewardType.Pair);
+            ResolvePreview(ref helperPowerUpButton,holder,RewardType.Helper);
+            ResolvePreview(ref revealingPowerUpButton,holder,RewardType.Revealing);
+            ResolvePreview(ref lifePowerUpButton,holder,RewardType.Life);
+            ResolvePreview(ref bombPowerUpButton,holder,RewardType.Bomb);
             var assigned = new System.Collections.Generic.HashSet<PowerUpButtonView> {
                 bombPowerUpButton,revealingPowerUpButton,lifePowerUpButton,helperPowerUpButton,pairPowerUpButton,splitPowerUpButton,ultraPowerUpButton };
             foreach(var old in GetComponentsInChildren<PowerUpButtonView>(true))
@@ -145,14 +129,17 @@ namespace Scripts
             FruitLabStyle.Place((RectTransform)holder, transform, width - 40f, (height - 28f) * .5f, 28f, 28f);
         }
 
-        private void ResolvePreview(ref PowerUpButtonView preview, Transform holder, string icon)
+        private void ResolvePreview(ref PowerUpButtonView preview, Transform holder, RewardType type)
         {
-            if (preview == null) return;
-            if (!preview.transform.IsChildOf(transform)) preview = Instantiate(preview, holder, false);
+            if(preview==null || !preview.transform.IsChildOf(transform))
+            {
+                if(buttonPrefab==null)throw new InvalidOperationException("Crystal progress requires its shared powerup button prefab.");
+                preview=Instantiate(buttonPrefab,holder,false);preview.name=type+"RewardPreview";
+            }
             if(preview.GetButtonRectTransform()!=_presentedRewardPreview && preview.transform.parent!=holder)
                 preview.transform.SetParent(holder,false);
             FruitLabStyle.Stretch(preview.GetButtonRectTransform());
-            preview.ApplyLabPreview(icon);
+            preview.ApplyPreview(type);
         }
 
         private TMP_Text GetLabel(string name, float size, Color color)
