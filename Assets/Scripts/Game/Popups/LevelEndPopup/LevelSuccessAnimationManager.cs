@@ -1,6 +1,7 @@
 using DG.Tweening;
 using Scripts;
 using Zenject;
+using Scripts.Economy;
 
 namespace Game
 {
@@ -34,7 +35,7 @@ namespace Game
             int earnedCrystalCount,
             int previousCoinCount,
             int previousCrystalProgressCount,
-            RewardType rewardTypeBeforeCollection,RewardType? directReward=null)
+            RewardType rewardTypeBeforeCollection,RewardType? directReward=null,CrystalRewardPlan crystalPlan=null)
         {
             _fadePanelController.SetFadeImageStatus(false);
             _fadePanelController.SetTutorialFadeImageStatus(false);
@@ -59,11 +60,11 @@ namespace Game
                     earnedCrystalCount,
                     previousCoinCount,
                     previousCrystalProgressCount,
-                    rewardTypeBeforeCollection))
+                    rewardTypeBeforeCollection,crystalPlan))
                 .Append(_cleanupAnimationController.FadeOutLifeBar(buttonsFadeOutDuration))
                 .Append(_rewardCollectionAnimationController.PlayPostCollectionFlow(0.3f,directReward))
                 .OnKill(_rewardCollectionAnimationController.Cancel);
-            if (!directReward.HasValue && !PowerUpRewardPresenter.EarnsReward(previousCrystalProgressCount,earnedCrystalCount))
+            if (!directReward.HasValue && (crystalPlan?.PowerUps.Count??0)==0)
                 sequence.Insert(.70f,_levelEndPopupController.ChangeFadeButtons(.15f,1f));
             return sequence;
         }
@@ -77,6 +78,6 @@ namespace Game
             int earnedCrystalCount,
             int previousCoinCount,
             int previousCrystalProgressCount,
-            RewardType rewardTypeBeforeCollection,RewardType? directReward=null);
+            RewardType rewardTypeBeforeCollection,RewardType? directReward=null,CrystalRewardPlan crystalPlan=null);
     }
 }

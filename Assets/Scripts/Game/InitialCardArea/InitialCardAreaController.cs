@@ -199,6 +199,7 @@ namespace Scripts
             if (cardIndex < 0 || cardIndex >= _normalCardItemControllerList.Length) return false;
 
             cardItem = _normalCardItemControllerList[cardIndex];
+            if (cardItem?.GetView() is UnityEngine.Object view && view == null) { cardItem=null;return false; }
             return cardItem != null;
         }
 

@@ -255,8 +255,6 @@ namespace Scripts
 
         public void AddBoardHolder()
         {
-            _boardHolderCountManager.AddBoardHolder();
-            _boardPlacementCommands.AddBoardHolder();
             int count = _boardHolderCountManager.GetBoardHolderCount();
             _boardLayoutManager.Initialize(count);
             CreateBoardHolders(count);

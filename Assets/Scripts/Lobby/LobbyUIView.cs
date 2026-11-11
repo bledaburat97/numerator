@@ -7,6 +7,7 @@ namespace Scripts
 {
     public class LobbyUIView : MonoBehaviour, ILobbyUIView
     {
+        public void OpenSettings(ISettingsPopupService service)=>GetComponentInParent<FruitLabOnlineLayout>().OpenSettings(service);
         [SerializeField] private BaseButtonView menuButton;
         [SerializeField] private TMP_InputField playerNameInputField;
         [SerializeField] private BaseButtonView createLobbyButton;
@@ -220,6 +221,7 @@ namespace Scripts
     }
     public interface ILobbyUIView
     {
+        void OpenSettings(ISettingsPopupService service);
         void ConfigureProfile(string name, int avatar, Action<string, int> save);
         void ConfigureInvitation(Action accept, Action dismiss, Action retry);
         void ShowInvitation(FriendInvitePreview preview, string error, bool loading); void HideInvitation();

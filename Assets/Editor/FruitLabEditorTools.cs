@@ -268,7 +268,12 @@ public static class FruitLabEditorTools
                 case "button-prefab-review": reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewButtonPrefabs,validateBeforeRender:true);break;
                 case "button-prefab-validate": reply.details=ButtonPrefabEditorTools.ValidateAssets();break;
                 case "powerup-use-review": FruitLabCardEditorTools.PrepareAssets();reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPowerUpUses,validateBeforeRender:true);break;
+                case "mvp-review":
+                    AssetDatabase.ImportAsset("Assets/UnmaskService.prefab",ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+                    reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewModelPresentation,validateBeforeRender:true);
+                    break;
                 case "powerup-regression-review":
+                    AssetDatabase.ImportAsset("Assets/UnmaskService.prefab",ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
                     reply.details=Render(5,9,validation:FruitLabTutorialEditorTools.ReviewIce,validateBeforeRender:true)
                         + "\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewSplit,validateBeforeRender:true)
                         + "\n"+Render(5,9,validation:FruitLabTutorialEditorTools.ReviewPair,validateBeforeRender:true)

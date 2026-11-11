@@ -131,14 +131,16 @@ namespace Scripts
         private readonly ILevelTracker _tracker;
         private readonly ILevelSaveDataManager _save;
         private readonly ITargetNumberCreator _target;
-        private readonly IBoardAreaController _board;
+        private readonly IBoardHolderCountManager _counts;
+        private readonly IBoardPlacementCommands _placements;
+        public event Action Advanced;
         private readonly ICardItemInfoManager _info;
         private readonly IRoundStateManager _round;
 
         public GrowingBoardService(ILevelDataCreator levels,ILevelTracker tracker,ILevelSaveDataManager save,
-            ITargetNumberCreator target,IBoardAreaController board,ICardItemInfoManager info,
+            ITargetNumberCreator target,IBoardHolderCountManager counts,IBoardPlacementCommands placements,ICardItemInfoManager info,
             IRoundStateManager round)
-        { _levels = levels; _tracker = tracker; _save = save; _target = target; _board = board; _info = info; _round = round; }
+        { _levels = levels; _tracker = tracker; _save = save; _target = target; _counts = counts; _placements=placements; _info = info; _round = round; }
 
         public bool TryAdvance(GuessEvaluation guess)
         {
@@ -157,11 +159,39 @@ namespace Scripts
             foreach (var card in _info.GetCardItemInfoList())
                 if (!card.isLocked && card.isExisted && !card.possibleCardHolderIndicatorIndexes.Contains(newIndex))
                     card.possibleCardHolderIndicatorIndexes.Add(newIndex);
-            _board.AddBoardHolder();
+            _counts.AddBoardHolder();_placements.AddBoardHolder();
+            Advanced?.Invoke();
             return true;
         }
     }
     public enum DynamiteUpdateReason { Prepared, Guess, Lock }
+
+    public sealed class GrowingBoardPresenter : IDisposable
+    {
+        private readonly GrowingBoardService _rules;private readonly IBoardAreaController _board;
+        public GrowingBoardPresenter(GrowingBoardService rules,IBoardAreaController board)
+        {_rules=rules;_board=board;_rules.Advanced+=Render;}
+        private void Render()=>_board.AddBoardHolder();
+        public void Dispose()=>_rules.Advanced-=Render;
+    }
+    public sealed class DynamitePresenter : IDisposable
+    {
+        private readonly DynamiteService _rules;private readonly ICardPlacementCoordinator _cards;
+        private readonly ITargetNumberCreator _target;private readonly ICardItemInfoManager _info;private readonly IGuessManager _guesses;
+        public DynamitePresenter(DynamiteService rules,ICardPlacementCoordinator cards,ITargetNumberCreator target,ICardItemInfoManager info,IGuessManager guesses)
+        {_rules=rules;_cards=cards;_target=target;_info=info;_guesses=guesses;rules.Changed+=Render;}
+        private void Render(object sender,DynamiteUpdateReason reason)
+        {
+            var state=_rules.Current;if(state==null)return;
+            if(state.Disarmed)
+            {
+                int card=_target.GetTargetCardsList()[state.BoardIndex]-1;
+                if(_info.GetCardItemInfoList()[card].isLocked)_cards.PresentLockedCard(state.BoardIndex,card,reason!=DynamiteUpdateReason.Prepared);
+            }
+            if(state.Exploded)_guesses.FailRound();
+        }
+        public void Dispose()=>_rules.Changed-=Render;
+    }
 
     // A submitted guess or an authoritative card lock is the only way to resolve danger.
     public sealed class DynamiteService : IDisposable
@@ -171,17 +201,19 @@ namespace Scripts
         private readonly ILevelSaveDataManager _save;
         private readonly ITargetNumberCreator _target;
         private readonly ICardItemInfoManager _info;
-        private readonly ICardPlacementCoordinator _placement;
-        private readonly IGuessManager _guesses;
+        private readonly ICardKnowledgeEvents _knowledge;
+        private readonly CardLockService _locks;
+        private readonly IRoundStateManager _round;
         public event EventHandler<DynamiteUpdateReason> Changed;
         public DynamiteRoundState Current => _tracker.GetGameOption() == GameOption.SinglePlayer
             && _levels.GetLevelData().Mechanic == LevelMechanic.Dynamite ? _save.GetLevelSaveData().Dynamite : null;
 
         public DynamiteService(ILevelDataCreator levels,ILevelTracker tracker,ILevelSaveDataManager save,
-            ITargetNumberCreator target,ICardItemInfoManager info,ICardPlacementCoordinator placement,IGuessManager guesses)
+            ITargetNumberCreator target,ICardItemInfoManager info,CardLockService locks,IRoundStateManager round)
         {
-            _levels = levels; _tracker = tracker; _save = save; _target = target; _info = info; _placement = placement; _guesses = guesses;
-            _placement.CardLockedEvent += OnLocked;
+            _levels = levels; _tracker = tracker; _save = save; _target = target; _info = info; _locks=locks; _round=round;
+            _knowledge=info as ICardKnowledgeEvents;
+            if(_knowledge!=null)_knowledge.Changed+=OnKnowledge;
         }
 
         public void ApplyCommitted(DynamiteRoundState state)
@@ -200,7 +232,6 @@ namespace Scripts
             int fruit = answer[state.BoardIndex]-1;
             var info = _info.GetCardItemInfoList()[fruit];
             if (!state.Exploded && info.isLocked && info.possibleCardHolderIndicatorIndexes.Contains(state.BoardIndex)) state.Disarmed = true;
-            if (state.Disarmed) _placement.TryRevealAndLockCard(state.BoardIndex,fruit,false);
             Changed?.Invoke(this,DynamiteUpdateReason.Prepared);
         }
 
@@ -216,23 +247,24 @@ namespace Scripts
             if (guess.Cards[state.BoardIndex] == fruit)
             {
                 state.Disarmed = true;
-                if (!guess.Won) _placement.TryRevealAndLockCard(state.BoardIndex,fruit-1);
+                if (!guess.Won) _locks.TryLock(state.BoardIndex,fruit-1);
             }
             else if (state.GuessesUsed == DynamiteRoundState.GuessLimit) state.Exploded = true;
+            if(state.Exploded)_round.ExhaustGuesses();
             Changed?.Invoke(this,DynamiteUpdateReason.Guess);
-            if (state.Exploded) _guesses.FailRound();
             return true;
         }
 
-        private void OnLocked(object sender,(int cardIndex,int boardIndex) locked)
+        private void OnKnowledge()
         {
-            var state = Current;
-            if (state == null || state.Disarmed || state.Exploded || locked.boardIndex != state.BoardIndex
-                || _target.GetTargetCardsList()[state.BoardIndex] != locked.cardIndex+1) return;
-            state.Disarmed = true;
-            Changed?.Invoke(this,DynamiteUpdateReason.Lock);
+            var state=Current;
+            if(state==null || state.Disarmed || state.Exploded || state.BoardIndex<0 || state.BoardIndex>=_target.GetTargetCardsList().Count)return;
+            var fact=_info.GetCardItemInfoList()[_target.GetTargetCardsList()[state.BoardIndex]-1];
+            if(!fact.isLocked || !fact.possibleCardHolderIndicatorIndexes.Contains(state.BoardIndex))return;
+            state.Disarmed=true;Changed?.Invoke(this,DynamiteUpdateReason.Lock);
         }
-        public void Dispose() => _placement.CardLockedEvent -= OnLocked;
+        public void Dispose(){if(_knowledge!=null)_knowledge.Changed-=OnKnowledge;}
+
     }
 
 }

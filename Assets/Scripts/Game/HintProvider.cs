@@ -13,26 +13,30 @@ namespace Game
         [InjectOptional] private EliminateFruitEffect _eliminate;
         [InjectOptional] private IRoundStateManager _round;
         [InjectOptional] private IceBoardService _ice;
+        [InjectOptional] private LazyInject<IGameSaveSnapshotProvider> _snapshots;
+        [InjectOptional] private IGameSaveService _saves;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly ICardItemInfoManager _cardItemInfoManager;
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly ICardPlacementCoordinator _cardPlacementCoordinator;
+        private readonly CardLockService _locks;
         private readonly List<(IRewardTokenView token, Sequence animation)> _activeHints = new List<(IRewardTokenView, Sequence)>();
         
         [Inject]
         public HintProvider(IGuessManager guessManager, ITargetNumberCreator targetNumberCreator,
             ICardItemInfoManager cardItemInfoManager, IInitialCardAreaController initialCardAreaController,
-            IBoardPlacementQuery boardPlacementQuery, ICardPlacementCoordinator cardPlacementCoordinator)
+            IBoardPlacementQuery boardPlacementQuery, ICardPlacementCoordinator cardPlacementCoordinator,CardLockService locks)
         {
             guessManager.HintRewardTokenEvent += OnHintRewardTokenEvent;
             guessManager.LevelFailEvent += CancelPendingHints;
             _targetNumberCreator = targetNumberCreator;
-            _eliminate = new EliminateFruitEffect(targetNumberCreator, cardItemInfoManager, cardPlacementCoordinator);
+            _eliminate = new EliminateFruitEffect(targetNumberCreator, cardItemInfoManager);
             _cardItemInfoManager = cardItemInfoManager;
             _initialCardAreaController = initialCardAreaController;
             _boardPlacementQuery = boardPlacementQuery;
             _cardPlacementCoordinator = cardPlacementCoordinator;
+            _locks=locks;
         }
 
         private void OnHintRewardTokenEvent(object sender, HintRewardTokenEventArgs args)
@@ -54,9 +58,11 @@ namespace Game
                 return false;
             }
 
-            RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
-            Action revealAndLockCardAction = () =>
-                _cardPlacementCoordinator.TryRevealAndLockCard(boardHolderIndex, cardIndex);
+            if(!_locks.TryLock(boardHolderIndex,cardIndex))return false;
+            Checkpoint();
+            if(!_initialCardAreaController.TryGetCardItem(cardIndex,out var card)){ConsumeRewardItem(rewardTokenView);return true;}
+            RectTransform cardRectTransform=card.GetRectTransform();
+            Action revealAndLockCardAction = () => _cardPlacementCoordinator.PresentLockedCard(boardHolderIndex, cardIndex);
 
             Track(rewardTokenView, new RewardTokenAnimationManager().RevealCard(rewardTokenView, cardRectTransform, revealAndLockCardAction));
             return true;
@@ -72,7 +78,10 @@ namespace Game
                 return false;
             }
 
-            RectTransform cardRectTransform = _initialCardAreaController.GetRectTransformOfCardItem(cardIndex);
+            _cardPlacementCoordinator.TryRemoveCardFromBoard(cardIndex);
+            Checkpoint();
+            if(!_initialCardAreaController.TryGetCardItem(cardIndex,out var card)){ConsumeRewardItem(rewardTokenView);return true;}
+            RectTransform cardRectTransform=card.GetRectTransform();
             if (_initialCardAreaController.TryGetCardItem(cardIndex, out var eliminated))
             {
                 eliminated.GetCardMoveHandler().SetMovementLocked(true);
@@ -88,6 +97,11 @@ namespace Game
         private static void ConsumeRewardItem(IRewardTokenView rewardTokenView)
         {
             rewardTokenView.AnimateFadeOut(0.25f);
+        }
+
+        private void Checkpoint()
+        {
+            if (_saves != null && _snapshots != null && _snapshots.Value.TryCreateSnapshot(out var state,true)) _saves.Save(state);
         }
 
         private void Track(IRewardTokenView token, Sequence animation)

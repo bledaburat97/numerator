@@ -5,6 +5,7 @@ namespace Scripts
 {
     public class WaitingSceneUIView : MonoBehaviour, IWaitingSceneUIView
     {
+        public void OpenSettings(ISettingsPopupService service)=>GetComponentInParent<FruitLabOnlineLayout>().OpenSettings(service);
         [SerializeField] private TMP_Text lobbyNameText;
         [SerializeField] private TMP_Text lobbyCodeText;
         [SerializeField] private BaseButtonView menuButton;
@@ -69,6 +70,7 @@ namespace Scripts
     }
     public interface IWaitingSceneUIView
     {
+        void OpenSettings(ISettingsPopupService service);
         void ConfigureShare(System.Action share);
         void SetStatus(string message); void SetLobbyNameText(string text); void SetLobbyCodeText(string text);
         void SetStartAvailability(bool isHost, bool canStart);

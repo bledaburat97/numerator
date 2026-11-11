@@ -7,35 +7,18 @@ namespace Scripts
     public class ResultBlockController : IResultBlockController
     {
         private IResultBlockView _view;
-        private List<int> _numbers;
-
-        public void Initialize(IResultBlockView view, ResultBlockModel model, float resultAreaWidth, float rowHeight)
-        {
-            _view = view;
-            _numbers = new List<int>(model.finalNumbers);
-            if (view is ResultBlockView row) row.ConfigureGroups(model.groups);
-            view.Init(new NonDraggableCardItemViewFactory(), resultAreaWidth, rowHeight);
-            foreach (int number in model.finalNumbers)
-            {
-                INonDraggableCardItemView card = view.CreateCardItem();
-                if(number==GuessSubmission.FrozenMarker)card.InitFrozen();else card.Init(number);
-                card.InitLocalScale();
-            }
-            view.DisplayFeedback(model.correctPosCount, model.wrongPosCount);
-        }
-
-        public void DestroyResultBlock() => _view.Destroy();
-        public void SetPlayerIdentity(bool isLocal, string playerName = null) => (_view as ResultBlockView)?.SetPlayerIdentity(isLocal, playerName);
-
-        public void RevealDetails(IReadOnlyList<CardResultState> states)
-        {
-            if (_view is ResultBlockView view) view.RevealDetails(states);
-        }
-
+        private ResultBlockModel _model;
+        private float _width,_height;
+        public void Initialize(IResultBlockView view,ResultBlockModel model,float width,float height)
+        {_view=view;_model=model.Snapshot();_width=width;_height=height;Render();}
+        private void Render()=>_view.Bind(_model,_width,_height);
+        public void DestroyResultBlock()=>_view.Destroy();
+        public void SetPlayerIdentity(bool local,string name=null){_model.isLocalGuess=local;_model.playerName=name;Render();}
+        public void RevealDetails(IReadOnlyList<CardResultState> states){_model.hintStates=states.ToArray();Render();}
         public void RevealAnswer(IReadOnlyList<int> answer)
         {
-            var evaluation = new GuessEvaluation(0, GuessSubmission.FromHistory(_numbers), answer);
-            for (int i = 0; i < evaluation.States.Count; i++) _view.SetCardResult(i, evaluation.States[i]);
+            var partition=_model.groups?.Count==2?BoardPartition.ForCount(_model.finalNumbers.Count):null;
+            _model.reviewStates=new GuessEvaluation(0,GuessSubmission.FromHistory(_model.finalNumbers),answer,partition).States;Render();
         }
     }
 

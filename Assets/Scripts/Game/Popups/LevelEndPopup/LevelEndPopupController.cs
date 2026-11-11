@@ -10,15 +10,27 @@ namespace Game
     {
         private LevelFinishPopupView _view;
         [InjectOptional] private PowerUpRewardPresenter _rewardPresentation;
+        private bool _rewardBatch;
+        private int _rewardVersion;
+        private Action _afterRewards;
         public bool IsRewardPresentationActive => _rewardPresentation?.IsPresenting == true;
         public void PresentPowerUpReward(RewardType reward,bool bonus=false)
+            =>PresentPowerUpRewards(new[]{reward},bonus);
+        public void PresentPowerUpRewards(IReadOnlyList<RewardType> rewards,bool bonus=false)
         {
-            if (_rewardPresentation == null) { ChangeFadeButtons(.15f,1); return; }
+            if (_rewardPresentation == null || rewards.Count==0) { ChangeFadeButtons(.15f,1); return; }
+            int version=++_rewardVersion;_rewardBatch=true;
             ChangeFadeButtons(0,0).Complete(true);
-            _rewardPresentation.Present(reward,()=>ChangeFadeButtons(.15f,1),bonus);
+            void Next(int index)
+            {
+                if(version!=_rewardVersion)return;
+                if(index<rewards.Count){_rewardPresentation.Present(rewards[index],()=>Next(index+1),bonus);return;}
+                _rewardBatch=false;ChangeFadeButtons(.15f,1);var after=_afterRewards;_afterRewards=null;after?.Invoke();
+            }
+            Next(0);
         }
         public void AfterRewardPresentation(Action action)
-        { if(_rewardPresentation!=null)_rewardPresentation.AfterClose(action);else action?.Invoke(); }
+        { if(_rewardBatch)_afterRewards+=action;else action?.Invoke(); }
 
 
         [Inject]
@@ -29,6 +41,7 @@ namespace Game
 
         public void SetAllStatusFalse()
         {
+            _rewardVersion++;_rewardBatch=false;_afterRewards=null;
             _rewardPresentation?.Cancel();
             _view.ResetTitle(); _view.ResetRewardProgress();
 
@@ -132,6 +145,7 @@ namespace Game
     {
         bool IsRewardPresentationActive { get; }
         void PresentPowerUpReward(RewardType reward,bool bonus=false);
+        void PresentPowerUpRewards(IReadOnlyList<RewardType> rewards,bool bonus=false);
         void AfterRewardPresentation(Action action);
         void InitButton(LevelFinishButtonType buttonType, string text, Action onClick);
         void InitText(string text);

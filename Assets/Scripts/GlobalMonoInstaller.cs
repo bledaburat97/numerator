@@ -7,6 +7,7 @@ namespace Scripts
     {
         public override void InstallBindings()
         {
+            Container.Bind<ISettingsPopupService>().To<SettingsPopupService>().AsSingle();
             Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>()
                 .To<BaseButtonController>();
             Container.Bind<Economy.PowerUpUseJournal>().AsSingle();

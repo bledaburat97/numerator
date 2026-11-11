@@ -84,7 +84,7 @@ public static partial class FruitLabTutorialEditorTools
                 game.BuildActors(); game.Gate.Clear();
                 Field(game.Tracker, "_levelId", 24); Field(game.Tracker, "_helperPowerUpCount", 2);
                 var helper = game.Helper;
-                var eliminate = new EliminateFruitEffect(game.Target, game._info, game.Placement, game._saves);
+                var eliminate = new EliminateFruitEffect(game.Target, game._info, game._saves);
 
                 var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                 Field(snapshot, "_saveData", game._saves); Field(snapshot, "_tracker", game.Tracker);
@@ -106,7 +106,7 @@ public static partial class FruitLabTutorialEditorTools
                     Require(game.Tracker.GetPowerUpCount(RewardType.Helper) == 1 && game._saves.GetLevelSaveData().RevealedGuessNumbers.SequenceEqual(new[] {3,4}), "Manual inventory and automatic rule share Helper effect");
                     Require(memory.Data.RevealedGuessNumbers.SequenceEqual(new[] {3,4}), "Checkpoint includes inspection state");
                     game._saves.SetLevelSaveDataAsSaved(memory.Data); game.Round.Initialize();
-                    game._area.RemoveResultBlocks(); game.Results.TryAddTriedCards(); rules.Begin(LevelMechanic.Helper);
+                    game._area.History.Clear(); game.Results.TryAddTriedCards(); rules.Begin(LevelMechanic.Helper);
                     Require(!helper.CanApply, "Resume cannot re-spend on the same guess");
                     // The preferred fruit must be absent from the answer, independent of manual notes.
                     int preferred = 2;
@@ -250,7 +250,7 @@ public static partial class FruitLabTutorialEditorTools
                     Require(helper.TryApply() && helper.EvaluateGuess(1).Cards.Count == 2,"Helper can explain both the latest and an early short guess");
                     var split = (BoardSplitService)Get(game.Results,"_split"); int stockBefore=game.Tracker.GetPowerUpCount(RewardType.Split);
                     Require(game.Uses.TryApply(RewardType.Split)==PowerUpUseResult.Unavailable && game.Tracker.GetPowerUpCount(RewardType.Split)==stockBefore,"A grown board cannot activate Split after guesses");
-                    game._area.RemoveResultBlocks(); game.Results.TryAddTriedCards(); game._area.RevealAnswer(game.Target.GetTargetCardsList());
+                    game._area.History.Clear(); game.Results.TryAddTriedCards(); game._area.RevealAnswer(game.Target.GetTargetCardsList());
                     Require(provider.TryCreateSnapshot(out var decorated),"Powerup metadata stays in the growth checkpoint");
                     checkpoints.Add(decorated);
                     var legacySplit = JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(decorated));
@@ -301,7 +301,7 @@ public static partial class FruitLabTutorialEditorTools
                         game.Check(); Tick(.4f);
                     }
                     Require(game.Board.GetRectTransformOfGarden(0) == holder && card.IsChildOf(holder) && game._info.GetCardItemInfoList()[full[0]-1].isLocked,"Growth keeps the same locked fruit and holder");
-                    var elimination = new EliminateFruitEffect(game.Target,game._info,game.Placement);
+                    var elimination = new EliminateFruitEffect(game.Target,game._info);
                     while (elimination.TryApply(new[] {full[3]},0,out int removed)) Require(!full.Contains(removed+1),"Elimination protects unopened target fruit");
                     Require(full.All(fruit => game._info.GetCardItemInfoList()[fruit-1].isExisted),"All future answer fruit remain playable");
                     Require(GrowingSnapshot(game,definition).TryCreateSnapshot(out var locked),"Locked-card growth saves");
@@ -382,7 +382,12 @@ public static partial class FruitLabTutorialEditorTools
         finally { DOTween.defaultUpdateType = previous; Application.logMessageReceived -= collect; }
     }
 
-    private static GrowingBoardService GrowthFor(Fixture game,LevelData definition) => new GrowingBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game.Board,game._info,game.Round);
+    private static GrowingBoardService GrowthFor(Fixture game,LevelData definition)
+    {
+        var commands=(IBoardPlacementCommands)Get(game.Placement,"_boardPlacementCommands");
+        var rules=new GrowingBoardService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game._counts,commands,game._info,game.Round);
+        game.ExtraDisposables.Add(new GrowingBoardPresenter(rules,game.Board));return rules;
+    }
     private static LevelMechanicsController GrowingRules(Fixture game,LevelData definition,GrowingBoardService growth)
     {
         var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
@@ -696,7 +701,11 @@ public static partial class FruitLabTutorialEditorTools
         ((IGameSaveService)Get(game,"_memory")).Save(loaded); game._saves.SetLevelSaveDataAsSaved(loaded);
         game.Round.Initialize(); game.BuildActors(); game.Results.TryAddTriedCards(); game.Gate.Clear();
     }
-    private static DynamiteService DangerFor(Fixture game,LevelData definition) => new DynamiteService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game._info,game.Placement,game._guess);
+    private static DynamiteService DangerFor(Fixture game,LevelData definition)
+    {
+        var rules=new DynamiteService(new TestLevel(definition),game.Tracker,game._saves,game.Target,game._info,game.Locks,game.Round);
+        game.ExtraDisposables.Add(new DynamitePresenter(rules,game.Placement,game.Target,game._info,game._guess));return rules;
+    }
     private static LevelMechanicsController DangerRules(Fixture game,LevelData definition,DynamiteService danger,PairEffect pair = null)
     {
         var helper = game.Helper; Field(helper,"_split",Get(game.Results,"_split"));
@@ -830,7 +839,7 @@ public static partial class FruitLabTutorialEditorTools
                     Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Revealing));
                     Require(!game.Reveal.TryRequestRevealCard(4) && game.Tracker.GetPowerUpCount(RewardType.Revealing)==reveal,"Frozen reveal selection rejects the target without consuming stock");
                     SubmitIce(game,ice,new[]{6,2,5,4,0});
-                    var history=(IResultHistorySource)game._area;var row=history.GetHistoryEntry(1);
+                    var history=(IResultHistorySource)game._area.History;var row=history.GetHistoryEntry(1);
                     Require(row.finalNumbers.SequenceEqual(new[]{6,2,5,4,0}) && row.correctPosCount==2 && row.wrongPosCount==1 && !ice.Service.IsFrozen,"Actual four-card ice input stores five slots and reports 2/1 before thawing");
                     Require(ice.Helper.TryApply() && history.GetHistoryEntry(1).hintStates[4]==CardResultState.Frozen,"Helper inspects four fruit and retains the ice cell");
                     var resultView=canvas.GetComponentInChildren<ResultAreaView>(true);resultView.RefreshVisibleRows();
@@ -900,7 +909,7 @@ public static partial class FruitLabTutorialEditorTools
             saved=IceSnapshot(game,definition);
             var view=canvas.GetComponentInChildren<ResultAreaView>(true);var scroll=view.GetComponentInParent<UnityEngine.UI.ScrollRect>();
             if(scroll!=null){scroll.verticalNormalizedPosition=1;scroll.onValueChanged.Invoke(Vector2.up);}
-            Require(((IResultHistorySource)game._area).GetHistoryEntry(1).finalNumbers.Last()==0,"Long history never rewrites its earlier ice slots");
+            Require(((IResultHistorySource)game._area.History).GetHistoryEntry(1).finalNumbers.Last()==0,"Long history never rewrites its earlier ice slots");
         }
         ClearPreviewActors(canvas);
         using(var game=new Fixture(canvas,camera,definition))
@@ -940,7 +949,7 @@ public static partial class FruitLabTutorialEditorTools
                 SubmitIce(game,ice,new[]{3,2,1,4,5});
                 SubmitIce(game,ice,new[]{3,2,5,4,0});
                 Require(ice.Helper.TryApply(),"Helper can inspect an iced split row");
-                Require(((IResultHistorySource)game._area).GetHistoryEntry(1).hintStates[4]==CardResultState.Frozen,"A detailed split hint retains its frozen final cell");
+                Require(((IResultHistorySource)game._area.History).GetHistoryEntry(1).hintStates[4]==CardResultState.Frozen,"A detailed split hint retains its frozen final cell");
                 var pair=game.Pair;
                 Require(pair.Prepare(true) && pair.Current!=null,"Pair reveals real neighboring fruit on an iced board");
                 SubmitIce(game,ice,new[]{3,2,1,4,5});

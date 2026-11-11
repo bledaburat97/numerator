@@ -32,7 +32,7 @@ namespace Game
         
         public void Initialize(bool deferRewardIntroAnimation = false)
         {
-            _failed = false;
+            if (_roundStateManager.GetRemainingGuessCount() > 0) _failed = false;
             _lifeGainAnimation?.Kill();
             _lifeBarController.SetLifeBar(
                 _roundStateManager.GetMaxGuessCount(),
@@ -86,10 +86,11 @@ namespace Game
             _lifeBarController.UpdateProgressBar(
                 (float)remainingGuessCount / _roundStateManager.GetMaxGuessCount(),
                 1f,
-                remainingGuessCount == 0 ? () => { if (_roundStateManager.GetRemainingGuessCount() <= 0) FailRound(); } : null).Play();
+                null).Play();
 
 
             _gameUIController.TriggerResetNumbers();
+            if (remainingGuessCount == 0) FailRound();
         }
         
         public bool GrantExtraLives(int amount,bool expandCapacity = false)

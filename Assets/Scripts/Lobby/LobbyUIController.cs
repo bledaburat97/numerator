@@ -6,6 +6,7 @@ namespace Scripts
     public class LobbyUIController : ILobbyUIController, IDisposable
     {
         [Inject] private BaseButtonControllerFactory _buttons;
+        [Inject] private ISettingsPopupService _settings;
         private readonly ILobbyUIView _view;
         private IBaseButtonController _join, _invite;
         private bool _disposed;
@@ -39,7 +40,7 @@ namespace Scripts
             quick.SetText("Hemen Oyna"); quick.SetButtonClickable(false);
             _view.SetCodeSubmit(Join);
             var settings = _buttons.Create(_view.GetMenuButton(), () =>
-                ((UnityEngine.Component)_view).GetComponentInParent<FruitLabOnlineLayout>().OpenSettings(_buttons));
+                _view.OpenSettings(_settings));
             settings.SetClickOnRelease(true);
             _view.InitPlayerNameInputField(MultiplayerManager.Instance.GetPlayerName(), MultiplayerManager.Instance.SetPlayerName);
             _view.ConfigureProfile(MultiplayerManager.Instance.GetPlayerName(), MultiplayerManager.Instance.LocalAvatar, PlayerIdentityStore.Set);

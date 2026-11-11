@@ -30,9 +30,9 @@ namespace Scripts
             Container.Bind<ITurnOrderDeterminer>().To<TurnOrderDeterminer>().FromComponentInHierarchy().AsSingle();
             Container.Bind<ILevelDataCreator>().To<LevelDataCreator>().FromComponentInHierarchy().AsSingle();
             Container.Bind<IUserReady>().To<UserReady>().FromComponentInHierarchy().AsSingle();
-            Container.Bind<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
-            Container.Bind<IResultAreaController>().To<ResultAreaController>().FromResolve();
-            Container.Bind<IResultHistorySource>().To<ResultAreaController>().FromResolve();
+            Container.BindInterfacesAndSelfTo<ResultAreaController>().AsSingle().WithArguments(resultAreaView);
+            Container.Bind<RoundHistory>().AsSingle();
+            Container.Bind<IResultHistorySource>().To<RoundHistory>().FromResolve();
             Container.Bind<IPositionAssistanceView>().To<PositionAssistanceView>().AsSingle().WithArguments(gameUI, resultAreaView);
             Container.Bind<PositionAssistanceController>().AsSingle();
             Container.Bind<Economy.UltraActivationService>().FromMethod(context=>new Economy.UltraActivationService(context.Container.Resolve<Economy.IPlayerProfileRepository>())).AsSingle();
@@ -49,6 +49,8 @@ namespace Scripts
             Container.Bind<BoardSplitService>().AsSingle();
             Container.Bind<GrowingBoardService>().AsSingle();
             Container.Bind<DynamiteService>().AsSingle();
+            Container.BindInterfacesAndSelfTo<GrowingBoardPresenter>().AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<DynamitePresenter>().AsSingle().NonLazy();
             Container.Bind<IceBoardService>().AsSingle();
             Container.BindInterfacesAndSelfTo<IceBoardPresenter>().AsSingle();
             Container.Bind<HelperEffect>().AsSingle();
@@ -64,6 +66,8 @@ namespace Scripts
             Container.Bind<IBoardAreaController>().To<BoardAreaController>().FromResolve();
             Container.Bind<IBoardHolderClickRouter>().To<BoardHolderClickRouter>().AsSingle().NonLazy();
             Container.Bind<ICardItemInfoManager>().To<CardItemInfoManager>().AsSingle();
+            Container.Bind<CardLockService>().AsSingle();
+            Container.BindInterfacesAndSelfTo<CardKnowledgePresenter>().AsSingle().NonLazy();
             Container.Bind<ICardItemInfoPopupController>().To<CardItemInfoPopupController>().AsSingle()
                 .WithArguments(cardItemInfoPopupView);
             Container.Bind<IInitialCardAreaLayoutManager>().To<InitialCardAreaLayoutManager>().AsSingle();

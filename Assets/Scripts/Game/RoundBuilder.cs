@@ -11,6 +11,7 @@ namespace Game
         private readonly IBoardHolderCountManager _boardHolderCountManager;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IResultAreaController _resultAreaController;
+        private readonly RoundHistory _history;
         private readonly ILifeBarController _lifeBarController;
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly IGameUIController _gameUIController;
@@ -43,7 +44,7 @@ namespace Game
             ICardPlacementCoordinator cardPlacementCoordinator,
             ICardInteractionManager cardInteractionManager,
             IResultManager resultManager,
-            IRoundStateManager roundStateManager)
+            IRoundStateManager roundStateManager,RoundHistory history)
         {
             _levelDataCreator = levelDataCreator;
             _levelSaveDataManager = levelSaveDataManager;
@@ -63,6 +64,7 @@ namespace Game
             _cardInteractionManager = cardInteractionManager;
             _resultManager = resultManager;
             _roundStateManager = roundStateManager;
+            _history=history;
         }
 
         public void BuildSingle(bool isResumeFlow)
@@ -70,6 +72,7 @@ namespace Game
             _roundStateManager.Initialize();
             _boardAreaController.CreateBoard();
             _targetNumberCreator.SetTargetNumber(_boardHolderCountManager.GetBoardHolderCount());
+            _history.Clear();
             _resultAreaController.Initialize(!isResumeFlow);
             _lifeBarController.SetFade(!isResumeFlow);
             _initialCardAreaController.Initialize(!isResumeFlow);
@@ -91,7 +94,7 @@ namespace Game
         {
             _cardItemInfoPopupController.ClearCardHolderIndicatorButtons();
             _initialCardAreaController.ClearInitialCardHolders();
-            _resultAreaController.RemoveResultBlocks();
+            _history.Clear();
             _levelDataCreator.SetMultiplayerLevelData(); _levelSaveDataManager.CreateDefaultLevelSaveData();
             _roundStateManager.Initialize(); _boardAreaController.CreateBoard();
             _targetNumberCreator.SetTargetNumber(_levelDataCreator.GetLevelData().NumOfBoardHolders);

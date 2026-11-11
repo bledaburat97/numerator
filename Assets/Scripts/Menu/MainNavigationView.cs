@@ -19,6 +19,16 @@ namespace Menu
 
     public sealed class MainNavigationView : MonoBehaviour
     {
+        private MenuUIView Home=>GetComponentInParent<Canvas>().GetComponentInChildren<MenuUIView>(true);
+        public void FrameCollection()=>FramePage((RectTransform)Collection.transform);
+        public bool HasHome=>Home!=null;
+        public FruitCollectionView Collection=>Home?.GetCollectionView();
+        public void SetHomeVisible(bool visible,bool header)
+        {
+            var canvas=GetComponentInParent<Canvas>();canvas.GetComponent<FruitLabMenuLayout>().SetHomeVisible(visible);
+            canvas.GetComponentInChildren<MenuHeaderView>(true).gameObject.SetActive(header);
+        }
+        public void ShowSettings(ISettingsPopupService service,Action collection)=>service.Show(settingsPrefab,transform.parent,"MainSettingsOverlay",collection,true);
         public const float BarHeight = 68;
         [SerializeField] private SettingsPopupView settingsPrefab;
         [NonSerialized] private RectTransform _safe, _bar;

@@ -108,7 +108,7 @@ public static partial class FruitLabTutorialEditorTools
                         Require(area.GetComponentsInChildren<ResultBlockView>().All(row => row.IsSplit),"Completion keeps both feedback groups visible");
                         for (int index = 0; index < area.HistoryCount; index++)
                         {
-                            var model = game._area.GetHistoryEntry(index);
+                            var model = game._area.History.GetHistoryEntry(index);
                             var expected = new GuessEvaluation(index + 1, model.finalNumbers, answer, BoardPartition.ForCount(count));
                             Require(model.reviewStates.SequenceEqual(expected.States), "Completion evaluates every historical fruit inside its own group");
                             var row = area.GetVisibleRow(index);

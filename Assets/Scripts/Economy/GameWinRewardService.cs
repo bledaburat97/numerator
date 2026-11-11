@@ -20,6 +20,7 @@ namespace Scripts.Economy
         public RewardType PreviousReward;
         public int NextLevelNumber;
         public List<RewardType> PowerUps=new List<RewardType>();
+        public CrystalRewardPlan Crystals;
         [JsonIgnore] public bool IsReplay;
     }
 
@@ -39,7 +40,7 @@ namespace Scripts.Economy
             return Commit("single:"+roundId,"single_win",request,profile=>{
                 if(profile.Progress.LevelId!=levelId)throw new InvalidOperationException("The winning round does not match current progression.");
                 var result=Before(profile);
-                result.PowerUps=_rules.ApplySingle(profile,coins,crystals);
+                result.PowerUps=_rules.ApplySingle(profile,coins,crystals,out var plan);result.Crystals=plan;
                 result.NextLevelNumber=checked(profile.Progress.LevelId+1);
                 FruitInventoryService.ApplyGrant(profile,FruitGainSource.SinglePlayer,fruits,_achievements);
                 return result;

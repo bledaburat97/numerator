@@ -5,6 +5,25 @@ using UnityEngine.SceneManagement;
 
 namespace Scripts
 {
+    public interface ISettingsPopupService
+    {
+        void Show(SettingsPopupView prefab,UnityEngine.Transform parent,string name,Action collection=null,bool menu=false);
+    }
+    public sealed class SettingsPopupService : ISettingsPopupService
+    {
+        private readonly ILevelTracker _tracker;private readonly BaseButtonControllerFactory _buttons;
+        public SettingsPopupService(ILevelTracker tracker,BaseButtonControllerFactory buttons){_tracker=tracker;_buttons=buttons;}
+        public void Show(SettingsPopupView prefab,UnityEngine.Transform parent,string name,Action collection=null,bool menu=false)
+        {
+            if(prefab==null || parent.Find(name)!=null)return;
+            var overlay=FriendUi.Overlay(parent,name);
+            var popup=UnityEngine.Object.Instantiate(prefab,overlay);
+            void Close()=>TutorialObjectUtility.Destroy(overlay.gameObject);
+            new SettingsPopupController().Initialize(popup,Close,null,null,_tracker,_buttons);
+            if(menu)popup.ConfigureForMenu(()=>{Close();collection?.Invoke();});
+            else popup.GetCloseButton().SetText("Geri dön");
+        }
+    }
     public class SettingsPopupController : ISettingsPopupController
     {
         private ISettingsPopupView _view;
@@ -12,20 +31,23 @@ namespace Scripts
         private readonly Action<string> _loadScene;
         private readonly Action _shutdownNetwork;
         private bool _isNavigating;
+        private readonly Action _privacy;
 
         public SettingsPopupController() : this(scene => SceneManager.LoadScene(scene), () =>
         {
             MultiplayerConnection.Shutdown();
         }) { }
 
-        public SettingsPopupController(Action<string> loadScene, Action shutdownNetwork)
+        public SettingsPopupController(Action<string> loadScene, Action shutdownNetwork,Action privacy=null)
         {
+            _privacy=privacy??(()=>TelemetryRuntime.Instance?.ShowPrivacy());
             _loadScene = loadScene;
             _shutdownNetwork = shutdownNetwork;
         }
         public void Initialize(ISettingsPopupView view, Action onCloseAction, Action saveGameAction, Action deleteSaveAction, ILevelTracker levelTracker, BaseButtonControllerFactory baseButtonControllerFactory,IPositionNotesSettings notes=null)
         {
-            _view = view;
+            if(_view!=null)_view.PrivacyRequested-=OpenPrivacy;
+            _view = view;_view.PrivacyRequested+=OpenPrivacy;
             _levelTracker = levelTracker;
             _isNavigating = false;
             _view.Init();
@@ -59,6 +81,7 @@ namespace Scripts
             }
         }
 
+        private void OpenPrivacy()=>_privacy();
         private void OnCloseButtonClick(Action onCloseAction)
         {
             _view.Close();

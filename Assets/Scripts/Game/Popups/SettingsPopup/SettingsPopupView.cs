@@ -12,6 +12,7 @@ namespace Scripts
         [SerializeField] private RectTransform content;
         [SerializeField] private TMP_Text title;
         [SerializeField] private TMP_Text description;
+        public event System.Action PrivacyRequested;
         private bool _singlePlayer = true, _menuContext;
         private RectTransform _achievements;
         public void ConfigureForMenu(System.Action openCollection)
@@ -52,7 +53,7 @@ namespace Scripts
             transform.SetAsLastSibling();
             if (_privacy == null)
                 _privacy = (RectTransform)TelemetryPrivacyPanel.AddButton(content, "PrivacyButton", "Gizlilik ve veri",
-                    () => TelemetryRuntime.Instance?.ShowPrivacy()).transform;
+                    () => PrivacyRequested?.Invoke()).transform;
             ApplyLayout();
         }
 
@@ -158,6 +159,7 @@ namespace Scripts
 
     public interface ISettingsPopupView
     {
+        event System.Action PrivacyRequested;
         void ConfigureNotes(bool visible,System.Action reset);
         void Init();
         void SetSinglePlayer(bool singlePlayer);

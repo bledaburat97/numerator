@@ -10,15 +10,12 @@ namespace Scripts
         public event Action Changed;
         private List<CardItemInfo> _cardItemInfoList = new List<CardItemInfo>();
         private ILevelSaveDataManager _levelSaveDataManager;
-        private IInitialCardAreaController _initialCardAreaController;
         private IBoardHolderCountManager _boardHolderCountManager;
 
         [Inject]
-        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IInitialCardAreaController initialCardAreaController, 
-            IBoardHolderCountManager boardHolderCountManager)
+        public CardItemInfoManager(ILevelSaveDataManager levelSaveDataManager, IBoardHolderCountManager boardHolderCountManager)
         {
             _levelSaveDataManager = levelSaveDataManager;
-            _initialCardAreaController = initialCardAreaController;
             _boardHolderCountManager = boardHolderCountManager;
         }
         
@@ -71,8 +68,7 @@ namespace Scripts
             if (IsCardLocked(activeCardIndex)) return;
 
             ChangeTheCardInfoByProbability(activeCardIndex, probabilityType);
-            _initialCardAreaController.AnimateProbabilityChangeOfCardItem(activeCardIndex, 0f, probabilityType, false);
-            _initialCardAreaController.SetHolderIndicatorListOfCardHolder(activeCardIndex, _cardItemInfoList[activeCardIndex].possibleCardHolderIndicatorIndexes);
+            Changed?.Invoke();
         }
 
         public void OnHolderIndicatorClicked(int activeCardIndex, int holderIndicatorIndex)
@@ -80,8 +76,7 @@ namespace Scripts
             if (IsCardLocked(activeCardIndex)) return;
 
             ChangeTheCardInfoByHolderIndicator(activeCardIndex, holderIndicatorIndex);
-            _initialCardAreaController.SetHolderIndicatorListOfCardHolder(activeCardIndex,
-                _cardItemInfoList[activeCardIndex].possibleCardHolderIndicatorIndexes);
+            Changed?.Invoke();
         }
 
         private void ChangeTheCardInfoByProbability(int cardIndex, ProbabilityType probabilityType)
@@ -129,7 +124,6 @@ namespace Scripts
                         cardItemInfo.probabilityType = ProbabilityType.NotExisted;
                         cardItemInfo.possibleCardHolderIndicatorIndexes = new List<int>();
                     }
-                    _initialCardAreaController.AnimateProbabilityChangeOfCardItem(cardIndex, 0f, cardItemInfo.probabilityType, false);
                 }
             }
             else
@@ -159,6 +153,58 @@ namespace Scripts
     }
 
     public interface ICardKnowledgeEvents { event Action Changed; }
+
+    public sealed class CardLockService
+    {
+        private readonly ICardItemInfoManager _info;
+        private readonly IBoardPlacementQuery _query;
+        private readonly IBoardPlacementCommands _commands;
+        public CardLockService(ICardItemInfoManager info,IBoardPlacementQuery query,IBoardPlacementCommands commands)
+        {_info=info;_query=query;_commands=commands;}
+        public bool TryLock(int slot,int card)
+        {
+            var facts=_info.GetCardItemInfoList();
+            if(slot<0 || slot>=_query.GetPlacedCardIndexesOnBoard().Count || card<0 || card>=facts.Count || !facts[card].isExisted)return false;
+            if(facts[card].isLocked && (facts[card].possibleCardHolderIndicatorIndexes.Count!=1 || facts[card].possibleCardHolderIndicatorIndexes[0]!=slot))return false;
+            if(_query.TryGetOccupiedCardIndexOnBoardHolder(slot,out var occupant) && occupant!=card)
+            {
+                if(facts[occupant].isLocked)return false;
+                _commands.TryRemoveCardFromBoard(occupant);
+            }
+            if(!_commands.TryPlaceCardOnBoardHolder(slot,card))return false;
+            _info.MakeCardCertain(card,new List<int>{slot});return true;
+        }
+    }
+
+    public sealed class CardKnowledgePresenter : IDisposable
+    {
+        private readonly ICardItemInfoManager _info;
+        private readonly IInitialCardAreaController _cards;
+        private readonly ICardKnowledgeEvents _changes;
+        private readonly IInitialCardAreaEvents _actors;
+        public CardKnowledgePresenter(ICardItemInfoManager info,IInitialCardAreaController cards)
+        {
+            _info=info;_cards=cards;_changes=info as ICardKnowledgeEvents;_actors=cards as IInitialCardAreaEvents;
+            if(_changes!=null)_changes.Changed+=Render;
+            if(_actors!=null)_actors.Rebuilt+=Render;
+        }
+        public void Render()
+        {
+            var facts=_info.GetCardItemInfoList();
+            for(int index=0;index<facts.Count;index++)
+            {
+                if(!_cards.TryGetCardItem(index,out _))continue;
+                var fact=facts[index];
+                _cards.SetProbabilityOfCardItem(index,fact.probabilityType,fact.isLocked);
+                _cards.SetHolderIndicatorListOfCardHolder(index,fact.possibleCardHolderIndicatorIndexes);
+            }
+        }
+        public void Dispose()
+        {
+            if(_changes!=null)_changes.Changed-=Render;
+            if(_actors!=null)_actors.Rebuilt-=Render;
+        }
+    }
 
     public interface ICardItemInfoManager
     {

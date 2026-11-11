@@ -9,12 +9,11 @@ namespace Scripts
     {
         private readonly ITargetNumberCreator _target;
         private readonly ICardItemInfoManager _info;
-        private readonly ICardPlacementCoordinator _placement;
         private readonly ILevelSaveDataManager _save;
 
         public EliminateFruitEffect(ITargetNumberCreator target, ICardItemInfoManager info,
-            ICardPlacementCoordinator placement, ILevelSaveDataManager save = null)
-        { _target = target; _info = info; _placement = placement; _save = save; }
+            ILevelSaveDataManager save = null)
+        { _target = target; _info = info; _save = save; }
 
         public bool TryApply(IReadOnlyList<int> preferredCards, int guessNumber, out int cardIndex)
         {
@@ -29,7 +28,6 @@ namespace Scripts
             if (choices.Count == 0) return false;
             cardIndex = choices[UnityEngine.Random.Range(0, choices.Count)];
             _info.MakeCardNotExisted(cardIndex);
-            _placement.TryRemoveCardFromBoard(cardIndex);
             if (_save != null) _save.GetLevelSaveData().LastEliminationGuessNumber = guessNumber;
             return true;
         }

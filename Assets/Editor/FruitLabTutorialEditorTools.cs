@@ -125,7 +125,7 @@ public static partial class FruitLabTutorialEditorTools
     private static PositionAssistanceController AssistanceFor(Fixture game, LevelData definition, out PositionAssistanceView view,bool ultra=true)
     {
         view = new PositionAssistanceView(game.Initial, game.View, game.Canvas.GetComponentInChildren<ResultAreaView>(true), game.UI, null);
-        var assistance=new PositionAssistanceController(game._area, game.Initial, game._counts, new TestLevel(definition), game._info,
+        var assistance=new PositionAssistanceController(game._area.History, game.Initial, game._counts, new TestLevel(definition), game._info,
             (BoardSplitService)Get(game.Results, "_split"), view,game._saves);
         if(ultra)assistance.ActivateUltra();
         return assistance;
@@ -212,7 +212,7 @@ public static partial class FruitLabTutorialEditorTools
                 {
                     assistance.Refresh();
                     Require(assistance.State.FixedSlot(1) == 2 && assistance.State.Reason(1, 2).Guesses.SequenceEqual(new[] {1,2}), "Save/resume reconstructs deductions and reasons from existing history");
-                    game._area.RemoveResultBlocks(); assistance.Tick();
+                    game._area.History.Clear(); assistance.Tick();
                     Require(assistance.State.Presence(1) == FruitPresence.Unknown && game.Initial.GetHolderView(0).Indicators.All(cell => !cell.IsExcluded && !cell.IsConfirmed), "A new history generation clears all deductions");
                 }
             }
@@ -346,9 +346,9 @@ public static partial class FruitLabTutorialEditorTools
                     Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();
                     var answer = Enumerable.Range(1,slots).ToArray();game.Target.RevealMultiplayerAnswer(answer);
                     var query = (IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
-                    var hints = new HintProvider(game._guess,game.Target,game._info,game.Initial,query,game.Placement);
+                    var hints = new HintProvider(game._guess,game.Target,game._info,game.Initial,query,game.Placement,game.Locks);
                     Field(hints,"_round",game.Round);
-                    Field(hints,"_eliminate",new EliminateFruitEffect(game.Target,game._info,game.Placement,game._saves));
+                    Field(hints,"_eliminate",new EliminateFruitEffect(game.Target,game._info,game._saves));
                     CrystalView crystal = null;int flights=0;
                     game._guess.HintRewardTokenEvent += (sender,args)=>{crystal=(CrystalView)args.RewardTokenView;flights++;};
                     int boundary = game.Round.GetLifeBarRewardInfoList().Where(reward=>reward.IsCrystal).Max(reward=>reward.BoundaryIndex);
@@ -457,11 +457,11 @@ public static partial class FruitLabTutorialEditorTools
                 Require(area.GetVisibleRow(999) != null && area.GetVisibleRow(999).IsLocalGuess == false, "The latest opponent row remains accessible after review");
                 scroll.verticalNormalizedPosition = 1; scroll.onValueChanged.Invoke(Vector2.up);
                 first = area.GetVisibleRow(0);
-                Require(game._area.GetHistoryEntry(0).reviewStates[0] == CardResultState.Correct
-                    && game._area.GetHistoryEntry(0).reviewStates[1] == CardResultState.Misplaced,
+                Require(game._area.History.GetHistoryEntry(0).reviewStates[0] == CardResultState.Correct
+                    && game._area.History.GetHistoryEntry(0).reviewStates[1] == CardResultState.Misplaced,
                     "End review persists correct and misplaced states for offscreen rows");
                 Require(area.AllocatedRowCount == allocated, "Scrolling and review reuse the existing row pool");
-                game._area.RemoveResultBlocks();
+                game._area.History.Clear();
                 Require(area.VisibleRowCount == 0 && game._area.HistoryCount == 0, "Rematch clears history and releases visible rows");
                 for (int i = 0; i < 8; i++) game._area.AddResultBlock(new ResultBlockModel { finalNumbers = new List<int> { 2, 1 } });
                 Require(area.GetComponentsInChildren<ResultBlockView>().All(row => !row.IsSplit && row.IsLocalGuess == null
@@ -678,6 +678,11 @@ public static partial class FruitLabTutorialEditorTools
         Debug.Log("FRUIT_LAB_TUTORIAL_PASS: scripted real placements/results, mandatory completion/menu resume/fixed answer, first-use tips, mobile layouts and player-data isolation.");
     }
 
+    public static Scripts.Economy.CrystalRewardPlan MakeCrystalPlan(int previous,RewardType reward,int earned,int level)
+    {
+        var profile=new Scripts.Economy.PlayerProfileData();profile.Wallet.CrystalProgress=previous;profile.Wallet.NextReward=reward;profile.Progress.LevelId=level;
+        Scripts.Economy.PlayerProfileRuntime.CreateRewardRules().ApplySingle(profile,0,earned,out var plan);return plan;
+    }
     private sealed class Fixture : IDisposable
     {
         public readonly Canvas Canvas; public readonly Camera Camera;
@@ -693,6 +698,7 @@ public static partial class FruitLabTutorialEditorTools
         public readonly PairEffect Pair;
         public readonly BombPowerUpController Bomb;
         public readonly PowerUpUseService Uses;
+        public readonly CardLockService Locks;
         public readonly Scripts.Economy.IPlayerProfileRepository PowerProfiles;
         public readonly DiContainer PowerContainer;
         public readonly GamePowerUpAreaController _powers;
@@ -726,7 +732,9 @@ public static partial class FruitLabTutorialEditorTools
             var initialView = canvas.GetComponentInChildren<InitialCardAreaView>(true); var layout = new InitialCardAreaLayoutManager(initialView, sizes);
             var haptic = new HapticController();
             Initial = new InitialCardAreaController(initialView, Board, counts, level, saves, Target, layout, new InitialCardAreaFactory(initialView, haptic, layout));
-            _info = new CardItemInfoManager(saves, null, counts);
+            _info = new CardItemInfoManager(saves, counts);
+            Locks=new CardLockService(_info,indexes,indexes);
+            ExtraDisposables.Add(new CardKnowledgePresenter(_info,Initial));
             var container = new DiContainer(); container.Bind<IHapticController>().FromInstance(haptic); container.Bind<TutorialInputGate>().FromInstance(Gate);
             container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             _buttons = container.Resolve<BaseButtonControllerFactory>();
@@ -740,7 +748,7 @@ public static partial class FruitLabTutorialEditorTools
             var locator = new CardItemLocator(Board, UI); locator.Initialize();
             Placement = new CardPlacementCoordinator(Board, locator, UI, indexes, indexes, reveal, Initial, _info, Gate);
             _area = new ResultAreaController(canvas.GetComponentInChildren<ResultAreaView>(true));
-            var results = Results = new ResultManager(UI, _area, Target, indexes, Round, _powers);
+            var results = Results = new ResultManager(UI, _area, Target, indexes, Round, _powers,_area.History);
             Field(results,"_split",split);
             _guess = new GuessManager(results, new LifeBarController(canvas.GetComponentInChildren<LifeBarView>(true)), UI, Round);
             _interaction = new CardInteractionManager(UI, new BoardHolderClickRouter(Board, reveal), Initial, haptic, Placement);
@@ -895,7 +903,7 @@ public static partial class FruitLabTutorialEditorTools
         }
         public void Dispose()
         {
-            View.GetPairView()?.Unbind(); _guess.Dispose();
+            View.GetPairView()?.Unbind(); _guess.Dispose();_area.Dispose();
             foreach(var extra in ExtraDisposables)extra.Dispose();
             Bootstrap.Dispose(); _interaction.Unsubscribe(); Tick(2f);
             Object.DestroyImmediate(_events); Object.DestroyImmediate(_objects);

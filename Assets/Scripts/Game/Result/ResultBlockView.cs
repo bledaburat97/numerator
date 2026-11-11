@@ -320,6 +320,7 @@ namespace Scripts
 
     public interface IResultBlockView
     {
+        void Bind(ResultBlockModel model,float width,float height);
         void Init(NonDraggableCardItemViewFactory cardFactory, float width, float height);
         INonDraggableCardItemView CreateCardItem();
         void DisplayFeedback(int correct, int misplaced);

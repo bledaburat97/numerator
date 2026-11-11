@@ -179,7 +179,7 @@ public static partial class FruitLabTutorialEditorTools
                 using(var notes=AssistanceFor(game,definition,out _,false))
                 {
                     notes.Refresh();Require(notes.UltraActive && notes.IndicatorsVisible && !notes.CanEditNotes,"Resume preserves Ultra and recomputes its public evidence");
-                    game._saves.CreateDefaultLevelSaveData();game.Round.Initialize();game._area.RemoveResultBlocks();game.Initial.ClearInitialCardHolders();game.BuildActors();notes.Tick();
+                    game._saves.CreateDefaultLevelSaveData();game.Round.Initialize();game._area.History.Clear();game.Initial.ClearInitialCardHolders();game.BuildActors();notes.Tick();
                     Require(!notes.UltraActive && !notes.IndicatorsVisible,"Retry/new round restores the initial normal state");
                     game.Target.RevealMultiplayerAnswer(new[]{2,3,1});game.Gate.Clear();
                     SubmitAssistedGuess(game,new[]{4,5,6},notes);
@@ -240,7 +240,7 @@ public static partial class FruitLabTutorialEditorTools
                     life.SetLifeBar(9,new[]{new LifeBarRewardInfo(1,LifeBarRewardType.Coin,true),new LifeBarRewardInfo(3,LifeBarRewardType.Coin,true),new LifeBarRewardInfo(5,earnedCrystals>0?LifeBarRewardType.Crystal:LifeBarRewardType.Coin,true)},9);
                     var tokens=life.GetActiveRewardTokens(LifeBarRewardType.Coin).Concat(life.GetActiveRewardTokens(LifeBarRewardType.Crystal)).ToArray();
                     popup.SetOutcome(true,earnedCrystals);
-                    var parent=success.SuccessLevelAnimation(earnedCrystals>0?2:3,earnedCrystals,0,0,RewardType.Bomb);
+                    var parent=success.SuccessLevelAnimation(earnedCrystals>0?2:3,earnedCrystals,0,0,RewardType.Bomb,crystalPlan:MakeCrystalPlan(0,RewardType.Bomb,earnedCrystals,20));
                     Tick(interruptAt);
                     var presenter=new SinglePlayerEndPresenter(null,game.UI,null,null,null,crystal,popup,success,null);
                     Field(presenter,"_ending",parent);presenter.PrepareRound();
@@ -514,7 +514,7 @@ public static partial class FruitLabTutorialEditorTools
         using(var game=new Fixture(canvas,camera,dangerDefinition))
         {
             Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{4,1,2,3});
-            using(var danger=new DynamiteService(new TestLevel(dangerDefinition),game.Tracker,game._saves,game.Target,game._info,game.Placement,game._guess))
+            using(var danger=new DynamiteService(new TestLevel(dangerDefinition),game.Tracker,game._saves,game.Target,game._info,game.Locks,game.Round))
             {
                 danger.Prepare();danger.Current.BoardIndex=0;game.Results.GuessResolved+=(sender,guess)=>danger.Resolve(guess);
                 for(int turn=0;turn<2;turn++){for(int card=0;card<4;card++)game.Place(card);game.Check();Tick(.5f);}

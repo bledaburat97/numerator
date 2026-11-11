@@ -6,102 +6,70 @@ using Zenject;
 
 namespace Scripts
 {
-    public class ResultAreaController : IResultAreaController, IResultHistorySource
+    // Owns public evidence independently of any result-list instance or row pool.
+    public sealed class RoundHistory : IResultHistorySource
     {
-        private IResultAreaView _view;
-        private readonly List<ResultBlockModel> _history = new List<ResultBlockModel>();
+        private readonly List<ResultBlockModel> _entries=new List<ResultBlockModel>();
+        public IReadOnlyList<ResultBlockModel> Entries=>_entries;
         public event Action Changed;
         public event Action<int> DetailsChanged;
-        public int Generation { get; private set; }
-        public int HistoryCount => _history.Count;
-        public ResultBlockModel GetHistoryEntry(int index) => _history[index];
-        
+        public event Action RowsUpdated;
+        public int Generation {get;private set;}
+        public int HistoryCount=>_entries.Count;
+        public ResultBlockModel GetHistoryEntry(int index)=>_entries[index];
+        public void Add(ResultBlockModel row){_entries.Add(row.Snapshot());Changed?.Invoke();}
+        public void Clear(){_entries.Clear();Generation++;Changed?.Invoke();}
+        public void LabelLatest(bool local,string name)
+        {if(_entries.Count==0)return;var row=_entries[_entries.Count-1];row.isLocalGuess=local;row.playerName=name;RowsUpdated?.Invoke();}
+        public void Reveal(GuessEvaluation guess)
+        {
+            if(guess.Number<1 || guess.Number>_entries.Count)return;
+            _entries[guess.Number-1].hintStates=guess.States;DetailsChanged?.Invoke(guess.Number-1);
+        }
+        public void Review(IReadOnlyList<int> answer)
+        {
+            foreach(var row in _entries)
+            {
+                var partition=row.groups!=null && row.groups.Count==2?BoardPartition.ForCount(row.finalNumbers.Count):null;
+                row.reviewStates=new GuessEvaluation(0,GuessSubmission.FromHistory(row.finalNumbers),answer,partition).States;
+            }
+            RowsUpdated?.Invoke();
+        }
+    }
+    public class ResultAreaController : IResultAreaController, IDisposable
+    {
+        private readonly IResultAreaView _view;
+        public RoundHistory History {get;}
+        public int HistoryCount=>History.HistoryCount;
         [Inject]
-        public ResultAreaController(IResultAreaView view)
+        public ResultAreaController(IResultAreaView view,RoundHistory history=null)
         {
-            _view = view;
-            _view.SetHistory(_history);
+            _view=view;History=history??new RoundHistory();_view.SetHistory(History.Entries);
+            History.Changed+=Render;History.DetailsChanged+=RenderDetail;History.RowsUpdated+=RenderRows;
         }
-
+        private void Render(){_view.SetHistory(History.Entries);_view.HistoryChanged();_view.SetEmptyState(History.HistoryCount==0);}
+        private void RenderDetail(int index)=>_view.RefreshRow(index);
+        private void RenderRows()=>_view.RefreshVisibleRows();
         public void Initialize(bool isNewGame)
-        {
-            if (isNewGame) RemoveResultBlocks();
-            _view.SetEmptyState(_history.Count == 0);
-            if (isNewGame)
-            {
-                _view.GetCanvasGroup().alpha = 0f;
-            }
-            else
-            {
-                _view.GetCanvasGroup().alpha = 1f;
-            }
-        }
-
-        public Sequence ChangeFade(float duration, float finalAlpha)
-        {
-            return DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(finalAlpha, duration));
-        }
-
-        public void EnableReview() => _view.EnableReview();
-        public void LabelLatestMultiplayerGuess(bool isLocal, string playerName = null)
-        {
-            if (_history.Count > 0)
-            {
-                var row = _history[_history.Count - 1];
-                row.isLocalGuess = isLocal; row.playerName = playerName;
-                _view.RefreshRow(_history.Count - 1);
-            }
-            _view.SetScrollPositionToBottom();
-        }
-
-        public void RevealAnswer(IReadOnlyList<int> answer)
-        {
-            for (int i = 0; i < _history.Count; i++)
-            {
-                var row = _history[i];
-                var partition = row.groups != null && row.groups.Count == 2 ? BoardPartition.ForCount(row.finalNumbers.Count) : null;
-                row.reviewStates = new GuessEvaluation(0, GuessSubmission.FromHistory(row.finalNumbers), answer, partition).States;
-            }
-            _view.RefreshVisibleRows();
-            EnableReview();
-        }
-
+        {_view.SetHistory(History.Entries);_view.SetEmptyState(History.HistoryCount==0);_view.GetCanvasGroup().alpha=isNewGame?0f:1f;}
+        public Sequence ChangeFade(float duration,float alpha)=>DOTween.Sequence().Append(_view.GetCanvasGroup().DOFade(alpha,duration));
+        public void EnableReview()=>_view.EnableReview();
+        public void LabelLatestMultiplayerGuess(bool local,string name=null)
+        {History.LabelLatest(local,name);_view.SetScrollPositionToBottom();}
+        public void RevealAnswer(IReadOnlyList<int> answer){History.Review(answer);EnableReview();}
         public void RevealGuess(GuessEvaluation guess,bool animate=false)
+        {History.Reveal(guess);if(animate && guess.Number>0 && guess.Number<=History.HistoryCount)_view.PlayHintForRow(guess.Number-1);}
+        public void AddResultBlock(ResultBlockModel row,bool animate=true)
+        {History.Add(row);_view.SetScrollPositionToBottom();if(animate)_view.PlayFeedbackForRow(History.HistoryCount-1);}
+        public void AddNewResultBlock(int number,int correct,int wrong)
         {
-            if (guess.Number <= 0 || guess.Number > _history.Count) return;
-            _history[guess.Number - 1].hintStates = guess.States;
-            _view.RefreshRow(guess.Number - 1);
-            if(animate)_view.PlayHintForRow(guess.Number-1);
-            DetailsChanged?.Invoke(guess.Number - 1);
+            var cards=new List<int>();while(number!=0){cards.Add(number%10);number/=10;}
+            AddResultBlock(new ResultBlockModel{finalNumbers=cards,correctPosCount=correct,wrongPosCount=wrong});
         }
-
-        public void AddResultBlock(ResultBlockModel resultBlockModel,bool animate=true)
-        {
-            _history.Add(resultBlockModel.Snapshot());
-            _view.HistoryChanged();
-
-            _view.SetScrollPositionToBottom();
-            if(animate)_view.PlayFeedbackForRow(_history.Count-1);
-            Changed?.Invoke();
-        }
-        // Compatibility for existing numeric callers; gameplay uses the card-list model directly.
-        public void AddNewResultBlock(int finalNumber, int correctPosCount, int wrongPosCount)
-        {
-            var cards = new List<int>();
-            while (finalNumber != 0) { cards.Add(finalNumber % 10); finalNumber /= 10; }
-            AddResultBlock(new ResultBlockModel { finalNumbers = cards, correctPosCount = correctPosCount, wrongPosCount = wrongPosCount });
-        }
-
-        public ResultAreaInfo GetResultAreaInfo()
-        {
-            return _view.GetResultAreaInfo();
-        }
-
-        public void RemoveResultBlocks()
-        {
-            _history.Clear(); Generation++;
-            _view.HistoryChanged(); Changed?.Invoke();
-        }
+        public ResultAreaInfo GetResultAreaInfo()=>_view.GetResultAreaInfo();
+        // Hiding/recycling a screen must not erase the round's evidence.
+        public void RemoveResultBlocks(){_view.SetHistory(Array.Empty<ResultBlockModel>());_view.HistoryChanged();}
+        public void Dispose(){History.Changed-=Render;History.DetailsChanged-=RenderDetail;History.RowsUpdated-=RenderRows;}
     }
 
     public interface IResultHistorySource

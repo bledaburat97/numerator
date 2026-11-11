@@ -39,18 +39,8 @@ namespace Scripts
             var popup = GetComponentInChildren<LobbyMessagePopupView>(true);
             if (popup != null) { popup.ApplyOnlineLayout(); popup.transform.SetAsLastSibling(); }
         }
-        public void OpenSettings(BaseButtonControllerFactory buttons)
-        {
-            if (settingsPopupPrefab == null || transform.Find("OnlineSettingsOverlay") != null) return;
-            var overlay = Rect("OnlineSettingsOverlay", transform);
-            FruitLabStyle.Stretch(overlay);
-            var blocker = overlay.gameObject.AddComponent<Image>(); blocker.color = new Color(0, 0, 0, .7f); blocker.raycastTarget = true;
-            var view = Instantiate(settingsPopupPrefab, overlay);
-            new SettingsPopupController().Initialize(view, () => Destroy(overlay.gameObject), null, null,
-                FindFirstObjectByType<LevelTracker>(), buttons);
-            view.GetCloseButton().SetText("Geri dön");
-            overlay.SetAsLastSibling();
-        }
+        public void OpenSettings(ISettingsPopupService settings)
+            =>settings.Show(settingsPopupPrefab,transform,"OnlineSettingsOverlay");
         public static RectTransform Rect(string name, Transform parent)
         {
             var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();

@@ -33,8 +33,8 @@ namespace Scripts
             _cardPlacementCoordinator.TryResetPositionOfCardOnExplodedBoardHolder();
             _targetNumberCreator.ApplyCommittedTarget(committed.TargetCards);
             if(!_boardAreaController.ApplyCommittedShrink(expectedBefore,committed.TargetCards.Count))return false;
-            _cardItemInfoManager.ApplyPositionOptions(committed.CardItemInfoList);
             _dynamite?.ApplyCommitted(committed.Dynamite);
+            _cardItemInfoManager.ApplyPositionOptions(committed.CardItemInfoList);
             _pair?.RestoreClue(committed.PairClue);return true;
         }
     }

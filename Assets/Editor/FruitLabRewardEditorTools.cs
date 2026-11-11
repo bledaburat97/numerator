@@ -137,7 +137,7 @@ public static class FruitLabRewardEditorTools
                 controller.Initialize();
                 if (earned > 0) controller.PrepareForCollection(previous, type);
                 endController.SetOutcome(true, earned);
-                controller.AddCrystals(null, earned).Complete(true);
+                controller.AddCrystals(null, FruitLabTutorialEditorTools.MakeCrystalPlan(previous,type,earned,50)).Complete(true);
                 popup.SetStatus(false); popup.SetStatus(true); popup.ApplyLabLayout();
                 Require(view.gameObject.activeSelf == (earned > 0),
                     "Crystal energy is visible only when this level earned crystals, including after reopening the popup");
@@ -535,6 +535,7 @@ public static class FruitLabSettingsEditorTools
 
     private sealed class ImmediateCloseView : ISettingsPopupView
     {
+        public event Action PrivacyRequested {add=>_view.PrivacyRequested+=value;remove=>_view.PrivacyRequested-=value;}
         public void ConfigureNotes(bool visible,Action reset)=>_view.ConfigureNotes(visible,reset);
         private readonly SettingsPopupView _view;
         public ImmediateCloseView(SettingsPopupView view) => _view = view;

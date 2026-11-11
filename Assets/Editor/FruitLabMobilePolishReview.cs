@@ -509,7 +509,7 @@ public static partial class FruitLabTutorialEditorTools
             controller.PrepareForCollection(ConstantValues.NUM_OF_STARS_FOR_WILD-1,RewardType.Revealing);
             var destination = view.GetCrystalIconRectTransform();
             for (int i = 0; i < 3; i++) tokens.Add(new CollectionToken(canvas.transform));
-            var sequence = controller.AddCrystals(tokens.Cast<IRewardTokenView>().ToArray(),3); sequence.Play();
+            var sequence = controller.AddCrystals(tokens.Cast<IRewardTokenView>().ToArray(),MakeCrystalPlan(0,RewardType.Bomb,3,50)); sequence.Play();
             var started = new float[3];
             for (int frame = 0; frame < 180; frame++)
             {

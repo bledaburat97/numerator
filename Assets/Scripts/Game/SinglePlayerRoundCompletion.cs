@@ -39,6 +39,7 @@ namespace Game
             if (_completed != null) return _completed;
 
             int coins = 0, crystals = 0;
+            CrystalRewardPlan crystalPlan=null;
             int previousCoins = _tracker.GetCoinCount();
             int previousProgress = _tracker.GetCrystalProgressCount();
             RewardType previousReward = _tracker.GetCurrentRewardType();
@@ -55,7 +56,8 @@ namespace Game
                 previousCoins=award.PreviousCoins;previousProgress=award.PreviousCrystalProgress;
                 nextLevelNumber=award.NextLevelNumber;
                 // Match the reward preview when an old locked reward is normalized at an unlock boundary.
-                previousReward=PowerUpTypeUtility.IsUnlocked(award.PreviousReward,state.LevelId)?award.PreviousReward:PowerUpTypeUtility.NextReward(award.PreviousReward,state.LevelId);
+                crystalPlan=award.Crystals;
+                previousReward=crystalPlan?.InitialReward??award.PreviousReward;
                 if(!award.IsReplay)foreach(var type in award.PowerUps)GameTelemetry.Powerup(type,true,bonus.HasValue?"bonus":"crystal");
             }
 
@@ -63,7 +65,7 @@ namespace Game
                 coins, crystals, previousCoins, previousProgress, previousReward, nextLevelNumber,
                 won?_achievements.ClosestFor(_target.GetTargetCardsList()):null,
                 won?_target.GetTargetCardsList():null,_checkpoint.GetLevelSaveData().Definition,
-                won?_checkpoint.GetLevelSaveData().Definition?.BonusReward:null);
+                won?_checkpoint.GetLevelSaveData().Definition?.BonusReward:null,crystalPlan);
             var saved=_saves.GetSavedLevel();
             if(saved==null || string.IsNullOrEmpty(saved.RoundId) || saved.RoundId==_checkpoint.GetLevelSaveData().RoundId)_saves.DeleteSave();
             return _completed;
@@ -72,6 +74,7 @@ namespace Game
 
     public sealed class SinglePlayerRoundResult
     {
+        public CrystalRewardPlan Crystals {get;}
         public bool Won { get; }
         public int GuessCount { get; }
         public int EarnedCoins { get; }
@@ -86,8 +89,9 @@ namespace Game
         public RewardType? DirectReward {get;}
 
         public SinglePlayerRoundResult(bool won, int guessCount, int earnedCoins, int earnedCrystals,
-            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null,IReadOnlyList<int> earnedFruits=null,LevelData currentDefinition=null,RewardType? directReward=null)
+            int previousCoins, int previousCrystalProgress, RewardType previousReward, int nextLevelNumber,AchievementStatus achievementTarget=null,IReadOnlyList<int> earnedFruits=null,LevelData currentDefinition=null,RewardType? directReward=null,CrystalRewardPlan crystalPlan=null)
         {
+            Crystals=crystalPlan;
             CurrentDefinition=currentDefinition?.Copy();DirectReward=won?directReward:null;
             Won = won;
             GuessCount = guessCount;

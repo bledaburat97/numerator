@@ -12,6 +12,7 @@ namespace Scripts
 
         public override void InstallBindings()
         {
+            Container.Bind<ISettingsPopupService>().To<SettingsPopupService>().AsSingle();
             Container.BindInterfacesAndSelfTo<Menu.MainNavigationController>().AsSingle()
                 .WithArguments(Menu.MainNavigationView.Ensure(waitingSceneUI.GetComponentInParent<Canvas>())).NonLazy();
             Container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();

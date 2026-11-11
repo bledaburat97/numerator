@@ -4,6 +4,7 @@ using DG.Tweening;
 using Game;
 using UnityEngine;
 using Zenject;
+using Scripts.Economy;
 
 namespace Scripts
 {
@@ -63,14 +64,16 @@ namespace Scripts
             return _view == null ? DOTween.Sequence() : _view.ChangeFade(duration, finalAlpha);
         }
 
-        public Sequence AddCrystals(IReadOnlyList<IRewardTokenView> crystalTokenViews, int earnedCrystalCount)
+        public Sequence AddCrystals(IReadOnlyList<IRewardTokenView> crystalTokenViews, CrystalRewardPlan plan)
         {
             Sequence sequence = DOTween.Sequence();
-            if (_view == null || earnedCrystalCount <= 0) return sequence;
+            if (_view == null || plan==null) return sequence;
+            int earnedCrystalCount=plan.FinalProgress-plan.PreviousProgress+plan.PowerUps.Count*plan.Capacity;
+            if(earnedCrystalCount<=0)return sequence;
 
-            int crystalCapacity = GetCrystalCapacity();
-            int simulatedCrystalCount = _currentCrystalCount;
-            RewardType simulatedRewardType = _currentRewardType;
+            int crystalCapacity = plan.Capacity;
+            int simulatedCrystalCount = plan.PreviousProgress;
+            int rewardIndex=0;
             float barReadyAt = 0f;
             for (int i = 0; i < earnedCrystalCount; i++)
             {
@@ -83,15 +86,14 @@ namespace Scripts
                 bool completed = simulatedCrystalCount >= crystalCapacity;
                 int progressCount = completed ? crystalCapacity : simulatedCrystalCount;
                 int nextCount = completed ? 0 : simulatedCrystalCount;
-                sequence.Insert(updateAt, UpdateVerticalCrystalProgressBar(GetProgressPercentage(progressCount), .14f, () => {
+                sequence.Insert(updateAt, UpdateVerticalCrystalProgressBar((float)progressCount/crystalCapacity, .14f, () => {
                     _currentCrystalCount = nextCount;
                     _hapticController?.Vibrate(HapticType.Success);
                 }));
                 if (completed)
                 {
-                    var awarded = simulatedRewardType;
-                    var next = GetNextRewardType(awarded);
-                    simulatedRewardType = next;
+                    var awarded = plan.PowerUps[rewardIndex++];
+                    var next = rewardIndex<plan.PowerUps.Count?plan.PowerUps[rewardIndex]:plan.NextReward;
                     var feedback = CompleteBar(awarded);
                     sequence.Insert(updateAt + .14f, feedback);
                     barReadyAt = updateAt + .14f + feedback.Duration();
@@ -107,7 +109,8 @@ namespace Scripts
                 }
             }
 
-            sequence.Append(_view.PlayRewardPreviewCompleted(simulatedRewardType,.22f));
+            sequence.AppendCallback(()=>{_currentCrystalCount=plan.FinalProgress;_currentRewardType=plan.NextReward;_view.InitProgress((float)plan.FinalProgress/plan.Capacity);_view.ShowRewardPreview(plan.NextReward);});
+            sequence.Append(_view.PlayRewardPreviewCompleted(plan.NextReward,.22f));
             return sequence;
         }
 
@@ -168,11 +171,6 @@ namespace Scripts
             return Mathf.Clamp01(crystalCount / (float) GetCrystalCapacity());
         }
 
-        private RewardType GetNextRewardType(RewardType rewardType)
-        {
-            return PowerUpTypeUtility.NextReward(rewardType, _levelTracker.GetLevelId());
-        }
-
         public Tween UpdateVerticalCrystalProgressBar(float targetPercentage, float animationDuration, Action onComplete)
         {
             if (_view == null)
@@ -191,7 +189,7 @@ namespace Scripts
         void Refresh();
         void PrepareForCollection(int crystalProgressCount, RewardType rewardType);
         Sequence ChangeFade(float duration, float finalAlpha);
-        Sequence AddCrystals(IReadOnlyList<IRewardTokenView> crystalTokenViews, int earnedCrystalCount);
+        Sequence AddCrystals(IReadOnlyList<IRewardTokenView> crystalTokenViews, CrystalRewardPlan plan);
         Sequence PresentCompletedReward(RewardType rewardType, float duration);
         Sequence HidePresentedReward(float duration);
         Tween UpdateVerticalCrystalProgressBar(float targetPercentage, float animationDuration, Action onComplete);

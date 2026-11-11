@@ -6,6 +6,7 @@ namespace Scripts
     public class WaitingSceneUIController : IWaitingSceneUIController, System.IDisposable
     {
         [Inject] private BaseButtonControllerFactory _buttons;
+        [Inject] private ISettingsPopupService _settings;
         private readonly IWaitingSceneUIView _view;
         private IUserReady _userReady;
         private IBaseButtonController _readyButton, _startButton;
@@ -18,7 +19,7 @@ namespace Scripts
             _view.SetLobbyNameText(MultiplayerRules.For(PlayerLobby.Instance.RoomDifficulty).Name);
             _view.SetLobbyCodeText(PlayerLobby.Instance.GetLobbyCode());
             var settings = _buttons.Create(_view.GetMenuButton(), () =>
-                ((UnityEngine.Component)_view).GetComponentInParent<FruitLabOnlineLayout>().OpenSettings(_buttons));
+                _view.OpenSettings(_settings));
             settings.SetClickOnRelease(true);
             _readyButton = _buttons.Create(_view.GetReadyButton(), OnReadyButtonClick);
             _readyButton.SetText("Hazırım"); _readyButton.SetClickOnRelease(true);

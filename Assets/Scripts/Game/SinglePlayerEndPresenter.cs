@@ -73,7 +73,7 @@ namespace Game
 
             int generation = _generation;
             _ending = _success.SuccessLevelAnimation(result.EarnedCoins, result.EarnedCrystals,
-                result.PreviousCoins, result.PreviousCrystalProgress, result.PreviousReward,result.DirectReward);
+                result.PreviousCoins, result.PreviousCrystalProgress, result.PreviousReward,result.DirectReward,result.Crystals);
             _ending.OnComplete(() =>
             {
                 if (!_disposed && generation == _generation)

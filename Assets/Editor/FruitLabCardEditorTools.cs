@@ -308,12 +308,12 @@ public static partial class FruitLabTutorialEditorTools
                     {game.Place(0);game.Place(2);game.Place(6);game.Check();CardFeedbackFrames(.6f);notes.Refresh();}
                     if(mechanic==LevelMechanic.Normal)Require(helper.TryApply(),"Apply the manual Helper effect to the last guess");
                     notes.Refresh();CardFeedbackFrames(.3f);
-                    var row=((IResultHistorySource)game._area).GetHistoryEntry(((IResultHistorySource)game._area).HistoryCount-1);
+                    var row=((IResultHistorySource)game._area.History).GetHistoryEntry(((IResultHistorySource)game._area.History).HistoryCount-1);
                     Require(row.hintStates!=null && row.hintStates.Contains(CardResultState.Correct) && row.hintStates.Contains(CardResultState.Misplaced),"Both hint paths reveal green/yellow details in history");
                     foreach(var card in canvas.GetComponentsInChildren<NormalCardItemView>())
                         Require(!card.HasPresenceBadge && !CardKnowledgeFrame(card),"Helper details do not mark or frame the playable fruit cards while Ultra is off");
                     Require(game._info.GetCardItemInfoList().All(info=>!info.isLocked),"Helper does not fix a card onto the board");
-                    var resultRow=canvas.GetComponentInChildren<ResultAreaView>(true).GetVisibleRow(((IResultHistorySource)game._area).HistoryCount-1);
+                    var resultRow=canvas.GetComponentInChildren<ResultAreaView>(true).GetVisibleRow(((IResultHistorySource)game._area.History).HistoryCount-1);
                     Require(resultRow!=null && resultRow.GetComponentsInChildren<NonDraggableCardItemView>().Any(card=>card.GetComponentsInChildren<Image>().Any(image=>image.name=="ResultOutline")),"Hint frames remain in the result area");
                     Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-card-knowledge-helper-"+mechanic+".png");
                 }

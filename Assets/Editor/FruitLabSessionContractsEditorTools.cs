@@ -255,7 +255,7 @@ public static partial class FruitLabTutorialEditorTools
                 Require(snapshots.TryCreateSnapshot(out checkpoint),"Active sessions remain saveable through ILevelSession");
                 saves.Save(checkpoint);
             }
-            game.Initial.ClearInitialCardHolders();game.Board.ClearBoardHolders();game._area.RemoveResultBlocks();
+            game.Initial.ClearInitialCardHolders();game.Board.ClearBoardHolders();game._area.History.Clear();
             using(var resumed=CreateContractSession(game,definition))
             {
                 resumed.Begin(LevelEntryMode.Resume);game.Gate.Clear();
@@ -280,7 +280,7 @@ public static partial class FruitLabTutorialEditorTools
             new LevelSuccessCleanupAnimationController(game.Initial,game.UI,life,game._area,game.Placement),
             new LevelSuccessRewardCollectionAnimationController(life,game.UI,bar,popup));
         var builder=new RoundBuilder(new TestLevel(definition),game._saves,game.Board,game._counts,game.Target,game._area,life,game.Initial,game.UI,game._powers,
-            (ICardItemLocator)Get(game.Placement,"_cardItemLocator"),game._guess,game._info,cardInfo,game.Placement,(ICardInteractionManager)Get(game,"_interaction"),game.Results,game.Round);
+            (ICardItemLocator)Get(game.Placement,"_cardItemLocator"),game._guess,game._info,cardInfo,game.Placement,(ICardInteractionManager)Get(game,"_interaction"),game.Results,game.Round,game._area.History);
         var saves=(MemorySave)Get(game,"_memory");
         var rewards=CollectionFixtureRewards(game,out var profiles);
         return new SinglePlayerSession(game.Tracker,new TestLevel(definition),saves,game._saves,game._counts,popups,game._guess,game.Results,game.Round,
@@ -349,7 +349,7 @@ public static partial class FruitLabTutorialEditorTools
     {
         public void Cancel() { }
         public bool Success;public int Coins,Crystals;public Sequence Sequence;
-        public Sequence SuccessLevelAnimation(int earnedCoinCount,int earnedCrystalCount,int previousCoinCount,int previousCrystalProgressCount,RewardType rewardTypeBeforeCollection,RewardType? directReward=null)
+        public Sequence SuccessLevelAnimation(int earnedCoinCount,int earnedCrystalCount,int previousCoinCount,int previousCrystalProgressCount,RewardType rewardTypeBeforeCollection,RewardType? directReward=null,Scripts.Economy.CrystalRewardPlan crystalPlan=null)
         {Success=true;Coins=earnedCoinCount;Crystals=earnedCrystalCount;return Sequence=DOTween.Sequence().AppendInterval(.25f);}
         public Sequence FailLevelAnimation(){Success=false;Coins=Crystals=0;return Sequence=DOTween.Sequence().AppendInterval(.25f);}
         public Sequence FadeOutResultArea(float duration)=>DOTween.Sequence().AppendInterval(duration);
@@ -413,5 +413,149 @@ public static partial class FruitLabTutorialEditorTools
         public event EventHandler<MultiplayerPublicState> StateChanged {add{} remove{}}
         public event EventHandler<MultiplayerOutcome> MatchEnded {add{} remove{}}
         public event EventHandler<string> RequestRejected {add{} remove{}}
+    }
+}
+
+public static partial class FruitLabTutorialEditorTools
+{
+    public static void ReviewModelPresentation(Canvas canvas,Camera camera)
+    {
+        var previous=DOTween.defaultUpdateType;DOTween.defaultUpdateType=UpdateType.Manual;
+        string prefs=Profile();
+        try
+        {
+            ReviewSceneFreeMechanics();
+            ClearPreviewActors(canvas);
+            var definition=new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9};
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
+                Field(game.Round,"_remainingGuessCount",1);int failed=0;game._guess.LevelFailEvent+=(s,e)=>failed++;
+                for(int card=3;card<6;card++)game.Place(card);
+                game.Check();
+                Require(failed==1 && game.Round.GetRemainingGuessCount()==0,"The final wrong guess fails synchronously before the life animation advances");
+                game._guess.Initialize();Tick(1.2f);game._guess.FailRound();
+                Require(failed==1,"A layout rebuild and tween cancellation cannot lose or duplicate failure");
+            }
+            ClearPreviewActors(canvas);
+            using(var game=new Fixture(canvas,camera,definition))
+            {
+                game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
+                var query=(IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
+                var hints=new HintProvider(game._guess,game.Target,game._info,game.Initial,query,game.Placement,game.Locks);
+                var save=(MemorySave)Get(game,"_memory");var di=new DiContainer();
+                di.Bind<IGameSaveSnapshotProvider>().FromInstance(GrowingSnapshot(game,definition));
+                Field(hints,"_snapshots",di.Resolve<LazyInject<IGameSaveSnapshotProvider>>());Field(hints,"_saves",save);
+                var token=canvas.GetComponentsInChildren<CrystalView>(true).First();
+                bool started=(bool)typeof(HintProvider).GetMethod("TryApplyRevealHint",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(hints,new object[]{token});
+                Require(started,"A crystal prepares a reveal");
+                int card=game._info.GetCardItemInfoList().FindIndex(fact=>fact.isLocked);int slot=game._info.GetCardItemInfoList()[card].possibleCardHolderIndicatorIndexes.Single();
+                Require(save.Data.CardItemInfoList[card].isLocked && query.GetPlacedCardIndexesOnBoard()[slot]==card,"The reveal and board placement are committed and saved before flight");
+                DOTween.KillAll(false);
+                game._saves.SetLevelSaveDataAsSaved(save.Data);game.Initial.ClearInitialCardHolders();game.Board.ClearBoardHolders();game.BuildActors();
+                Require(game._info.GetCardItemInfoList()[card].isLocked && query.GetPlacedCardIndexesOnBoard()[slot]==card,"Cancelling the crystal flight and resuming retains the granted reveal");
+                int otherSlot=(slot+1)%3;
+                Require(!game.Placement.PresentLockedCard(otherSlot,otherSlot),"A stale presentation cannot create a new logical lock");
+                Require(game.Placement.TryPlaceCardOnBoard(6,otherSlot),"Place an unlocked card before a reveal");Tick(.4f);
+                Require(game.Placement.TryRevealAndLockCard(otherSlot,otherSlot),"Reveal commits the correct card over an occupied slot");Tick(.4f);
+                Require(!query.TryGetOccupiedBoardHolderIndexOfCard(6,out _) && game.Initial.GetRectTransformOfCardItem(6).parent!=game.Board.GetRectTransformOfGarden(otherSlot),"The displaced card returns visually without a second model mutation");
+                var history=game._area.History;history.Add(new ResultBlockModel{finalNumbers=new List<int>{4,2,3},correctPosCount=2,wrongPosCount=0});
+                history.Reveal(new GuessEvaluation(1,new[]{4,2,3},new[]{1,2,3}));
+                game._area.RemoveResultBlocks();
+                Require(history.HistoryCount==1 && history.GetHistoryEntry(0).hintStates!=null,"Clearing visual result rows preserves public evidence");
+                using(var notes=AssistanceFor(game,definition,out _,false))
+                {notes.ActivateUltra();Require(notes.State.Presence(4)==FruitPresence.Absent,"Ultra reads model evidence while the result screen is empty");}
+                var progressView=canvas.GetComponentInChildren<VerticalCrystalProgressView>(true);
+                progressView.ApplyLabStyle();
+                var progress=new VerticalCrystalProgressController(progressView,game.Tracker,null);
+                var planned=new Scripts.Economy.CrystalRewardPlan{Capacity=6,PreviousProgress=5,FinalProgress=2,InitialReward=RewardType.Ultra,NextReward=RewardType.Pair,PowerUps=new List<RewardType>{RewardType.Ultra}};
+                Field(game.Tracker,"_currentRewardType",RewardType.Bomb);
+                progress.PrepareForCollection(5,planned.InitialReward);progress.AddCrystals(null,planned).Complete(true);
+                Require(progressView.transform.Find("CrystalCount").GetComponent<TMPro.TMP_Text>().text=="2 / 6","The bar consumes the prepared final state rather than current wallet rules");
+                var popupView=canvas.GetComponentInChildren<LevelFinishPopupView>(true);var popup=new LevelEndPopupController(popupView);
+                var rewardView=PowerUpRewardView.Ensure(canvas);
+                using(var rewards=new PowerUpRewardPresenter(rewardView,game.Tracker,null))
+                {
+                    Field(popup,"_rewardPresentation",rewards);int closed=0;
+                    popup.PresentPowerUpRewards(new[]{RewardType.Ultra,RewardType.Helper});popup.AfterRewardPresentation(()=>closed++);
+                    Tick(.5f);rewardView.ClaimButton.onClick.Invoke();Tick(1.2f);Tick(.5f);
+                    Require(rewards.IsPresenting && closed==0,"The second awarded power is presented before continuation");
+                    rewardView.ClaimButton.onClick.Invoke();Tick(.9f);
+                    Require(!rewards.IsPresenting && closed==1,"An ordered reward batch finishes once after its final claim");
+                }
+                var settings=UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<SettingsPopupView>("Assets/Prefabs/SettingsPopup.prefab"),canvas.transform);
+                try
+                {
+                    int privacy=0;var controller=new SettingsPopupController(_=>{},()=>{},()=>privacy++);
+                    var buttons=(BaseButtonControllerFactory)Get(game,"_buttons");
+                    for(int repeat=1;repeat<=2;repeat++)
+                    {
+                        controller.Initialize(settings,()=>{},()=>{},()=>{},game.Tracker,buttons);
+                        settings.GetComponentsInChildren<UnityEngine.UI.Button>(true).Single(button=>button.name=="PrivacyButton").onClick.Invoke();
+                        Require(privacy==repeat,"Privacy requests are routed by the controller once, including view reuse");
+                    }
+                }
+                finally{UnityEngine.Object.DestroyImmediate(settings.gameObject);}
+            }
+            Require(prefs==Profile(),"Model/presentation regressions preserve real player preferences");
+            System.IO.File.WriteAllText(Folder+"/mvp-review.json",Newtonsoft.Json.JsonConvert.SerializeObject(new {passed=true,checks=new[]{"failure before animation","layout cancellation","crystal commit and resume before callback","history survives view clear","scene-free growth and dynamite","card facts notify without view","authoritative crystal reward plan"}},Newtonsoft.Json.Formatting.Indented));
+        }
+        finally{DOTween.defaultUpdateType=previous;}
+    }
+    private static void ReviewSceneFreeMechanics()
+    {
+        var tracker=new RulesTracker();
+        void Create(LevelMechanic mechanic,out TestLevel level,out LevelSaveDataManager save,out RoundStateManager round,out BoardHolderCountManager counts,out BoardCardIndexManager slots,out CardItemInfoManager info,out RulesTarget target)
+        {
+            level=new TestLevel(new LevelData{NumOfBoardHolders=mechanic==LevelMechanic.Growing?2:5,NumOfCards=9,MaxNumOfTries=9,Mechanic=mechanic});
+            save=new LevelSaveDataManager(level);save.CreateDefaultLevelSaveData();
+            round=new RoundStateManager(level,save);round.Initialize();counts=new BoardHolderCountManager(save,level);counts.Initialize();
+            slots=new BoardCardIndexManager();slots.InitializeCardIndexesOnBoardHolders(counts.GetBoardHolderCount());
+            info=new CardItemInfoManager(save,counts);info.Initialize();target=new RulesTarget(Enumerable.Range(1,counts.GetBoardHolderCount()));
+        }
+        Create(LevelMechanic.Growing,out var level,out var save,out var round,out var counts,out var slots,out var info,out var target);
+        save.GetLevelSaveData().GrowingBoard.FullTarget=new List<int>{1,2,3,4};
+        var growth=new GrowingBoardService(level,tracker,save,target,counts,slots,info,round);
+        Require(!growth.TryAdvance(new GuessEvaluation(1,new[]{8,9},target.GetTargetCardsList())) && growth.TryAdvance(new GuessEvaluation(2,new[]{8,9},target.GetTargetCardsList())),"Growth calculates the two-miss boundary without a scene presenter");
+        Require(counts.GetBoardHolderCount()==3 && target.GetTargetCardsList().Count==3 && slots.GetPlacedCardIndexesOnBoard().Count==3,"All growth state is complete without spawning a holder");
+        Create(LevelMechanic.Dynamite,out level,out save,out round,out counts,out slots,out info,out target);
+        save.GetLevelSaveData().Dynamite.BoardIndex=1;
+        using(var danger=new DynamiteService(level,tracker,save,target,info,new CardLockService(info,slots,slots),round))
+        {
+            danger.Prepare();danger.Resolve(new GuessEvaluation(1,new[]{8,2,9,6,7},target.GetTargetCardsList()));
+            Require(danger.Current.Disarmed && info.GetCardItemInfoList()[1].isLocked && slots.GetPlacedCardIndexesOnBoard()[1]==1,"Dynamite disarms and locks the model without card GameObjects");
+        }
+        Create(LevelMechanic.Dynamite,out level,out save,out round,out counts,out slots,out info,out target);save.GetLevelSaveData().Dynamite.BoardIndex=1;
+        using(var danger=new DynamiteService(level,tracker,save,target,info,new CardLockService(info,slots,slots),round))
+        {for(int turn=1;turn<=4;turn++)danger.Resolve(new GuessEvaluation(turn,new[]{6,7,8,9,1},target.GetTargetCardsList()));Require(danger.Current.Exploded && round.GetRemainingGuessCount()==0,"Dynamite exhausts logical lives without a presenter or tween");}
+        int changes=0;info.Changed+=()=>changes++;info.OnProbabilityButtonClicked(0,ProbabilityType.Certain);info.OnHolderIndicatorClicked(0,0);
+        Require(changes==2,"Card information publishes both note edits without accessing scene objects");
+        var profile=new Scripts.Economy.PlayerProfileData();profile.Wallet.CrystalProgress=1;
+        var rules=new Scripts.Economy.WalletRewardRules(2,(r,l)=>true,(r,l)=>r==RewardType.Revealing?RewardType.Ultra:RewardType.Pair);
+        var grants=rules.ApplySingle(profile,0,4,out var plan);
+        Require(grants.SequenceEqual(plan.PowerUps) && plan.PowerUps.SequenceEqual(new[]{RewardType.Revealing,RewardType.Ultra}) && plan.FinalProgress==1 && plan.NextReward==RewardType.Pair,"Economics returns the ordered awarded tools and final bar state");
+        var repository=new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>{var data=new Scripts.Economy.PlayerProfileData();data.Wallet.CrystalProgress=1;return data;});
+        var achievements=new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings());
+        string id=Guid.NewGuid().ToString("N");var awarded=new Scripts.Economy.GameWinRewardService(repository,rules,achievements).SinglePlayer(id,0,new[]{1,2},0,4);
+        var changed=new Scripts.Economy.WalletRewardRules(99,(r,l)=>throw new Exception("Replay must not recalculate reward rules"),(r,l)=>throw new Exception("Replay must not select another reward"));
+        var replay=new Scripts.Economy.GameWinRewardService(repository,changed,achievements).SinglePlayer(id,0,new[]{1,2},0,4);
+        Require(replay.IsReplay && Newtonsoft.Json.JsonConvert.SerializeObject(replay.Crystals)==Newtonsoft.Json.JsonConvert.SerializeObject(awarded.Crystals),"The recorded presentation plan survives receipt replay and rule changes");
+    }
+    private sealed class RulesTarget : ITargetNumberCreator
+    {
+        private List<int> _cards;public RulesTarget(IEnumerable<int> cards){_cards=cards.ToList();}
+        public List<int> GetTargetCardsList()=>_cards;public IReadOnlyList<int> GetHistoryTargetCards()=>_cards;public IReadOnlyList<int> GetProtectedTargetCards()=>_cards;
+        public bool TryAppendTargetCard(int card){_cards.Add(card);return true;}public bool TryRemoveLastTargetCard(){_cards.RemoveAt(_cards.Count-1);return true;}
+        public void ApplyCommittedTarget(IReadOnlyList<int> cards)=>_cards=cards.ToList();public void SetTargetNumber(int count){}public void CreateMultiplayerTargetNumber(){}
+    }
+    private sealed class RulesTracker : ILevelTracker
+    {
+        public GameOption GetGameOption()=>GameOption.SinglePlayer;public int GetLevelId()=>20;
+        public void GrantIntroducedPowerUps(){}public void EnsurePlaytestPowerUp(RewardType type){}public void ClearPlayerPrefs(){}public void SavePlayerPrefs(){}
+        public void SetGameOption(GameOption option){}public void SetMultiplayerLevelDifficulty(Difficulty value){}public int GetNumberOfBoardCardsInMultiplayer()=>5;
+        public bool IsFirstLevelTutorial()=>false;public bool IsCardInfoTutorial()=>false;public void IncrementLevelId(int a,int b){}public void IncrementLevelIdWithRewards(int a,int b){}
+        public void IncreaseRevealingPowerUpCount(){}public void IncreaseLifePowerUpCount(){}public void IncreaseBombPowerUpCount(){}
+        public int GetGiftStarCount()=>0;public int GetCrystalProgressCount()=>0;public int GetStarCount()=>0;public int GetCoinCount()=>0;
+        public int GetRevealingPowerUpCount()=>0;public int GetLifePowerUpCount()=>0;public int GetBombPowerUpCount()=>0;public int GetPowerUpCount(RewardType type)=>0;public RewardType GetCurrentRewardType()=>RewardType.Revealing;
     }
 }

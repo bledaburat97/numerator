@@ -18,6 +18,7 @@ namespace Scripts
         private readonly IRevealingPowerUpController _revealingPowerUpController;
         private readonly IInitialCardAreaController _initialCardAreaController;
         private readonly ICardItemInfoManager _cardItemInfoManager;
+        private readonly CardLockService _locks;
         private int _numOfCards;
         private int _pairDragFirst = -1, _pairDragSecond = -1;
         private readonly TutorialInputGate _tutorialGate;
@@ -53,6 +54,7 @@ namespace Scripts
             _revealingPowerUpController = revealingPowerUpController;
             _initialCardAreaController = initialCardAreaController;
             _cardItemInfoManager = cardItemInfoManager;
+            _locks=new CardLockService(cardItemInfoManager,boardPlacementQuery,boardPlacementCommands);
             _tutorialGate = tutorialGate;
             _gameUIController.ResetNumbers += ResetPositionsOfCardItems;
         }
@@ -228,26 +230,27 @@ namespace Scripts
         {
             if (!CanUseCard(cardIndex) || (!_restoringLocks && _ice?.IsBlocked(boardHolderIndex)==true)) return false;
             if (IsCardLocked(cardIndex) && !IsCardLockedOnBoardHolder(cardIndex, boardHolderIndex)) return false;
+            if(!_locks.TryLock(boardHolderIndex,cardIndex))return false;
+            return PresentLockedCard(boardHolderIndex,cardIndex,playSuccessAnimation);
+        }
 
-            if (_boardPlacementQuery.TryGetOccupiedCardIndexOnBoardHolder(boardHolderIndex, out int occupiedCardIndex) &&
-                occupiedCardIndex != cardIndex)
+        public bool PresentLockedCard(int boardHolderIndex,int cardIndex,bool playSuccessAnimation=true)
+        {
+            if (!CanUseCard(cardIndex) || (!_restoringLocks && _ice?.IsBlocked(boardHolderIndex)==true)) return false;
+            if (!IsCardLockedOnBoardHolder(cardIndex, boardHolderIndex)
+                || !_boardPlacementQuery.TryGetPlacedBoardHolderIndexOfCard(cardIndex,out int committedSlot) || committedSlot!=boardHolderIndex)return false;
+            var parent=_boardAreaController.GetRectTransformOfGarden(boardHolderIndex);
+            // A committed lock may have displaced an unlocked card; reconcile its visual parent only.
+            for(int index=0;index<_numOfCards;index++)
             {
-                if (IsCardLocked(occupiedCardIndex)) return false;
-
-                TryReturnCardToInitial(occupiedCardIndex);
+                if(index==cardIndex || !TryGetCardItem(index,out var other) || other.GetRectTransform().parent!=parent)continue;
+                if(!_boardPlacementQuery.TryGetOccupiedBoardHolderIndexOfCard(index,out _))other.GetCardViewHandler().MoveToInitialParent();
             }
-
-            if (!_boardPlacementCommands.TryPlaceCardOnBoardHolder(boardHolderIndex, cardIndex)) return false;
             if (!_initialCardAreaController.TryPlaceLockedCardOnBoard(
                     cardIndex,
                     boardHolderIndex,
-                    _boardAreaController.GetRectTransformOfGarden(boardHolderIndex)))
-            {
-                _boardPlacementCommands.TryRemoveCardFromBoard(cardIndex);
-                return false;
-            }
+                    parent))return false;
 
-            _cardItemInfoManager.MakeCardCertain(cardIndex, new List<int> { boardHolderIndex });
             CardLockedEvent?.Invoke(this,(cardIndex,boardHolderIndex));
             if (playSuccessAnimation)
             {
@@ -406,6 +409,7 @@ namespace Scripts
         bool TryPlaceCardOnBoard(int cardIndex, int boardCardHolderIndex = -1);
         bool TryPlaceCardOnFirstEmptyBoardHolder(int cardIndex);
         bool TryRevealAndLockCard(int boardHolderIndex, int cardIndex, bool playSuccessAnimation = true);
+        bool PresentLockedCard(int boardHolderIndex,int cardIndex,bool playSuccessAnimation=true);
         void TryRemoveCardFromBoard(int cardIndex);
         List<ICardViewHandler> GetCardsOnInitialHolder();
         List<ICardViewHandler> GetCardsOnBoard();

@@ -268,7 +268,7 @@ public static class FruitLabFailureValidation
                     var view = new BombBoard(parent);
                     var board = new BoardAreaController(view, new BoardLayoutManager(view, new SizeManager()), counts, indexes, indexes);
                     board.CreateBoard();
-                    var info = new CardItemInfoManager(saves, null, counts); info.Initialize();
+                    var info = new CardItemInfoManager(saves, counts); info.Initialize();
                     var initial = new InitialCardAreaController(null, board, counts, level, saves, null, null, null);
                     var cards = new INormalCardItemController[9];
                     var outlines = new Image[9];
@@ -373,7 +373,7 @@ public static class FruitLabFailureValidation
             var board = new BoardAreaController(view, new BoardLayoutManager(view, new SizeManager()), counts, indexes, indexes);
             board.CreateBoard();
             var round = new RoundStateManager(level, saves); round.Initialize();
-            var info = new CardItemInfoManager(saves, null, counts); info.Initialize();
+            var info = new CardItemInfoManager(saves, counts); info.Initialize();
             var powers = new PowerSource();
             var ui = new UiProbe();
             var targetObject = new GameObject("BombTarget"); targetObject.transform.SetParent(parent); targetObject.SetActive(false);
@@ -444,7 +444,7 @@ public static class FruitLabFailureValidation
 
             var results = new BombResults();
             var powerArea = new GamePowerUpAreaController(null, null, null);
-            var result = new ResultManager(ui, results, target, indexes, round, powerArea);
+            var result = new ResultManager(ui, results, target, indexes, round, powerArea,new RoundHistory());
             int wins = 0, wrong = 0;
             result.LevelSuccessEvent += (sender, args) => wins++;
             result.WrongGuessEvent += (sender, args) => { wrong++; round.DecreaseRemainingGuessCount(); };
@@ -593,7 +593,7 @@ public static class FruitLabCompletionValidation
             area.Initialize(false);
             Require(!view.Rows[0].Destroyed, "Review/resume must retain existing guesses");
             var previousRow = view.Rows[0];
-            area.Initialize(true);
+            area.History.Clear();area.Initialize(true);
             Require(view.Empty && previousRow.Destroyed && view.Rows.Count == 0, "A fresh round must clear the completed history");
             area.AddNewResultBlock(321, 3, 0);
             foreach (var card in view.Rows[0].Cards) Require(card.State == CardResultState.Unrevealed, "Next round cannot inherit answer highlights");
@@ -664,6 +664,12 @@ public static class FruitLabCompletionValidation
     {
         public readonly List<CardProbe> Cards = new List<CardProbe>();
         public bool Destroyed;
+        public void Bind(ResultBlockModel model,float width,float height)
+        {
+            Cards.Clear();foreach(var number in model.finalNumbers)CreateCardItem().Init(number);
+            var states=model.reviewStates??model.hintStates;
+            if(states!=null)for(int i=0;i<states.Count;i++)SetCardResult(i,states[i]);
+        }
         public void Init(NonDraggableCardItemViewFactory factory, float width, float height) { }
         public INonDraggableCardItemView CreateCardItem() { var card = new CardProbe(); Cards.Add(card); return card; }
         public void DisplayFeedback(int correct, int misplaced) { }
@@ -736,7 +742,7 @@ public static class FruitLabRetryValidation
             var powers = new GamePowerUpAreaController(factory, powerView, tracker);
             var definition=new RetryPowerLevel(boardCounts.GetBoardHolderCount());
             var state=new LevelSaveDataManager(definition);state.CreateDefaultLevelSaveData();
-            var info=new CardItemInfoManager(state,null,boardCounts);info.Initialize();
+            var info=new CardItemInfoManager(state,boardCounts);info.Initialize();
             var target=objects.AddComponent<TargetNumberCreator>();
             Field(target,"_targetCardsList",Enumerable.Range(1,boardCounts.GetBoardHolderCount()).ToList());
             GameMonoInstaller.BindPowerUpEffects(container);

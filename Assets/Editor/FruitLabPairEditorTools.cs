@@ -51,7 +51,7 @@ public static partial class FruitLabTutorialEditorTools
                     var pair = game.Pair;
 
                     var helper = game.Helper;
-                    var eliminate = new EliminateFruitEffect(game.Target, game._info, game.Placement, game._saves);
+                    var eliminate = new EliminateFruitEffect(game.Target, game._info, game._saves);
                     var snapshot = new GameSaveSnapshotProvider(game.Target, game._info, new PlayingFlow(), game._counts, game.Round);
                     Field(snapshot, "_saveData", game._saves); Field(snapshot, "_tracker", game.Tracker); Field(snapshot, "_levels", new TestLevel(definition));
                     var memory = new MemorySave();

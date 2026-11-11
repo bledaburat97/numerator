@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using Game;
 using UnityEngine;
 using Zenject;
+using Scripts.Economy;
 
 namespace Scripts
 {
@@ -14,7 +16,7 @@ namespace Scripts
         private readonly ILevelEndPopupController _levelEndPopupController;
         private readonly List<IRewardTokenView> _presentationTokens = new List<IRewardTokenView>();
         private bool _hasCompletedReward;
-        private RewardType _completedRewardType;
+        private IReadOnlyList<RewardType> _earnedRewards=System.Array.Empty<RewardType>();
 
         [Inject]
         public LevelSuccessRewardCollectionAnimationController(
@@ -34,15 +36,12 @@ namespace Scripts
             int earnedCrystalCount,
             int previousCoinCount,
             int previousCrystalProgressCount,
-            RewardType rewardTypeBeforeCollection)
+            RewardType rewardTypeBeforeCollection,CrystalRewardPlan plan=null)
         {
             Cancel();
             Sequence sequence = DOTween.Sequence();
-            _hasCompletedReward = TryGetFirstCompletedRewardType(
-                previousCrystalProgressCount,
-                earnedCrystalCount,
-                rewardTypeBeforeCollection,
-                out _completedRewardType);
+            _hasCompletedReward=plan?.PowerUps.Count>0;
+            _earnedRewards=plan?.PowerUps.ToArray()??System.Array.Empty<RewardType>();
             IReadOnlyList<IRewardTokenView> coinTokens =
                 _lifeBarController.GetActiveRewardTokens(LifeBarRewardType.Coin);
             IReadOnlyList<IRewardTokenView> crystalTokens =
@@ -61,7 +60,7 @@ namespace Scripts
 
             Sequence collectionSequence = DOTween.Sequence()
                 .Append(AnimateCoinsToCounter(coinTokens, earnedCoinCount, previousCoinCount))
-                .Join(_verticalCrystalProgressController.AddCrystals(crystalTokens, earnedCrystalCount));
+                .Join(_verticalCrystalProgressController.AddCrystals(crystalTokens, plan));
 
             sequence.Append(collectionSequence);
             if (earnedCrystalCount > 0)
@@ -96,7 +95,7 @@ namespace Scripts
                 return _levelEndPopupController.ChangeFadeButtons(buttonFadeDuration, 1f);
             }
 
-            return DOTween.Sequence().AppendCallback(()=>_levelEndPopupController.PresentPowerUpReward(directReward ?? _completedRewardType,directReward.HasValue));
+            return DOTween.Sequence().AppendCallback(()=>_levelEndPopupController.PresentPowerUpRewards(directReward.HasValue?new[]{directReward.Value}:_earnedRewards,directReward.HasValue));
         }
 
         private Sequence AnimateCoinsToCounter(
@@ -173,28 +172,6 @@ namespace Scripts
             return preset == null ? tween.SetEase(Ease.OutQuad) : tween.SetEase(preset.verticalPositionCurve);
         }
 
-        private static bool TryGetFirstCompletedRewardType(
-            int previousCrystalProgressCount,
-            int earnedCrystalCount,
-            RewardType rewardTypeBeforeCollection,
-            out RewardType completedRewardType)
-        {
-            completedRewardType = rewardTypeBeforeCollection;
-            if (earnedCrystalCount <= 0) return false;
-
-            int crystalCapacity = Mathf.Max(1, ConstantValues.NUM_OF_STARS_FOR_WILD);
-            int simulatedCrystalCount = Mathf.Clamp(previousCrystalProgressCount % crystalCapacity, 0, crystalCapacity);
-            for (int i = 0; i < earnedCrystalCount; i++)
-            {
-                simulatedCrystalCount++;
-                if (simulatedCrystalCount >= crystalCapacity)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 
     public interface ILevelSuccessRewardCollectionAnimationController
@@ -205,7 +182,7 @@ namespace Scripts
             int earnedCrystalCount,
             int previousCoinCount,
             int previousCrystalProgressCount,
-            RewardType rewardTypeBeforeCollection);
+            RewardType rewardTypeBeforeCollection,CrystalRewardPlan plan=null);
         Sequence PlayPostCollectionFlow(float buttonFadeDuration,RewardType? directReward=null);
     }
 }

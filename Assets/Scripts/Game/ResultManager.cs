@@ -14,6 +14,7 @@ namespace Scripts
         [InjectOptional] private BoardSplitService _split;
         [InjectOptional] private IceBoardService _ice;
         private readonly IResultAreaController _resultAreaController;
+        private readonly RoundHistory _history;
         private readonly ITargetNumberCreator _targetNumberCreator;
         private readonly IBoardPlacementQuery _boardPlacementQuery;
         private readonly IRoundStateManager _roundStateManager;
@@ -27,10 +28,10 @@ namespace Scripts
         public ResultManager(IGameUIController gameUIController, 
             IResultAreaController resultAreaController, ITargetNumberCreator targetNumberCreator,
             IBoardPlacementQuery boardPlacementQuery, IRoundStateManager roundStateManager,
-            IGamePowerUpAreaController gamePowerUpAreaController)
+            IGamePowerUpAreaController gamePowerUpAreaController,RoundHistory history)
         {
             gameUIController.CheckFinalNumbers += CheckFinalCards;
-            _resultAreaController = resultAreaController;
+            _resultAreaController = resultAreaController;_history=history;
             _targetNumberCreator = targetNumberCreator;
             _boardPlacementQuery = boardPlacementQuery;
             _roundStateManager = roundStateManager;
@@ -39,10 +40,11 @@ namespace Scripts
 
         public void TryAddTriedCards()
         {
+            _history.Clear();
             foreach (List<int> triedCards in _roundStateManager.GetTriedCardsList())
             {
                 var evaluation = Evaluate(0,triedCards);
-                _resultAreaController.AddResultBlock(CreateRow(triedCards,evaluation),false);
+                _history.Add(CreateRow(triedCards,evaluation));
             }
         }
 
