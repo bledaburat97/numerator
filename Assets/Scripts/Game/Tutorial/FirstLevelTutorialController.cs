@@ -110,8 +110,6 @@ namespace Scripts
                 _mask.Highlight(check); _hand.StartClickAnimation(check.position);
                 _message.Show("Tahminini gönder", _step == 10 ? "İki meyve de hazır. Son tahminini gönderelim!" : "Tahmin et butonuna dokun. Sonuçlar meyvelerin yerleri hakkında ipucu verecek.", false);
             }
-            _gate.AllowSettings();
-            _mask.Highlight(_ui.GetButton(GameUIButtonType.Settings).GetView().GetButtonRectTransform());
         }
         private void OnPlaced(object sender, (int cardIndex, int boardIndex) args)
         {
@@ -121,7 +119,7 @@ namespace Scripts
         private void OnWrong(object sender, EventArgs args)
         {
             if (_disposed || (_step != 2 && _step != 6)) return;
-            _gate.Block(); _gate.AllowSettings(); SetCardLocks(-1); _hand.StopActiveAnimation();
+            _gate.Block(); SetCardLocks(-1); _hand.StopActiveAnimation();
             _pending = DOTween.Sequence().AppendInterval(.35f).AppendCallback(() => { _step++; ShowStep(); })
                 .SetLink(_message.gameObject);
         }

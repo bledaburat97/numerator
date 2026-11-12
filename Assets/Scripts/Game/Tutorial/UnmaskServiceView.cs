@@ -17,7 +17,7 @@ namespace Scripts
             // Real UI holes replace the old mask camera and RenderTexture.
             maskImage.enabled = false;
             var rect = (RectTransform)transform;
-            rect.SetParent(maskImage.transform.parent, false); FruitLabStyle.Stretch(rect);
+            rect.SetParent(maskImage.GetComponentInParent<Canvas>().rootCanvas.transform, false); FruitLabStyle.Stretch(rect);rect.SetAsLastSibling();
             foreach (Transform child in GetComponentsInChildren<Transform>(true)) child.gameObject.layer = maskImage.gameObject.layer;
             spotlight.color = new Color(color.r, color.g, color.b, alpha);
             spotlight.raycastTarget = true;

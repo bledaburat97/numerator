@@ -35,13 +35,13 @@ namespace Menu
         }
         private static void PlacePlant(RectTransform rect,float width,float height,GardenGrowthStage stage)
         {
-            float side=Mathf.Min(width*.70f,height*.82f);
+            float side=Mathf.Min(width*.85f,height*.57f);
             if(stage==GardenGrowthStage.Seed)side=Mathf.Min(side,Mathf.Max(12,side*.4f));
             else if(stage==GardenGrowthStage.Sprout)side=Mathf.Min(side,Mathf.Max(19,side*.7f));
             // PreserveAspect uses this bottom pivot too, so wide vines and tall
             // saplings stand on the same ground point without a stage-change jump.
             rect.anchorMin=rect.anchorMax=Vector2.zero;rect.pivot=new Vector2(.5f,0);
-            rect.anchoredPosition=new Vector2(width*.35f,height*.12f);rect.sizeDelta=Vector2.one*side;
+            rect.anchoredPosition=new Vector2(width*.5f,height*.43f);rect.sizeDelta=Vector2.one*side;
         }
         public void PlayPlanting(float delay=0)
         {

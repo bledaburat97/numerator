@@ -43,9 +43,7 @@ namespace Scripts
         public Sequence FadeOutObsoleteGameUi(float duration)
         {
             return DOTween.Sequence()
-                .Append(_gameUIController.ChangeFadeTopAreaButtons(duration, 0f))
-                .Join(_gameUIController.ChangeFadeUserText(duration, 0f))
-                .Join(_initialCardAreaController.ChangeFadeInitialArea(duration, 0f)
+                .Append(_initialCardAreaController.ChangeFadeInitialArea(duration, 0f)
                     .OnComplete(() => _initialCardAreaController.ClearInitialCardHolders()))
                 .Join(_gameUIController.ChangeFadeMiddleAreaButtons(duration, 0f));
         }

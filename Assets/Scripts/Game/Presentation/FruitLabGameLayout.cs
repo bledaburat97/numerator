@@ -90,7 +90,13 @@ namespace Scripts
             FruitLabStyle.AddSurface(middleArea.gameObject, FruitLabStyle.Background);
             FruitLabStyle.Atmosphere(middleArea);
             FruitLabStyle.Place(header, safeArea, layout.Padding,
-                layout.Height - layout.TopPadding - layout.HeaderHeight, width, layout.HeaderHeight);
+                layout.Height - layout.HeaderHeight, width, layout.HeaderHeight);
+            var band=FruitLabStyle.Detail(safeArea,"GameHeaderBand",Menu.MenuChrome.Sky);
+            band.sprite=null;band.type=Image.Type.Simple;
+            var canvas=GetComponent<Canvas>();float inset=Menu.MenuChrome.SafeTopAndSides(canvas).y;
+            float canvasWidth=((RectTransform)canvas.transform).rect.width;
+            FruitLabStyle.Place(band.rectTransform,safeArea,(safeArea.rect.width-canvasWidth)*.5f,layout.Height-56,canvasWidth,56+inset);
+            band.transform.SetSiblingIndex(header.GetSiblingIndex());
             Image oldHeader = header.GetComponent<Image>();
             if (oldHeader != null) oldHeader.enabled = false;
 

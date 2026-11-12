@@ -180,7 +180,7 @@ namespace Scripts
         {
             foreach (var pair in _buttonDictionary)
             {
-                pair.Value.SetButtonClickable(false);
+                pair.Value.SetButtonClickable(pair.Key==GameUIButtonType.Settings || pair.Key==GameUIButtonType.Information);
             }
 
             if (_cardInfoButtonController != null)

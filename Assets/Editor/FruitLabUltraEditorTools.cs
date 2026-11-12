@@ -89,7 +89,7 @@ public static partial class FruitLabTutorialEditorTools
             ClearPreviewActors(canvas);
             using(var game=new Fixture(canvas,camera,definition))
             {
-                Field(game.Tracker,"_levelId",7);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{2,3,1});
+                Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{2,3,1});
                 using(var notes=AssistanceFor(game,definition,out var view,false))
                 using(var editor=new CardAnnotationController(game.Initial,game.Placement,game.UI,canvas.GetComponent<FruitLabGameLayout>(),game.Gate,null,()=>true,notes,game.Initial,game.Board))
                 {
@@ -161,7 +161,7 @@ public static partial class FruitLabTutorialEditorTools
                     camera.orthographicSize=406;
                     ((RectTransform)canvas.transform).sizeDelta=new Vector2(375,812);canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
                     Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-ultra-active.png");
-                    var powers=canvas.GetComponentInChildren<PowerUpListHolderView>(true);powers.SetProgression(7);
+                    var powers=canvas.GetComponentInChildren<PowerUpListHolderView>(true);powers.SetProgression(20);
                     foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
                     {
                         var powerButton=((BaseButtonView)powers.GetPowerUpButton(type)).GetButtonRectTransform();
@@ -174,7 +174,7 @@ public static partial class FruitLabTutorialEditorTools
             ClearPreviewActors(canvas);
             using(var game=new Fixture(canvas,camera,definition))
             {
-                Field(game.Tracker,"_levelId",7);((MemorySave)Get(game,"_memory")).Save(saved);game._saves.SetLevelSaveDataAsSaved(saved);
+                Field(game.Tracker,"_levelId",20);((MemorySave)Get(game,"_memory")).Save(saved);game._saves.SetLevelSaveDataAsSaved(saved);
                 game.Round.Initialize();game.BuildActors();game.Results.TryAddTriedCards();
                 using(var notes=AssistanceFor(game,definition,out _,false))
                 {
@@ -185,8 +185,8 @@ public static partial class FruitLabTutorialEditorTools
                     SubmitAssistedGuess(game,new[]{4,5,6},notes);
                     var helper=game.Helper;helper.Applied+=(sender,guess)=>game._area.RevealGuess(guess);
                     Require(helper.TryApply(),"A real detailed hint is available");notes.Tick();
-                    Require(!notes.IndicatorsVisible && !notes.CanEditFruit(4),"Verified absent detail cannot enable strips or be overwritten manually");
-                    notes.SetPresence(4,FruitPresence.Present);Require(notes.State.Presence(4)==FruitPresence.Unknown,"A manual green command cannot contradict a verified absent fruit");
+                    Require(!notes.IndicatorsVisible && notes.CanEditFruit(4),"Detailed history does not disable manual card notes");
+                    notes.SetPresence(4,FruitPresence.Present);Require(notes.State.Presence(4)==FruitPresence.Present,"A player can independently annotate a fruit after seeing a hint");
                     notes.SetPresence(7,FruitPresence.Absent);
                     var verified=canvas.GetComponentsInChildren<FruitLabGlyph>(true).First(glyph=>glyph.name=="HelperAbsent");
                     var manual=game.Initial.GetRectTransformOfCardItem(6).GetComponentsInChildren<FruitLabGlyph>(true).First(glyph=>glyph.Type==FruitLabGlyph.Symbol.Cross);
@@ -210,7 +210,7 @@ public static partial class FruitLabTutorialEditorTools
             ClearPreviewActors(canvas);
             using(var game=new Fixture(canvas,camera,new LevelData {NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=9}))
             {
-                Field(game.Tracker,"_levelId",7);game.BuildActors();game.Gate.Clear();
+                Field(game.Tracker,"_levelId",20);game.BuildActors();game.Gate.Clear();
                 var powers=canvas.GetComponentInChildren<PowerUpListHolderView>(true);powers.SetProgression(7);
                 foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
                 {

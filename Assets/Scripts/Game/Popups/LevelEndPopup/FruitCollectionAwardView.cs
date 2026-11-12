@@ -43,6 +43,7 @@ namespace Scripts
             label.gameObject.layer=gameObject.layer;
             if(_collection==null)_collection=transform.Find("Collection")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(transform,FruitLabGlyph.Symbol.Collection,FruitLabStyle.Mint);
             _collection.name="Collection";_collection.gameObject.layer=gameObject.layer;
+            _collection.gameObject.SetActive(false);
             if(fruitIcons==null || fruitIcons.Length!=5)
             {
                 fruitIcons=new Image[5];
@@ -66,7 +67,7 @@ namespace Scripts
             EnsureUi();var rect=(RectTransform)transform;float width=rect.rect.width,height=rect.rect.height;
             float labelWidth=Mathf.Min(108,width*.41f),gap=4;
             FruitLabStyle.Place(_collection.rectTransform,transform,0,(height-22)*.5f,22,22);
-            FruitLabStyle.Place(label.rectTransform,transform,26,0,labelWidth-26,height);
+            FruitLabStyle.Place(label.rectTransform,transform,0,0,labelWidth,height);
             float side=Mathf.Max(1,Mathf.Min(28,Mathf.Min(height,(width-labelWidth-8-gap*Mathf.Max(0,_count-1))/Mathf.Max(1,_count))));
             for(int i=0;i<_count;i++)FruitLabStyle.Place(fruitIcons[i].rectTransform,transform,labelWidth+8+i*(side+gap),(height-side)*.5f,side,side);
         }

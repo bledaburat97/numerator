@@ -167,13 +167,7 @@ namespace Scripts
         private bool CanEdit(int fruit)
         {
             if(_disposed || UltraActive || State==null || fruit<1 || fruit>State.FruitCount)return false;
-            for(int index=0;index<_history.HistoryCount;index++)
-            {
-                var row=_history.GetHistoryEntry(index);
-                if(row.hintStates==null)continue;
-                for(int slot=0;slot<row.finalNumbers.Count && slot<row.hintStates.Count;slot++)
-                    if(row.finalNumbers[slot]==fruit && ((row.hintStates[slot]==CardResultState.Absent && (row.groups==null || row.groups.Count==0)) || row.hintStates[slot]==CardResultState.Correct))return false;
-            }
+            // Detailed feedback belongs to history. It does not lock the player's notebook.
             var info=_info.GetCardItemInfoList();
             return info!=null && fruit<=info.Count && info[fruit-1].isExisted && !info[fruit-1].isLocked;
         }

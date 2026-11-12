@@ -71,6 +71,9 @@ namespace Scripts
             Cancel(); _ready = true; _roundEnded = false; _rewardTipShown=false; _gate.Clear();
             if (_tracker.GetGameOption() != GameOption.SinglePlayer) return;
             _definition=_levels?.GetLevelData();
+            var pendingLesson=_save?.GetLevelSaveData().Tutorial;
+            if(_definition?.Lesson==TutorialLessonId.None && pendingLesson!=null && !pendingLesson.Completed && TutorialLessonController.PowerFor(pendingLesson.Lesson).HasValue)
+            {_definition=_definition.Copy();_definition.Lesson=pendingLesson.Lesson;_definition.TrialPowerUp=TutorialLessonController.PowerFor(pendingLesson.Lesson);}
             if(_definition!=null && _definition.Lesson!=TutorialLessonId.None && _definition.Lesson!=TutorialLessonId.Basics)
             {
                 if(_definition.IsPlaytest || _definition.DisablePowerUps || !TutorialProgress.Seen("lesson_"+_definition.Lesson))StartLesson(inPlace);
@@ -119,7 +122,7 @@ namespace Scripts
             if (mechanic == LevelMechanic.Growing)
             {
                 if (TutorialProgress.Seen(TutorialProgress.GrowingLevel)) return false;
-                ShowTip("Büyüyen Tahta", "2 alanla başlarsın. Her 2 yanlışta bir alan açılır. Ek 4 hakkın başlangıçta verilir.",
+                ShowTip("Büyüyen Tahta", "2 gizli meyve ile başlarsın, her iki tahminden sonra bir gizli meyve daha bulman gerekir.",
                     TutorialProgress.GrowingLevel,Find<BoardAreaView>()?.GetRectTransform());
                 return true;
             }
@@ -159,7 +162,7 @@ namespace Scripts
             if(_definition?.Lesson==TutorialLessonId.Crystal && crystals>0)
             {
                 _rewardTipShown=true;
-                ShowTip("İlk kristalin", "Coin → tohum\nKristal → güçlendirici",TutorialProgress.Currency,
+                ShowTip("Kristal Etkisi", "Kristaller güçlendirici kazandırır",TutorialProgress.Currency,
                     _ui.GetCoinImageRectTransform(),Find<VerticalCrystalProgressView>()?.GetRectTransform());
                 _message?.ShowCurrencyFlow();
                 return;
@@ -191,9 +194,12 @@ namespace Scripts
             var reward=PowerUpTypeUtility.ToRewardType(type);
             string key=PowerUpTypeUtility.TutorialKey(reward);
             if (TutorialProgress.Seen(key) || _tracker.GetPowerUpCount(reward) <= 0) return false;
-            var button = Find<PowerUpListHolderView>()?.GetPowerUpButton(reward)?.GetButtonRectTransform();
-            if(button!=null && !button.gameObject.activeInHierarchy)button=null;
-            ShowTip(PowerUpTypeUtility.Name(reward),PowerUpTypeUtility.Description(reward),key,button);
+            if(_levels==null || _save==null || (_uses!=null && !_uses.Value.CanUse(reward)))return false;
+            _definition=_levels.GetLevelData().Copy();
+            _definition.Lesson=TutorialLessonController.ForPower(reward);
+            _definition.TrialPowerUp=reward;
+            _save.GetLevelSaveData().Tutorial=new TutorialLessonState {Lesson=_definition.Lesson};
+            StartLesson(true);
             return true;
         }
         private void ShowTip(string title, string text, string key, params RectTransform[] targets)
@@ -228,6 +234,8 @@ namespace Scripts
             _mask.Init(1f, _canvas.rect.height); _mask.InstantiateTutorialFade();
             _message = UnityEngine.Object.Instantiate(_messagePrefab, _parent, false); _message.Init();
             _hand = UnityEngine.Object.Instantiate(_handPrefab, _parent, false); _hand.Init(1f, _canvas.rect.height);
+            _message.transform.SetParent(_canvas,false);_message.ApplyLayout();
+            _hand.transform.SetParent(_canvas,false);_hand.transform.SetAsLastSibling();
             foreach (Transform child in _message.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = _parent.gameObject.layer;
             foreach (Transform child in _hand.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = _parent.gameObject.layer;
         }
@@ -328,6 +336,7 @@ namespace Scripts
         private void RenderLesson(TutorialLessonStep step)
         {
             _lessonDelay?.Kill();_lessonDelay=null;
+            if(step?.Expected==LessonSignal.NoteOpened)_annotations?.Cancel();
             ClosePresentation(true);
             if(step==null)
             {
@@ -335,6 +344,8 @@ namespace Scripts
                 {
                     GameTelemetry.Tutorial("tutorial_completed","lesson_"+_definition.Lesson,_lesson.State.Step);
                     if(!_definition.IsPlaytest)TutorialProgress.Mark("lesson_"+_definition.Lesson);
+                    var power=TutorialLessonController.PowerFor(_definition.Lesson);
+                    if(power.HasValue)TutorialProgress.Mark(PowerUpTypeUtility.TutorialKey(power.Value));
                 }
                 return;
             }
@@ -365,13 +376,13 @@ namespace Scripts
             if(step.Power==RewardType.Ultra)_mask.Highlight(Find<InitialCardAreaView>()?.GetRectTransform());
             bool instruction=step.Expected!=LessonSignal.Continue;
             string open=(_definition.NumOfBoardHolders-1).ToString();
-            _message.ShowAt(step.Title.Replace("{open}",open),step.Text.Replace("{open}",open),true,instruction?TutorialMessagePlacement.Top:TutorialMessagePlacement.Center);
+            _message.ShowAt(step.Title.Replace("{open}",open),step.Text.Replace("{open}",open),!instruction,instruction?TutorialMessagePlacement.Top:TutorialMessagePlacement.Center);
             _message.Bind(_buttons,()=>{
                 if(_lesson?.Current!=step)return;
-                if(instruction)_lesson?.Dismiss();else _lesson?.Accept(LessonSignal.Continue);
+                if(!instruction)_lesson?.Accept(LessonSignal.Continue);
                 _lastGuess=_lastRevision=-1;Tick();
             });
-            _mask.SetOutsideDismiss(()=>_lesson?.Dismiss());
+            _mask.SetOutsideDismiss(null);
             GameTelemetry.Tutorial("tutorial_step","lesson_"+_definition.Lesson,_lesson.State.Step);
         }
         private void SetLessonGate(TutorialLessonStep step)
@@ -381,6 +392,7 @@ namespace Scripts
             else if(step.Expected==LessonSignal.NoteOpened || step.Expected==LessonSignal.FruitExcluded || step.Expected==LessonSignal.PositionExcluded)
                 _gate.AllowNotes(step.Card);
             else if(step.Expected==LessonSignal.Continue){_gate.Block();LockCards(-1);}
+            else if(step.Expected==LessonSignal.PowerApplied && step.Power.HasValue){_gate.AllowPower(PowerUpTypeUtility.ToGameButtonType(step.Power.Value));LockCards(-1);}
             else _gate.Clear();
             _gate.AllowSettings();
         }

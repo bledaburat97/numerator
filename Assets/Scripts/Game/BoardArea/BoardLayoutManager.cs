@@ -9,6 +9,7 @@ namespace Scripts
     {
         private const float GardenSpacingToHolderWidthRatio = 3f / 70f;
         [InjectOptional] private BoardSplitService _split;
+        [InjectOptional] private ILevelDataCreator _levels;
 
         private readonly IBoardAreaView _view;
         private readonly ISizeManager _sizeManager;
@@ -39,7 +40,7 @@ namespace Scripts
             Vector2 cardHolderSize = GetSizeOfBoardHolder();
             float spacing = cardHolderSize.x * GardenSpacingToHolderWidthRatio;
             _boardHolderSceneLocalPositionList = _boardHolderSceneLocalPositionList.GetLocalPositionList(
-                numOfBoardHolders,
+                _levels?.GetLevelData()?.Mechanic==LevelMechanic.Growing?GrowingBoardState.MaximumCount:numOfBoardHolders,
                 spacing,
                 cardHolderSize,
                 footer*.5f);

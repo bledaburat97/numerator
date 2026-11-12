@@ -50,7 +50,7 @@ namespace Scripts
             EnsureHomeContent();
             _lastSize = safeArea.rect.size;
             float width = _lastSize.x - 24f, height = _lastSize.y;
-            MenuChrome.ApplyBackdrop(GetComponent<Canvas>());
+            MenuChrome.ApplyBackdrop(GetComponent<Canvas>(),GetComponentInChildren<MainNavigationView>()?.SelectedTab??MainTab.Home);
             FruitLabStyle.Stretch(middleArea);
             FruitLabStyle.AddSurface(middleArea.gameObject, Color.clear);
             foreach (string old in new[] { "LabRoom", "LabBackdrop" })

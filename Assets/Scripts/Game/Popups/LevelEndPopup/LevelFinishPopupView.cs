@@ -163,7 +163,7 @@ namespace Scripts
             mark.color = _success ? FruitLabStyle.Correct : FruitLabStyle.Gold;
             mark.SetAllDirty();
             FruitLabStyle.Stretch(mark.rectTransform, 6f);
-            mark.gameObject.SetActive(!_multiplayerReward.HasValue);
+            mark.gameObject.SetActive(false);
             var rewardIcon = stage.Find("MultiplayerReward")?.GetComponent<Image>();
             if (_multiplayerReward.HasValue)
             {
@@ -241,7 +241,7 @@ namespace Scripts
             _hasCrystalReward = success && earnedCrystalCount > 0;
             ApplyLabLayout();
             Transform mark = transform.Find("RewardStage/Outcome");
-            if (mark != null) mark.gameObject.SetActive(true);
+            if (mark != null) mark.gameObject.SetActive(false);
             if (verticalCrystalProgressView != null)
             {
                 verticalCrystalProgressView.SetAlpha(1f);
@@ -250,7 +250,7 @@ namespace Scripts
 
         public void SetRewardPresentation()
         {
-            text.text = _multiplayer?"Kazandın!":"Çözdün!";
+            text.text = "Çözdün!";
             Transform mark = transform.Find("RewardStage/Outcome");
             if (mark != null) mark.gameObject.SetActive(false);
             TMP_Text subtitle = rewardDetails?.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
@@ -277,6 +277,7 @@ namespace Scripts
 
         public void SetText(string text)
         {
+            if(_success && (text=="Kazandın!" || text=="Bölüm tamamlandı!" || text=="Başardın!"))text="Çözdün!";
             this.text.SetText(text);
         }
 

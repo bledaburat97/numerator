@@ -9,6 +9,8 @@ namespace Menu
         public static readonly Color Sky = new Color32(148, 211, 236, 255);
         public static readonly Color Counter = new Color32(222, 242, 250, 255);
         public static readonly Color Ink = new Color32(37, 76, 91, 255);
+        public static Color HeaderColor(MainTab tab) => tab==MainTab.Garden ? new Color32(167,202,157,255) : Sky;
+        public static Color CounterColor(MainTab tab) => tab==MainTab.Garden ? new Color32(230,241,221,255) : Counter;
         public const float HeaderHeight = 56;
         public const float SettingsSize = 44;
 
@@ -21,13 +23,13 @@ namespace Menu
                 (Screen.height - Screen.safeArea.yMax) / Screen.height * size.y);
         }
 
-        public static void ApplyBackdrop(Canvas canvas)
+        public static void ApplyBackdrop(Canvas canvas,MainTab tab=MainTab.Home)
         {
             var root = (RectTransform)canvas.transform;
             var surface = Scripts.FruitLabStyle.AddSurface(canvas.gameObject, Sky);
             surface.sprite = null; surface.type = Image.Type.Simple;
             var art = Scripts.FruitLabStyle.Detail(root, "OrchardBackdrop", Color.white);
-            art.sprite = Resources.Load<Sprite>("Art/Menu/OrchardHome"); art.type = Image.Type.Simple;
+            art.sprite = Resources.Load<Sprite>(tab==MainTab.Collection?"Art/Menu/BadgeGarden":"Art/Menu/OrchardHome"); art.type = Image.Type.Simple;
             art.preserveAspect = false; art.raycastTarget = false;
             if (art.sprite == null) return;
             var source = art.sprite.rect.size;

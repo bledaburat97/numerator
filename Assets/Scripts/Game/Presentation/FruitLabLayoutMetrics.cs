@@ -23,7 +23,7 @@ namespace Scripts
             Padding = 12f * scale * compact;
             TopPadding = BottomPadding = 4f * scale * compact;
             Gap = 6f * scale * compact;
-            HeaderHeight = (mechanicCaption ? 86f : 72f) * Math.Min(1f,scale);
+            HeaderHeight = mechanicCaption ? 104f : 90f;
             BoardFooterHeight = boardFooter ? Math.Max(24f,24f*scale*compact) : 0f;
             BoardFooterHeight += Math.Max(18f, Math.Min(24f, 20f*scale*compact + (Height-580f*scale)*.45f));
             BoardHeight = 64f * scale * compact + BoardFooterHeight;

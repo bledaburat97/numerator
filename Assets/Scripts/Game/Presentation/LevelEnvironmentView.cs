@@ -88,20 +88,22 @@ namespace Scripts
         {
             int remaining=_definition.Mechanic==LevelMechanic.Growing?Mathf.Clamp(4-_active,0,2):0;
             var holders=_board.GetComponentsInChildren<BoardHolderView>();
-            float right=0,centerY=0,side=0;
+            float right=float.NegativeInfinity,centerY=0,side=0,holderWidth=0;
             foreach(var holder in holders)
             {
                 var rect=holder.GetRectTransform();var corners=new Vector3[4];rect.GetWorldCorners(corners);
-                right=Mathf.Max(right,_board.InverseTransformPoint(corners[2]).x);centerY=_board.InverseTransformPoint(rect.position).y;side=rect.rect.height;
+                right=Mathf.Max(right,_board.InverseTransformPoint(corners[2]).x);centerY=_board.InverseTransformPoint(rect.position).y;side=rect.rect.height;holderWidth=rect.rect.width;
             }
-            float free=_board.rect.xMax-right-4,ghostWidth=remaining>0?Mathf.Min(28,(free-remaining*3)/remaining):0;
+            if(side<=0){remaining=0;right=0;}
+            float ghostWidth=holderWidth;
+            float spacing=holderWidth*3f/70f;
             for(int i=0;i<_future.Length;i++)
             {
                 if(_future[i]==null){_future[i]=FruitLabStyle.Detail(_board,"FutureSlot"+i,identity.Accent,true);var plus=FruitLabStyle.CreateText("Plus",_future[i].transform,16,identity.Accent);plus.text="+";FruitLabStyle.Stretch(plus.rectTransform);}
-                _future[i].gameObject.SetActive(i<remaining && ghostWidth>=12);
+                _future[i].gameObject.SetActive(i<remaining);
                 if(i>=remaining)continue;
                 _future[i].color=new Color(identity.Accent.r,identity.Accent.g,identity.Accent.b,.32f);
-                FruitLabStyle.Place(_future[i].rectTransform,_board,right-_board.rect.xMin+3+i*(ghostWidth+3),centerY-_board.rect.yMin-side*.32f,Mathf.Max(1,ghostWidth),side*.64f);
+                FruitLabStyle.Place(_future[i].rectTransform,_board,right-_board.rect.xMin+spacing+i*(ghostWidth+spacing),centerY-_board.rect.yMin-side*.5f,ghostWidth,side);
             }
         }
         public Sequence PlayIntro()

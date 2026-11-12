@@ -61,14 +61,15 @@ namespace Scripts
         }
 
         private TMP_Text _mechanicLabel;
+        private RectTransform _headerRect;
         public bool HasMechanicStatus => _mechanicLabel != null && _mechanicLabel.gameObject.activeSelf;
         public void SetMechanicStatus(string text)
         {
             bool wasVisible = HasMechanicStatus;
             bool visible = !string.IsNullOrEmpty(text) && !_multiplayerMode;
             if (_mechanicLabel != null && _mechanicLabel.text == text && wasVisible == visible) return;
-            if (_mechanicLabel == null) _mechanicLabel = userText.transform.parent.Find("MechanicStatus")?.GetComponent<TMP_Text>()
-                ?? FruitLabStyle.CreateText("MechanicStatus", userText.transform.parent, 14f, FruitLabStyle.Mint);
+            if (_mechanicLabel == null) _mechanicLabel = (_headerRect!=null?_headerRect:userText.transform.parent).Find("MechanicStatus")?.GetComponent<TMP_Text>()
+                ?? FruitLabStyle.CreateText("MechanicStatus", _headerRect!=null?_headerRect:userText.transform.parent, 14f, FruitLabStyle.Mint);
             _mechanicLabel.text = text;
             _mechanicLabel.raycastTarget = false;
             _mechanicLabel.enableAutoSizing = true; _mechanicLabel.fontSizeMin = 12; _mechanicLabel.fontSizeMax = 14;
@@ -80,7 +81,7 @@ namespace Scripts
         private void PlaceMechanicStatus()
         {
             if (_mechanicLabel == null) return;
-            var header = (RectTransform)userText.transform.parent;
+            var header = _headerRect!=null?_headerRect:(RectTransform)userText.transform.parent;
             FruitLabStyle.Place(_mechanicLabel.rectTransform, header, 0, 34f, Mathf.Max(1,header.rect.width-106), 14f);
         }
 
@@ -158,6 +159,7 @@ namespace Scripts
         }
         public void ApplyLabLayout(RectTransform header, RectTransform actionArea, float width, float headerHeight, float actionWidth, float actionHeight)
         {
+            _headerRect=header;
             opponentInfo.SetActive(false);
             PlaceMechanicStatus();
             if (_mechanicLabel != null && _multiplayerMode) _mechanicLabel.gameObject.SetActive(false);
@@ -170,39 +172,42 @@ namespace Scripts
                 FruitLabStyle.Stretch(_timeLabel.rectTransform, 1f);
             }
             if (_matchHud != null) _matchHud.gameObject.SetActive(_multiplayerMode);
-            FruitLabStyle.Place(userText.rectTransform, header, 0f, headerHeight - 34f, _multiplayerMode ? width - 102f : width - 227f, 30f);
-            userText.fontSize = _multiplayerMode ? 15f : width<330?16f:19f;
-            userText.textWrappingMode=TextWrappingModes.NoWrap;
-            userText.enableAutoSizing = !_multiplayerMode;userText.fontSizeMin=14;userText.fontSizeMax=width<330?16:19;
-            userText.fontStyle = FontStyles.Bold;
-            userText.color = FruitLabStyle.Text;
-            userText.alignment = TextAlignmentOptions.MidlineLeft;
-            FruitLabStyle.Place(settingsButton.GetButtonRectTransform(), header, width - 48f, headerHeight - 48f, 48f, 48f);
+            float settingsX=width-44,infoX=settingsX-48;
+            float counterWidth=Mathf.Clamp((width+24)*.285f,88,110);
+            float coinX=infoX-8-counterWidth;
+            float levelWidth=Mathf.Min(104,coinX-12);
+            var level=FruitLabStyle.Detail(header,"LevelCounter",Menu.MenuChrome.Counter);
+            FruitLabStyle.Place(level.rectTransform,header,0,headerHeight-44,levelWidth,36);
+            FruitLabStyle.Place(userText.rectTransform,header,6,headerHeight-44,levelWidth-12,36);
+            userText.transform.SetAsLastSibling();
+            userText.fontSize=19;userText.enableAutoSizing=true;userText.fontSizeMin=16;userText.fontSizeMax=19;
+            userText.textWrappingMode=TextWrappingModes.NoWrap;userText.fontStyle=FontStyles.Bold;
+            userText.color=Menu.MenuChrome.Ink;userText.alignment=TextAlignmentOptions.Midline;
+            FruitLabStyle.Place(settingsButton.GetButtonRectTransform(),header,settingsX,headerHeight-48,44,44);
+            ButtonAppearance.For(settingsButton).SetSettingsStyle();ButtonAppearance.For(settingsButton).SetIconInset(8);
+            var settingsTint=Color.Lerp(Menu.MenuChrome.Sky,Color.white,.3f);
+            FruitLabStyle.Surface(settingsButton.OuterSurface,settingsTint*.9f);FruitLabStyle.Surface(settingsButton.PressedSurface,settingsTint);
             var information=GetInformationButton();
-            FruitLabStyle.Place((RectTransform)information.transform,header,width-100f,headerHeight-48f,48f,48f);
-            ButtonAppearance.For(settingsButton).SetSettingsStyle();
-            ButtonAppearance.For(settingsButton).SetIconInset(6f);
-            if (coinCountHolder != null)
+            FruitLabStyle.Place((RectTransform)information.transform,header,infoX,headerHeight-48,44,44);
+            FruitLabStyle.Surface(information.GetComponent<Image>(),Color.Lerp(Menu.MenuChrome.Sky,Color.white,.3f));
+            if(coinCountHolder!=null)
             {
-                RectTransform counter = (RectTransform)coinCountHolder.transform;
-                FruitLabStyle.Place(counter, header, width - 219f, headerHeight - 39f, 111f, 36f);
-                FruitLabStyle.AddSurface(counter.gameObject, FruitLabStyle.Panel);
-                coinCountHolder.SetFixedWidth(124f);
-                foreach (Image background in counter.GetComponentsInChildren<Image>(true))
-                    if (background != coinImage) FruitLabStyle.Surface(background, FruitLabStyle.Panel);
-                foreach (TMP_Text label in counter.GetComponentsInChildren<TMP_Text>(true))
+                var counter=(RectTransform)coinCountHolder.transform;
+                FruitLabStyle.Place(counter,header,coinX,headerHeight-44,counterWidth,36);
+                FruitLabStyle.AddSurface(counter.gameObject,Menu.MenuChrome.Counter);coinCountHolder.SetFixedWidth(counterWidth);
+                foreach(var background in counter.GetComponentsInChildren<Image>(true))
+                    if(background!=coinImage)FruitLabStyle.Surface(background,Menu.MenuChrome.Counter);
+                foreach(var fitter in counter.GetComponentsInChildren<ContentSizeFitter>(true))fitter.enabled=false;
+                foreach(var label in counter.GetComponentsInChildren<TMP_Text>(true))
                 {
-                    label.fontSize = 24f;
-                    label.enableAutoSizing = false;
-                    label.color = FruitLabStyle.Text;
-                    label.alignment = TextAlignmentOptions.MidlineLeft;
-                    FruitLabStyle.Place(label.rectTransform, counter, 42f, 0f, 78f, 36f);
+                    label.fontSize=21;label.enableAutoSizing=true;label.fontSizeMin=17;label.fontSizeMax=21;
+                    label.color=Menu.MenuChrome.Ink;label.alignment=TextAlignmentOptions.MidlineLeft;
+                    FruitLabStyle.Place(label.rectTransform,counter,36,0,counterWidth-39,36);
                 }
-                RectTransform coinWidget = coinImage.rectTransform;
-                while (coinWidget.parent != null && coinWidget.parent != header && coinWidget.parent != counter)
-                    coinWidget = (RectTransform)coinWidget.parent;
-                FruitLabStyle.Place(coinWidget, counter, 6f, 3f, 30f, 30f);
-                if (coinWidget != coinImage.rectTransform) FruitLabStyle.Stretch(coinImage.rectTransform);
+                RectTransform widget=coinImage.rectTransform;
+                while(widget.parent!=null && widget.parent!=header && widget.parent!=counter)widget=(RectTransform)widget.parent;
+                FruitLabStyle.Place(widget,counter,3,3,30,30);
+                if(widget!=coinImage.rectTransform)FruitLabStyle.Stretch(coinImage.rectTransform);
             }
             FruitLabStyle.SetIcon(coinImage, "Coin");
             if (_multiplayerMode) SetCoinCounterStatus(false);
@@ -277,7 +282,7 @@ namespace Scripts
         {
             if (coinCountHolder == null) return;
 
-            coinCountHolder.SetText(count.ToString());
+            coinCountHolder.SetText(Menu.FruitCollectionView.FormatCount(count));
             coinCountHolder.SetPosition();
         }
 

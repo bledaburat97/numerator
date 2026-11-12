@@ -9,7 +9,7 @@ namespace Menu
     {
         public const string Purpose="Çöz, meyve biriktir.\nCoinlerinle bahçeni büyüt.";
         public const string GardenRule="1 tohum, 1 meyve.\nEkimden sonra 4 farklı gün oyunu aç.";
-        public const string PurchaseRule="Bugün sayılmaz.\nSonraki 4 farklı gün oyunu aç.";
+        public const string PurchaseRule="Bahçene tohum ekip 4 gün sonunda meyve hasat edebilirsin.";
         public static void Quantity(TMP_Text text,float size=22)
         {FruitLabStyle.TextStyle(text,size);text.color=FruitLabStyle.Text;}
         public static NonDraggableCardItemView FruitCard(Transform parent,string name,NonDraggableCardItemView prefab,int fruit)

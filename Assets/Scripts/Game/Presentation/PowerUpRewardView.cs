@@ -49,9 +49,7 @@ namespace Scripts
             _burst = burst.GetComponent<RewardBurstGraphic>() ?? burst.gameObject.AddComponent<RewardBurstGraphic>();
             _burst.raycastTarget = false;
             _hero = FruitLabStyle.Detail(transform,"Reward",Color.white);
-            var quantity=FriendUi.Text(_hero.transform,"Quantity","×1",22);quantity.color=FruitLabStyle.Gold;
-            quantity.rectTransform.anchorMin=quantity.rectTransform.anchorMax=new Vector2(1,0);quantity.rectTransform.pivot=new Vector2(1,0);
-            quantity.rectTransform.anchoredPosition=new Vector2(6,-8);quantity.rectTransform.sizeDelta=new Vector2(42,28);
+            var quantity=_hero.transform.Find("Quantity");if(quantity!=null)quantity.gameObject.SetActive(false);
             _title = FriendUi.Text(transform,"Title","Güçlendirici kazandın!",26);
             _title.fontStyle = FontStyles.Bold; _title.color = FruitLabStyle.Gold;
             _inventory = FruitLabStyle.Detail(transform,"InventoryReward",Color.white);
@@ -73,8 +71,10 @@ namespace Scripts
             Center(_hero.rectTransform,Vector2.zero,Vector2.one*size);
             Center(_burst.rectTransform,Vector2.zero,Vector2.one*size*2.1f);
             Center(_title.rectTransform,new Vector2(0,size*.5f+82),new Vector2(width-40,76));
-            Center(_inventory.rectTransform,new Vector2(-25,-size*.5f-70),Vector2.one*40);
-            Center(_count.rectTransform,new Vector2(46,-size*.5f-70),new Vector2(88,42));
+            float countWidth=Mathf.Max(24,_count.GetPreferredValues().x+4);
+            float totalWidth=40+10+countWidth;
+            Center(_inventory.rectTransform,new Vector2(-totalWidth*.5f+20,-size*.5f-70),Vector2.one*40);
+            Center(_count.rectTransform,new Vector2(-totalWidth*.5f+50+countWidth*.5f,-size*.5f-70),new Vector2(countWidth,42));
             Center((RectTransform)_claim.transform,new Vector2(0,-size*.5f-158),new Vector2(Mathf.Min(280,width-48),56));
         }
         public void Bind(RewardType reward, int finalCount, Action claim,bool bonus=false)
@@ -88,7 +88,7 @@ namespace Scripts
             _hero.rectTransform.localScale = Vector3.one*.35f;
             _burst.rectTransform.localScale = Vector3.one*.65f; _burst.rectTransform.localRotation = Quaternion.identity;
             _count.rectTransform.localScale = Vector3.one; _claim.gameObject.SetActive(true);
-            _count.text = Mathf.Max(0,_finalCount-1).ToString();
+            _count.text = _finalCount.ToString();Layout();
             FruitLabStyle.SetIcon(_hero,PowerUpTypeUtility.IconName(reward));
             FruitLabStyle.SetIcon(_inventory,PowerUpTypeUtility.IconName(reward));
             _claim.interactable = false; _claim.onClick.RemoveAllListeners(); _claim.onClick.AddListener(claim.Invoke);

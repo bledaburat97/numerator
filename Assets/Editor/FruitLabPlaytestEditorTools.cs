@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using DG.Tweening;
 using Game;
 using Newtonsoft.Json;
@@ -10,8 +11,103 @@ using UnityEngine;
 
 public static partial class FruitLabTutorialEditorTools
 {
+    private static void ReviewGameScreenContracts(Canvas canvas,Camera camera)
+    {
+        int attempts=0,version=1,saved=0;
+        var retry=new CheckpointRetry(()=>{attempts++;if(attempts<3)throw new IOException("Injected checkpoint");saved=version;});
+        retry.Request();Require(retry.Pending && attempts==1,"Failed normal checkpoint remains pending");
+        version=2;retry.Tick(.4f);Require(attempts==1,"Checkpoint retries are throttled");retry.Tick(.6f);retry.Tick(1);
+        Require(!retry.Pending && attempts==3 && saved==2,"Checkpoint retry stores the latest turn exactly once after recovery");
+        var cancel=new CheckpointRetry(()=>throw new IOException());cancel.Request();cancel.Clear();cancel.Tick(2);Require(!cancel.Pending,"Finished/new round cancels old checkpoint work");
+        ClearPreviewActors(canvas);
+        var ordinary=new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=8};
+        using(var game=new Fixture(canvas,camera,ordinary))
+        using(var rules=RulesFor(game,new LevelMechanicsController(game.Results,game.Helper,game.Round,game._saves,game.Target,game._area,game._powers,game.Tracker)))
+        {
+            game.BuildActors();game.Gate.Clear();game.Target.RevealMultiplayerAnswer(new[]{1,2,3});
+            var provider=GrowingSnapshot(game,ordinary);LevelSaveData checkpoint=null;int writes=0;
+            rules.Attach(new LevelMechanicsPresenter(game.View,game.Board),()=>{
+                Require(provider.TryCreateSnapshot(out var data),"A normal turn produces a complete checkpoint");
+                if(++writes==1)throw new IOException("Injected turn write failure");checkpoint=data;
+            });
+            rules.Begin(LevelMechanic.Normal);SubmitSplit(game,new[]{4,5,6});
+            Require(rules.HasPendingCheckpoint && game.Round.GetRemainingGuessCount()==7,"A failed checkpoint never rolls back the submitted guess or spent life");
+            rules.TickCheckpoint(1,true);
+            Require(!rules.HasPendingCheckpoint && checkpoint.RemainingGuessCount==7 && checkpoint.TriedCardsList.Count==1,"Automatic retry persists the real turn, history and life count");
+        }
+        ClearPreviewActors(canvas);
+        var growing=new LevelData {Mechanic=LevelMechanic.Growing,NumOfBoardHolders=2,NumOfCards=8,MaxNumOfTries=8};
+        using(var game=new Fixture(canvas,camera,growing))
+        {
+            game.BuildActors();game.Gate.Clear();var environment=LevelEnvironmentView.Ensure(canvas);environment.Render(growing,2,0);
+            Canvas.ForceUpdateCanvases();var board=canvas.GetComponentInChildren<BoardAreaView>().GetRectTransform();
+            var holders=board.GetComponentsInChildren<BoardHolderView>().OrderBy(view=>board.InverseTransformPoint(view.transform.position).x).ToArray();
+            var futures=board.GetComponentsInChildren<UnityEngine.UI.Image>().Where(image=>image.name.StartsWith("FutureSlot")).OrderBy(image=>board.InverseTransformPoint(image.transform.position).x).ToArray();
+            Require(holders.Length==2 && futures.Length==2,"Growing opens with two live and two future holders");
+            var actual=holders[0].GetRectTransform();
+            foreach(var future in futures)Require((future.rectTransform.rect.size-actual.rect.size).sqrMagnitude<.01f,"Future and live holders have identical dimensions");
+            var left=new Vector3[4];var right=new Vector3[4];actual.GetWorldCorners(left);futures[1].rectTransform.GetWorldCorners(right);
+            Require(Math.Abs(board.InverseTransformPoint(left[0]).x+board.InverseTransformPoint(right[2]).x)<1,"All four growing slots are centered together");
+            Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-growing-centered.png");
+        }
+        foreach(string failure in new[]{"save","delete","load"})
+        {
+            int sideEffects=0,loads=0;bool fail=true;
+            var controller=new SettingsPopupController(_=>{if(failure=="load" && fail){fail=false;throw new IOException();}loads++;},()=>{});
+            Action operation=()=>{if(failure!="load" && fail){fail=false;throw new IOException();}sideEffects++;};
+            var method=typeof(SettingsPopupController).GetMethod(failure=="delete"?"OnRetryButtonClick":"OnMenuButtonClick",BindingFlags.NonPublic|BindingFlags.Instance);
+            try{method.Invoke(controller,new object[]{operation});throw new Exception("Expected settings failure");}
+            catch(System.Reflection.TargetInvocationException error){Require(error.InnerException is IOException,"Injected navigation failure propagates");}
+            method.Invoke(controller,new object[]{operation});int once=sideEffects;method.Invoke(controller,new object[]{operation});
+            Require(loads==1 && sideEffects==once,"Settings retries after "+failure+" failure and still blocks duplicate success");
+        }
+        var definition=new LevelData {Lesson=TutorialLessonId.Crystal,NumOfBoardHolders=3,NumOfCards=5,MaxNumOfTries=8};
+        int compatible=0;
+        for(int a=1;a<=5;a++)for(int b=1;b<=5;b++)for(int c=1;c<=5;c++)
+        {
+            if(a==b || a==c || b==c)continue;
+            var first=new List<int>{a,b,c};var answer=CrystalTutorialAnswer.Choose(definition,first,new List<List<int>>(),new[]{1,2,3});
+            var feedback=new GuessEvaluation(1,first,answer);Require(feedback.Correct==0 && feedback.Misplaced==1,"Every crystal opening has an actual zero/one answer");
+            for(int x=1;x<=5;x++)for(int y=1;y<=5;y++)for(int z=1;z<=5;z++)
+            {
+                if(x==y || x==z || y==z)continue;
+                var guess=new List<int>{x,y,z};var prior=new GuessEvaluation(1,first,guess);
+                var selected=CrystalTutorialAnswer.Choose(definition,guess,new[]{first},answer);
+                bool valid=prior.Correct==0 && prior.Misplaced==1;
+                Require(valid==(selected!=null),"Only guesses consistent with the opening can become the answer");
+                if(valid){compatible++;Require(new GuessEvaluation(2,guess,selected).Won,"Consistent crystal guess really wins");}
+            }
+        }
+        Require(compatible>0 && CrystalTutorialAnswer.Choose(new LevelData(),new List<int>{1,2,3},new List<List<int>>(),new[]{1,2,3})==null,"Ordinary rounds never use adaptive answers");
+        ClearPreviewActors(canvas);
+        using(var game=new Fixture(canvas,camera,definition))
+        {
+            Field(game.Tracker,"_levelId",2);game.BuildActors();ConfigureLessonFixture(game,definition);game.Bootstrap.StartRound();Tick(.6f);game.Next();Tick(.6f);
+            Require(game.Bootstrap.ActiveLesson.Current==null && !game.Gate.IsRestricted,"Crystal lesson leaves all placements to the player");
+            foreach(int fruit in new[]{0,1,2})game.Place(fruit);game.Check();Tick(.8f);
+            var first=game._area.History.GetHistoryEntry(0);Require(first.correctPosCount==0 && first.wrongPosCount==1,"Actual crystal result is zero correct, one misplaced");
+            foreach(int fruit in new[]{4,0,3})game.Place(fruit);game.Check();Tick(.8f);
+            Require(game.Target.GetTargetCardsList().SequenceEqual(new[]{5,1,4}) && new GuessEvaluation(2,new[]{5,1,4},game.Target.GetTargetCardsList()).Won,"Actual compatible second guess becomes the saved winning answer");
+            new LevelSuccessCleanupAnimationController(game.Initial,game.UI,null,game._area,game.Placement).FadeOutObsoleteGameUi(.1f);Tick(.2f);
+            Require(game.View.GetUserText().alpha==1,"Level-end cleanup preserves the common header");
+            game.Gate.Clear();game.UI.SetAllButtonsUnclickable();int settings=0;game.UI.OpenSettings+=(s,e)=>settings++;
+            game.AssertHit(game.View.GetSettingsButton().GetButtonRectTransform(),typeof(UnityEngine.EventSystems.IPointerDownHandler));Click((BaseButtonView)game.View.GetSettingsButton());
+            Require(settings==1,"End-state settings remain clickable while gameplay buttons are locked");
+        }
+        ClearPreviewActors(canvas);
+        var basics=new LevelData {Lesson=TutorialLessonId.Basics,NumOfBoardHolders=2,NumOfCards=5,MaxNumOfTries=6};
+        using(var game=new Fixture(canvas,camera,basics))
+        {
+            game.BuildActors();ConfigureLessonFixture(game,basics);game.Bootstrap.StartRound();Tick(.6f);
+            Require(!game.Gate.AllowsButton(GameUIButtonType.Settings),"Basics locks settings with all unrelated input");
+            var spot=canvas.GetComponentInChildren<TutorialSpotlightView>();var rect=game.View.GetSettingsButton().GetButtonRectTransform();
+            Require(spot.IsRaycastLocationValid(UnityEngine.RectTransformUtility.WorldToScreenPoint(camera,rect.position),camera),"Basics spotlight has no settings hole");
+            int opened=0;game.UI.OpenSettings+=(s,e)=>opened++;Click((BaseButtonView)game.View.GetSettingsButton());Require(opened==0,"Basics cannot open settings through an underlying control");
+        }
+    }
     public static void ReviewPlaytest(Canvas canvas, Camera camera)
     {
+        using var tutorialIsolation=TutorialProgress.UseTestValues(new Dictionary<string,int>());
         var oldUpdate = DOTween.defaultUpdateType; DOTween.defaultUpdateType = UpdateType.Manual;
         var errors = new List<string>();
         Application.LogCallback collect = (message, stack, type) => {
@@ -29,6 +125,7 @@ public static partial class FruitLabTutorialEditorTools
         {
             ValidateMechanicBindings();
             ValidateSessionAliases(true);
+            ReviewGameScreenContracts(canvas,camera);
             Require(LevelPlaytestSchedule.Settings.Enabled && LevelPlaytestSchedule.Settings.StartLevel == 1, "Tutorial test starts at display level 1");
             Require(LevelPlaytestSchedule.Settings.Cycle.Count == 19 && LevelPlaytestSchedule.Settings.SeparateProfile, "Nineteen lessons use a separate phone profile");
             for (int cycle = 0; cycle < 12; cycle++)
@@ -152,7 +249,7 @@ public static partial class FruitLabTutorialEditorTools
             Require(errors.Count == 0, "No runtime/tween errors: " + string.Join("; ", errors));
             File.WriteAllText(Folder + "/playtest-review.json", JsonConvert.SerializeObject(new { passed = true, stages,
                 repeated_cycles = 12, first_level = 1, real_scene_start_and_resume_cases=38, actual_power_lessons=7,
-                checks = new[] { "nineteen repeatable lessons", "all current level types", "seven actual powerup uses", "removed elimination", "deterministic repeats", "trial resupply", "no duplicate on resume", "retry resupply", "life save during animation", "round definition migration", "currency/progress preserved", "test profile can be disabled", "real scene DI", "unchanged real PlayerPrefs", "outside dismiss and highlighted raycasts", "small-phone lesson text", "coin/seed and crystal/power icon flows" }
+                checks = new[] { "nineteen repeatable lessons", "all current level types", "seven mandatory powerup uses", "removed elimination", "deterministic repeats", "trial resupply", "no duplicate on resume", "retry resupply", "life save during animation", "round definition migration", "currency/progress preserved", "test profile can be disabled", "real scene DI", "unchanged real PlayerPrefs", "outside touches preserve mandatory lessons", "small-phone lesson text", "adaptive crystal lesson with consistent feedback", "checkpoint retry", "navigation retry", "settings blocked only during basics", "manual notes for all three guessed fruits" }
             }, Formatting.Indented));
         }
         finally { DOTween.defaultUpdateType = oldUpdate; Application.logMessageReceived -= collect; }
@@ -197,6 +294,12 @@ public static partial class FruitLabTutorialEditorTools
                     {
                         var step=game.Bootstrap.ActiveLesson.Current;
                         Require(game.Message!=null,"The actual lesson popup is visible");
+                        if(step.Expected!=LessonSignal.Continue)
+                        {
+                            int before=game.Bootstrap.ActiveLesson.State.Step;
+                            canvas.GetComponentInChildren<TutorialSpotlightView>().OnPointerDown(new UnityEngine.EventSystems.PointerEventData(null));
+                            game.Next();Require(game.Bootstrap.ActiveLesson.State.Step==before && !game.Bootstrap.ActiveLesson.State.Completed,"Unexpected touches cannot finish a required note step");
+                        }
                         switch(step.Expected)
                         {
                             case LessonSignal.Continue:game.Next();break;
@@ -207,12 +310,17 @@ public static partial class FruitLabTutorialEditorTools
                                 card.GetCardMoveHandler().OnPointerDown(null);Tick(.6f);card.GetCardMoveHandler().OnPointerUp(null);
                                 Require(annotations.IsSelecting,"A real long press opens the note menu through its scoped tutorial gate");break;
                             case LessonSignal.FruitExcluded:annotations.GetButton(0).onClick.Invoke();break;
-                            case LessonSignal.PositionExcluded:ClickPositionIndicator(game,annotations.GetPositionButton(step.Slot));break;
+                            case LessonSignal.PositionExcluded:
+                                var hand=canvas.GetComponentInChildren<HandTutorialView>();
+                                Require(hand.transform.parent==canvas.rootCanvas.transform && hand.transform.GetSiblingIndex()>annotations.Toolbar.parent.GetSiblingIndex(),"Tutorial hand renders in front of the position controls");
+                                if(step.Slot==0){Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-position-note-hand.png");}
+                                ClickPositionIndicator(game,annotations.GetPositionButton(step.Slot));break;
                             default:throw new Exception("Unexpected note lesson stage: "+step.Expected);
                         }
                         Tick(.8f);
                     }
                     Require(budget>0 && game._saves.GetLevelSaveData().Tutorial.Completed,"The full real note lesson completes in both cycles");
+                    if(definition.Lesson==TutorialLessonId.EliminationNote)Require(notes.State.Presence(2)==FruitPresence.Absent && notes.State.Presence(3)==FruitPresence.Absent,"Both fruits from the zero/zero example are excluded");
                     Require(definition.Lesson==TutorialLessonId.PositionNote?notes.IndicatorsVisible:!notes.IndicatorsVisible,"Only direct position editing opens indicator strips");
                     // Resume a note menu step without keeping a destroyed selection.
                     var saved=game._saves.GetLevelSaveData().Tutorial;saved.Completed=false;saved.Step=definition.Lesson==TutorialLessonId.PositionNote?7:6;
@@ -221,7 +329,7 @@ public static partial class FruitLabTutorialEditorTools
                     game.Bootstrap.Resume(true);Tick(.6f);
                     Require(game.Bootstrap.ActiveLesson.Current.Expected==LessonSignal.NoteOpened,"Modal return reopens the safe card-selection step");
                     Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-lesson-"+(id+1)+".png");
-                    game.Bootstrap.ActiveLesson.Dismiss();Require(!game.Gate.IsRestricted,"Optional note lesson can close without leaving an input gate");
+                    game.Bootstrap.Cancel();Require(!game.Gate.IsRestricted,"Scene cleanup releases the lesson gate without marking an incomplete lesson complete");
                 }
             }
         }
@@ -244,6 +352,7 @@ public static partial class FruitLabTutorialEditorTools
     private static void ConfigureLessonFixture(Fixture game,LevelData definition,CardAnnotationController annotations=null)
     {
         Field(game.Bootstrap,"_levels",new TestLevel(definition));Field(game.Bootstrap,"_save",game._saves);
+        Field(game.Results,"_levels",new TestLevel(definition));Field(game.Results,"_knowledge",game._info);
         Field(game.Bootstrap,"_saves",Get(game,"_memory"));
         Field(game.Bootstrap,"_uses",game.PowerContainer.Resolve<Zenject.LazyInject<PowerUpUseService>>());
         var snapshot=new GameSaveSnapshotProvider(game.Target,game._info,new PlayingFlow(),game._counts,game.Round);
@@ -311,7 +420,7 @@ public static partial class FruitLabTutorialEditorTools
                     }
                     Require(game.Bootstrap.ActiveLesson.Current.Expected==LessonSignal.PowerApplied,"Actual readiness opens the optional power lesson");
                     var saved=game._saves.GetLevelSaveData().Tutorial;int phase=saved.Step,stock=game.Tracker.GetPowerUpCount(type);
-                    game.Next();Require(saved.Completed && game.Tracker.GetPowerUpCount(type)==stock,"Acknowledging an optional lesson spends no stock");
+                    game.Next();Require(!saved.Completed && saved.Step==phase && game.Tracker.GetPowerUpCount(type)==stock,"A required power lesson cannot be skipped by the hidden continuation button");
                     saved.Completed=false;saved.Step=phase;game.Bootstrap.Suspend(true);game.Bootstrap.Resume(true);Tick(.6f);
                     var button=(BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(type);
                     game.AssertHit(button.GetButtonRectTransform(),typeof(UnityEngine.EventSystems.IPointerDownHandler));Click(button);

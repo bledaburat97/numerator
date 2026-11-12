@@ -74,13 +74,25 @@ namespace Scripts
         public static int[] PreparedAnswer(TutorialLessonId lesson)
         {
             if(lesson==TutorialLessonId.Basics || lesson==TutorialLessonId.EliminationNote)return new[]{4,1};
-            if(lesson==TutorialLessonId.PositionNote || lesson==TutorialLessonId.Crystal)return new[]{1,2,3};
+            if(lesson==TutorialLessonId.PositionNote)return new[]{1,2,3};
             return null;
         }
         public static bool IsBasics(LevelData definition,bool legacyFirst)=>definition?.Lesson==TutorialLessonId.Basics
             || ((definition?.Lesson??TutorialLessonId.None)==TutorialLessonId.None && legacyFirst);
+        public static TutorialLessonId ForPower(RewardType type)
+        {
+            switch(type){case RewardType.Bomb:return TutorialLessonId.Bomb;case RewardType.Revealing:return TutorialLessonId.Reveal;
+                case RewardType.Life:return TutorialLessonId.Life;case RewardType.Helper:return TutorialLessonId.Inspect;
+                case RewardType.Pair:return TutorialLessonId.Pair;case RewardType.Split:return TutorialLessonId.Split;default:return TutorialLessonId.Ultra;}
+        }
+        public static RewardType? PowerFor(TutorialLessonId lesson)
+        {
+            foreach(RewardType type in Enum.GetValues(typeof(RewardType)))if(ForPower(type)==lesson)return type;
+            return null;
+        }
         public static bool Fits(LevelData level)
         {
+            if(level.Lesson==TutorialLessonId.Crystal && (level.NumOfBoardHolders!=3 || level.NumOfCards<5))return false;
             var answer=PreparedAnswer(level.Lesson);
             if(answer!=null && (answer.Length!=level.NumOfBoardHolders || Array.Exists(answer,fruit=>fruit>level.NumOfCards)))return false;
             if(level.Lesson==TutorialLessonId.Basics && level.NumOfCards!=5)return false;
@@ -102,8 +114,8 @@ namespace Scripts
                 Message(definition.Name,definition.Description,LessonTarget.Power);
                 steps[steps.Count-1].Power=type;
                 if(type==RewardType.Life || type==RewardType.Helper)Wait(LessonSignal.Available);
-                steps.Add(new TutorialLessonStep {Title=definition.Name,Text=type==RewardType.Revealing?"İkona dokun, sonra açık bir alan seç. Kullanmak zorunlu değil."
-                    :"İkona dokunarak deneyebilirsin. Kullanmak zorunlu değil.",Target=LessonTarget.Power,Power=type,Expected=LessonSignal.PowerApplied});
+                steps.Add(new TutorialLessonStep {Title=definition.Name,Text=type==RewardType.Revealing?"İkona dokun, sonra açık bir alan seç."
+                    :"Güçlendirici ikonuna dokun.",Target=LessonTarget.Power,Power=type,Expected=LessonSignal.PowerApplied});
                 Message("Etkisini gördün",type==RewardType.Life?"2 tahmin hakkı eklendi.":type==RewardType.Helper?"Ayrıntılar yalnızca son tahmininde gösterilir."
                     :type==RewardType.Ultra?"Konum notları bu bölüm boyunca otomatik güncellenir."
                     :type==RewardType.Pair?"İp, cevapta komşu olan meyveleri gösterir. Sıralarını sen bulursun."
@@ -118,16 +130,22 @@ namespace Scripts
                     Message("İkisi de cevapta yok","0 doğru, 0 yanlış yer: denediğin iki meyve de cevapta yok.",LessonTarget.Result);
                     steps.Add(new TutorialLessonStep {Title="Kendi notunu koy",Text="Muza yarım saniye basılı tut.",Target=LessonTarget.Card,Card=1,Expected=LessonSignal.NoteOpened});
                     steps.Add(new TutorialLessonStep {Title="Bu meyve yok",Text="Kırmızıya dokun. Bu işareti istediğinde değiştirebilirsin.",Target=LessonTarget.NoteRed,Card=1,Expected=LessonSignal.FruitExcluded});
+                    steps.Add(new TutorialLessonStep {Title="Çilek de cevapta yok",Text="Şimdi çileğe yarım saniye basılı tut.",Target=LessonTarget.Card,Card=2,Expected=LessonSignal.NoteOpened});
+                    steps.Add(new TutorialLessonStep {Title="Çileği de ele",Text="Kırmızıya dokun.",Target=LessonTarget.NoteRed,Card=2,Expected=LessonSignal.FruitExcluded});
                     Message("Notun hazır","Karttaki X, meyvenin cevapta olmadığını düşündüğünü gösterir.",LessonTarget.Card);steps[steps.Count-1].Card=1;break;
                 case TutorialLessonId.PositionNote:
                     Message("Konum notları","Bu kez meyveler cevapta var; yerlerini ayırt edeceğiz.");Place(1,0);Place(2,1);Place(0,2);Guess();
                     Message("Meyveler başka yerde","0 doğru, 3 yanlış yer: meyvelerin hiçbiri denediğin konumda olamaz.",LessonTarget.Result);
                     steps.Add(new TutorialLessonStep {Title="Konumunu not et",Text="Muza yarım saniye basılı tut.",Target=LessonTarget.Card,Card=1,Expected=LessonSignal.NoteOpened});
                     steps.Add(new TutorialLessonStep {Title="Birinci konum olamaz",Text="Tahtanın altındaki 1'e dokun. Bu X yalnızca o konumu eler.",Target=LessonTarget.NotePosition,Card=1,Slot=0,Expected=LessonSignal.PositionExcluded});
+                    steps.Add(new TutorialLessonStep {Title="Çileğin konumunu ele",Text="Çileğe yarım saniye basılı tut.",Target=LessonTarget.Card,Card=2,Expected=LessonSignal.NoteOpened});
+                    steps.Add(new TutorialLessonStep {Title="İkinci konum olamaz",Text="Tahtanın altındaki 2'ye dokun.",Target=LessonTarget.NotePosition,Card=2,Slot=1,Expected=LessonSignal.PositionExcluded});
+                    steps.Add(new TutorialLessonStep {Title="Elmanın konumunu ele",Text="Elmaya yarım saniye basılı tut.",Target=LessonTarget.Card,Card=0,Expected=LessonSignal.NoteOpened});
+                    steps.Add(new TutorialLessonStep {Title="Üçüncü konum olamaz",Text="Tahtanın altındaki 3'e dokun.",Target=LessonTarget.NotePosition,Card=0,Slot=2,Expected=LessonSignal.PositionExcluded});
                     Message("Meyveyi değil, yerini eledin","Kart altındaki 1 artık X. Diğer konumlar hâlâ aday.",LessonTarget.Card);steps[steps.Count-1].Card=1;break;
                 case TutorialLessonId.Crystal:
                     Message("Artık üç alan var","Üç meyvenin yerini bul. Kristali de birlikte kazanalım.",LessonTarget.Holder,2);
-                    Place(0,0);Place(1,1);Place(2,2);Guess();break;
+                    break;
                 case TutorialLessonId.Reveal:Power(RewardType.Revealing);break;
                 case TutorialLessonId.Life:Power(RewardType.Life);break;
                 case TutorialLessonId.Bomb:Power(RewardType.Bomb);break;
@@ -136,7 +154,7 @@ namespace Scripts
                 case TutorialLessonId.Ultra:Power(RewardType.Ultra);break;
                 case TutorialLessonId.Split:Power(RewardType.Split);break;
                 case TutorialLessonId.Growing:
-                    Message("Büyüyen Tahta","2 alanla başlarsın. Her 2 yanlışta bir alan açılır; en fazla 4 alan olur. Ek hakların baştan verilir.");
+                    Message("Büyüyen Tahta","2 gizli meyve ile başlarsın, her iki tahminden sonra bir gizli meyve daha bulman gerekir.");
                     Wait(LessonSignal.Growth);Message("Yeni alan açıldı","İki yanlış tahmin yaptın. Şimdi bir meyve daha yerleştir.",LessonTarget.Holder,2);break;
                 case TutorialLessonId.HelperLevel:
                     Message("Bonus İpucu","Her 3 yanlış tahminde bir son tahmininin ayrıntıları açılır.");
@@ -159,6 +177,42 @@ namespace Scripts
                     Message("Powerupsız Bölüm","Bu bölümde powerup kullanılamaz. Notlarını ve tahmin geçmişini kullanabilirsin.");break;
             }
             return steps;
+        }
+    }
+    public static class CrystalTutorialAnswer
+    {
+        public static List<int> Choose(LevelData definition,List<int> guess,IReadOnlyList<List<int>> history,IReadOnlyList<int> current,IReadOnlyList<CardItemInfo> knowledge=null)
+        {
+            if(definition?.Lesson!=TutorialLessonId.Crystal || guess.Count!=3 || definition.NumOfCards<5)return null;
+            bool FitsKnowledge(IReadOnlyList<int> candidate)
+            {
+                if(knowledge==null)return true;
+                for(int fruit=0;fruit<knowledge.Count;fruit++)
+                {
+                    var fact=knowledge[fruit];int slot=-1;
+                    for(int i=0;i<candidate.Count;i++)if(candidate[i]==fruit+1)slot=i;
+                    if(!fact.isExisted && slot>=0)return false;
+                    if(fact.isLocked && (slot<0 || !fact.possibleCardHolderIndicatorIndexes.Contains(slot)))return false;
+                }
+                return true;
+            }
+            if(history.Count>0)
+            {
+                if(!FitsKnowledge(guess))return null;
+                foreach(var previous in history)
+                {
+                    var before=new GuessEvaluation(0,previous,current);var after=new GuessEvaluation(0,previous,guess);
+                    if(before.Correct!=after.Correct || before.Misplaced!=after.Misplaced)return null;
+                }
+                return new List<int>(guess);
+            }
+            for(int a=1;a<=definition.NumOfCards;a++)for(int b=1;b<=definition.NumOfCards;b++)for(int c=1;c<=definition.NumOfCards;c++)
+            {
+                if(a==b || a==c || b==c)continue;
+                var candidate=new List<int>{a,b,c};var feedback=new GuessEvaluation(0,guess,candidate);
+                if(feedback.Correct==0 && feedback.Misplaced==1 && FitsKnowledge(candidate))return candidate;
+            }
+            return null;
         }
     }
 }

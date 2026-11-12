@@ -143,17 +143,16 @@ namespace Scripts
         {
             if (_isNavigating) return;
             _isNavigating = true;
-            deleteSaveAction.Invoke();
-            _loadScene("Game");
+            try{deleteSaveAction.Invoke();_loadScene("Game");}
+            catch{_isNavigating=false;throw;}
         }
         
         private void OnMenuButtonClick(Action saveGameAction)
         {
             if (_isNavigating) return;
             _isNavigating = true;
-            saveGameAction?.Invoke();
-            _shutdownNetwork?.Invoke();
-            _loadScene("Menu");
+            try{saveGameAction?.Invoke();_shutdownNetwork?.Invoke();_loadScene("Menu");}
+            catch{_isNavigating=false;throw;}
         }
         public void Dispose(){if(_view!=null)_view.PrivacyRequested-=OpenPrivacy;_view=null;_isNavigating=true;}
     }

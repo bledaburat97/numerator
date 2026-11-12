@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace Menu
 {
-    // Five stable channel rows share the fruit summary scroll. Completed goals
+    // Five stable channel rows. Completed goals
     // replace their own row; historical achievements never enter this view.
     internal sealed class CollectionBadgesView
     {
@@ -25,7 +25,7 @@ namespace Menu
             _pendingTitle = GardenUi.Text(content, "PendingBadgesTitle", 21, FruitLabStyle.Text);
             _earnedTitle = GardenUi.Text(content, "EarnedBadgesTitle", 21, FruitLabStyle.Text);
             _pendingTitle.alignment = _earnedTitle.alignment = TextAlignmentOptions.MidlineLeft;
-            _pendingTitle.text = "Görevler"; _earnedTitle.gameObject.SetActive(false);
+            _pendingTitle.text = ""; _pendingTitle.gameObject.SetActive(false);_earnedTitle.gameObject.SetActive(false);
             _empty = GardenUi.Text(content, "EarnedBadgesEmpty", 17, FruitLabStyle.Muted, true);
             _empty.gameObject.SetActive(false);
         }
@@ -43,9 +43,8 @@ namespace Menu
         }
         public float Layout(float width, float top)
         {
-            _pendingTitle.gameObject.SetActive(_items.Count>0);
+            _pendingTitle.gameObject.SetActive(false);
             _earnedTitle.gameObject.SetActive(false);_empty.gameObject.SetActive(false);
-            if(_items.Count>0){Top(_pendingTitle.rectTransform,width,top,34);top+=42;}
             foreach(var item in _items){_rows[item.Id].Layout(width,top,false);top+=120;}
             return top+12;
         }
@@ -83,6 +82,7 @@ namespace Menu
             {
                 _name.text = item.Title;
                 _progress.text = FruitCollectionView.FormatCount(item.Progress) + " / " + FruitCollectionView.FormatCount(item.Target);
+                var tint=ProgressColor(item.Kind);_fill.color=tint;_progress.color=tint;_track.color=Color.Lerp(FruitLabStyle.Recess,tint,.22f);
                 _badge.color = item.Unlocked ? Color.white : new Color(.8f, .85f, .85f, .5f);
                 _ratio = Mathf.Clamp01((float)((decimal)item.Progress / item.Target));
                 _surface.color = focused ? Color.Lerp(FruitLabStyle.Panel, FruitLabStyle.Mint, .18f) : FruitLabStyle.Panel;
@@ -97,7 +97,13 @@ namespace Menu
                 FruitLabStyle.Place(_name.rectTransform, Root, 78, 52, width - 90, 52);
                 _progress.gameObject.SetActive(!earned); _track.gameObject.SetActive(!earned);
                 FruitLabStyle.Place(_progress.rectTransform, Root, 78, 28, width - 90, 26);
-                FruitLabStyle.Place(_track.rectTransform, Root, 78, 16, width - 94, 6);
+                FruitLabStyle.Place(_track.rectTransform, Root, 78, 12, width - 94, 13);
+            }
+            private static Color ProgressColor(MissionKind kind)
+            {
+                switch(kind){case MissionKind.FruitA:return new Color32(243,164,139,255);
+                    case MissionKind.FruitB:return new Color32(244,206,119,255);case MissionKind.Level:return new Color32(137,208,242,255);
+                    case MissionKind.Harvest:return new Color32(168,218,145,255);default:return new Color32(201,171,243,255);}
             }
         }
     }

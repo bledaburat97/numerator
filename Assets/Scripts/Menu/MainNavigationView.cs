@@ -40,6 +40,7 @@ namespace Menu
         [NonSerialized] private Button[] _tabs;
         private Button _settings;
         private MainTab _selected;
+        public MainTab SelectedTab=>_selected;
         private readonly List<RectTransform> _pages = new List<RectTransform>();
         private bool _multiplayerUnlocked;
         private MenuHeaderView _header;
@@ -84,6 +85,9 @@ namespace Menu
         public void Render(MainTab tab)
         {
             EnsureUi(); _selected = tab;
+            _header.SetPage(tab);
+            var canvas=GetComponentInParent<Canvas>();
+            if(canvas!=null && canvas.GetComponent<FruitLabMenuLayout>()!=null)MenuChrome.ApplyBackdrop(canvas,tab);
             _settings.gameObject.SetActive(true);
             for (int i = 0; i < _tabs.Length; i++)
             {
@@ -129,7 +133,9 @@ namespace Menu
         private void PlacePage(RectTransform page)
         {
             var parent = (RectTransform)page.parent;
-            FruitLabStyle.Place(page, parent, 0, BarHeight + 8, parent.rect.width, Mathf.Max(1, parent.rect.height - BarHeight - MenuChrome.HeaderHeight - 16));
+            bool garden=page.GetComponent<FruitCollectionView>()?.IsGardenSelected==true;
+            float margin=garden?0:8;
+            FruitLabStyle.Place(page, parent, 0, BarHeight + margin, parent.rect.width, Mathf.Max(1, parent.rect.height - BarHeight - MenuChrome.HeaderHeight - margin*2));
         }
         public void Unbind() { _choose = null; if (_header != null) _header.UnbindSettings(); }
         public void BringForward() { transform.SetAsLastSibling(); if (_header != null) _header.transform.SetAsLastSibling(); }

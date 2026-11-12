@@ -23,6 +23,7 @@ namespace Menu
 
         public void Initialize(FruitId fruit, Action showDetails, Action<string> harvest = null)
         {
+            _cells.Clear();
             Fruit = fruit;
             _harvest=harvest;
             _soil = Art(transform, "SoilAndFence", GardenArtwork.Get("EmptyPlot"));
@@ -54,22 +55,23 @@ namespace Menu
 
         public void ApplyLayout(float width, float height)
         {
-            FruitLabStyle.Place(_soil.rectTransform, transform, 0, 0, width, height);
+            const float signHeight = 28;
+            float soilHeight = Mathf.Max(1, height - signHeight);
+            FruitLabStyle.Place(_soil.rectTransform, transform, 0, signHeight, width, soilHeight);
             // Art has a slightly top-down projection. All cells have identical
             // interactive geometry; foliage and badges stay inside these bounds.
-            float innerX = width * .16f, innerY = height * .20f;
-            float cellWidth = width * .33f, cellHeight = height * .30f;
+            float innerX = width * .12f, innerY = signHeight + soilHeight * .14f;
+            float cellWidth = width * .36f, cellHeight = soilHeight * .38f;
             for (int i = 0; i < 4; i++)
             {
-                FruitLabStyle.Place(_cells[i].Root, transform, innerX + (i % 2) * width * .34f,
-                    innerY + (1 - i / 2) * height * .32f, cellWidth, cellHeight);
+                FruitLabStyle.Place(_cells[i].Root, transform, innerX + (i % 2) * width * .40f,
+                    innerY + (1 - i / 2) * soilHeight * .42f, cellWidth, cellHeight);
                 _cells[i].Layout(cellWidth, cellHeight);
             }
-            // Expand the sign's hit area into the outside margin, away from crops.
-            FruitLabStyle.Place(_sign.rectTransform, transform, -20, height * .36f, 44, 44);
-            FruitLabStyle.Place(_plaque.rectTransform, _sign.transform, 14, 7, 30, 30);
-            FruitLabStyle.Place(_fruit.rectTransform, _plaque.transform, 5, 9, 20, 20);
-            FruitLabStyle.Place(_overflow.rectTransform, _sign.transform, 14, -5, 30, 17);
+            FruitLabStyle.Place(_sign.rectTransform, transform, (width-56)*.5f, -5, 56, 40);
+            FruitLabStyle.Place(_plaque.rectTransform, _sign.transform, 0, 2, 56, 38);
+            FruitLabStyle.Place(_fruit.rectTransform, _plaque.transform, 14, 10, 28, 28);
+            FruitLabStyle.Place(_overflow.rectTransform, _sign.transform, 43, 0, 28, 17);
         }
 
         public RectTransform CellRect(int index) => _cells[index].Root;
@@ -115,8 +117,9 @@ namespace Menu
                 _ready=FruitLabStyle.Detail(root,"ReadyToHarvest",new Color32(255,211,104,180),true);
                 Art = GardenPlotView.Art(root, "Plant", null); Art.preserveAspect = true;
                 _badge = GardenPlotView.Art(root, "CountBadge", GardenArtwork.Get("GardenProps", "CountBadge"));
-                Count = GardenUi.Text(_badge.transform, "Quantity", 14, new Color32(81, 48, 27, 255));
-                Count.enableAutoSizing = true; Count.fontSizeMin = 12; Count.fontSizeMax = 14;
+                FruitLabStyle.AddSurface(_badge.gameObject,new Color32(255,239,203,248));
+                Count = GardenUi.Text(_badge.transform, "Quantity", 14, new Color32(81, 48, 27, 255),true);
+                Count.enableAutoSizing = true; Count.fontSizeMin = 12; Count.fontSizeMax = 14;Count.textWrappingMode=TextWrappingModes.NoWrap;
                 _animation=root.GetComponent<GardenCellAnimationView>() ?? root.gameObject.AddComponent<GardenCellAnimationView>();
                 _animation.Configure(Art,_badge.rectTransform);
             }
@@ -131,15 +134,14 @@ namespace Menu
                 if (batch == null) return;
                 _stage = batch.Stage;
                 Art.sprite = GardenArtwork.Stage(fruit, batch.Stage);
-                Count.text = CompactCount(batch.Quantity);
+                Count.text = CompactCount(batch.Quantity)+" "+StageName(batch.Stage);
                 if(changed)Layout(Root.rect.width, Root.rect.height);
             }
             public void Layout(float width, float height)
             {
                 FruitLabStyle.Stretch(_hit.rectTransform);FruitLabStyle.Stretch(_ready.rectTransform);
                 _animation.Layout(width,height,_stage);
-                float badgeWidth = Mathf.Max(26, width * .54f);
-                FruitLabStyle.Place(_badge.rectTransform, Root, width - badgeWidth + 1, -4, badgeWidth, 20);
+                FruitLabStyle.Place(_badge.rectTransform, Root, 0, -2, width, 18);
                 FruitLabStyle.Stretch(Count.rectTransform, 1);
             }
             public void PlayPlanting(string id){if(_id==id)_animation.PlayPlanting(.18f);}
@@ -164,6 +166,11 @@ namespace Menu
                 if (count < 1000000) return (count / 1000m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "B";
                 if (count < 1000000000) return (count / 1000000m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "Mn";
                 return FruitCollectionView.FormatCount(count);
+            }
+            private static string StageName(GardenGrowthStage stage)
+            {
+                switch(stage){case GardenGrowthStage.Seed:return "tohum";case GardenGrowthStage.Sprout:return "filiz";
+                    case GardenGrowthStage.Leaves:return "fidan";case GardenGrowthStage.Flower:return "çiçek";default:return "meyve";}
             }
         }
     }

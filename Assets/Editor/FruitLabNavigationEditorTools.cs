@@ -46,8 +46,8 @@ public static class FruitLabNavigationEditorTools
         try
         {
             string result = Review();
-            File.WriteAllText(Folder + "/garden-world-review.json", "{\"passed\":true,\"sizes\":[568,667,812,932],\"plots\":9,\"cells_per_plot\":4,\"two_column_window\":true,\"drag_snap\":true,\"fixed_chrome\":true,\"real_raycast\":true,\"profile_unchanged\":true,\"scope\":\"layout and two-species art pilot\"}");
-            return result + "; garden world: two-column viewport, one-column drag/snap and reverse, four cells per plot, apple/strawberry growth art";
+            File.WriteAllText(Folder + "/garden-world-review.json", "{\"passed\":true,\"sizes\":[568,667,812,932],\"plots\":9,\"cells_per_plot\":4,\"two_column_window\":true,\"free_pan\":true,\"fractional_pan_preserved\":true,\"fixed_chrome\":true,\"collection_modal\":true,\"real_raycast\":true,\"profile_unchanged\":true}");
+            return result + "; garden world: free fractional pan, four cells per plot, stage/count labels, enlarged centered plaques and separate collection modal";
         }
         finally { _gardenWorldReview = false; }
     }
@@ -106,15 +106,16 @@ public static class FruitLabNavigationEditorTools
     }
     private static void ImportMenuArtwork()
     {
-        foreach(string name in new[]{"OrchardHome","TabGarden","TabHome","TabMultiplayer","TabMarket"})
+        foreach(string name in new[]{"OrchardHome","BadgeGarden","TabGarden","TabHome","TabMultiplayer","TabMarket"})
         {
             string path="Assets/Resources/Art/Menu/"+name+".png";
             AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);
             var importer=(TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
-            importer.alphaIsTransparency=name!="OrchardHome";importer.mipmapEnabled=false;
+            bool background=name=="OrchardHome" || name=="BadgeGarden";
+            importer.alphaIsTransparency=!background;importer.mipmapEnabled=false;
             importer.wrapMode=TextureWrapMode.Clamp;importer.npotScale=TextureImporterNPOTScale.None;
-            importer.maxTextureSize=name=="OrchardHome"?2048:256;
+            importer.maxTextureSize=background?2048:256;
             importer.textureCompression=TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
         }
@@ -182,12 +183,33 @@ public static class FruitLabNavigationEditorTools
                 if (tab == MainTab.Garden)
                 {
                     var gardenPanel = (GardenPanelView)menu.GetCollectionView().Garden;
+                    CheckGardenChrome(canvas,gardenPanel,menu.GetCollectionView());
                     if (_presentationReview) CheckGardenPresentation(canvas,scene,gardenPanel,profile,controller,visits);
                     else if (_gardenWorldReview) CheckGardenWorld(canvas, scene, gardenPanel, profile, controller);
                     var purchase = (SeedPurchasePopupView)menu.GetCollectionView().Purchase;
                     Click(canvas, gardenPanel.BuyButton); Require(purchase.gameObject.activeInHierarchy, "Embedded garden opens seed purchase");
+                    Click(canvas,purchase.FruitButton(FruitId.Banana));
+                    Click(canvas,purchase.transform.Find("Panel/Plus").GetComponent<Button>());
+                    Require(purchase.QuantityInput.text=="4","Seed quantity controls remain visible and add one two-seed pack");
+                    CheckGardenModal(canvas,(RectTransform)purchase.transform,purchase.transform.Find("Panel") as RectTransform);
+                    Require(purchase.transform.Find("Panel/Title").GetComponent<TMP_Text>().text=="Tohum Marketi","Seed market title");
+                    Require(!purchase.GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Bakiye" || text.text.StartsWith("Kalan") || text.text.Contains("tohum =")),"Seed market omits redundant balance/price explanations");
                     Capture(canvas,scene,Folder + "/preview-navigation-purchase-" + height + ".png");
                     Click(canvas,purchase.CancelButton); Require(!purchase.gameObject.activeSelf,"Embedded purchase cancels safely");
+                    Click(canvas,gardenPanel.CollectionButton);var inventory=menu.GetCollectionView().CollectionPopup;
+                    Require(inventory.IsVisible && menu.GetCollectionView().IsGardenSelected,"Album opens a modal and retains garden tab");
+                    Require(inventory.GetComponentsInChildren<NonDraggableCardItemView>().Length==9,"Collection modal contains nine fruit cards");
+                    CheckGardenModal(canvas,(RectTransform)inventory.transform,inventory.transform.Find("Panel") as RectTransform);
+                    Capture(canvas,scene,Folder+"/preview-navigation-inventory-"+height+".png");
+                    Click(canvas,inventory.CloseButton);Require(!inventory.IsVisible,"Inventory modal closes without navigation");
+                }
+                if(tab==MainTab.Collection)
+                {
+                    Require(menu.GetCollectionView().GetComponentsInChildren<NonDraggableCardItemView>().Length==0,"Badges page has no visible fruit summary");
+                    Require(!menu.GetCollectionView().GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Görevler" || text.text=="Koleksiyon" || text.text.StartsWith("Toplam ")),"Badges page has no redundant headings");
+                    var tracks=menu.GetCollectionView().GetComponentsInChildren<Image>().Where(item=>item.name=="Track").ToArray();
+                    Require(tracks.All(track=>track.rectTransform.rect.height>=13),"Mission progress bars are thicker");
+                    Require(tracks.Select(track=>track.transform.Find("Fill").GetComponent<Image>().color).Distinct().Count()==tracks.Length,"Mission channels have distinct progress colors");
                 }
             }
             Click(canvas, view.SettingsButton);
@@ -290,13 +312,14 @@ public static class FruitLabNavigationEditorTools
         string before = Newtonsoft.Json.JsonConvert.SerializeObject(profile.Snapshot());
         Require(panel.Plots.Count == 9 && panel.Plots.All(plot => plot.transform.Find("Cell3") != null && plot.transform.Find("Cell4") == null), "Nine plots, four cells each");
         Require(panel.Plots.Select(plot => plot.Fruit).SequenceEqual(GardenPanelView.FruitOrder), "Fixed fruit geography");
-        Require(panel.Plots.Single(plot => plot.Fruit == FruitId.Apple).CellCount(0).text == "12", "Actual batch quantity");
+        Require(panel.Plots.Single(plot => plot.Fruit == FruitId.Apple).CellCount(0).text == "12 çiçek", "Actual batch quantity and growth stage");
         Require(panel.Plots.Single(plot => plot.Fruit == FruitId.Pear).OccupiedCells == 0, "Empty cells have no fabricated content");
         var scroll = panel.WorldScroll;
         Require(Mathf.Abs(scroll.viewport.rect.width - scroll.ColumnWidth * 2) < .1f && Mathf.Abs(scroll.content.rect.width - scroll.ColumnWidth * 3) < .1f, "Two-column window, three equal world columns");
         foreach (var plot in panel.Plots)
             for (int i = 0; i < 4; i++)
-                if (plot.CellArt(i).gameObject.activeSelf) Require(plot.CellCount(i).fontSize >= 14, "Compact cell count is legible");
+                if (plot.CellArt(i).gameObject.activeSelf)
+                {var label=plot.CellCount(i);label.ForceMeshUpdate();Require(label.fontSize>=12 && !label.isTextOverflowing,"Count and stage fit without clipping: "+label.text);}
         Require(((RectTransform)panel.BuyButton.transform).rect.width >= 48 && ((RectTransform)panel.CollectionButton.transform).rect.height >= 48, "Garden touch targets >=48");
         var fixedPosition = panel.BuyButton.transform.position;
         int height = (int)((RectTransform)canvas.transform).rect.height;
@@ -311,7 +334,7 @@ public static class FruitLabNavigationEditorTools
             var start = RectTransformUtility.WorldToScreenPoint(camera, scroll.viewport.TransformPoint(scroll.viewport.rect.center));
             void Drag(float amount)
             {
-                // No active animation in EditMode: release must already be exactly snapped.
+                // Pointer movement must preserve fractional horizontal positions.
                 var pointer = new PointerEventData(root.GetComponent<EventSystem>()) {
                     button = PointerEventData.InputButton.Left, position = start, pressPosition = start,
                     pointerPressRaycast = new RaycastResult { module = canvas.GetComponent<GraphicRaycaster>() }
@@ -320,13 +343,15 @@ public static class FruitLabNavigationEditorTools
                 pointer.position = RectTransformUtility.WorldToScreenPoint(camera, scroll.viewport.TransformPoint(scroll.viewport.rect.center + new Vector2(amount, 0)));
                 scroll.OnDrag(pointer); scroll.OnEndDrag(pointer);
             }
-            Drag(-scroll.ColumnWidth * .8f);
-            Require(scroll.Column == 1 && Mathf.Abs(scroll.content.anchoredPosition.x + scroll.ColumnWidth) < .1f, "Leftward drag moves one column");
+            Drag(-scroll.ColumnWidth * .1f);
+            Require(Mathf.Abs(scroll.ColumnOffset-.1f)<.01f,"Ten-percent drag remains at ten percent after release");
+            panel.ApplyLayout();Require(Mathf.Abs(scroll.ColumnOffset-.1f)<.01f,"Layout refresh preserves fractional position");
             Require(panel.BuyButton.transform.position == fixedPosition, "Seed shop stays fixed");
             Capture(canvas, scene, Folder + "/preview-garden-world-right-" + height + ".png");
             canvas.worldCamera = camera; // Capture owns a temporary camera.
-            Drag(-scroll.ColumnWidth * 3); Require(scroll.Column == 1, "World clamps at right edge");
-            Drag(scroll.ColumnWidth * .8f); Require(scroll.Column == 0, "Reverse drag returns one column");
+            Drag(-scroll.ColumnWidth * 3); Require(scroll.ColumnOffset==1, "World clamps at right edge");
+            Drag(scroll.ColumnWidth * .8f); Require(Mathf.Abs(scroll.ColumnOffset-.2f)<.01f, "Reverse drag is free, not page-snapped");
+            scroll.SetColumn(0,false);
         }
         finally { Object.DestroyImmediate(root); }
         var legacyBatches = new Dictionary<string, PlantingBatch>();
@@ -339,9 +364,28 @@ public static class FruitLabNavigationEditorTools
         Require(details != null && details.GetComponentsInChildren<NonDraggableCardItemView>().Length == 6, "All legacy batches are inspectable");
         Click(canvas, panel.transform.Find("PlantingDetails/CloseDetails").GetComponent<Button>());
         Click(canvas, panel.CollectionButton);
-        Require(MainNavigationState.RequestedTab == MainTab.Collection, "Album selects Collection tab");
+        Require(MainNavigationState.RequestedTab == MainTab.Garden && canvas.GetComponentInChildren<FruitInventoryPopupView>().IsVisible, "Album opens the collection modal without changing tabs");
+        Click(canvas,canvas.GetComponentInChildren<FruitInventoryPopupView>().CloseButton);
         controller.Select(MainTab.Garden); Canvas.ForceUpdateCanvases(); panel.ApplyLayout();
         Require(Newtonsoft.Json.JsonConvert.SerializeObject(profile.Snapshot()) == before, "Garden presentation leaves the profile unchanged");
+    }
+    private static void CheckGardenChrome(Canvas canvas,GardenPanelView garden,FruitCollectionView collection)
+    {
+        Require(!garden.transform.Find("GardenTitle").gameObject.activeSelf,"Garden has no page title");
+        Require(Mathf.Abs(garden.BuyButton.transform.position.y-garden.CollectionButton.transform.position.y)<.1f
+            && garden.CollectionButton.transform.position.x>garden.BuyButton.transform.position.x,"Album and seed market are opposite each other on the bottom row");
+        foreach(var plot in garden.Plots)
+        {
+            var sign=plot.transform.Find("FruitSign") as RectTransform;
+            Require(sign.anchoredPosition.x==plot.Root.rect.width*.5f,"Fruit plaque is centered below its plot");
+            Require((sign.Find("Plaque") as RectTransform).rect.width>=56,"Fruit plaque is enlarged");
+        }
+    }
+    private static void CheckGardenModal(Canvas canvas,RectTransform root,RectTransform panel)
+    {
+        Canvas.ForceUpdateCanvases();var header=canvas.GetComponentInChildren<MenuHeaderView>();
+        var corners=new Vector3[4];panel.GetWorldCorners(corners);float top=header.transform.InverseTransformPoint(corners[1]).y;
+        Require(top<=((RectTransform)header.transform).rect.yMin+.1f,"Garden modal starts below shared header");
     }
     private static void CheckGardenPresentation(Canvas canvas,Scene scene,GardenPanelView panel,IPlayerProfileRepository profile,MainNavigationController controller,GardenVisitCoordinator visits)
     {
@@ -401,7 +445,7 @@ public static class FruitLabNavigationEditorTools
             Click(canvas,purchase.FruitButton(FruitId.Banana));int coins=profile.Snapshot().Wallet.Coins;
             Click(canvas,purchase.ConfirmButton);purchase.ConfirmButton.onClick.Invoke();menu.GetGardenNoticeView().Hide();
             var fresh=profile.Snapshot().Garden.Single(pair=>pair.Value.Fruit==FruitId.Banana && pair.Value.Stage==GardenGrowthStage.Seed);
-            Require(fresh.Value.CellIndex==3 && fresh.Value.Quantity==5 && profile.Snapshot().Wallet.Coins==coins-1,"Planting effect follows one committed five-seed purchase");
+            Require(fresh.Value.CellIndex==3 && fresh.Value.Quantity==new EconomySettings().SeedsPerPack && profile.Snapshot().Wallet.Coins==coins-1,"Planting effect follows one committed seed-pack purchase");
             Advance(.3f);Capture(canvas,scene,Folder+"/preview-garden-planting-motion-"+height+".png");Advance(.5f);
             Require(panel.GetComponentsInChildren<GardenCellAnimationView>(true).All(view=>!view.IsAnimating),"Planting particles stop");
             var canvasScale=canvas.transform.localScale;canvas.transform.localScale=Vector3.one*1.3f;

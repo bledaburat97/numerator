@@ -488,7 +488,7 @@ public static class FruitLabEditorTools
                 var popup = canvas.GetComponentInChildren<LevelFinishPopupView>(true);
                 popup.SetStatus(true); popup.SetOutcome(!failPreview, failPreview ? 0 : 1);
                 popup.GetText().gameObject.SetActive(true);
-                popup.GetText().text = failPreview ? "Tekrar dene" : "Kazandın!";
+                popup.SetText(failPreview ? "Tekrar dene" : "Çözdün!");
                 popup.GetText().rectTransform.localScale = Vector3.one;
                 popup.GetButton(LevelFinishButtonType.Menu).SetButtonStatus(!claimPreview);
                 popup.GetButton(LevelFinishButtonType.Menu).SetText("Menü");

@@ -77,6 +77,7 @@ namespace Scripts
         private void Update()
         {
             _session?.Tick();
+            _mechanics?.TickCheckpoint(Time.unscaledDeltaTime,_session!=null && !_session.IsGameOver);
             if(_powerUpRecoveryPending)
             {
                 _powerUpRecoveryPending=false;CancelCurrentInteractions();
@@ -156,7 +157,6 @@ namespace Scripts
 
         private void TrySave()
         {
-            GetComponentInChildren<GameUIView>(true)?.GetPairView()?.CancelDrag();
             if (_levelTracker == null || _gameSaveSnapshotProvider == null || _gameSaveService == null) return;
 
             if (_levelTracker.GetGameOption() == GameOption.SinglePlayer)

@@ -26,6 +26,8 @@ namespace Scripts
         private LevelMechanic _mechanic;
         private ILevelMechanicsPresentation _presentation;
         private Action _checkpoint;
+        private CheckpointRetry _checkpointRetry;
+        public bool HasPendingCheckpoint=>_checkpointRetry?.Pending==true;
         private bool _disposed;
 
         public LevelMechanicsController(IResultManager results, HelperEffect helper, IRoundStateManager round,
@@ -41,11 +43,19 @@ namespace Scripts
             if (_dynamite != null) _dynamite.Changed += OnDynamite;
         }
 
-        public void Attach(ILevelMechanicsPresentation presentation, Action checkpoint) { _presentation = presentation; _checkpoint = checkpoint; }
+        public void Attach(ILevelMechanicsPresentation presentation, Action checkpoint)
+        {
+            _presentation=presentation;
+            _checkpointRetry=checkpoint==null?null:new CheckpointRetry(checkpoint,error=>UnityEngine.Debug.LogWarning("Tur kaydı yeniden denenecek: "+error.GetType().Name));
+            _checkpoint=_checkpointRetry==null?null:_checkpointRetry.Request;
+        }
+        public void TickCheckpoint(float delta,bool active)
+        {if(!active)_checkpointRetry?.Clear();else _checkpointRetry?.Tick(delta);}
 
         public void Begin(LevelMechanic mechanic)
         {
             _mechanic = LevelMechanicRules.Normalize(mechanic);
+            _checkpointRetry?.Clear();
             _dynamite?.Prepare();
             _ice?.PrepareTurn();
             ObserverNotification.Present(()=>_icePresentation?.Render());
@@ -87,7 +97,7 @@ namespace Scripts
         public void CompleteTurn(GuessEvaluation guess)
         {
             _dynamite?.SynchronizeKnowledge();
-            if (!guess.Won && _round.GetRemainingGuessCount() > 0) ObserverNotification.Run(()=>_checkpoint?.Invoke());
+            if (!guess.Won && _round.GetRemainingGuessCount() > 0) _checkpoint?.Invoke();
         }
 
         private void OnDynamite(object sender,DynamiteUpdateReason reason)
@@ -126,6 +136,59 @@ namespace Scripts
             if (_split != null) _split.Applied -= OnSplit;
             if (_dynamite != null) _dynamite.Changed -= OnDynamite;
             _checkpoint = null; _presentation = null;
+            _checkpointRetry?.Clear();
+        }
+    }
+    // Retries the latest live round, never an older captured snapshot. Gameplay and
+    // reward settlement remain independent; a new/finished round cancels this work.
+    public sealed class CheckpointRetry
+    {
+        private readonly Action _save;
+        private readonly Action<Exception> _report;
+        private float _delay;
+        private bool _reported;
+        public bool Pending { get; private set; }
+
+        public CheckpointRetry(Action save, Action<Exception> report = null)
+        {
+            _save = save ?? throw new ArgumentNullException(nameof(save));
+            _report = report;
+        }
+        public void Request()
+        {
+            Pending = true;
+            TrySave();
+        }
+        public void Tick(float delta)
+        {
+            if (!Pending) return;
+            _delay -= Math.Max(0, delta);
+            if (_delay <= 0) TrySave();
+        }
+        private void TrySave()
+        {
+            try
+            {
+                _save();
+                Pending = false;
+                _reported = false;
+            }
+            catch (Exception error)
+            {
+                Pending = true;
+                _delay = 1;
+                if (!_reported)
+                {
+                    _reported = true;
+                    ObserverNotification.Run(() => _report?.Invoke(error));
+                }
+            }
+        }
+        public void Clear()
+        {
+            Pending = false;
+            _reported = false;
+            _delay = 0;
         }
     }
     // Called once a submitted guess has been evaluated and its life consumed.

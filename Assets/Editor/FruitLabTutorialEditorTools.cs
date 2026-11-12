@@ -617,7 +617,7 @@ public static partial class FruitLabTutorialEditorTools
                 game.BuildActors(); game.Bootstrap.StartRound();
                 Tick(.001f);
                 Require(game.Step == 0 && game.Bootstrap.IsFirstActive, "First lesson must start after board/cards are initialized");
-                game.AssertNoSkip(); game.MenuAndResume();
+                game.AssertNoSkip(); game.PauseAndResume();
                 Require(game.Step == 0, "Leaving before a guess restarts level-one training with the same answer");
                 Capture(camera, Folder + "/preview-tutorial-placement.png");
                 game.AssertHit(game.Initial.GetRectTransformOfCardItem(0), typeof(IPointerUpHandler));
@@ -625,11 +625,11 @@ public static partial class FruitLabTutorialEditorTools
                 game.Check(); Require(game.Round.GetTriedCardsList().Count == 0, "Premature guess is blocked");
                 game.Place(0); game.Place(1); Require(game.Step == 2, "First two placements advance to submit");
                 game.AssertHit(game.UI.GetCheckButtonRectTransform(), typeof(IPointerDownHandler));
-                game.Check(); game.MenuAndResume(); Tick(.5f); Require(game.Step == 3, "Wrong-guess return must finish before explanation");
+                game.Check(); game.PauseAndResume(); Tick(.5f); Require(game.Step == 3, "Wrong-guess return must finish before explanation");
                 game.Feedback(0, new[] { 1, 2 }, 0, 1);
                 Capture(camera, Folder + "/preview-tutorial-feedback.png");
                 game.Next(); game.Place(2); game.Place(0); game.Check(); Tick(.5f);
-                game.MenuAndResume(); Require(game.Step == 7, "Second explanation follows the second guess"); game.Feedback(1, new[] { 3, 1 }, 1, 0);
+                game.PauseAndResume(); Require(game.Step == 7, "Second explanation follows the second guess"); game.Feedback(1, new[] { 3, 1 }, 1, 0);
                 game.Next(); game.Place(3); game.Place(0); game.Check(); Tick(.5f);
                 Require(TutorialProgress.Seen(TutorialProgress.First) && !TutorialProgress.Seen(TutorialProgress.LegacySkipped), "Win persists the first-lesson completion flag");
                 Require(game.Round.GetTriedCardsList().Count == 3 && game.Round.GetRemainingGuessCount() == 4, "Three scripted guesses use exactly two wrong-guess lives");
@@ -645,19 +645,6 @@ public static partial class FruitLabTutorialEditorTools
                 game.Bootstrap.StartRound();
                 Require(game.Message != null && game.Gate.IsRestricted, "The first round containing crystal hints explains them before play");
                 game.Next(); Require(TutorialProgress.Seen(TutorialProgress.CrystalHints), "Crystal hint explanation is acknowledged separately");
-                foreach (var type in new[] { GameUIButtonType.BombPowerUp, GameUIButtonType.RevealingPowerUp, GameUIButtonType.LifePowerUp })
-                {
-                    int stock = game.Tracker.GetPowerUpCount(PowerUpTypeUtility.ToRewardType(type));
-                    Require(game.Gate.TryExplain(type), "First powerup encounter must show an explanation: " + type);
-                    Require(game.Tracker.GetPowerUpCount(PowerUpTypeUtility.ToRewardType(type)) == stock && game.Message != null, "Explanation cannot spend stock early");
-                    game.Next(); Require(game.Tracker.GetPowerUpCount(PowerUpTypeUtility.ToRewardType(type)) == stock && game.Message == null,
-                        "Continue only dismisses the introduction without spending inventory");
-                    Require(!game.Gate.TryExplain(type), "Acknowledged powerup intro must not repeat");
-                }
-                flags.Remove(TutorialProgress.Reveal); int revealStock = game.Tracker.GetPowerUpCount(RewardType.Revealing);
-                Require(game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp), "Unseen reveal can be explained");
-                game.Next(); Require(game.Tracker.GetPowerUpCount(RewardType.Revealing) == revealStock && !game.Gate.IsRestricted,
-                    "Tamam acknowledges the introduction without forcing its use");
                 flags.Remove(TutorialProgress.Reveal); Field(game.Tracker, "_revealingPowerUpCount", 0);
                 Require(!game.Gate.TryExplain(GameUIButtonType.RevealingPowerUp), "No-stock powerups do not open a use tutorial");
                 game.Bootstrap.ShowRewards(2, 1); Require(game.Message != null, "First earned currencies are explained");
@@ -672,14 +659,14 @@ public static partial class FruitLabTutorialEditorTools
             File.WriteAllText(Folder + "/tutorial-review.json", Newtonsoft.Json.JsonConvert.SerializeObject(new {
                 passed = true, scenario = "[1,2] => 0/1; [3,1] => 1/0; [4,1] => win", checks = new[] {
                     "board readiness", "real pointer placement and guess buttons", "input/raycast restrictions", "actual result rows and life count",
-                    "completion only on win", "no skip or replay controls", "old skipped flag recovery", "menu exit and resume with 0/1/2 guesses", "pending animation cancellation on menu exit", "fixed level-one answer and legacy save policy", "three powerup intros before action",
-                    "first-use cancel and zero-stock guards", "first crystal-hint round",
+                    "completion only on win", "no skip or replay controls", "old skipped flag recovery", "pause and resume with 0/1/2 guesses", "settings blocked during the first lesson", "pending animation cancellation on pause", "fixed level-one answer and legacy save policy",
+                    "zero-stock tutorial guard", "first crystal-hint round",
                     "coin/crystal intro", "320/375/430 width layouts", "unchanged real PlayerPrefs", "no Unity/tween errors" },
                 flags, player_preferences_written = false
             }, Newtonsoft.Json.Formatting.Indented));
         }
         finally { DOTween.defaultUpdateType = update; Application.logMessageReceived -= collect; }
-        Debug.Log("FRUIT_LAB_TUTORIAL_PASS: scripted real placements/results, mandatory completion/menu resume/fixed answer, first-use tips, mobile layouts and player-data isolation.");
+        Debug.Log("FRUIT_LAB_TUTORIAL_PASS: scripted real placements/results, mandatory completion/pause resume/fixed answer, first-use tips, mobile layouts and player-data isolation.");
     }
 
     public static Scripts.Economy.CrystalRewardPlan MakeCrystalPlan(int previous,RewardType reward,int earned,int level)
@@ -730,7 +717,7 @@ public static partial class FruitLabTutorialEditorTools
             var counts = _counts = new BoardHolderCountManager(saves, level); var indexes = new BoardCardIndexManager(); var sizes = new SizeManager();
             var boardView = canvas.GetComponentInChildren<BoardAreaView>(true);
             var split = new BoardSplitService(level,Tracker);
-            var boardLayout = new BoardLayoutManager(boardView,sizes); Field(boardLayout,"_split",split);
+            var boardLayout = new BoardLayoutManager(boardView,sizes); Field(boardLayout,"_split",split);Field(boardLayout,"_levels",level);
             Board = new BoardAreaController(boardView, boardLayout, counts, indexes, indexes); Field(Board,"_split",split);
             Target = _objects.AddComponent<TargetNumberCreator>();
             Field(Target, "_levelDataCreator", level); Field(Target, "_gameSaveService", _memory); Field(Target, "_levelTracker", Tracker); Field(Target,"_saveData",saves);
@@ -841,39 +828,26 @@ public static partial class FruitLabTutorialEditorTools
                 "The first lesson has no skip/close action");
             Require(Message.transform.Find("SkipButton") == null, "Old skip object is removed from the prefab");
         }
-        public void MenuAndResume()
+        public void PauseAndResume()
         {
             AssertNoSkip();
-            Require(Gate.AllowsButton(GameUIButtonType.Settings), "Settings stays available during the mandatory lesson");
-            AssertHit(View.GetSettingsButton().GetButtonRectTransform(), typeof(IPointerDownHandler));
-            SettingsPopupView popup = null; var scenes = new List<string>();
-            EventHandler open = (sender, args) => {
-                popup = Object.Instantiate(AssetDatabase.LoadAssetAtPath<SettingsPopupView>("Assets/Prefabs/SettingsPopup.prefab"), Canvas.GetComponentInChildren<GamePopupCreator>(true).transform, false);
-                Layer(popup.transform);
-                new SettingsPopupController(scene => scenes.Add(scene), () => { }).Initialize(popup, () => { }, () => {
-                    var provider = new GameSaveSnapshotProvider(Target, _info, new PlayingFlow(), _counts, Round);
-                    if (provider.TryCreateSnapshot(out var snapshot)) _memory.Save(snapshot); else _memory.DeleteSave();
-                }, () => throw new Exception("Menu cannot delete a saved lesson"), Tracker, _buttons);
-            };
-            UI.OpenSettings += open;
-            try
-            {
-                Click((BaseButtonView)View.GetSettingsButton());
-                Require(popup != null && popup.transform.Find("Image/ReplayButton") == null, "Settings opens with no replay action");
-                Click((BaseButtonView)popup.GetMenuButton());
-                Require(scenes.SequenceEqual(new[] { "Menu" }), "Menu action saves then requests the Menu scene");
-            }
-            finally { UI.OpenSettings -= open; if (popup != null) Object.DestroyImmediate(popup.gameObject); }
+            Require(!Gate.AllowsButton(GameUIButtonType.Settings), "Settings is blocked with unrelated input during the first lesson");
+            int opened=0;EventHandler open=(sender,args)=>opened++;
+            UI.OpenSettings+=open;
+            try { Click((BaseButtonView)View.GetSettingsButton());Require(opened==0,"Settings cannot bypass the first lesson"); }
+            finally { UI.OpenSettings-=open; }
+            var provider = new GameSaveSnapshotProvider(Target, _info, new PlayingFlow(), _counts, Round);
+            if (provider.TryCreateSnapshot(out var snapshot)) _memory.Save(snapshot); else _memory.DeleteSave();
             int guesses = Round.GetTriedCardsList().Count;
-            Require(!TutorialProgress.Seen(TutorialProgress.First), "Returning to menu cannot mark training completed");
-            Require(guesses == 0 ? !_memory.HasSavedGame() : FirstLevelTutorialController.CanResume(_memory.Data, 6), "Actual menu snapshot is safe to resume");
+            Require(!TutorialProgress.Seen(TutorialProgress.First), "Pausing cannot mark training completed");
+            Require(guesses == 0 ? !_memory.HasSavedGame() : FirstLevelTutorialController.CanResume(_memory.Data, 6), "Actual pause snapshot is safe to resume");
             Bootstrap.Cancel(); UI.TriggerResetNumbers(); Tick(.5f);
-            Require(Message == null && !Gate.IsRestricted && !TutorialProgress.Seen(TutorialProgress.First), "Menu exit cancels pending callbacks without completing training");
+            Require(Message == null && !Gate.IsRestricted && !TutorialProgress.Seen(TutorialProgress.First), "Pausing cancels pending callbacks without completing training");
             if (_memory.HasSavedGame()) _saves.SetLevelSaveDataAsSaved(_memory.Data); else _saves.CreateDefaultLevelSaveData();
             Round.Initialize(); _info.Initialize(); Target.SetTargetNumber(2);
             Bootstrap.PrepareRound(); Bootstrap.StartRound(); Tick(.001f);
             Require(Bootstrap.IsFirstActive && Step == (guesses == 0 ? 0 : guesses == 1 ? 3 : 7)
-                && Target.GetTargetCardsList().SequenceEqual(new[] { 4, 1 }), "Return to level one resumes the guided lesson with portakal/elma");
+                && Target.GetTargetCardsList().SequenceEqual(new[] { 4, 1 }), "Resuming level one restores the guided lesson with portakal/elma");
         }
         public void AssertSavePolicy()
         {

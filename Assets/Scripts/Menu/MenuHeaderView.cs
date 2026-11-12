@@ -14,6 +14,8 @@ namespace Scripts
         [NonSerialized] private TMP_Text _coinText;
         [NonSerialized] private Button _settings;
         private Vector2 _lastSize, _lastInsets;
+        private MainTab _page;
+        public void SetPage(MainTab page){_page=page;ApplyLayout();}
         public Button SettingsButton { get { EnsureUi(); return _settings; } }
         public static MenuHeaderView Ensure(Canvas canvas)
         {
@@ -56,18 +58,19 @@ namespace Scripts
             _lastSize = root.rect.size; _lastInsets = insets;
             float height = MenuChrome.HeaderHeight + insets.y, width = root.rect.width;
             FruitLabStyle.Place((RectTransform)transform, root, 0, root.rect.height - height, width, height);
-            var surface = FruitLabStyle.AddSurface(gameObject, MenuChrome.Sky); surface.sprite = null; surface.type = Image.Type.Simple;
+            var surface = FruitLabStyle.AddSurface(gameObject, MenuChrome.HeaderColor(_page)); surface.sprite = null; surface.type = Image.Type.Simple;
             float left = 12 + insets.x, right = width - left, counterWidth = Mathf.Clamp((width - insets.x * 2) * .285f, 88, 110);
             FruitLabStyle.Place(_badges.Root, transform, left, 12, counterWidth, 36);
-            _badges.ApplyHeaderStyle(counterWidth);
+            _badges.ApplyHeaderStyle(counterWidth,MenuChrome.CounterColor(_page));
             FruitLabStyle.Place(_coins, transform, right - MenuChrome.SettingsSize - 10 - counterWidth, 12, counterWidth, 36);
-            FruitLabStyle.AddSurface(_coins.gameObject, MenuChrome.Counter);
+            FruitLabStyle.AddSurface(_coins.gameObject, MenuChrome.CounterColor(_page));
             if (starHolder != null) starHolder.SetFixedWidth(counterWidth);
             FruitLabStyle.Place(_coins.Find("Image") as RectTransform, _coins, 3, 3, 30, 30);
             _coinText.fontSize = 21; _coinText.enableAutoSizing = true; _coinText.fontSizeMin = 17; _coinText.fontSizeMax = 21;
             _coinText.color = MenuChrome.Ink; _coinText.alignment = TextAlignmentOptions.MidlineLeft; _coinText.raycastTarget = false;
             FruitLabStyle.Place(_coinText.rectTransform, _coins, 36, 0, counterWidth - 39, 36);
             FruitLabStyle.Place((RectTransform)_settings.transform, transform, right - MenuChrome.SettingsSize, 8, MenuChrome.SettingsSize, MenuChrome.SettingsSize);
+            FruitLabStyle.Surface(_settings.GetComponent<Image>(),Color.Lerp(MenuChrome.HeaderColor(_page),Color.white,.3f));
             FruitLabStyle.Place(_settings.transform.Find("Icon") as RectTransform, _settings.transform, 8, 8, 28, 28);
             var line = FruitLabStyle.Detail(transform, "HeaderEdge", new Color32(74, 142, 164, 85)); line.sprite = null;
             FruitLabStyle.Place(line.rectTransform, transform, 0, 0, width, 1);
@@ -97,9 +100,9 @@ namespace Scripts
             FruitLabStyle.Place(_amount.rectTransform,Root,38,0,54,40);
         }
         public void Render(long count)=>_amount.text=Menu.FruitCollectionView.FormatCount(count);
-        public void ApplyHeaderStyle(float width)
+        public void ApplyHeaderStyle(float width,Color color)
         {
-            FruitLabStyle.AddSurface(Root.gameObject, MenuChrome.Counter);
+            FruitLabStyle.AddSurface(Root.gameObject, color);
             FruitLabStyle.Place(Root.Find("Icon") as RectTransform, Root, 3, 3, 30, 30);
             _amount.color = MenuChrome.Ink; _amount.fontSize = _amount.fontSizeMax = 21; _amount.fontSizeMin = 17;
             FruitLabStyle.Place(_amount.rectTransform, Root, 36, 0, width - 39, 36);

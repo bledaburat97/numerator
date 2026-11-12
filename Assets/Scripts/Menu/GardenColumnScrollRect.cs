@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Menu
 {
-    // A two-column window moves by ONE column, including when more columns are added.
+    // Free horizontal panning. Column coordinates remain useful for focusing a fruit.
     public sealed class GardenColumnScrollRect : ScrollRect
     {
         public event System.Action<int> ColumnSettled;
@@ -13,15 +13,17 @@ namespace Menu
         public float ColumnWidth { get; private set; }
         public int LastColumn { get; private set; }
         public int DragVersion { get; private set; }
+        public float ColumnOffset => content != null && ColumnWidth > 0 ? Mathf.Clamp(-content.anchoredPosition.x / ColumnWidth, 0, LastColumn) : 0;
         private Tween _snap;
 
         public void Configure(float columnWidth, int totalColumns)
         {
-            ColumnWidth = columnWidth;
+            float position = ColumnOffset;
+            _snap?.Kill(); StopMovement(); ColumnWidth = columnWidth;
             LastColumn = Mathf.Max(0, totalColumns - 2);
             horizontal = true; vertical = false; inertia = false;
             movementType = MovementType.Clamped;
-            SetColumn(Column, false);
+            SetPosition(position, false);
         }
         public override void OnBeginDrag(PointerEventData data)
         {
@@ -33,13 +35,20 @@ namespace Menu
         {
             base.OnEndDrag(data);
             if (data.button == PointerEventData.InputButton.Left && ColumnWidth > 0)
-                SetColumn(Mathf.RoundToInt(-content.anchoredPosition.x / ColumnWidth), true);
+            { Column = Mathf.FloorToInt(ColumnOffset); ColumnSettled?.Invoke(Column); }
         }
-        public void SetColumn(int column, bool animated)
+        public bool IsColumnVisible(int column) => column + 1 > ColumnOffset + .01f && column < ColumnOffset + 2 - .01f;
+        public void FocusColumn(int column)
         {
-            _snap?.Kill(); StopMovement(); Column = Mathf.Clamp(column, 0, LastColumn);
+            if (column < ColumnOffset) SetPosition(column, true);
+            else if (column + 1 > ColumnOffset + 2) SetPosition(column - 1, true);
+        }
+        public void SetColumn(int column, bool animated) => SetPosition(column, animated);
+        private void SetPosition(float position, bool animated)
+        {
+            _snap?.Kill(); StopMovement(); position = Mathf.Clamp(position, 0, LastColumn); Column = Mathf.FloorToInt(position);
             if (content == null || ColumnWidth <= 0) return;
-            var target = new Vector2(-Column * ColumnWidth, 0);
+            var target = new Vector2(-position * ColumnWidth, 0);
             if (animated && Application.isPlaying)
                 _snap = content.DOAnchorPos(target, .24f).SetEase(Ease.OutCubic).SetUpdate(true)
                     .SetLink(gameObject, LinkBehaviour.KillOnDisable).OnComplete(()=>ColumnSettled?.Invoke(Column));
@@ -48,7 +57,6 @@ namespace Menu
         protected override void OnDisable()
         {
             _snap?.Kill(); base.OnDisable();
-            if (content != null) content.anchoredPosition = new Vector2(-Column * ColumnWidth, 0);
         }
     }
 }

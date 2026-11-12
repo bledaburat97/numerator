@@ -21,8 +21,10 @@ public static partial class FruitLabTutorialEditorTools
         if(opened)scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
         try
         {
+            Find<FruitLabGameLayout>(scene).ApplyLayout();
             var view=PowerUpRewardView.Ensure(Find<Canvas>(scene));view.Hide();
-            foreach(var component in view.GetComponentsInChildren<Component>(true))EditorUtility.SetDirty(component);
+            foreach(var component in Find<Canvas>(scene).GetComponentsInChildren<Component>(true))
+            {EditorUtility.SetDirty(component);if(PrefabUtility.IsPartOfPrefabInstance(component))PrefabUtility.RecordPrefabInstancePropertyModifications(component);}
             EditorSceneManager.MarkSceneDirty(scene);Require(EditorSceneManager.SaveScene(scene),"Save reward presentation");
             return "Saved central powerup reward overlay in Game";
         }
@@ -57,6 +59,9 @@ public static partial class FruitLabTutorialEditorTools
                         Require(view.Hero.rect.width>=size.x*.30f && view.Hero.rect.width<=size.x*.36f,"Reward is roughly one third of the screen width");
                         Require(((RectTransform)view.ClaimButton.transform).rect.height>=48,"Claim has a comfortable touch target");
                         Require(view.GetComponentsInChildren<TMP_Text>().Any(label=>label.text=="Güçlendirici kazandın!"),"Short readable reward title");
+                        Require(!view.GetComponentsInChildren<TMP_Text>().Any(label=>label.text=="×1" || label.text=="x1"),"Reward has no redundant quantity label");
+                        var small=(RectTransform)view.transform.Find("InventoryReward");var amount=(RectTransform)view.transform.Find("InventoryCount");
+                        Require(Mathf.Abs(small.anchoredPosition.x-small.rect.width*.5f+amount.anchoredPosition.x+amount.rect.width*.5f)<.1f,"Inventory icon and amount are centered together");
                         Tick(2);Require(presenter.IsPresenting && view.IsVisible && closed==0,"Reward waits for player acknowledgement");
                         if(reward==RewardType.Ultra){Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-powerup-earned-"+(int)size.y+".png");}
                         TapGarden(canvas,camera,EventSystem.current,view.ClaimButton);view.ClaimButton.onClick.Invoke();
@@ -81,12 +86,16 @@ public static partial class FruitLabTutorialEditorTools
                     int stock=game.Tracker.GetPowerUpCount(RewardType.Bomb);game.Check();
                     Require(game.Tracker.GetPowerUpCount(RewardType.Bomb)==stock+1,"Real win commits its powerup before presentation");
                     Tick(.9f);var finish=canvas.GetComponentInChildren<LevelFinishPopupView>(true);
+                    Require(finish.GetText().text=="Çözdün!","Real win uses the requested success title");
+                    Require(!finish.transform.Find("RewardStage/Outcome").gameObject.activeSelf,"The extra title check stays hidden after outcome and layout refreshes");
+                    Require(!finish.GetComponentInChildren<FruitCollectionAwardView>(true).transform.Find("Collection").gameObject.activeSelf,"Fruit award has no leading collection icon");
                     Require(!finish.GetButton(LevelFinishButtonType.Game).GetCanvasGroup().blocksRaycasts,"An earned powerup blocks early continuation");
                     for(int i=0;i<40;i++)Tick(.1f);
                     Require(rewards.IsPresenting,"Real crystal collection opens the acknowledgement overlay");
                     PowerUpRewardView.Ensure(canvas).ClaimButton.onClick.Invoke();for(int i=0;i<12;i++)Tick(.1f);
                     Require(!rewards.IsPresenting && finish.GetButton(LevelFinishButtonType.Game).GetCanvasGroup().blocksRaycasts,"Claim enables continuation");
                     Require(game.Tracker.GetPowerUpCount(RewardType.Bomb)==stock+1,"Claim never gives a second saved award");
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-game-win-refreshed.png");
                     ClickContractGameButton(canvas);for(int i=0;i<20;i++)Tick(.1f);
                     Require(session.State==LevelFlowState.Playing,"Next round is playable after claim without stale blockers");
                     int closed=0;rewards.Present(RewardType.Bomb,()=>closed++);Tick(.12f);rewards.Cancel();Tick(1);
