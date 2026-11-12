@@ -50,15 +50,12 @@ namespace Scripts
             EnsureHomeContent();
             _lastSize = safeArea.rect.size;
             float width = _lastSize.x - 24f, height = _lastSize.y;
-            FruitLabStyle.AddSurface(gameObject, FruitLabStyle.Background);
+            MenuChrome.ApplyBackdrop(GetComponent<Canvas>());
             FruitLabStyle.Stretch(middleArea);
-            FruitLabStyle.AddSurface(middleArea.gameObject, FruitLabStyle.Background);
-            FruitLabStyle.Atmosphere(middleArea);
-            int first = Mathf.Min(middleArea.GetSiblingIndex(), header.transform.GetSiblingIndex());
-            middleArea.SetSiblingIndex(first);
-            header.transform.SetSiblingIndex(first + 1);
-            FruitLabStyle.Place((RectTransform)header.transform, safeArea, 12f, height - 68f, width, 60f);
-            header.ApplyLabLayout(width);
+            FruitLabStyle.AddSurface(middleArea.gameObject, Color.clear);
+            foreach (string old in new[] { "LabRoom", "LabBackdrop" })
+            { var art = middleArea.Find(old); if (art != null) art.gameObject.SetActive(false); }
+            header.ApplyLayout();
             FruitLabStyle.Place(crystals.GetRectTransform(), _homeContent, 12f, height - 184f, width, 106f);
             crystals.ApplyLabStyle();
             FruitLabStyle.Place(powers.GetRectTransform(), _homeContent, 12f, height - 316f, width, 120f);
@@ -72,7 +69,7 @@ namespace Scripts
             var privacy = actions.Find("PrivacyButton"); if (privacy != null) privacy.gameObject.SetActive(false);
             ButtonAppearance.For(play).SetActionStyle(true);
             var goal=ClosestBadgeView.Ensure(_homeContent);
-            FruitLabStyle.Place((RectTransform)goal.transform,_homeContent,36f,actions.anchoredPosition.y+44f,width-48f,60f);
+            FruitLabStyle.Place((RectTransform)goal.transform,_homeContent,36f,actions.anchoredPosition.y+44f,width-48f,72f);
             goal.ApplyLayout();
 
         }

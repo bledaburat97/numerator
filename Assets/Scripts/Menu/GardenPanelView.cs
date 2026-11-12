@@ -41,6 +41,8 @@ namespace Menu
         private TMP_Text _title;
         private Button _buy, _collection;
         private GardenCoinCounter _coins;
+        private bool _sharedHeader;
+        public void SetSharedHeader(bool shared) { _sharedHeader=shared; EnsureUi(); ApplyLayout(); }
         private RectTransform _footer, _detailsOverlay;
         private GardenBatchListView _details;
         private Button _closeDetails;
@@ -59,7 +61,8 @@ namespace Menu
 
         public void EnsureUi()
         {
-            if (_scroll != null) return;
+            if (_scroll != null && _coins != null && _plots.Count == FruitOrder.Length) return;
+            _plots.Clear(); _dots.Clear();
             // Disable the previous list hierarchy in existing scene/prefab instances.
             // It remains available as a batch details view, built only when opened.
             foreach (string old in new[] { "Summary", "Empty", "EmptyIllustration", "GrowthRule", "Batches", "BuySeeds" })
@@ -156,6 +159,9 @@ namespace Menu
         public void ApplyLayout()
         {
             EnsureUi(); var rect = (RectTransform)transform; _lastSize = rect.rect.size;
+            // Unity can restore component references after an editor reload while
+            // the small C# counter wrapper needs to be reconstructed.
+            _coins ??= new GardenCoinCounter(transform, "GardenCoins");
             float width = rect.rect.width, height = rect.rect.height;
             FruitLabStyle.Stretch(_backdrop.rectTransform);
             const float headerHeight = 62, footerHeight = 60;
@@ -176,8 +182,9 @@ namespace Menu
             }
             _scroll.Configure(pitch, 3);
             FruitLabStyle.Place((RectTransform)_collection.transform, transform, 7, height - 60, 54, 54);
-            FruitLabStyle.Place(_title.rectTransform, transform, 64, height - 53, width - 184, 42);
+            FruitLabStyle.Place(_title.rectTransform, transform, 64, height - 53, width - (_sharedHeader?128:184), 42);
             _coins.Place(transform, width - 111, height - 54, 104, 40, 22);
+            _coins.Root.gameObject.SetActive(!_sharedHeader);
             FruitLabStyle.Place(_footer, transform, 0, 0, width, footerHeight);
             FruitLabStyle.Place((RectTransform)_buy.transform, _footer, 9, 2, 56, 56);
             for (int i = 0; i < _dots.Count; i++) FruitLabStyle.Place(_dots[i].rectTransform, _footer, width * .5f - 14 + i * 18, 24, 10, 10);

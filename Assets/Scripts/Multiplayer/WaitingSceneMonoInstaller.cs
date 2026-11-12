@@ -12,6 +12,8 @@ namespace Scripts
 
         public override void InstallBindings()
         {
+            Container.BindInterfacesAndSelfTo<MenuHeaderController>().AsSingle()
+                .WithArguments(MenuHeaderView.Ensure(waitingSceneUI.GetComponentInParent<Canvas>()));
             Container.Bind<ISettingsPopupService>().To<SettingsPopupService>().AsSingle();
             Container.BindInterfacesAndSelfTo<Menu.MainNavigationController>().AsSingle()
                 .WithArguments(Menu.MainNavigationView.Ensure(waitingSceneUI.GetComponentInParent<Canvas>())).NonLazy();

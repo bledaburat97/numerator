@@ -3,7 +3,7 @@ using Scripts.Economy;
 
 namespace Scripts
 {
-    public class MenuHeaderController : IMenuHeaderController,IDisposable
+    public class MenuHeaderController : IMenuHeaderController,IDisposable,Zenject.IInitializable
     {
         private readonly IMenuHeaderView _view;
         private readonly IPlayerProfileRepository _profiles;
@@ -12,7 +12,8 @@ namespace Scripts
         {
             _view=view;_profiles=profiles;_profiles.Updated+=OnProfileChanged;
         }
-        public void Initialize(ILevelTracker levelTracker){_initialized=true;Refresh();}
+        public void Initialize(ILevelTracker levelTracker)=>Initialize();
+        public void Initialize(){_initialized=true;Refresh();}
         private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Coins|ProfileArea.Achievements))Refresh();}
         private void Refresh(){if(!_initialized)return;var profile=_profiles.Snapshot();_view.Init(profile.Wallet.Coins);_view.SetBadges(profile.Missions.Badges);}
         public void Dispose()=>_profiles.Updated-=OnProfileChanged;

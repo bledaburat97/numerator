@@ -42,8 +42,9 @@ namespace Menu
         [SerializeField] private BaseButtonView closeButton;
         [SerializeField] private FruitCollectionCell[] cells;
         [SerializeField] private NonDraggableCardItemView cardPrefab;
-        private bool _initialized, _embedded;
-        public void SetEmbedded(bool embedded) { _embedded = embedded; Initialize(); ApplyLayout(); }
+        [NonSerialized] private bool _initialized;
+        private bool _embedded;
+        public void SetEmbedded(bool embedded) { _embedded = embedded; Initialize(); _garden.SetSharedHeader(embedded); ApplyLayout(); }
         private Vector2 _lastSize;
         private UnityEngine.UI.Button _gardenTab,_collectionTab;
         private UnityEngine.UI.ScrollRect _collectionScroll;

@@ -63,6 +63,8 @@ public static class FruitLabNavigationEditorTools
         var previous = MainNavigationState.RequestedTab;
         try
         {
+            CheckFruitGoalPolicy();
+            ImportMenuArtwork();
             Bake();
             foreach (var size in new[] { new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932) }) Preview(size);
             foreach (var sceneName in new[] { "Lobby", "WaitingScene" }) CheckOnline(sceneName);
@@ -72,8 +74,8 @@ public static class FruitLabNavigationEditorTools
         }
         finally { MainNavigationState.RequestedTab = previous; Application.logMessageReceived -= collect; }
         Require(errors.Count == 0, "No runtime/editor errors: " + string.Join("; ", errors));
-        File.WriteAllText(Folder + "/navigation-review.json", "{\"passed\":true,\"sizes\":[568,667,812,932],\"tabs\":5,\"checks\":[\"real page switching\",\"locked multiplayer\",\"disabled market\",\"settings access\",\"no home privacy link\",\"no game tabs\",\"online exit routing\"]}");
-        return "Five icon tabs; real garden/collection pages; menu settings/achievements; locked multiplayer and disabled market; 4 sizes and real tab raycasts; no game tabs; no player-data writes";
+        File.WriteAllText(Folder + "/navigation-review.json", "{\"passed\":true,\"sizes\":[568,667,812,932],\"tabs\":5,\"checks\":[\"badge-garden-home-multiplayer-market order\",\"absolute remaining fruit goals only\",\"equal compact header counters\",\"44-unit settings target\",\"notch sky continuity\",\"real page switching\",\"locked multiplayer\",\"disabled market\",\"shared online settings\",\"no home privacy link\",\"no game tabs\",\"online exit routing\"]}");
+        return "Generated orchard art and icon tabs; fruit-only nearest goal; shared blue header and notch continuity; 4 sizes and real tab/settings raycasts; online exit routing; no game tabs or player-data writes";
     }
     private static void Bake()
     {
@@ -102,6 +104,32 @@ public static class FruitLabNavigationEditorTools
             finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
         }
     }
+    private static void ImportMenuArtwork()
+    {
+        foreach(string name in new[]{"OrchardHome","TabGarden","TabHome","TabMultiplayer","TabMarket"})
+        {
+            string path="Assets/Resources/Art/Menu/"+name+".png";
+            AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);
+            var importer=(TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
+            importer.alphaIsTransparency=name!="OrchardHome";importer.mipmapEnabled=false;
+            importer.wrapMode=TextureWrapMode.Clamp;importer.npotScale=TextureImporterNPOTScale.None;
+            importer.maxTextureSize=name=="OrchardHome"?2048:256;
+            importer.textureCompression=TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+        }
+    }
+    private static void CheckFruitGoalPolicy()
+    {
+        var goals=new[]{
+            new AchievementStatus{Id="fruit-a",Kind=MissionKind.FruitA,Fruit=FruitId.Strawberry,Target=100,Progress=90},
+            new AchievementStatus{Id="fruit-b",Kind=MissionKind.FruitB,Fruit=FruitId.Orange,Target=10,Progress=8},
+            new AchievementStatus{Id="level",Kind=MissionKind.Level,Target=10,Progress=9},
+            new AchievementStatus{Id="duel",Kind=MissionKind.Duel,Target=1,Progress=0}
+        };
+        Require(AchievementPriority.FruitGoals(goals).Select(goal=>goal.Id).SequenceEqual(new[]{"fruit-b","fruit-a"}),"Home uses absolute fruit remainder, never level/duel goals or percentage ranking");
+        goals[1].Unlocked=true;Require(AchievementPriority.FruitGoals(goals).Single().Id=="fruit-a","Completed fruit goal is excluded");
+    }
     private static void Preview(Vector2 size)
     {
         int height = (int)size.y;
@@ -120,11 +148,14 @@ public static class FruitLabNavigationEditorTools
             bindings.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             var buttons = bindings.Resolve<BaseButtonControllerFactory>(); var profile = _gardenWorldReview ? FruitLabGardenWorldEditorTools.PreviewProfile(_presentationReview) : PlayerProfileRuntime.Current;
             var rules = new AchievementRules(new EconomySettings()); var garden = new GardenService(profile, new EconomySettings(), new SystemGardenClock(), rules);
+            using var headerController=new MenuHeaderController(canvas.GetComponentInChildren<MenuHeaderView>(true),profile);headerController.Initialize();
+            using var closest=new ClosestBadgePresenter(new AchievementService(profile,rules),profile,new PreviewCollectionNavigation(),ClosestBadgeView.Ensure(canvas.GetComponent<FruitLabMenuLayout>().HomeContent));closest.Initialize();
             var visits=new GardenVisitCoordinator(garden);
             using var collection = new FruitCollectionPresenter(new FruitInventoryService(profile, rules), profile, menu.GetCollectionView(), buttons, garden, visits, menu.GetGardenNoticeView(),new Scripts.Economy.AchievementService(profile,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings())));
             var requests = new List<string>();
             using var controller = new MainNavigationController(view, tracker, buttons, collection, requests.Add, () => { });
             MainNavigationState.RequestedTab = MainTab.Home; controller.Initialize();
+            CheckHeaderAndTabs(canvas,view);
             new MenuUIController(tracker, new GameSaveService(), buttons, menu);
             new RewardProgressDisplayController(canvas.GetComponentInChildren<VerticalCrystalProgressView>(true), tracker).Initialize();
             Require(!menu.GetCollectionView().IsVisible, "Home starts without a collection overlay");
@@ -166,6 +197,7 @@ public static class FruitLabNavigationEditorTools
             var badges = popup.GetComponentsInChildren<Button>().First(button => button.name == "AchievementsButton");
             badges.onClick.Invoke(); Require(menu.GetCollectionView().IsVisible && !menu.GetCollectionView().IsGardenSelected && !menu.GetAchievementsView().IsVisible, "Settings opens the shared collection");
             controller.Select(MainTab.Home); Require(!menu.GetAchievementsView().IsVisible, "Tabs dismiss achievement details");
+            if(height==812)CheckNotchedHome(canvas,scene);
             Set(tracker, "_levelId", 0);
             controller.Select(MainTab.Multiplayer); Require(requests.Count == 0, "Level lock protects direct multiplayer routing");
             Set(tracker, "_levelId", 5); controller.Select(MainTab.Multiplayer); Require(requests.SequenceEqual(new[] { "Lobby" }), "Unlocked tab opens Lobby");
@@ -182,22 +214,75 @@ public static class FruitLabNavigationEditorTools
     private static void CheckOnline(string name)
     {
         var source = EditorSceneManager.OpenPreviewScene("Assets/Scenes/" + name + ".unity");
+        var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);
         try
         {
-            var view = Find<MainNavigationView>(source); Require(view != null, "Online navigation exists");
+            var clone=Object.Instantiate(Find<Canvas>(source).gameObject);SceneManager.MoveGameObjectToScene(clone,scene);
+            var canvas=clone.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.transform.localScale=Vector3.one;
+            ((RectTransform)canvas.transform).sizeDelta=new Vector2(375,812);canvas.transform.position=Vector3.zero;
+            canvas.GetComponent<FruitLabOnlineLayout>().ApplyLayout();
+            var view = MainNavigationView.Ensure(canvas); Require(view != null, "Online navigation exists");
             var root = new GameObject("OnlineNavigationTracker"); root.SetActive(false);
             try
             {
                 var tracker = root.AddComponent<LevelTracker>(); Set(tracker, "_levelId", 20);
+                var bindings=new DiContainer();bindings.Bind<IHapticController>().FromInstance(new SilentHaptics());
+                bindings.BindFactory<IBaseButtonView,Action,IBaseButtonController,BaseButtonControllerFactory>().To<BaseButtonController>();
+                var buttons=bindings.Resolve<BaseButtonControllerFactory>();
                 var requests = new List<string>(); int shutdowns = 0;
-                using var controller = new MainNavigationController(view, tracker, null, null, requests.Add, () => shutdowns++);
-                controller.Initialize(); Require(!view.SettingsButton.gameObject.activeSelf, "Online scenes reuse their existing settings button");
+                using var header=new MenuHeaderController(MenuHeaderView.Ensure(canvas),PlayerProfileRuntime.Current);header.Initialize();
+                using var controller = new MainNavigationController(view, tracker, buttons, null, requests.Add, () => shutdowns++);
+                controller.Initialize(); Require(view.SettingsButton.gameObject.activeSelf, "Shared header settings are visible online");
+                view.BringForward();
+                Capture(canvas,scene,Folder+"/preview-navigation-"+name.ToLowerInvariant()+"-812.png");
+                Click(canvas,view.SettingsButton);
+                Require(canvas.GetComponentInChildren<SettingsPopupView>()!=null,"Shared online settings opens from real raycast");
                 controller.Select(MainTab.Garden);
                 Require(shutdowns == 1 && requests.SequenceEqual(new[] { "Menu" }) && MainNavigationState.RequestedTab == MainTab.Garden, "Online tab leaves the room and opens the requested page");
             }
             finally { Object.DestroyImmediate(root); }
         }
-        finally { EditorSceneManager.ClosePreviewScene(source); }
+        finally { EditorSceneManager.CloseScene(scene,true);EditorSceneManager.ClosePreviewScene(source); }
+    }
+    private static void CheckNotchedHome(Canvas canvas,Scene scene)
+    {
+        var header=canvas.GetComponentInChildren<MenuHeaderView>(true);
+        var layout=canvas.GetComponent<FruitLabMenuLayout>();
+        var safe=(RectTransform)typeof(FruitLabMenuLayout).GetField("safeArea",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(layout);
+        safe.anchorMin=new Vector2(0,34f/812);safe.anchorMax=new Vector2(1,1-47f/812);Canvas.ForceUpdateCanvases();layout.ApplyLayout();
+        var apply=typeof(MenuHeaderView).GetMethod("ApplyLayout",BindingFlags.NonPublic|BindingFlags.Instance,null,new[]{typeof(Vector2)},null);
+        apply.Invoke(header,new object[]{new Vector2(0,47)});
+        var navigation=canvas.GetComponentInChildren<MainNavigationView>(true);
+        navigation.SafeArea.anchorMin=safe.anchorMin;navigation.SafeArea.anchorMax=safe.anchorMax;
+        Canvas.ForceUpdateCanvases();
+        var headerRect=(RectTransform)header.transform;var canvasRect=(RectTransform)canvas.transform;
+        var corners=new Vector3[4];headerRect.GetWorldCorners(corners);
+        Require(Mathf.Abs(canvasRect.InverseTransformPoint(corners[1]).y-canvasRect.rect.yMax)<.1f,"Header reaches physical top above notch");
+        Require(Mathf.Abs(headerRect.rect.height-103)<.1f,"Safe-area and header share one continuous surface");
+        var gear=(RectTransform)header.SettingsButton.transform;gear.GetWorldCorners(corners);
+        Require(canvasRect.InverseTransformPoint(corners[1]).y<=canvasRect.rect.yMax-47,"Settings stays below notch");
+        Capture(canvas,scene,Folder+"/preview-navigation-home-notched-812.png");
+        safe.anchorMin=Vector2.zero;safe.anchorMax=Vector2.one;Canvas.ForceUpdateCanvases();layout.ApplyLayout();navigation.ApplyLayout();
+    }
+    private sealed class PreviewCollectionNavigation : ICollectionNavigation { public void OpenCollection(string id=null){} }
+    private static void CheckHeaderAndTabs(Canvas canvas,MainNavigationView view)
+    {
+        var header=canvas.GetComponentInChildren<MenuHeaderView>(true);header.ApplyLayout();
+        var badges=header.transform.Find("BadgeCounter") as RectTransform;
+        var coins=header.GetComponentsInChildren<TextHolderAdjustment>(true).Single().transform as RectTransform;
+        Require(Mathf.Abs(badges.rect.width-coins.rect.width)<.1f && Mathf.Abs(badges.rect.height-coins.rect.height)<.1f,"Header counters have equal compact dimensions");
+        Require(badges.position.x<coins.position.x && coins.position.x<view.SettingsButton.transform.position.x,"Header order is badge, coins, settings");
+        Require(((RectTransform)view.SettingsButton.transform).rect.width==44,"Settings uses a smaller 44-unit whole button");
+        var order=new[]{MainTab.Collection,MainTab.Garden,MainTab.Home,MainTab.Multiplayer,MainTab.Market};
+        for(int i=0;i<order.Length;i++)
+        {
+            var tab=view.GetTab(order[i]);var icon=tab.transform.Find("TabArtwork").GetComponent<Image>();
+            Require(icon.sprite!=null,"Generated icon loaded: "+order[i]);
+            if(i>0)Require(tab.transform.position.x>view.GetTab(order[i-1]).transform.position.x,"Requested tab ordering");
+        }
+        var goal=canvas.GetComponentInChildren<ClosestBadgeView>(true);
+        Require(!goal.transform.Find("Name").gameObject.activeSelf,"Home goal has no fruit name");
+        Require(((RectTransform)goal.transform.Find("Track")).rect.height>=20,"Home progress track is thicker");
     }
     private static void CheckGardenWorld(Canvas canvas, Scene scene, GardenPanelView panel, IPlayerProfileRepository profile, MainNavigationController controller)
     {

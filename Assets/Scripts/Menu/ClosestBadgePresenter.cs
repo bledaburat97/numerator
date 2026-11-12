@@ -21,7 +21,7 @@ namespace Menu
             _profiles.Updated+=OnProfileChanged;_view.Selected+=Select;Refresh();
         }
         private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Achievements|ProfileArea.Collection|ProfileArea.Progress))Refresh();}
-        private void Refresh(){var goal=_achievements.Closest();_goalId=goal?.Id;_view.Render(goal);}
+        private void Refresh(){var goal=_achievements.ClosestFruitGoal();_goalId=goal?.Id;_view.Render(goal);}
         private void Select(){if(_goalId!=null)_navigation.OpenCollection(_goalId);}
         public void Dispose(){_profiles.Updated-=OnProfileChanged;if(_view!=null)_view.Selected-=Select;}
     }

@@ -9,6 +9,8 @@ namespace Scripts
         [SerializeField] private LobbyUIView lobbyUIView;
         public override void InstallBindings()
         {
+            Container.BindInterfacesAndSelfTo<MenuHeaderController>().AsSingle()
+                .WithArguments(MenuHeaderView.Ensure(lobbyUIView.GetComponentInParent<Canvas>()));
             Container.BindInterfacesAndSelfTo<Menu.MainNavigationController>().AsSingle()
                 .WithArguments(Menu.MainNavigationView.Ensure(lobbyUIView.GetComponentInParent<Canvas>())).NonLazy();
             Container.Bind<ILobbyPopupCreator>().To<LobbyPopupCreator>().FromComponentInHierarchy().AsSingle();

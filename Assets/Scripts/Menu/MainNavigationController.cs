@@ -62,13 +62,13 @@ namespace Menu
             MainNavigationState.RequestedTab = tab;
             if (tab == MainTab.Garden || tab == MainTab.Collection) _collection.Open(tab == MainTab.Garden ? GardenTab.Garden : GardenTab.Collection);
             else _collection.Close();
-            _view.SetHomeVisible(tab==MainTab.Home,tab!=MainTab.Garden);
+            _view.SetHomeVisible(tab==MainTab.Home,true);
             _view.Render(tab); _view.BringForward();
         }
         public void OpenCollection(string badgeId = null)
         { if(_disposed)return;Select(MainTab.Collection); if(_home)_collection.FocusBadge(badgeId); }
         private void SelectCollectionTab(GardenTab tab) => Select(tab == GardenTab.Garden ? MainTab.Garden : MainTab.Collection);
-        private void OpenSettings()=>_view.ShowSettings(_settings,()=>{OpenCollection();_view.BringForward();});
+        private void OpenSettings()=>_view.ShowSettings(_settings,()=>{OpenCollection();if(_home && _view!=null)_view.BringForward();});
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;

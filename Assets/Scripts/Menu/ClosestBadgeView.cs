@@ -26,19 +26,22 @@ namespace Menu
             _button.onClick.AddListener(()=>Selected?.Invoke());
             _fruit=GardenUi.Icon(transform,"Fruit","Apple");_badge=GardenUi.Icon(transform,"Badge","Badge");
             _title=GardenUi.Text(transform,"Name",17,FruitLabStyle.Text);
-            _title.alignment=TextAlignmentOptions.MidlineLeft;_title.enableAutoSizing=true;_title.fontSizeMin=16;_title.fontSizeMax=17;
-            _amount=GardenUi.Text(transform,"Progress",18,FruitLabStyle.Mint);_amount.alignment=TextAlignmentOptions.MidlineRight;_amount.enableAutoSizing=true;_amount.fontSizeMin=14;_amount.fontSizeMax=18;
+            _title.text=""; _title.gameObject.SetActive(false);
+            _amount=GardenUi.Text(transform,"Progress",19,FruitLabStyle.Text);_amount.alignment=TextAlignmentOptions.Midline;_amount.enableAutoSizing=true;_amount.fontSizeMin=16;_amount.fontSizeMax=19;
             _track=FruitLabStyle.Detail(transform,"Track",FruitLabStyle.Recess);_fill=FruitLabStyle.Detail(_track.transform,"Fill",FruitLabStyle.Mint);
+            var shine=FruitLabStyle.Detail(_fill.transform,"Shine",new Color(1,1,1,.15f));
+            shine.rectTransform.anchorMin=new Vector2(0,.55f);shine.rectTransform.anchorMax=Vector2.one;
+            shine.rectTransform.offsetMin=new Vector2(3,0);shine.rectTransform.offsetMax=new Vector2(-3,-2);
         }
         public void Render(AchievementStatus goal)
         {
+            if(goal!=null && (!goal.Fruit.HasValue || (goal.Kind!=MissionKind.FruitA && goal.Kind!=MissionKind.FruitB)))goal=null;
             EnsureUi();gameObject.SetActive(goal!=null);
             if(goal==null)return;
-            _title.text=goal.Fruit.HasValue?FruitCollectionView.FruitName(goal.Fruit.Value):goal.Kind==MissionKind.Level?"Bölüm tamamla":goal.Kind==MissionKind.Harvest?"Meyve hasat et":"Düello kazan";
             _amount.text=FruitCollectionView.FormatCount(goal.Progress)+"/"+FruitCollectionView.FormatCount(goal.Target);
             _fruit.gameObject.SetActive(goal.Fruit.HasValue);
             if(goal.Fruit.HasValue)FruitLabStyle.SetIcon(_fruit,goal.Fruit.Value.ToString());
-            _badge.color=new Color(.8f,.85f,.85f,.55f);
+            _badge.color=Color.white;
             _fill.rectTransform.anchorMin=Vector2.zero;
             _fill.rectTransform.anchorMax=new Vector2(Mathf.Clamp01((float)((decimal)goal.Progress/goal.Target)),1);
             _fill.rectTransform.offsetMin=_fill.rectTransform.offsetMax=Vector2.zero;
@@ -47,12 +50,11 @@ namespace Menu
         public void ApplyLayout()
         {
             EnsureUi();float width=((RectTransform)transform).rect.width;
-            FruitLabStyle.Place(_badge.rectTransform,transform,10,10,38,38);
-            FruitLabStyle.Place(_fruit.rectTransform,transform,43,13,24,24);
-            float left=_fruit.gameObject.activeSelf?73:58;
-            FruitLabStyle.Place(_title.rectTransform,transform,left,27,width-left-10,26);
-            FruitLabStyle.Place(_amount.rectTransform,transform,width-118,5,106,24);
-            FruitLabStyle.Place(_track.rectTransform,transform,left,13,Mathf.Max(12,width-left-134),5);
+            float height=((RectTransform)transform).rect.height;
+            FruitLabStyle.Place(_badge.rectTransform,transform,10,(height-42)*.5f,42,42);
+            FruitLabStyle.Place(_fruit.rectTransform,transform,width-58,height-41,34,34);
+            FruitLabStyle.Place(_amount.rectTransform,transform,width-78,5,74,24);
+            FruitLabStyle.Place(_track.rectTransform,transform,62,(height-20)*.5f,Mathf.Max(12,width-148),20);
         }
         private void OnDestroy(){if(_button!=null)_button.onClick.RemoveAllListeners();Selected=null;}
     }

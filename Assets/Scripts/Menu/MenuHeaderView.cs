@@ -1,3 +1,5 @@
+using System;
+using Menu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,36 +10,72 @@ namespace Scripts
     {
         [SerializeField] private TextHolderAdjustment starHolder;
         private BadgeCounterView _badges;
-        public void SetBadges(long count){_badges ??= new BadgeCounterView(transform);_badges.Render(count);ApplyBadgeLayout(((RectTransform)transform).rect.width);}
-        private void ApplyBadgeLayout(float width){if(_badges!=null)FruitLabStyle.Place(_badges.Root,transform,Mathf.Max(140,width-174),12,94,40);}
-
-        public void ApplyLabLayout(float width)
+        [NonSerialized] private RectTransform _coins;
+        [NonSerialized] private TMP_Text _coinText;
+        [NonSerialized] private Button _settings;
+        private Vector2 _lastSize, _lastInsets;
+        public Button SettingsButton { get { EnsureUi(); return _settings; } }
+        public static MenuHeaderView Ensure(Canvas canvas)
         {
-            ApplyBadgeLayout(width);
-            RectTransform counter = (RectTransform)starHolder.transform;
-            FruitLabStyle.Place(counter, transform, 0f, 12f, 132f, 40f);
-            starHolder.SetFixedWidth(132f);
-            FruitLabStyle.AddSurface(counter.gameObject, FruitLabStyle.Panel);
-            foreach (ContentSizeFitter fitter in counter.GetComponentsInChildren<ContentSizeFitter>(true)) fitter.enabled = false;
-            Image icon = counter.Find("Image")?.GetComponent<Image>();
-            if (icon != null)
-            {
-                FruitLabStyle.SetIcon(icon, "Coin");
-                FruitLabStyle.Place(icon.rectTransform, icon.transform.parent, 6f, 4f, 32f, 32f);
-            }
-            foreach (TMP_Text label in counter.GetComponentsInChildren<TMP_Text>(true))
-            {
-                label.fontSize = 24f; label.enableAutoSizing = false;
-                label.color = FruitLabStyle.Text;
-                label.alignment = TextAlignmentOptions.MidlineLeft;
-                FruitLabStyle.Place(label.rectTransform, label.transform.parent, 44f, 0f, 84f, 40f);
-            }
+            var view = canvas.GetComponentInChildren<MenuHeaderView>(true);
+            if (view == null) view = FruitLabOnlineLayout.Rect("MenuHeader", canvas.transform).gameObject.AddComponent<MenuHeaderView>();
+            view.ApplyLayout(); return view;
         }
-
-        public void Init(int starCount)
+        private void EnsureUi()
         {
-            starHolder.SetText(starCount.ToString());
-            starHolder.SetPosition();
+            if (_badges != null && _badges.Root != null && _coins != null && _coinText != null && _settings != null) return;
+            _badges = new BadgeCounterView(transform);
+            _coins = starHolder != null ? (RectTransform)starHolder.transform : transform.Find("CoinCounter") as RectTransform;
+            if (_coins == null) _coins = FruitLabOnlineLayout.Rect("CoinCounter", transform);
+            foreach (ContentSizeFitter fitter in _coins.GetComponentsInChildren<ContentSizeFitter>(true)) fitter.enabled = false;
+            _coinText = _coins.GetComponentInChildren<TMP_Text>(true) ?? FruitLabStyle.CreateText("Count", _coins, 21, MenuChrome.Ink);
+            var icon = _coins.Find("Image")?.GetComponent<Image>() ?? FruitLabStyle.Detail(_coins, "Image", Color.white);
+            FruitLabStyle.SetIcon(icon, "Coin"); icon.raycastTarget = false;
+            _settings = FriendUi.Button(transform, "Settings", "", () => { });
+            var gear = FruitLabStyle.Detail(_settings.transform, "Icon", Color.white); FruitLabStyle.SetIcon(gear, "Settings");
+            FruitLabStyle.Surface(_settings.GetComponent<Image>(), new Color32(199, 231, 243, 255));
+            _settings.navigation = new Navigation { mode = Navigation.Mode.None };
+        }
+        public void SetBadges(long count) { EnsureUi(); _badges.Render(count); }
+        public void Init(int starCount) { EnsureUi(); _coinText.text = Menu.FruitCollectionView.FormatCount(starCount); }
+        public void BindSettings(Action open)
+        { EnsureUi(); _settings.onClick.RemoveAllListeners(); if (open != null) _settings.onClick.AddListener(open.Invoke); }
+        public void UnbindSettings() { if (_settings != null) _settings.onClick.RemoveAllListeners(); }
+        public void ApplyLabLayout(float width) => ApplyLayout();
+        public void ApplyLayout()
+        {
+            var canvas = GetComponentInParent<Canvas>(); if (canvas == null) return;
+            ApplyLayout(MenuChrome.SafeTopAndSides(canvas));
+        }
+        // Kept separate so device-safe insets can be exercised by editor previews.
+        private void ApplyLayout(Vector2 insets)
+        {
+            var canvas = GetComponentInParent<Canvas>(); if (canvas == null) return;
+            EnsureUi(); transform.SetParent(canvas.transform, false); gameObject.SetActive(true);
+            var root = (RectTransform)canvas.transform;
+            _lastSize = root.rect.size; _lastInsets = insets;
+            float height = MenuChrome.HeaderHeight + insets.y, width = root.rect.width;
+            FruitLabStyle.Place((RectTransform)transform, root, 0, root.rect.height - height, width, height);
+            var surface = FruitLabStyle.AddSurface(gameObject, MenuChrome.Sky); surface.sprite = null; surface.type = Image.Type.Simple;
+            float left = 12 + insets.x, right = width - left, counterWidth = Mathf.Clamp((width - insets.x * 2) * .285f, 88, 110);
+            FruitLabStyle.Place(_badges.Root, transform, left, 12, counterWidth, 36);
+            _badges.ApplyHeaderStyle(counterWidth);
+            FruitLabStyle.Place(_coins, transform, right - MenuChrome.SettingsSize - 10 - counterWidth, 12, counterWidth, 36);
+            FruitLabStyle.AddSurface(_coins.gameObject, MenuChrome.Counter);
+            if (starHolder != null) starHolder.SetFixedWidth(counterWidth);
+            FruitLabStyle.Place(_coins.Find("Image") as RectTransform, _coins, 3, 3, 30, 30);
+            _coinText.fontSize = 21; _coinText.enableAutoSizing = true; _coinText.fontSizeMin = 17; _coinText.fontSizeMax = 21;
+            _coinText.color = MenuChrome.Ink; _coinText.alignment = TextAlignmentOptions.MidlineLeft; _coinText.raycastTarget = false;
+            FruitLabStyle.Place(_coinText.rectTransform, _coins, 36, 0, counterWidth - 39, 36);
+            FruitLabStyle.Place((RectTransform)_settings.transform, transform, right - MenuChrome.SettingsSize, 8, MenuChrome.SettingsSize, MenuChrome.SettingsSize);
+            FruitLabStyle.Place(_settings.transform.Find("Icon") as RectTransform, _settings.transform, 8, 8, 28, 28);
+            var line = FruitLabStyle.Detail(transform, "HeaderEdge", new Color32(74, 142, 164, 85)); line.sprite = null;
+            FruitLabStyle.Place(line.rectTransform, transform, 0, 0, width, 1);
+        }
+        private void LateUpdate()
+        {
+            var canvas = GetComponentInParent<Canvas>(); if (canvas == null) return;
+            if (((RectTransform)canvas.transform).rect.size != _lastSize || MenuChrome.SafeTopAndSides(canvas) != _lastInsets) ApplyLayout();
         }
     }
 
@@ -59,6 +97,13 @@ namespace Scripts
             FruitLabStyle.Place(_amount.rectTransform,Root,38,0,54,40);
         }
         public void Render(long count)=>_amount.text=Menu.FruitCollectionView.FormatCount(count);
+        public void ApplyHeaderStyle(float width)
+        {
+            FruitLabStyle.AddSurface(Root.gameObject, MenuChrome.Counter);
+            FruitLabStyle.Place(Root.Find("Icon") as RectTransform, Root, 3, 3, 30, 30);
+            _amount.color = MenuChrome.Ink; _amount.fontSize = _amount.fontSizeMax = 21; _amount.fontSizeMin = 17;
+            FruitLabStyle.Place(_amount.rectTransform, Root, 36, 0, width - 39, 36);
+        }
     }
 
     public interface IMenuHeaderView

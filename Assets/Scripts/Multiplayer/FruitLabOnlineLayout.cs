@@ -20,12 +20,16 @@ namespace Scripts
             _size = ((RectTransform)transform).rect.size;
             FruitLabStyle.AddSurface(gameObject, FruitLabStyle.Background);
             FruitLabStyle.Atmosphere((RectTransform)transform);
+            var canvas = GetComponent<Canvas>(); MenuHeaderView.Ensure(canvas);
             var lobby = GetComponentInChildren<LobbyUIView>(true);
             var waiting = GetComponentInChildren<WaitingSceneUIView>(true);
-            float width = Mathf.Min(335, _size.x - 24), height = Mathf.Min(lobby != null ? 428 : 564, _size.y - 148);
+            float top = Menu.MenuChrome.SafeTopAndSides(canvas).y + Menu.MenuChrome.HeaderHeight + 12;
+            float bottom = Menu.MainNavigationView.BarHeight + 12;
+            if(Application.isPlaying && canvas.renderMode!=RenderMode.WorldSpace && Screen.height>0)bottom+=Screen.safeArea.yMin/Screen.height*_size.y;
+            float width = Mathf.Min(335, _size.x - 24), height = Mathf.Min(lobby != null ? 428 : 564, _size.y - top - bottom);
             RectTransform panel = (lobby != null ? lobby.transform : waiting.transform) as RectTransform;
             panel.SetParent(transform, false); Center(panel, width, height);
-            panel.anchoredPosition = new Vector2(0, 30);
+            panel.anchoredPosition = new Vector2(0, (bottom-top)*.5f);
             var surface = FruitLabStyle.AddSurface(panel.gameObject, FruitLabStyle.Panel);
             surface.enabled = lobby == null;
             FruitLabStyle.Rim(panel); panel.Find("LabRim").gameObject.SetActive(lobby == null);
@@ -68,6 +72,7 @@ namespace Scripts
         public static void Settings(BaseButtonView button, RectTransform canvas)
         {
             button.name = "SettingsButton";
+            if(canvas.GetComponentInChildren<MenuHeaderView>(true)!=null){button.gameObject.SetActive(false);return;}
             float topInset = Application.isPlaying && Screen.height > 0 ? (Screen.height - Screen.safeArea.yMax) / Screen.height * canvas.rect.height : 0;
             FruitLabStyle.Place(button.GetButtonRectTransform(), canvas, canvas.rect.width - 58, canvas.rect.height - Mathf.Max(62, topInset + 56), 44, 44);
             ButtonAppearance.For(button).SetSettingsStyle(); button.gameObject.SetActive(true);
