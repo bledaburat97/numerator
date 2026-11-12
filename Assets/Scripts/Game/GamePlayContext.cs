@@ -34,6 +34,7 @@ namespace Scripts
         [Inject] private PositionAssistanceController _positionAssistance;
         [Inject] private UltraPowerUpController _ultra;
         [Inject] private PowerUpUseService _powerUpUses;
+        [Inject] private TutorialBootstrapper _tutorials;
         private bool _powerUpRecoveryPending;
         public PositionAssistanceController PositionAssistance => _positionAssistance;
         public CardAnnotationController Annotations { get; private set; }
@@ -49,6 +50,7 @@ namespace Scripts
             _layoutSize=_presentation!=null?_presentation.LayoutSize:Vector2.zero;
             Annotations=new CardAnnotationController(_initialCardAreaController,_cardPlacementCoordinator,_gameUi,_presentation,_tutorialGate,
                 _hapticController,()=>!_session.IsGameOver && _session.State==LevelFlowState.Playing,_positionAssistance,_initialPresentation,_boardAreaController);
+            _tutorials.SetAnnotations(Annotations);
             var view = GetComponentInChildren<GameUIView>(true);
             view?.GetPairView()?.Configure(new PairDragPresenter(_initialCardAreaController, _cardPlacementCoordinator, _boardAreaController, _boardQuery,
                 _tutorialGate, _gameUi, () => !_session.IsGameOver
@@ -82,6 +84,7 @@ namespace Scripts
             }
             _positionAssistance?.Tick();
             Annotations?.Tick();
+            _tutorials?.Tick();
             _multiplayerHud?.TickPresentation();
         }
 
@@ -177,16 +180,20 @@ namespace Scripts
             if (!hasFocus)
             {
                 CancelCurrentInteractions();
+                _tutorials?.Suspend();
                 TrySave();
             }
+            else _tutorials?.Resume();
 #else
         private void OnApplicationPause(bool pauseStatus)
         {
             if (pauseStatus)
             {
                 CancelCurrentInteractions();
+                _tutorials?.Suspend();
                 TrySave();
             }
+            else _tutorials?.Resume();
 #endif
         }
         

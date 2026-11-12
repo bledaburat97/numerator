@@ -46,7 +46,7 @@ namespace Scripts
 
         public bool TrySelect(int cardIndex)
         {
-            if (_notes==null || !_notes.CanEditNotes || !_notes.CanEditFruit(cardIndex+1) || _layout == null || !_canInteract() || (_gate != null && _gate.IsRestricted)
+            if (_notes==null || !_notes.CanEditNotes || !_notes.CanEditFruit(cardIndex+1) || _layout == null || !_canInteract() || (_gate != null && !_gate.AllowsNotes(cardIndex))
                 || !_cards.TryGetCardItem(cardIndex, out var card) || card.GetCardMoveHandler().IsMovementLocked()
                 || !card.GetView().CanAnnotate || !card.GetView().GetRectTransform().gameObject.activeInHierarchy) return false;
             Cancel();
@@ -56,13 +56,14 @@ namespace Scripts
             _view.Show(); _selected.SetCardAnimation(true);
             _board?.RefreshLayout();_cards.RefreshLayout();OnNotesChanged();
             _haptic?.Vibrate(HapticType.CardGrab);
+            _gate?.NotifyNoteOpened(cardIndex);
             return true;
         }
 
         public void Tick()
         {
             if (_selectedMove == null) return;
-            if (!IsSelecting || !_notes.CanEditNotes || !_canInteract() || (_gate != null && _gate.IsRestricted)
+            if (!IsSelecting || !_notes.CanEditNotes || !_canInteract() || (_gate != null && !_gate.AllowsNotes(_selectedFruit-1))
                 || _selectedMove.IsMovementLocked() || !_selected.CanAnnotate || !_selected.GetRectTransform().gameObject.activeInHierarchy)
             { Cancel(); return; }
         }
@@ -73,10 +74,11 @@ namespace Scripts
             {
                 _notes.SetPresence(_selectedFruit,annotation==CardAnnotation.Excluded?FruitPresence.Absent:annotation==CardAnnotation.Candidate?FruitPresence.Present:FruitPresence.Unknown);
                 _haptic?.Vibrate(HapticType.ButtonClick);
+                if(annotation==CardAnnotation.Excluded && _notes.State.Presence(_selectedFruit)==FruitPresence.Absent)_gate?.NotifyFruitExcluded(_selectedFruit-1);
             }
         }
         private void TogglePosition(int slot)
-        {if(!IsSelecting)return;_notes.TogglePosition(_selectedFruit,slot);_haptic?.Vibrate(HapticType.ButtonClick);}
+        {if(!IsSelecting)return;_notes.TogglePosition(_selectedFruit,slot);_haptic?.Vibrate(HapticType.ButtonClick);if(!_notes.State.IsPossible(_selectedFruit,slot))_gate?.NotifyPositionExcluded(_selectedFruit-1,slot);}
         private void OnNotesChanged(){if(IsSelecting)_view.RenderPositions(_notes.State,_selectedFruit);}
 
         public void Cancel()

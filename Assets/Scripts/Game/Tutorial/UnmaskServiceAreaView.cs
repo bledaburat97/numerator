@@ -40,6 +40,7 @@ namespace Scripts
 
         public void Highlight(RectTransform target, float padding = 5f) => _unmaskServiceView?.Highlight(target, padding);
         public void SetDismiss(System.Action dismiss)=>_unmaskServiceView?.SetDismiss(dismiss);
+        public void SetOutsideDismiss(System.Action dismiss)=>_unmaskServiceView?.SetOutsideDismiss(dismiss);
         
         private void CreateMaskSystem(float duration)
         {
@@ -71,6 +72,7 @@ namespace Scripts
         void InstantiateTutorialFade();
         void Highlight(RectTransform target, float padding = 5f);
         void SetDismiss(System.Action dismiss);
+        void SetOutsideDismiss(System.Action dismiss);
         void CloseTutorialFade();
         void CreateUnmaskCardItem(Vector2 position, Vector2 size, float changeInLocalPosY = 0f, float pixelPerUnit = 230f);
         void ClearAllUnmaskCardItems();

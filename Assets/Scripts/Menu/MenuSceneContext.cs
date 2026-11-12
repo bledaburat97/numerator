@@ -15,7 +15,11 @@ namespace Scripts
 
         public static bool AreCrystalRewardsUnlocked(int levelId)
         {
-            if (LevelPlaytestSchedule.IsActive(levelId)) return true;
+            if (LevelPlaytestSchedule.IsActive(levelId))
+            {
+                int first=LevelPlaytestSchedule.Settings.Cycle.FindIndex(step=>step.NumOfBoardHolders>2);
+                return first>=0 && levelId>=LevelPlaytestSchedule.Settings.StartLevel-1+first;
+            }
             // Derive introduction from level data; later two-slot levels stay unlocked.
             return LevelDataGetter.GetStartingLevelsData().Exists(level =>
                 level.LevelId <= levelId && level.NumOfBoardHolders > 2);

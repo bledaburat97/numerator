@@ -21,6 +21,8 @@ namespace Scripts
         private readonly TutorialMessagePopupView _message;
         private readonly Func<RectTransform> _latestResult;
         private readonly Action _ended;
+        private readonly Func<RectTransform> _lifeTarget;
+        private readonly Action<int,bool> _progress;
         private Sequence _pending;
         private int _step;
         private bool _disposed;
@@ -32,11 +34,13 @@ namespace Scripts
             ICardPlacementCoordinator placement, IResultManager results, IRoundStateManager round,
             ICardItemInfoManager info, IGameUIController ui, TutorialInputGate gate, IUnmaskServiceAreaView mask,
             IHandTutorialView hand, TutorialMessagePopupView message, BaseButtonControllerFactory buttons,
-            Func<RectTransform> latestResult, Action ended)
+            Func<RectTransform> latestResult, Action ended,Func<RectTransform> lifeTarget=null,Action<int,bool> progress=null)
         {
             _initial = initial; _board = board; _placement = placement; _results = results; _round = round;
             _info = info; _ui = ui; _gate = gate; _mask = mask; _hand = hand; _message = message;
             _latestResult = latestResult; _ended = ended;
+            _lifeTarget=lifeTarget;
+            _progress=progress;
             _message.Bind(buttons, Next);
         }
         public static bool CanResume(LevelSaveData save, int maxGuesses)
@@ -50,10 +54,12 @@ namespace Scripts
             return (count == 0 || (guesses[0] != null && guesses[0].SequenceEqual(new[] { 1, 2 })))
                 && (count < 2 || (guesses[1] != null && guesses[1].SequenceEqual(new[] { 3, 1 })));
         }
-        public void Start()
+        public void Start(int checkpointStep=-1,bool boardPreserved=false)
         {
             GameTelemetry.Tutorial("tutorial_started", "first_level");
-            _step = _round.GetTriedCardsList().Count >= 2 ? 7 : _round.GetTriedCardsList().Count == 1 ? 3 : 0;
+            int guesses=_round.GetTriedCardsList().Count;
+            _step=boardPreserved && checkpointStep>=0 && checkpointStep<=10?checkpointStep
+                :guesses>=2?(checkpointStep>=8?8:7):guesses==1?(checkpointStep>=4?4:3):0;
             _placement.CardPlacedEvent += OnPlaced;
             _results.WrongGuessEvent += OnWrong;
             ShowStep();
@@ -75,6 +81,7 @@ namespace Scripts
         private void ShowStep()
         {
             if (_disposed) return;
+            _progress?.Invoke(_step,false);
             GameTelemetry.Tutorial("tutorial_step", "first_level", _step);
             _mask.ClearAllUnmaskCardItems(); _hand.StopActiveAnimation(); _gate.Block(); SetCardLocks(-1);
             if (PlacementStep(out int card, out int slot))
@@ -91,6 +98,7 @@ namespace Scripts
             else if (_step == 3 || _step == 7)
             {
                 _mask.Highlight(_latestResult());
+                _mask.Highlight(_lifeTarget?.Invoke());
                 _message.Show(_step == 3 ? "Sonuçları okuyalım" : "Bir meyve yerinde!",
                     _step == 3 ? "Doğru yer: 0. Yanlış yer: 1. Bir meyve cevapta var, ama başka bir alanda olmalı. Her tahmin bir hak kullanır."
                         : "Doğru yer: 1. Yanlış yer: 0. Sağdaki elma doğru yerde! Kartlar yeni tahmin için yuvalarına döndü.", true, true, "Devam et");
@@ -126,6 +134,7 @@ namespace Scripts
         {
             if (_disposed) return;
             _completed = true; GameTelemetry.Tutorial("tutorial_completed", "first_level", _step);
+            _progress?.Invoke(_step,true);
             TutorialProgress.CompleteFirst(); Dispose(); _ended();
         }
         private void SetCardLocks(int allowed)

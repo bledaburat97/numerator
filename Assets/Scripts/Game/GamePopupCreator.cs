@@ -139,15 +139,26 @@ namespace Scripts
         private void CreateInformationPopup(object sender,EventArgs args)
         {
             if(_information!=null)return;
-            _interactions.Value.CancelCurrentInteractions();
-            _information=GameInformationPopup.Open(safeAreaRectTransform,_levels.GetLevelData().Mechanic,()=>_information=null);
+            _tutorialBootstrapper.Suspend(true);
+            try
+            {
+                _interactions.Value.CancelCurrentInteractions();
+                _information=GameInformationPopup.Open(safeAreaRectTransform,_levels.GetLevelData().Mechanic,()=>{_information=null;_tutorialBootstrapper.Resume(true);});
+            }
+            catch{_tutorialBootstrapper.Resume(true);throw;}
         }
 
         private void CreateSettingsPopup(object sender, EventArgs args)
         {
-            _settings.Show(new SettingsPopupRequest {
-                Prefab=settingsPopupPrefab,Parent=canvasRectTransform,OverlayName="GameSettingsOverlay",Context=SettingsPopupContext.Game,
-                CancelInteractions=_interactions.Value.CancelCurrentInteractions,Save=_saveGameAction,Reset=_deleteSaveAction,Notes=_notes});
+            _tutorialBootstrapper.Suspend(true);
+            try
+            {
+                _settings.Show(new SettingsPopupRequest {
+                    Prefab=settingsPopupPrefab,Parent=canvasRectTransform,OverlayName="GameSettingsOverlay",Context=SettingsPopupContext.Game,
+                    CancelInteractions=_interactions.Value.CancelCurrentInteractions,Save=_saveGameAction,Reset=_deleteSaveAction,Notes=_notes,
+                    Closed=()=>_tutorialBootstrapper.Resume(true)});
+            }
+            catch{_tutorialBootstrapper.Resume(true);throw;}
         }
 
         private void TrySaveGame()

@@ -210,7 +210,10 @@ namespace Scripts
 
         public bool IsFirstLevelTutorial()
         {
-            return _gameOption == GameOption.SinglePlayer && _levelId == 0;
+            if(_gameOption!=GameOption.SinglePlayer)return false;
+            if(LevelPlaytestSchedule.TryCreate(_levelId,out var level) && level.Lesson!=TutorialLessonId.None)
+                return level.Lesson==TutorialLessonId.Basics;
+            return _levelId==0;
         }
 
         public bool IsCardInfoTutorial()
@@ -310,6 +313,8 @@ namespace Scripts
         public int PlaytestStepCount;
         public RewardType? TrialPowerUp;
         public RewardType? BonusReward;
+        public TutorialLessonId Lesson;
+        public bool DisablePowerUps;
         [Newtonsoft.Json.JsonIgnore] public bool IsPlaytest => PlaytestRevision > 0;
         // Every definition field is a value type; never mutate a shared resource or save definition.
         public LevelData Copy() => (LevelData)MemberwiseClone();

@@ -16,6 +16,7 @@ namespace Scripts
         public PowerUpButtonCollection Buttons=>buttons;
 
         private bool _ultraActive;
+        private bool _locked;
         private CanvasGroup _canvasGroup;
         private static IReadOnlyList<RewardType> DisplayOrder=>PowerUpDefinition.DisplayOrder;
         private int _levelId = int.MaxValue - 1;
@@ -61,11 +62,26 @@ namespace Scripts
                 FruitLabStyle.Place(button.GetButtonRectTransform(), transform, left + column * (buttonWidth + gap),
                     (_rows - row - 1) * (buttonHeight + gap), buttonWidth, buttonHeight);
                 button.ApplyLayout(type,buttonWidth,buttonHeight);
+                RenderLock(button);
                 index++;
             }
         }
 
         public void SetUltraActive(bool active){if(_ultraActive==active)return;_ultraActive=active;if(_width>0)ApplyLabLayout(_width,_height,_rows);}
+        public void SetLocked(bool locked)
+        {
+            if(_locked==locked)return;_locked=locked;
+            foreach(var type in DisplayOrder)RenderLock((PowerUpButtonView)GetPowerUpButton(type));
+        }
+        private void RenderLock(PowerUpButtonView button)
+        {
+            var mark=button.transform.Find("UseLock")?.GetComponent<FruitLabGlyph>();
+            if(mark==null && !_locked)return;
+            if(mark==null){mark=FruitLabGlyph.Create(button.transform,FruitLabGlyph.Symbol.Lock,FruitLabStyle.Text);mark.name="UseLock";}
+            mark.gameObject.SetActive(_locked);mark.transform.SetAsLastSibling();
+            var size=button.GetButtonRectTransform().rect.size;
+            FruitLabStyle.Place(mark.rectTransform,button.transform,2,size.y-19,17,17);
+        }
 
         private TMP_Text CountText(RewardType type)=>GetAssignedButton(type).CountText;
 
@@ -175,5 +191,6 @@ namespace Scripts
         void SetRaycastStatus(bool status);
         void SetProgression(int levelId);
         void SetUltraActive(bool active);
+        void SetLocked(bool locked);
     }
 }

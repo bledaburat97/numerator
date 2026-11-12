@@ -17,6 +17,7 @@ namespace Scripts.Economy
         private static void PreserveJsonCollections()
         {
             AotHelper.EnsureList<long>();
+            AotHelper.EnsureList<LevelData>();
             AotHelper.EnsureList<MissionProgress>();
             AotHelper.EnsureList<PendingDuelAward>();
             AotHelper.EnsureList<RewardType>();
@@ -33,6 +34,7 @@ namespace Scripts.Economy
         }
 
         private static IPlayerProfileRepository _persistent;
+        private static IPlayerProfileRepository _playtest;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static IPlayerProfileRepository _probe;
 #endif
@@ -64,6 +66,22 @@ namespace Scripts.Economy
                         var profile=new PlayerProfileData();profile.Progress.LevelId=MenuProgression.MultiplayerUnlockLevel-1;return profile;
                     }));
 #endif
+                if(LevelPlaytestSchedule.UsesSeparateProfile)
+                    return _playtest??(_playtest=new PlayerProfileRepository(
+                        new AtomicPlayerProfileStorage(Path.Combine(Application.persistentDataPath,"tutorial-playtest-profile-v1.json"),Debug.LogWarning),
+                        ()=>{
+                            var profile=JsonConvert.DeserializeObject<PlayerProfileData>(JsonConvert.SerializeObject(Persistent.Snapshot()));
+                            profile.Progress.LevelId=0;profile.PowerUpCheckpoint=null;profile.Wallet.IntroductionGrants.Clear();profile.TelemetryOutbox.Clear();
+                            return profile;
+                        },observerError:Debug.LogException,
+                        commitPolicy:new ProfileTelemetryJournal(TelemetryRuntime.EconomyContext,error=>Debug.LogWarning("Playtest telemetry deferred: "+error.GetType().Name))));
+                return Persistent;
+            }
+        }
+        private static IPlayerProfileRepository Persistent
+        {
+            get
+            {
                 if(_persistent==null)
                 {
                     var storage=new AtomicPlayerProfileStorage(Path.Combine(Application.persistentDataPath,"player-profile.json"),Debug.LogWarning);
@@ -88,6 +106,7 @@ namespace Scripts.Economy
 
         public static void MirrorLegacy(PlayerProfileData profile)
         {
+            if(LevelPlaytestSchedule.UsesSeparateProfile)return;
 #if UNITY_EDITOR
             if(_test!=null)return;
 #endif

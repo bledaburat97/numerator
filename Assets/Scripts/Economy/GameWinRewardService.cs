@@ -126,7 +126,8 @@ namespace Scripts.Economy
     public interface IPendingRewardStorage { string Read();void Write(string data); }
     public sealed class PlayerPrefsRewardStorage : IPendingRewardStorage
     {
-        private const string Key="pending_duel_rewards_v1";private readonly bool _isolated;private string _memory;
+        private string Key=>LevelPlaytestSchedule.UsesSeparateProfile?"tutorial_playtest_pending_duel_rewards_v1":"pending_duel_rewards_v1";
+        private readonly bool _isolated;private string _memory;
         public PlayerPrefsRewardStorage(bool isolated=false){_isolated=isolated;}
         public string Read()=>_isolated?_memory:UnityEngine.PlayerPrefs.GetString(Key,null);
         public void Write(string data)

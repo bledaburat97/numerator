@@ -24,7 +24,7 @@ namespace Scripts
         {
             get
             {
-                if(LevelPlaytestSchedule.Settings.Enabled)return LevelPlaytestSchedule.Settings.StartLevel;
+                if(LevelPlaytestSchedule.Settings.Enabled)return LevelPlaytestSchedule.IntroductionLevel(Type);
                 if(_unscheduled)return int.MaxValue;
                 var level=LevelDataGetter.GetStartingLevelsData().Find(item=>item.NumOfBoardHolders>2);
                 return level==null?int.MaxValue:level.LevelId+1;

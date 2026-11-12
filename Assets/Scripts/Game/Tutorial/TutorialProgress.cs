@@ -44,15 +44,16 @@ namespace Scripts
 #if UNITY_EDITOR
             if (_testValues != null) return _testValues.TryGetValue(key, out int value) && value != 0;
 #endif
-            return PlayerPrefs.GetInt(key, 0) != 0;
+            return PlayerPrefs.GetInt(StorageKey(key), 0) != 0;
         }
         public static void Mark(string key)
         {
 #if UNITY_EDITOR
             if (_testValues != null) { _testValues[key] = 1; return; }
 #endif
-            PlayerPrefs.SetInt(key, 1); PlayerPrefs.Save();
+            PlayerPrefs.SetInt(StorageKey(key), 1); PlayerPrefs.Save();
         }
+        private static string StorageKey(string key)=>LevelPlaytestSchedule.UsesSeparateProfile?"tutorial_playtest_v1:"+key:key;
         public static void CompleteFirst() => Mark(First);
         public static void RepairIncompleteFirstLevel(int levelId)
         {
@@ -60,8 +61,8 @@ namespace Scripts
 #if UNITY_EDITOR
             if (_testValues != null) { _testValues.Remove(First); _testValues.Remove(LegacySkipped); return; }
 #endif
-            if (!PlayerPrefs.HasKey(First) && !PlayerPrefs.HasKey(LegacySkipped)) return;
-            PlayerPrefs.DeleteKey(First); PlayerPrefs.DeleteKey(LegacySkipped); PlayerPrefs.Save();
+            if (!PlayerPrefs.HasKey(StorageKey(First)) && !PlayerPrefs.HasKey(StorageKey(LegacySkipped))) return;
+            PlayerPrefs.DeleteKey(StorageKey(First)); PlayerPrefs.DeleteKey(StorageKey(LegacySkipped)); PlayerPrefs.Save();
         }
     }
     public static class TutorialObjectUtility

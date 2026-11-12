@@ -59,6 +59,7 @@ namespace Scripts
         private LevelSaveData _failedState;
         public event Action Changed;
         public event Action RecoveryRequired;
+        public event Action<RewardType> Applied;
 
         public PowerUpUseService(ILevelTracker tracker,ILevelDataCreator levels,ILevelSaveDataManager state,IRoundStateManager round,
             ICardItemInfoManager cards,IBoardHolderCountManager board,ITargetNumberCreator target,PowerUpUseJournal journal,IGameSaveService saves,
@@ -72,7 +73,7 @@ namespace Scripts
 
         public bool CanUse(RewardType type,int boardIndex=-1)
         {
-            if(_busy || _tracker.GetGameOption()!=GameOption.SinglePlayer || _round.GetRemainingGuessCount()<=0
+            if(_busy || _tracker.GetGameOption()!=GameOption.SinglePlayer || _levels.GetLevelData()?.DisablePowerUps==true || _round.GetRemainingGuessCount()<=0
                 || ReferenceEquals(_state.GetLevelSaveData(),_failedState) || !PowerUpTypeUtility.IsUnlocked(type,_tracker.GetLevelId())
                 || _tracker.GetPowerUpCount(type)<=0)return false;
             var c=Context();
@@ -82,7 +83,7 @@ namespace Scripts
 
         public PowerUpUseResult TryApply(RewardType type,int boardIndex=-1)
         {
-            if(_busy || _tracker.GetGameOption()!=GameOption.SinglePlayer)return PowerUpUseResult.Unavailable;
+            if(_busy || _tracker.GetGameOption()!=GameOption.SinglePlayer || _levels.GetLevelData()?.DisablePowerUps==true)return PowerUpUseResult.Unavailable;
             if(_effects.Get(type)?.IsAlreadyActive(Context())==true)return PowerUpUseResult.AlreadyActive;
             if(!CanUse(type,boardIndex) || (PowerUpDefinition.Get(type).NeedsBoardTarget && boardIndex<0))return PowerUpUseResult.Unavailable;
             _busy=true;bool committed=false;
@@ -92,6 +93,7 @@ namespace Scripts
                 var after=JsonConvert.DeserializeObject<LevelSaveData>(JsonConvert.SerializeObject(before));
                 if(!_effects.Get(type).TryPrepare(Context(),after,boardIndex,out var prepared))return PowerUpUseResult.Unavailable;
                 after.PowerUpUseRevision=checked(before.PowerUpUseRevision+1);
+                after.LastPowerUp=type;
                 // A resumable base must exist before the durable profile debit.
                 _saves.Save(before);
                 var request=new PowerUpUseRequest(type,boardIndex);
@@ -101,7 +103,9 @@ namespace Scripts
                 if(result==ProfileCommitResult.AlreadyApplied || !prepared.ApplyCommitted())
                 {_failedState=_state.GetLevelSaveData();return PowerUpUseResult.ResumeRequired;}
                 _state.GetLevelSaveData().PowerUpUseRevision=after.PowerUpUseRevision;
+                _state.GetLevelSaveData().LastPowerUp=type;
                 _saves.Save(after);
+                ObserverNotification.Send(Applied,type);
                 GameTelemetry.Powerup(type,false,"single");
                 return PowerUpUseResult.Applied;
             }

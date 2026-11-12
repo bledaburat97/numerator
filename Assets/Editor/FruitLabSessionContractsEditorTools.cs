@@ -112,6 +112,7 @@ public static partial class FruitLabTutorialEditorTools
         try
         {
             ValidateSessionAliases();
+            using var isolatedContent=LevelPlaytestSchedule.UseForTests(new LevelPlaytestSettings {Enabled=false});
             int outcomes = 0;
             for (int slots = 2; slots <= 5; slots++)
             foreach (bool won in new[] {true,false})
@@ -180,16 +181,19 @@ public static partial class FruitLabTutorialEditorTools
         finally {DOTween.defaultUpdateType=previous;Application.logMessageReceived-=collect;}
     }
 
-    private static void ValidateSessionAliases()
+    private static void ValidateSessionAliases(bool everyLesson=false)
     {
         var scene=EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
         try
         {
-            foreach(var mode in new[]{GameOption.SinglePlayer,GameOption.MultiPlayer})
+            var cases=Enumerable.Range(0,everyLesson?38:1).Select(index=>(Mode:GameOption.SinglePlayer,Level:everyLesson?index:20))
+                .Concat(new[]{(Mode:GameOption.MultiPlayer,Level:20)});
+            foreach(var test in cases)
             {
+                var mode=test.Mode;
                 using var isolatedProfile=Scripts.Economy.PlayerProfileRuntime.UseForTests(
                     new Scripts.Economy.PlayerProfileRepository(new Scripts.Economy.MemoryPlayerProfileStorage(),()=>{
-                        var profile=new Scripts.Economy.PlayerProfileData();profile.Progress.LevelId=20;
+                        var profile=new Scripts.Economy.PlayerProfileData();profile.Progress.LevelId=test.Level;
                         foreach(RewardType type in Enum.GetValues(typeof(RewardType)))profile.Wallet.PowerUps[type]=3;
                         return profile;
                     }));
@@ -198,7 +202,7 @@ public static partial class FruitLabTutorialEditorTools
                 try
                 {
                     var tracker=root.AddComponent<LevelTracker>();tracker.SuppressPersistenceForTests=true;Field(tracker,"_gameOption",mode);
-                    Field(tracker,"_levelId",20);Field(tracker,"_revealingPowerUpCount",3);Field(tracker,"_bombPowerUpCount",3);
+                    Field(tracker,"_levelId",test.Level);Field(tracker,"_revealingPowerUpCount",3);Field(tracker,"_bombPowerUpCount",3);
                     var container=new DiContainer();
                     container.Bind<Context>().FromInstance(Find<SceneContext>(scene));
                     container.Bind<ILevelTracker>().FromInstance(tracker);container.Bind<IGameSaveService>().FromInstance(new MemorySave());
@@ -225,12 +229,50 @@ public static partial class FruitLabTutorialEditorTools
                         && lifetimes.OfType<PositionAssistanceView>().Count()==1 && lifetimes.OfType<TutorialBootstrapper>().Count()==1,
                         "Input, hint, note-view and tutorial subscriptions belong to the scene container");
                     owner=container.Instantiate<DisposableManager>();
-                    if(mode==GameOption.SinglePlayer)ValidateInstallerStartup(container,session);
+                    if(mode==GameOption.SinglePlayer)
+                    {
+                        if(everyLesson)ValidateInstallerLessonRound(container,session,test.Level);
+                        else ValidateInstallerStartup(container,session);
+                    }
                 }
                 finally {if(owner!=null)owner.Dispose();else{assistance?.Dispose();session?.Dispose();}UnityEngine.Object.DestroyImmediate(root);}
             }
         }
         finally {EditorSceneManager.ClosePreviewScene(scene);}
+    }
+
+    private static void ValidateInstallerLessonRound(DiContainer container,ILevelSession session,int levelId)
+    {
+        container.Inject(container.Resolve<ILevelDataCreator>());container.Inject(container.Resolve<ITargetNumberCreator>());
+        container.Resolve<IGamePowerUpAreaController>().Initialize();session.Begin(LevelEntryMode.New);
+        for(int i=0;i<35;i++)Tick(.1f);
+        var definition=container.Resolve<ILevelDataCreator>().GetLevelData();
+        var target=container.Resolve<ITargetNumberCreator>().GetTargetCardsList().ToArray();
+        Require(session.State==LevelFlowState.Playing && target.Length==definition.NumOfBoardHolders
+            && container.Resolve<ICardItemInfoManager>().GetCardItemInfoList().Count==definition.NumOfCards,
+            "Real Game scene starts lesson "+definition.Lesson+" at level "+(levelId+1));
+        Require(container.Resolve<ILevelTracker>().IsFirstLevelTutorial()==(definition.Lesson==TutorialLessonId.Basics),
+            "The prepared first lesson is selected by its identity in every cycle");
+        var snapshots=container.Resolve<IGameSaveSnapshotProvider>();
+        Require(snapshots.TryCreateSnapshot(out var saved,true) && saved.Tutorial?.Lesson==definition.Lesson,"Lesson state is included in the real checkpoint");
+        var saves=container.Resolve<IGameSaveService>();saves.Save(saved);
+        session.Begin(LevelEntryMode.Resume);
+        Require(session.State==LevelFlowState.Playing && container.Resolve<ITargetNumberCreator>().GetTargetCardsList().SequenceEqual(target)
+            && container.Resolve<ILevelSaveDataManager>().GetLevelSaveData().RoundId==saved.RoundId,"Every real scene lesson resumes the same answer and round");
+        if(levelId<2)
+        {
+            var settings=LevelPlaytestSchedule.Settings;
+            var cycle=settings.Cycle.Select(step=>step.Copy()).ToList();var first=cycle[0];cycle[0]=cycle[1];cycle[1]=first;
+            using(LevelPlaytestSchedule.UseForTests(new LevelPlaytestSettings {Enabled=true,StartLevel=1,Revision=settings.Revision+1,Cycle=cycle}))
+            {
+                session.Begin(LevelEntryMode.Resume);
+                var captured=container.Resolve<ILevelDataCreator>().GetLevelData();
+                Require(session.State==LevelFlowState.Playing && captured.Lesson==definition.Lesson
+                    && container.Resolve<ITargetNumberCreator>().GetTargetCardsList().SequenceEqual(target)
+                    && TutorialLessonController.IsBasics(captured,container.Resolve<ILevelTracker>().IsFirstLevelTutorial())==(definition.Lesson==TutorialLessonId.Basics),
+                    "A reordered revision finishes the saved lesson instead of substituting the new first-level scenario");
+            }
+        }
     }
 
     private static void ValidateInstallerStartup(DiContainer container,ILevelSession session)
@@ -947,6 +989,7 @@ public static partial class FruitLabTutorialEditorTools
                 var di=new DiContainer();di.Bind<IGameInteractionCancellation>().FromInstance(context);
                 var factory=new SettingsPopupService(game.Tracker,(BaseButtonControllerFactory)Get(game,"_buttons"),_=>{},()=>{},()=>{});
                 Set(popup,"_settings",factory);Set(popup,"_interactions",di.Resolve<LazyInject<IGameInteractionCancellation>>());Set(popup,"_saveGameAction",(Action)(()=>{}));Set(popup,"_deleteSaveAction",(Action)(()=>{}));Set(popup,"_notes",assistance);
+                Set(popup,"_tutorialBootstrapper",game.Bootstrap);
                 var query=(IBoardPlacementQuery)Get(game.Placement,"_boardPlacementQuery");
                 var pair=new PairDragPresenter(game.Initial,game.Placement,game.Board,query,game.Gate,game.UI,()=>true);game.View.GetPairView().Configure(pair);
                 game.Initial.TryGetCardItem(0,out var card);var pointer=new UnityEngine.EventSystems.PointerEventData(((GameObject)Get(game,"_events")).GetComponent<UnityEngine.EventSystems.EventSystem>()){pointerId=9,position=new Vector2(70,130)};

@@ -9,7 +9,7 @@ namespace Scripts
     public class GameSaveService : IGameSaveService
     {
         [Zenject.InjectOptional] private Economy.PowerUpUseJournal _powerUps;
-        private readonly string _saveGameKey = "saved_game_key";
+        private string _saveGameKey=>LevelPlaytestSchedule.UsesSeparateProfile?"tutorial_playtest_saved_game_v1":"saved_game_key";
         
         public LevelSaveData GetSavedLevel()
         {
@@ -68,6 +68,7 @@ namespace Scripts
     {
         public string RoundId;
         public int PowerUpUseRevision;
+        public RewardType? LastPowerUp;
         public bool PendingWin;
         public bool HasPendingWin()
         {
@@ -94,6 +95,7 @@ namespace Scripts
         public IceRoundState Ice;
         public List<bool> ActiveRewardTokens;
         public PositionNotesSnapshot PositionNotes;
+        public TutorialLessonState Tutorial;
     }
     
     // Round state belongs to the existing checkpoint, including unopened fruit.

@@ -45,7 +45,7 @@ namespace Scripts
             var runtime=Instance;if(runtime==null || !runtime.CanUpload)return null;
             string scope=PlayerPrefs.GetString(ConsentScopeKey,"");if(!Guid.TryParseExact(scope,"N",out _))return null;
             return new EconomyTelemetryContext {ConsentScope=scope,UtcDay=GardenDay.FromUtc(DateTime.UtcNow),
-                BuildChannel=runtime.Configuration.buildChannel,Version=Application.version,Build=runtime.Configuration.buildNumber};
+                BuildChannel=LevelPlaytestSchedule.UsesSeparateProfile?"tutorial-playtest":runtime.Configuration.buildChannel,Version=Application.version,Build=runtime.Configuration.buildNumber};
         }
         private void EnsureScope()
         {
@@ -144,7 +144,7 @@ namespace Scripts
         {
             if (!CanUpload) return;
             var copy = new Dictionary<string, object>(data) {
-                ["flBuildChannel"] = Configuration.buildChannel,
+                ["flBuildChannel"] = LevelPlaytestSchedule.UsesSeparateProfile?"tutorial-playtest":Configuration.buildChannel,
                 ["flVersion"] = Application.version,
                 ["flBuild"] = Configuration.buildNumber
             };

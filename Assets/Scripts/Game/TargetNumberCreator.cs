@@ -35,13 +35,19 @@ namespace Scripts
                 _targetCardsList = state.FullTarget.Take(numOfBoardHolders).ToList();
                 return;
             }
-            if (_levelTracker.IsFirstLevelTutorial())
+            var prepared=TutorialLessonController.PreparedAnswer(_levelDataCreator.GetLevelData().Lesson);
+            var saved=_gameSaveService.GetSavedLevel();
+            if(TutorialLessonController.IsBasics(_levelDataCreator.GetLevelData(),_levelTracker.IsFirstLevelTutorial()))
             {
-                SetSavedTargetCardList(new List<int>() { 4, 1 });
+                SetSavedTargetCardList(new List<int> {4,1});
             }
-            else if (_gameSaveService.GetSavedLevel() != null)
+            else if(saved!=null)
             {
-                SetSavedTargetCardList(_gameSaveService.GetSavedLevel().TargetCards.Take(numOfBoardHolders).ToList());
+                SetSavedTargetCardList(saved.TargetCards.Take(numOfBoardHolders).ToList());
+            }
+            else if(prepared!=null)
+            {
+                SetSavedTargetCardList(prepared.ToList());
             }
             else if (_levelTracker.IsCardInfoTutorial())
             {

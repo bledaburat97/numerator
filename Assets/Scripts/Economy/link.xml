@@ -1,5 +1,9 @@
 <linker>
   <assembly fullname="Assembly-CSharp">
+    <type fullname="Scripts.LevelData" preserve="all" />
+    <type fullname="Scripts.LevelPlaytestSettings" preserve="all" />
+    <type fullname="Scripts.TutorialLessonState" preserve="all" />
+    <type fullname="Scripts.TutorialLessonId" preserve="all" />
     <type fullname="Scripts.Economy.MissionState" preserve="all" />
     <type fullname="Scripts.Economy.MissionProgress" preserve="all" />
     <type fullname="Scripts.Economy.MissionSettings" preserve="all" />

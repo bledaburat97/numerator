@@ -122,8 +122,9 @@ namespace Game
             {
                 LevelSaveData savedLevel = _gameSaveService.GetSavedLevel();
                 if (savedLevel?.Definition?.Mechanic == LevelMechanic.Growing) GrowingBoardState.UpgradeLegacy(savedLevel);
-                if (savedLevel != null && (savedLevel.HasPendingWin() || !_levelTracker.IsFirstLevelTutorial()
-                    || FirstLevelTutorialController.CanResume(savedLevel, _levelDataCreator.GetLevelData().MaxNumOfTries)))
+                if (savedLevel != null && (savedLevel.HasPendingWin()
+                    || !TutorialLessonController.IsBasics(savedLevel.Definition,_levelTracker.IsFirstLevelTutorial())
+                    || FirstLevelTutorialController.CanResume(savedLevel,savedLevel.Definition?.MaxNumOfTries??_levelDataCreator.GetLevelData().MaxNumOfTries)))
                 {
                     if ((savedLevel.LevelId >= 0 && savedLevel.LevelId != _levelTracker.GetLevelId())
                         || (!savedLevel.HasPendingWin() && !LevelPlaytestSchedule.CanResume(_levelTracker.GetLevelId(), savedLevel.Definition))

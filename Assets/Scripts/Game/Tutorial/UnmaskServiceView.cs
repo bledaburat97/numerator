@@ -11,6 +11,7 @@ namespace Scripts
         [SerializeField] private UnmaskCardItemView unmaskCardItemPrefab;
         private readonly List<UnmaskCardItemView> _items = new List<UnmaskCardItemView>();
         public void SetDismiss(System.Action dismiss)=>spotlight.SetDismiss(dismiss);
+        public void SetOutsideDismiss(System.Action dismiss)=>spotlight.SetOutsideDismiss(dismiss);
         public void Init(Image maskImage, Color color, float alpha)
         {
             // Real UI holes replace the old mask camera and RenderTexture.

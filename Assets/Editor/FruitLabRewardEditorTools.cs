@@ -230,7 +230,7 @@ public static class FruitLabRewardEditorTools
             {
                 var visible=PowerUpTypeUtility.OrderedRewardTypes.Where(type=>PowerUpTypeUtility.IsUnlocked(type,levelId)).Select(type=>powers.GetPowerUpButton(type).GetButtonRectTransform()).ToArray();
                 Require(powers.GetComponentsInChildren<PowerUpButtonView>(false).Length==visible.Length,"Only assigned powers are visible in the menu");
-                Require(visible.Select(item=>Mathf.RoundToInt(item.anchoredPosition.y)).Distinct().Count()==2,"Menu powers use exactly two rows");
+                Require(visible.Select(item=>Mathf.RoundToInt(item.anchoredPosition.y)).Distinct().Count()==Mathf.Min(2,visible.Length),"Menu uses up to two rows as powers unlock");
                 foreach(var item in visible)
                 {
                     Require(item.GetComponentsInChildren<TMPro.TMP_Text>(false).Length==1,"Menu power buttons contain only their count");
@@ -245,7 +245,9 @@ public static class FruitLabRewardEditorTools
             menu.SetSinglePlayerButtonText("Bölüm " + (levelId + 1));
             if (validateProgression)
             {
-                bool rewardsUnlocked = levelId >= (LevelPlaytestSchedule.Settings.Enabled ? 4 : 10);
+                int firstCrystal=LevelPlaytestSchedule.Settings.Enabled
+                    ?LevelPlaytestSchedule.Settings.StartLevel-1+LevelPlaytestSchedule.Settings.Cycle.FindIndex(step=>step.NumOfBoardHolders>2):10;
+                bool rewardsUnlocked = levelId >= firstCrystal;
                 Require(crystals.gameObject.activeSelf == rewardsUnlocked && powers.gameObject.activeSelf == rewardsUnlocked,
                     "Crystal energy and powers follow the active content profile, independent of balances");
                 var nav = MainNavigationView.Ensure(canvas);

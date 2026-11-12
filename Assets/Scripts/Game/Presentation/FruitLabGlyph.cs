@@ -6,7 +6,7 @@ namespace Scripts
     // Small functional symbols stay sharp at every UI scale and don't need a font glyph.
     public class FruitLabGlyph : MaskableGraphic
     {
-        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21, Gift=22, Growing=23, Challenge=24, Leaf=25, Seed=26, Sprout=27, Plant=28, Flower=29, Ice=30 }
+        public enum Symbol { Check, Swap, Reset, Cross, Pair, Rope, Split, Dynamite, Information=9, Ultra=14, Helper=15, Eraser=16, Home=17, Garden=18, Collection=19, Market=20, Players=21, Gift=22, Growing=23, Challenge=24, Leaf=25, Seed=26, Sprout=27, Plant=28, Flower=29, Ice=30, Lock=31 }
         public Symbol Type;
         private Color _meshTint;
         private static readonly Vector2[] FirstPairCard = {
@@ -167,6 +167,12 @@ namespace Scripts
                     float x=-.34f+i*.27f,top=-.08f+i*.17f;
                     RoundedStroke(mesh,new[]{new Vector2(x,-.28f),new Vector2(x,top),new Vector2(x+.2f,top),new Vector2(x+.2f,-.28f)},center,size,stroke*.65f);
                 }
+            }
+            else if(Type==Symbol.Lock)
+            {
+                RoundedStroke(mesh,new[]{new Vector2(-.28f,.04f),new Vector2(-.28f,-.30f),new Vector2(.28f,-.30f),new Vector2(.28f,.04f),new Vector2(-.28f,.04f)},center,size,stroke*.75f);
+                RoundedStroke(mesh,new[]{new Vector2(-.17f,.04f),new Vector2(-.17f,.21f),new Vector2(-.08f,.30f),new Vector2(.08f,.30f),new Vector2(.17f,.21f),new Vector2(.17f,.04f)},center,size,stroke*.75f);
+                Disc(mesh,center+Vector2.down*size*.13f,size*.045f);
             }
             else if(Type==Symbol.Challenge)
             {

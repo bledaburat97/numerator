@@ -9,6 +9,7 @@ namespace Scripts
     {
         [Inject] private LazyInject<PowerUpUseService> _uses;
         [InjectOptional] private UltraPowerUpController _ultra;
+        [InjectOptional] private ILevelDataCreator _levels;
         private const float DisabledAlpha = 0.55f;
         private const float EnabledAlpha = 1f;
 
@@ -56,6 +57,7 @@ namespace Scripts
 
             _view.SetProgression(_levelTracker.GetLevelId());
             _view.SetUltraActive(_ultra?.Active??false);
+            _view.SetLocked(_levels?.GetLevelData()?.DisablePowerUps==true);
             foreach (RewardType rewardType in PowerUpTypeUtility.OrderedRewardTypes)
             {
                 int count = _levelTracker.GetPowerUpCount(rewardType);

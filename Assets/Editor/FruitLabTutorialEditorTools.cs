@@ -745,6 +745,7 @@ public static partial class FruitLabTutorialEditorTools
             container.BindFactory<IBaseButtonView, Action, IBaseButtonController, BaseButtonControllerFactory>().To<BaseButtonController>();
             _buttons = container.Resolve<BaseButtonControllerFactory>();
             _powers = new GamePowerUpAreaController(_buttons, canvas.GetComponentInChildren<PowerUpListHolderView>(true), Tracker);
+            Field(_powers,"_levels",level);
             View = canvas.GetComponentInChildren<GameUIView>(true);
             UI = new GameUIController(_buttons, Tracker, null, haptic, View, _powers); Field(UI, "_tutorialGate", Gate);
             var fade = new FadePanelController(canvas.GetComponentInChildren<FadePanelView>(true));
@@ -825,7 +826,11 @@ public static partial class FruitLabTutorialEditorTools
         {
             Layer(Canvas.transform); Draw(Camera);
             var pointer = new PointerEventData(_events.GetComponent<EventSystem>()) { position = RectTransformUtility.WorldToScreenPoint(Camera, target.TransformPoint(target.rect.center)) };
-            var hits = new List<RaycastResult>(); Canvas.GetComponent<GraphicRaycaster>().Raycast(pointer, hits);
+            var hits = new List<RaycastResult>();
+            foreach(var raycaster in Canvas.GetComponentsInChildren<GraphicRaycaster>(true))
+                if(raycaster.isActiveAndEnabled)raycaster.Raycast(pointer,hits);
+            hits=hits.OrderByDescending(hit=>SortingLayer.GetLayerValueFromID(hit.sortingLayer))
+                .ThenByDescending(hit=>hit.sortingOrder).ThenByDescending(hit=>hit.depth).ToList();
             Require(hits.Count > 0 && hits[0].gameObject.GetComponentsInParent<MonoBehaviour>().Any(component => handler.IsInstanceOfType(component)),
                 "Spotlight hole must pass input to " + target.name + "; top=" + hits.FirstOrDefault().gameObject?.name);
         }

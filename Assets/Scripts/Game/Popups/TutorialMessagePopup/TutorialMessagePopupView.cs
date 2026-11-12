@@ -17,6 +17,21 @@ namespace Scripts
         private TutorialMessagePlacement _placement;
         private Image _surface, _rim;
         private Vector2 _lastParentSize;
+        private RectTransform _currencyFlow;
+        public void ShowCurrencyFlow()
+        {
+            if(_currencyFlow!=null)return;
+            _currencyFlow=FruitLabOnlineLayout.Rect("CurrencyFlow",transform);
+            for(int group=0;group<2;group++)
+            {
+                var token=FruitLabStyle.Detail(_currencyFlow,group==0?"Coin":"Crystal",Color.white);
+                FruitLabStyle.SetIcon(token,group==0?"Coin":"Crystal");
+                var arrow=FruitLabStyle.CreateText("Arrow"+group,_currencyFlow,25,FruitLabStyle.Background);arrow.text="→";arrow.alignment=TextAlignmentOptions.Center;
+                if(group==0){var seed=FruitLabGlyph.Create(_currencyFlow,FruitLabGlyph.Symbol.Seed,FruitLabStyle.Background);seed.name="Seed";}
+                else {var power=FruitLabStyle.Detail(_currencyFlow,"Power",Color.white);FruitLabStyle.SetIcon(power,"Reveal");}
+            }
+            ApplyLayout();
+        }
         public void Init()
         {
             transform.localScale = Vector3.one;
@@ -57,7 +72,7 @@ namespace Scripts
             float bodyHeight = text != null ? Mathf.Max(56f, text.GetPreferredValues(text.text, width - 32f, 0f).y + 4f) : 56f;
             float titleHeight=title!=null?Mathf.Max(28f,title.GetPreferredValues(title.text,width-32f,0f).y+2f):28f;
             bool actions = nextButton != null && nextButton.gameObject.activeSelf;
-            float height = bodyHeight + titleHeight + (actions ? 90f : 42f);
+            float height = bodyHeight + titleHeight + (actions ? 90f : 42f)+(_currencyFlow!=null?58:0);
             bool centered = _placement == TutorialMessagePlacement.Center;
             bool bottom = _placement == TutorialMessagePlacement.Bottom;
             rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(.5f, centered ? .5f : bottom ? 0f : 1f);
@@ -69,6 +84,18 @@ namespace Scripts
             FruitLabStyle.Place(title.rectTransform, rectTransform, 16f, height - 16f - titleHeight, width - 32f, titleHeight);
             FruitLabStyle.Place(text.rectTransform, rectTransform, 16f, height - 24f - titleHeight - bodyHeight, width - 32f, bodyHeight);
             FruitLabStyle.Place(nextButton.GetButtonRectTransform(), rectTransform, 16f, 12f, width - 32f, 44f);
+            if(_currencyFlow!=null)
+            {
+                FruitLabStyle.Place(_currencyFlow,rectTransform,16,62,width-32,50);
+                float half=(width-32)*.5f;
+                for(int group=0;group<2;group++)
+                {
+                    float x=group*half+(half-112)*.5f;
+                    FruitLabStyle.Place((RectTransform)_currencyFlow.Find(group==0?"Coin":"Crystal"),_currencyFlow,x,7,36,36);
+                    FruitLabStyle.Place((RectTransform)_currencyFlow.Find("Arrow"+group),_currencyFlow,x+40,8,28,34);
+                    FruitLabStyle.Place((RectTransform)_currencyFlow.Find(group==0?"Seed":"Power"),_currencyFlow,x+76,7,36,36);
+                }
+            }
         }
 
         private void ApplyAppearance()

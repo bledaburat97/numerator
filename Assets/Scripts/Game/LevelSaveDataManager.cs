@@ -44,6 +44,7 @@ namespace Game
             }
 
             _levelSaveData.RemovedBoardHolderCount = 0;
+            if(levelData.Lesson!=TutorialLessonId.None)_levelSaveData.Tutorial=new TutorialLessonState {Lesson=levelData.Lesson};
         }
 
         public void SetLevelSaveDataAsSaved(LevelSaveData savedData)

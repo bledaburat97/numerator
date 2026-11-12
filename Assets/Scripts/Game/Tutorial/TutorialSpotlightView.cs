@@ -13,7 +13,9 @@ namespace Scripts
         private readonly List<float> _xs = new List<float>(10), _ys = new List<float>(10);
         private readonly Vector3[] _corners = new Vector3[4];
         private Action _dismiss;
-        public void SetDismiss(Action dismiss)=>_dismiss=dismiss;
+        private bool _consumeHoles=true;
+        public void SetDismiss(Action dismiss){_dismiss=dismiss;_consumeHoles=true;}
+        public void SetOutsideDismiss(Action dismiss){_dismiss=dismiss;_consumeHoles=false;}
         public void OnPointerDown(PointerEventData data)=>_dismiss?.Invoke();
         public void SetHoles(IEnumerable<RectTransform> holes)
         {
@@ -22,7 +24,7 @@ namespace Scripts
         public bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
         {
             // Optional introductions consume the dismissing touch, including highlighted controls.
-            if(_dismiss!=null)return true;
+            if(_dismiss!=null && _consumeHoles)return true;
             foreach (RectTransform hole in _holes)
                 if (hole != null && hole.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(hole, screenPoint, eventCamera)) return false;
             return true;

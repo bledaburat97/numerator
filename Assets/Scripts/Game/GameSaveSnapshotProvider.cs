@@ -39,7 +39,8 @@ namespace Scripts
             bool mutatedBeforeGuess = (_saveData?.GetLevelSaveData().PowerUpUseRevision??0)>0 || _saveData?.GetLevelSaveData().Ice != null || _saveData?.GetLevelSaveData().Dynamite != null || (_saveData?.GetLevelSaveData().GrowingBoard?.FullTarget.Count == GrowingBoardState.MaximumCount) || (_saveData?.GetLevelSaveData().TrialStockPrepared ?? false) || (_saveData?.GetLevelSaveData().BoardSplitApplied ?? false) || (_saveData?.GetLevelSaveData().PairWasApplied ?? false)
                 || (_saveData?.GetLevelSaveData().UltraActive ?? false) || (_saveData?.GetLevelSaveData().PairClue != null) || _boardHolderCountManager.GetRemovedBoardHolderCount() > 0
                 || (info != null && info.Any(card => card.isLocked || !card.isExisted));
-            bool hasNotes = _saveData?.GetLevelSaveData().PositionNotes?.Edited == true;
+            bool hasNotes = _saveData?.GetLevelSaveData().PositionNotes?.Edited == true
+                || _saveData?.GetLevelSaveData().Tutorial!=null;
             if (!includeUnchanged && _roundStateManager.GetTriedCardsList().Count == 0 && !mutatedBeforeGuess && !hasNotes) return false;
             if (_roundStateManager.GetRemainingGuessCount() <= 0 || _session.IsGameOver) return false;
             if (_session.State != LevelFlowState.Idle && _session.State != LevelFlowState.Playing) return false;
@@ -49,6 +50,8 @@ namespace Scripts
                 PendingWin=_saveData?.GetLevelSaveData().PendingWin??false,
                 RoundId = _saveData?.GetLevelSaveData().RoundId,
                 PowerUpUseRevision = _saveData?.GetLevelSaveData().PowerUpUseRevision ?? 0,
+                LastPowerUp = _saveData?.GetLevelSaveData().LastPowerUp,
+                Tutorial = _saveData?.GetLevelSaveData().Tutorial?.Copy(),
                 TriedCardsList = CreateTriedCardsSnapshot(),
                 TargetCards = new List<int>(_targetNumberCreator.GetTargetCardsList()),
                 RemainingGuessCount = _roundStateManager.GetRemainingGuessCount(),

@@ -180,7 +180,7 @@ namespace Scripts
         }
 
         private bool OnCardLongPressed(int cardIndex) => CanMoveCard(cardIndex)
-            && (_tutorialGate == null || !_tutorialGate.IsRestricted) && _longPressHandler?.Invoke(cardIndex) == true;
+            && (_tutorialGate == null || _tutorialGate.AllowsNotes(cardIndex)) && _longPressHandler?.Invoke(cardIndex) == true;
 
         private void OnCardDragStarted(int cardIndex)
         {
