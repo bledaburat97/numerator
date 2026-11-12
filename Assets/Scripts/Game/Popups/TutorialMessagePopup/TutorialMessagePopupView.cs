@@ -69,10 +69,10 @@ namespace Scripts
             if (title != null) { title.fontSize = 21f; title.enableAutoSizing = false; title.fontStyle = FontStyles.Bold; title.textWrappingMode=TextWrappingModes.Normal; }
             if (nextButton != null)
                 foreach (TMP_Text buttonLabel in nextButton.GetComponentsInChildren<TMP_Text>(true)) { buttonLabel.fontSize = 18f; buttonLabel.enableAutoSizing = false; }
-            float bodyHeight = text != null ? Mathf.Max(56f, text.GetPreferredValues(text.text, width - 32f, 0f).y + 4f) : 56f;
-            float titleHeight=title!=null?Mathf.Max(28f,title.GetPreferredValues(title.text,width-32f,0f).y+2f):28f;
+            float bodyHeight = text != null ? Mathf.Max(48f, text.GetPreferredValues(text.text, width - 48f, 0f).y + 4f) : 48f;
+            float titleHeight=title!=null?Mathf.Max(28f,title.GetPreferredValues(title.text,width-48f,0f).y+2f):28f;
             bool actions = nextButton != null && nextButton.gameObject.activeSelf;
-            float height = bodyHeight + titleHeight + (actions ? 90f : 42f)+(_currencyFlow!=null?58:0);
+            float height = bodyHeight + titleHeight + (actions ? 128f : 72f)+(_currencyFlow!=null?58:0);
             bool centered = _placement == TutorialMessagePlacement.Center;
             bool bottom = _placement == TutorialMessagePlacement.Bottom;
             rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(.5f, centered ? .5f : bottom ? 0f : 1f);
@@ -81,13 +81,13 @@ namespace Scripts
             rectTransform.sizeDelta = new Vector2(width, height);
             ApplyAppearance();
             if (title == null || nextButton == null) return;
-            FruitLabStyle.Place(title.rectTransform, rectTransform, 16f, height - 16f - titleHeight, width - 32f, titleHeight);
-            FruitLabStyle.Place(text.rectTransform, rectTransform, 16f, height - 24f - titleHeight - bodyHeight, width - 32f, bodyHeight);
-            FruitLabStyle.Place(nextButton.GetButtonRectTransform(), rectTransform, 16f, 12f, width - 32f, 44f);
+            FruitLabStyle.Place(title.rectTransform, rectTransform, 24f, height - 36f - titleHeight, width - 48f, titleHeight);
+            FruitLabStyle.Place(text.rectTransform, rectTransform, 24f, height - 44f - titleHeight - bodyHeight, width - 48f, bodyHeight);
+            FruitLabStyle.Place(nextButton.GetButtonRectTransform(), rectTransform, 24f, 28f, width - 48f, 44f);
             if(_currencyFlow!=null)
             {
-                FruitLabStyle.Place(_currencyFlow,rectTransform,16,62,width-32,50);
-                float half=(width-32)*.5f;
+                FruitLabStyle.Place(_currencyFlow,rectTransform,24,84,width-48,50);
+                float half=(width-48)*.5f;
                 for(int group=0;group<2;group++)
                 {
                     float x=group*half+(half-112)*.5f;
@@ -102,14 +102,14 @@ namespace Scripts
         {
             if (_surface == null) _surface = GetComponent<Image>();
             if (_rim == null) _rim = transform.Find("LabRim")?.GetComponent<Image>();
-            if (_surface != null) _surface.color = Color.Lerp(FruitLabStyle.Text,FruitLabStyle.Mint,.15f);
-            if (_rim != null) _rim.color = FruitLabStyle.Mint;
+            PopupArtStyle.Apply(gameObject,true);
+            if (_rim != null) _rim.gameObject.SetActive(false);
             if (title != null)
             {
-                title.color = FruitLabStyle.Background;
+                title.color = PopupArtStyle.Ink;
                 title.alignment = TextAlignmentOptions.Midline;
             }
-            if (text != null) text.color = FruitLabStyle.Background;
+            if (text != null) text.color = PopupArtStyle.Body;
         }
     }
     public interface ITutorialMessagePopupView

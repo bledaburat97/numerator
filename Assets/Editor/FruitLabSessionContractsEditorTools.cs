@@ -915,11 +915,11 @@ public static partial class FruitLabTutorialEditorTools
             var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<SettingsPopupView>("Assets/Prefabs/SettingsPopup.prefab");
             var parent=new GameObject("SettingsScaledParent",typeof(RectTransform));parent.transform.SetParent(canvas.transform,false);
             FruitLabStyle.Stretch((RectTransform)parent.transform);parent.transform.localScale=Vector3.one*.8f;
-            var scenes=new List<string>();int cancelled=0,closed=0,saved=0,reset=0,collection=0,privacy=0,shutdown=0;
+            var scenes=new List<string>();int cancelled=0,closed=0,saved=0,reset=0,privacy=0,shutdown=0;
             var buttons=(BaseButtonControllerFactory)Get(game,"_buttons");
             var factory=new SettingsPopupService(game.Tracker,buttons,scene=>scenes.Add(scene),()=>shutdown++,()=>privacy++);
             SettingsPopupRequest Request(SettingsPopupContext context)=>new SettingsPopupRequest{Prefab=prefab,Parent=parent.transform,OverlayName="SettingsTestOverlay",Context=context,
-                CancelInteractions=()=>{Require(parent.transform.Find("SettingsTestOverlay")==null,"Cancel precedes overlay creation");cancelled++;},Closed=()=>closed++,Save=()=>saved++,Reset=()=>reset++,Collection=()=>collection++};
+                CancelInteractions=()=>{Require(parent.transform.Find("SettingsTestOverlay")==null,"Cancel precedes overlay creation");cancelled++;},Closed=()=>closed++,Save=()=>saved++,Reset=()=>reset++};
             try
             {
                 foreach(var context in new[]{SettingsPopupContext.Menu,SettingsPopupContext.Online,SettingsPopupContext.Game})
@@ -932,16 +932,14 @@ public static partial class FruitLabTutorialEditorTools
                     Require(((Component)view.GetRetryButton()).gameObject.activeSelf==(context==SettingsPopupContext.Game),"Retry is available only in a single-player game, even when online opens from a single-player profile");
                     var privacyButton=view.GetComponentsInChildren<UnityEngine.UI.Button>(true).Single(button=>button.name=="PrivacyButton");
                     privacyButton.onClick.Invoke();Require(privacy==cancellations+1,"Privacy uses the shared controller dependency");
-                    if(context==SettingsPopupContext.Menu)
-                        view.GetComponentsInChildren<UnityEngine.UI.Button>(true).Single(button=>button.name=="AchievementsButton").onClick.Invoke();
-                    else
+                    Require(view.GetComponentsInChildren<TMPro.TMP_Text>(false).All(label=>label.text!="Koleksiyon"),"Settings never includes a collection shortcut");
                     {
                         var button=(BaseButtonView)view.GetCloseButton();button.OnPointerDown(null);Require(!handle.IsClosed,"Close waits for pointer release");button.OnPointerUp(null);button.OnPointerClick(null);
                     }
                     handle.Close();
                     Require(handle.IsClosed && closed==closes+1 && parent.transform.Find("SettingsTestOverlay")==null,"Close cleans the owned overlay once");
                 }
-                Require(saved==0 && reset==0 && scenes.Count==0 && collection==1,"Closing and opening collection do not save, reset or navigate");
+                Require(saved==0 && reset==0 && scenes.Count==0,"Closing settings does not save, reset or navigate");
                 foreach(bool menu in new[]{true,false})
                 {
                     using(var handle=factory.Show(Request(SettingsPopupContext.Game)))Click((BaseButtonView)(menu?handle.View.GetMenuButton():handle.View.GetRetryButton()));

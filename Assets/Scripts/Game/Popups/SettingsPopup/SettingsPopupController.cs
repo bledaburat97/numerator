@@ -15,7 +15,7 @@ namespace Scripts
         public Transform Parent;
         public string OverlayName;
         public SettingsPopupContext Context;
-        public Action CancelInteractions,Closed,Save,Reset,Collection;
+        public Action CancelInteractions,Closed,Save,Reset;
         public IPositionNotesSettings Notes;
     }
     // Owns just this popup's controller and overlay, including external destruction.
@@ -63,7 +63,7 @@ namespace Scripts
                 var controller=new SettingsPopupController(_loadScene,_shutdown,_privacy);
                 handle=new SettingsPopupHandle(overlay,popup,controller,request.Closed);
                 controller.Initialize(popup,handle.Close,request.Save,request.Reset,_tracker,_buttons,request.Notes,request.Context);
-                if(request.Context==SettingsPopupContext.Menu)popup.ConfigureForMenu(()=>{handle.Close();request.Collection?.Invoke();});
+                if(request.Context==SettingsPopupContext.Menu)popup.ConfigureForMenu();
                 else if(request.Context==SettingsPopupContext.Online)popup.GetCloseButton().SetText("Geri dön");
                 return handle;
             }

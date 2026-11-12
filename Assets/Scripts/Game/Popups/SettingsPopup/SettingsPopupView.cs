@@ -16,16 +16,11 @@ namespace Scripts
         public event System.Action Destroyed;
         private void OnDestroy()=>Destroyed?.Invoke();
         private bool _singlePlayer = true, _menuContext;
-        private RectTransform _achievements;
-        public void ConfigureForMenu(System.Action openCollection)
+        public void ConfigureForMenu()
         {
             _menuContext = true; _notesVisible = false;
             retryButton.SetButtonStatus(false); menuButton.SetButtonStatus(false);
             closeButton.SetText("Kapat"); description.gameObject.SetActive(false);
-            if (_achievements == null) _achievements = (RectTransform)TelemetryPrivacyPanel.AddButton(content, "AchievementsButton", "Koleksiyon", () => { }).transform;
-            _achievements.GetComponentInChildren<TMP_Text>().text="Koleksiyon";
-            var button = _achievements.GetComponent<Button>(); button.onClick.RemoveAllListeners();
-            if (openCollection != null) button.onClick.AddListener(openCollection.Invoke);
             ApplyLayout();
         }
         private RectTransform _privacy;
@@ -81,30 +76,37 @@ namespace Scripts
             float availableWidth = parent != null && parent.rect.width > 1f ? parent.rect.width
                 : canvas != null ? ((RectTransform)canvas.rootCanvas.transform).rect.width : 375f;
             float width = Mathf.Min(335f, Mathf.Max(240f, availableWidth - 32f));
-            float height = _menuContext ? 300 : _singlePlayer ? 400f : 340f;
+            float height = _menuContext ? 252 : _singlePlayer ? 400f : 340f;
             if(_notesVisible)height+=54f;
             rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(width, height);
             if (content == null || title == null || description == null) return;
+            PopupArtStyle.Apply(gameObject);
+            var contentImage=content.GetComponent<Image>();if(contentImage!=null)contentImage.enabled=false;
+            foreach(string old in new[]{"AchievementsButton","CollectionButton"})
+                if(content.Find(old) is Transform legacy)legacy.gameObject.SetActive(false);
+            title.color=PopupArtStyle.Ink;title.fontSize=24;title.fontStyle=FontStyles.Bold;
+            title.alignment=TextAlignmentOptions.Midline;title.enableAutoSizing=false;
+            description.color=PopupArtStyle.Body;description.fontSize=16;description.fontStyle=FontStyles.Normal;
+            description.alignment=TextAlignmentOptions.Midline;description.textWrappingMode=TextWrappingModes.Normal;
             FruitLabStyle.Stretch(content, 3f);
             float innerWidth = width - 6f;
             FruitLabStyle.Place(title.rectTransform, content, 21f, height - 65f, innerWidth - 42f, 34f);
             FruitLabStyle.Place(description.rectTransform, content, 21f, height - 105f, innerWidth - 42f, 36f);
-            FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 17f, _singlePlayer ? 142f : 82f, innerWidth - 34f, 54f);
-            FruitLabStyle.Place(retryButton.GetButtonRectTransform(), content, 17f, 82f, innerWidth - 34f, 48f);
-            FruitLabStyle.Place(menuButton.GetButtonRectTransform(), content, 17f, 22f, innerWidth - 34f, 48f);
-            if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17f, height - 172f, innerWidth - 34f, 48f);
+            FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 25f, _singlePlayer ? 142f : 82f, innerWidth - 50f, 54f);
+            FruitLabStyle.Place(retryButton.GetButtonRectTransform(), content, 25f, 82f, innerWidth - 50f, 48f);
+            FruitLabStyle.Place(menuButton.GetButtonRectTransform(), content, 25f, 28f, innerWidth - 50f, 48f);
+            if (_privacy != null) FruitLabStyle.Place(_privacy, content, 25f, height - 172f, innerWidth - 50f, 48f);
             if (_menuContext)
             {
-                FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 17, 18, innerWidth - 34, 52);
-                if (_privacy != null) FruitLabStyle.Place(_privacy, content, 17, 138, innerWidth - 34, 48);
-                if (_achievements != null) FruitLabStyle.Place(_achievements, content, 17, 78, innerWidth - 34, 48);
+                FruitLabStyle.Place(closeButton.GetButtonRectTransform(), content, 25, 30, innerWidth - 50, 52);
+                if (_privacy != null) FruitLabStyle.Place(_privacy, content, 25, 94, innerWidth - 50, 48);
             }
             if(_notesVisible && _notesReset!=null)
             {
                 float closeY=_singlePlayer?142:82;
-                FruitLabStyle.Place(_notesReset,content,17,closeY+66,innerWidth-34,46);
+                FruitLabStyle.Place(_notesReset,content,25,closeY+66,innerWidth-50,46);
             }
         }
 

@@ -216,8 +216,10 @@ public static class FruitLabNavigationEditorTools
             var popup = canvas.GetComponentInChildren<SettingsPopupView>(); Require(popup != null, "Menu settings open");
             Require(!((Component)popup.GetRetryButton()).gameObject.activeSelf && !((Component)popup.GetMenuButton()).gameObject.activeSelf, "Menu settings omit game-only actions");
             var privacy = popup.GetComponentsInChildren<Button>().First(button => button.name == "PrivacyButton"); Require(privacy.interactable, "Privacy is accessible through settings");
-            var badges = popup.GetComponentsInChildren<Button>().First(button => button.name == "AchievementsButton");
-            badges.onClick.Invoke(); Require(menu.GetCollectionView().IsVisible && !menu.GetCollectionView().IsGardenSelected && !menu.GetAchievementsView().IsVisible, "Settings opens the shared collection");
+            Require(!popup.GetComponentsInChildren<TMP_Text>().Any(label=>label.text=="Koleksiyon"),"Menu settings has no collection shortcut");
+            Capture(canvas,scene,Folder+"/preview-navigation-settings-"+height+".png");
+            var closeSettings=(BaseButtonView)popup.GetCloseButton();closeSettings.OnPointerDown(null);closeSettings.OnPointerUp(null);closeSettings.OnPointerClick(null);
+            Require(canvas.GetComponentInChildren<SettingsPopupView>()==null,"Menu settings closes cleanly");
             controller.Select(MainTab.Home); Require(!menu.GetAchievementsView().IsVisible, "Tabs dismiss achievement details");
             if(height==812)CheckNotchedHome(canvas,scene);
             Set(tracker, "_levelId", 0);

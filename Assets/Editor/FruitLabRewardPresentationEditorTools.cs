@@ -12,9 +12,42 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 public static partial class FruitLabTutorialEditorTools
 {
+    public static void ReviewPopupArtwork(Canvas canvas,Camera camera)
+    {
+        var original=((RectTransform)canvas.transform).sizeDelta;float ortho=camera.orthographicSize;
+        try
+        {
+            foreach(var size in new[]{new Vector2(320,568),new Vector2(375,812)})
+            {
+                ((RectTransform)canvas.transform).sizeDelta=size;canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
+                camera.orthographicSize=Mathf.Max(size.y*.5f,size.x/(2*camera.aspect));
+                var information=GameInformationPopup.Open(canvas.transform,LevelMechanic.Growing,()=>{});
+                try
+                {
+                    Require(information.transform.Find("Panel").GetComponent<UnityEngine.UI.Image>().sprite.name=="popup","Information uses the supplied popup artwork");
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-popup-information-"+(int)size.y+".png");
+                }
+                finally{Object.DestroyImmediate(information.gameObject);}
+                var prefab=AssetDatabase.LoadAssetAtPath<Menu.FruitCollectionView>("Assets/Prefabs/FruitCollection.prefab");
+                var collection=Object.Instantiate(prefab,canvas.transform,false);
+                try
+                {
+                    FruitLabStyle.Stretch((RectTransform)collection.transform);collection.SetEmbedded(true);collection.SetVisible(true);
+                    collection.CollectionPopup.SetVisible(true);
+                    var panel=collection.CollectionPopup.transform.Find("Panel");
+                    Require(panel.GetComponent<UnityEngine.UI.Image>().sprite.name=="popup","Collection uses the supplied popup artwork");
+                    Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-popup-collection-"+(int)size.y+".png");
+                }
+                finally{Object.DestroyImmediate(collection.gameObject);}
+            }
+        }
+        finally{((RectTransform)canvas.transform).sizeDelta=original;camera.orthographicSize=ortho;canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();}
+    }
+
     public static string BakePowerUpRewardPresentation()
     {
         var path="Assets/Scenes/Game.unity";var scene=SceneManager.GetSceneByPath(path);bool opened=!scene.isLoaded;

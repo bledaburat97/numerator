@@ -25,9 +25,9 @@ namespace Menu
                 var dim=GetComponent<Image>() ?? gameObject.AddComponent<Image>();dim.color=new Color(0,0,0,.65f);dim.raycastTarget=true;
                 var outside=GetComponent<Button>() ?? gameObject.AddComponent<Button>();outside.transition=Selectable.Transition.None;
                 outside.onClick.RemoveAllListeners();outside.onClick.AddListener(()=>SetVisible(false));
-                _panel=GardenUi.Rect(transform,"Panel");FruitLabStyle.AddSurface(_panel.gameObject,FruitLabStyle.Panel).raycastTarget=true;
+                _panel=GardenUi.Rect(transform,"Panel");PopupArtStyle.Apply(_panel.gameObject);
                 if(_panel.GetComponent<Button>()==null)_panel.gameObject.AddComponent<Button>().transition=Selectable.Transition.None;
-                GardenUi.Text(_panel,"Title",24,FruitLabStyle.Text).text="Koleksiyon";
+                GardenUi.Text(_panel,"Title",24,PopupArtStyle.Ink).text="Koleksiyon";
                 _grid=GardenUi.Scroll(_panel,"Fruits");
                 _close=GardenUi.Button(_panel,"Close","Kapat");_close.onClick.RemoveAllListeners();_close.onClick.AddListener(()=>SetVisible(false));
             }
@@ -46,8 +46,9 @@ namespace Menu
             float width=Mathf.Min(350,_size.x-24),height=Mathf.Min(436,_size.y-16);
             FruitLabStyle.Place(_panel,root,(_size.x-width)*.5f,_size.y-height-8,width,height);
             FruitLabStyle.Place((RectTransform)_panel.Find("Title"),_panel,16,height-48,width-32,32);
-            FruitLabStyle.Place((RectTransform)_grid.transform,_panel,12,66,width-24,Mathf.Max(1,height-124));
-            float cellWidth=(width-40)/3,cellHeight=Mathf.Clamp((height-140)/3,84,94);
+            PopupArtStyle.Apply(_panel.gameObject);
+            FruitLabStyle.Place((RectTransform)_grid.transform,_panel,26,78,width-52,Mathf.Max(1,height-142));
+            float cellWidth=(width-68)/3,cellHeight=Mathf.Clamp((height-158)/3,80,94);
             GardenUi.Content(_grid,3*(cellHeight+8)-8);
             for(int i=0;i<_cells.Length;i++)
             {
@@ -55,9 +56,10 @@ namespace Menu
                 cell.Root.anchoredPosition=new Vector2((i%3)*(cellWidth+8),-(i/3)*(cellHeight+8));cell.Root.sizeDelta=new Vector2(cellWidth,cellHeight);
                 float side=Mathf.Min(60,Mathf.Min(cellWidth-12,cellHeight-34));
                 FruitLabStyle.Place((RectTransform)cell.Card.transform,cell.Root,(cellWidth-side)*.5f,cellHeight-side-4,side,side);
-                FruitLabStyle.Place(cell.Amount.rectTransform,cell.Root,2,3,cellWidth-4,25);GardenUi.Quantity(cell.Amount,22);
+                FruitLabStyle.Place(cell.Amount.rectTransform,cell.Root,2,3,cellWidth-4,25);GardenUi.Quantity(cell.Amount,22);cell.Amount.color=PopupArtStyle.Ink;
+                FruitLabStyle.Surface(cell.Root.GetComponent<Image>(),new Color(.42f,.50f,.26f,.10f));
             }
-            FruitLabStyle.Place((RectTransform)_close.transform,_panel,16,12,width-32,44);
+            FruitLabStyle.Place((RectTransform)_close.transform,_panel,28,26,width-56,44);
         }
         private void LateUpdate(){if(((RectTransform)transform).rect.size!=_size)ApplyLayout();}
     }

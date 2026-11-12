@@ -834,7 +834,7 @@ public static partial class FruitLabTutorialEditorTools
                     SubmitIce(game,ice,new[]{6,2,5,4,1});
                     Require(ice.Service.IsFrozen && !game.Placement.TryPlaceCardOnBoard(4,4),"The next editing turn is already frozen and blocks placement");
                     var boardIce=game.Board.GetRectTransformOfGarden(4).GetComponentInParent<BoardHolderView>().GetComponentInChildren<IceCardGraphic>();
-                    Require(boardIce!=null,"Frozen last holder is visible before submitting");
+                    Require(boardIce!=null && boardIce.sprite==PopupArtStyle.Ice,"Frozen last holder uses the supplied ice sprite before submitting");
                     int reveal=game.Tracker.GetPowerUpCount(RewardType.Revealing);
                     Click((BaseButtonView)canvas.GetComponentInChildren<PowerUpListHolderView>(true).GetPowerUpButton(RewardType.Revealing));
                     Require(!game.Reveal.TryRequestRevealCard(4) && game.Tracker.GetPowerUpCount(RewardType.Revealing)==reveal,"Frozen reveal selection rejects the target without consuming stock");
@@ -845,6 +845,7 @@ public static partial class FruitLabTutorialEditorTools
                     var resultView=canvas.GetComponentInChildren<ResultAreaView>(true);resultView.RefreshVisibleRows();
                     var past=resultView.GetVisibleRow(1);
                     Require(past!=null && past.GetComponentsInChildren<IceCardGraphic>().Length==1,"Historical ice remains visible after the live board thaws and after Helper");
+                    Require(past.GetComponentInChildren<IceCardGraphic>().sprite==PopupArtStyle.Ice,"History shares the live board ice artwork");
                     IceSnapshot(game,definition);
                     Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-ice-history-"+(int)size.y+".png");
                     SubmitIce(game,ice,new[]{6,7,8,9,1});

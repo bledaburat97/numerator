@@ -155,7 +155,7 @@ public static class FruitLabEditorTools
                     break;
                 case "settings-review":
                     reply.details = FruitLabSettingsEditorTools.Bake()
-                        + "\n" + Render(5, 9, validation: FruitLabSettingsEditorTools.Review, validateBeforeRender: true)
+                        + "\n" + Render(5, 9, validation: (canvas,camera)=>{FruitLabSettingsEditorTools.Review(canvas,camera);FruitLabTutorialEditorTools.ReviewPopupArtwork(canvas,camera);}, validateBeforeRender: true)
                         + "\n" + FruitLabRewardEditorTools.RenderMenu()
                         + "\n" + FruitLabSettingsEditorTools.AuditTutorials();
                     break;

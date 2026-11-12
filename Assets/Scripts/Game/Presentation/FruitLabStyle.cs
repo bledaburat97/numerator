@@ -5,6 +5,26 @@ using UnityEngine.UI;
 
 namespace Scripts
 {
+    // Shared artwork and readable ink for the supplied cream popup surfaces.
+    public static class PopupArtStyle
+    {
+        public static readonly Color Ink = new Color32(61,64,42,255);
+        public static readonly Color Body = new Color32(98,81,62,255);
+        public static Sprite Ice => Resources.Load<Sprite>("Art/UI/ice");
+
+        public static void Apply(GameObject target, bool tutorial = false)
+        {
+            var image = target.GetComponent<Image>() ?? target.AddComponent<Image>();
+            image.sprite = Resources.Load<Sprite>(tutorial ? "Art/UI/tutorial_popup" : "Art/UI/popup");
+            image.type = Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = tutorial ? 5f : 4f;
+            image.color = Color.white;
+            image.raycastTarget = true;
+            var oldRim = target.transform.Find("LabRim");
+            if (oldRim != null) oldRim.gameObject.SetActive(false);
+        }
+    }
+
     public static class FruitLabStyle
     {
         public static readonly Color Background = Hex("13272F");

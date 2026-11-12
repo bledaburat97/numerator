@@ -323,6 +323,7 @@ public static class FruitLabSettingsEditorTools
 
     public static string Bake()
     {
+        ImportPopupArtwork();
         string backup = Folder + "/SettingsBackups/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
         Directory.CreateDirectory(backup);
         File.Copy(Path, backup + "/SettingsPopup.prefab");
@@ -379,6 +380,23 @@ public static class FruitLabSettingsEditorTools
         return "Saved SettingsPopup.prefab and removed MenuTitle from Menu.unity; backup=" + backup;
     }
 
+    private static void ImportPopupArtwork()
+    {
+        foreach(string name in new[]{"popup","tutorial_popup","ice"})
+        {
+            string path="Assets/Resources/Art/UI/"+name+".png";
+            AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+            var importer=(TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
+            importer.spritePixelsPerUnit=100;importer.alphaIsTransparency=true;importer.mipmapEnabled=false;
+            importer.textureCompression=TextureImporterCompression.Uncompressed;importer.maxTextureSize=2048;
+            importer.spriteBorder=name=="popup"?new Vector4(140,116,140,156):name=="tutorial_popup"?new Vector4(150,150,150,170):Vector4.zero;
+            var settings=new TextureImporterSettings();importer.ReadTextureSettings(settings);settings.spriteMeshType=SpriteMeshType.FullRect;importer.SetTextureSettings(settings);
+            importer.SaveAndReimport();
+            Require(AssetDatabase.LoadAssetAtPath<Sprite>(path)!=null,"Popup artwork imports as a sprite: "+path);
+        }
+    }
+
     public static void Review(Canvas canvas, Camera camera)
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Path);
@@ -395,6 +413,8 @@ public static class FruitLabSettingsEditorTools
                 try
                 {
                     var view = root.GetComponent<SettingsPopupView>(); view.Init(); view.SetSinglePlayer(single);
+                    Require(root.GetComponent<Image>().sprite.name=="popup","Settings uses the supplied popup sprite");
+                    Require(root.transform.Find("Image/Title").GetComponent<TMPro.TMP_Text>().alignment==TMPro.TextAlignmentOptions.Midline,"Settings title is centered");
                     var rect = (RectTransform)root.transform;
                     Require(rect.rect.width <= width - 31f && rect.rect.height < height, "Popup must fit the available mobile area");
                     Require(((Component)view.GetRetryButton()).gameObject.activeSelf == single, "Retry is available only in single player");

@@ -31,8 +31,8 @@ namespace Menu
             var canvas=GetComponentInParent<Canvas>();canvas.GetComponent<FruitLabMenuLayout>().SetHomeVisible(visible);
             MenuHeaderView.Ensure(canvas).gameObject.SetActive(true);
         }
-        public void ShowSettings(ISettingsPopupService service,Action collection)=>service.Show(new SettingsPopupRequest {
-            Prefab=settingsPrefab,Parent=transform.parent,OverlayName="MainSettingsOverlay",Context=HasHome?SettingsPopupContext.Menu:SettingsPopupContext.Online,Collection=HasHome?collection:null});
+        public void ShowSettings(ISettingsPopupService service)=>service.Show(new SettingsPopupRequest {
+            Prefab=settingsPrefab,Parent=transform.parent,OverlayName="MainSettingsOverlay",Context=HasHome?SettingsPopupContext.Menu:SettingsPopupContext.Online});
         public const float BarHeight = 68;
         private static readonly MainTab[] VisualOrder = { MainTab.Collection, MainTab.Garden, MainTab.Home, MainTab.Multiplayer, MainTab.Market };
         [SerializeField] private SettingsPopupView settingsPrefab;

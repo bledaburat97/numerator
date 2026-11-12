@@ -68,7 +68,7 @@ namespace Menu
         public void OpenCollection(string badgeId = null)
         { if(_disposed)return;Select(MainTab.Collection); if(_home)_collection.FocusBadge(badgeId); }
         private void SelectCollectionTab(GardenTab tab) => Select(tab == GardenTab.Garden ? MainTab.Garden : MainTab.Collection);
-        private void OpenSettings()=>_view.ShowSettings(_settings,()=>{OpenCollection();if(_home && _view!=null)_view.BringForward();});
+        private void OpenSettings()=>_view.ShowSettings(_settings);
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;
