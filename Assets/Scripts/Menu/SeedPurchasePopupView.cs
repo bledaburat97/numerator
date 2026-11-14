@@ -48,10 +48,10 @@ namespace Menu
             _cards.Clear();_fruits.Clear();
             var backdrop=GetComponent<Image>() ?? gameObject.AddComponent<Image>();backdrop.color=new Color(0,0,0,.65f);backdrop.raycastTarget=true;
             var outside=GetComponent<Button>() ?? gameObject.AddComponent<Button>();outside.transition=Selectable.Transition.None;outside.onClick.AddListener(()=>Cancel?.Invoke());
-            _panel=GardenUi.Rect(transform,"Panel");FruitLabStyle.AddSurface(_panel.gameObject,FruitLabStyle.Panel).raycastTarget=true;
+            _panel=GardenUi.Rect(transform,"Panel");PopupArtStyle.Apply(_panel.gameObject);
             // Consume taps on panel whitespace rather than dismissing through it.
             if(_panel.GetComponent<Button>()==null)_panel.gameObject.AddComponent<Button>().transition=Selectable.Transition.None;
-            var title=GardenUi.Text(_panel,"Title",24,FruitLabStyle.Text);title.text="Tohum Marketi";
+            var title=GardenUi.Text(_panel,"Title",24,PopupArtStyle.Ink);title.text="Tohum Marketi";
             foreach(string old in new[]{"Balance","BalanceLabel","BalanceCounter","Remaining"})
             {var child=_panel.Find(old);if(child!=null)child.gameObject.SetActive(false);}
             _body=GardenUi.Scroll(_panel,"Options");
@@ -85,10 +85,10 @@ namespace Menu
             _quantity.characterLimit=19;_quantity.lineType=TMP_InputField.LineType.SingleLine;
             _quantity.onValueChanged.AddListener(value=>QuantityChanged?.Invoke(value));
             foreach(string name in new[]{"Total","Remaining"}){var legacy=_body.content.Find(name);if(legacy!=null)legacy.gameObject.SetActive(false);}
-            _totalLabel=GardenUi.Text(_panel,"TotalLabel",20,FruitLabStyle.Text);_totalLabel.text="Toplam";_totalLabel.alignment=TextAlignmentOptions.MidlineLeft;
+            _totalLabel=GardenUi.Text(_panel,"TotalLabel",20,PopupArtStyle.Ink);_totalLabel.text="Toplam";_totalLabel.alignment=TextAlignmentOptions.MidlineLeft;
             _total=new GardenCoinCounter(_panel,"TotalCounter");
             _error=GardenUi.Text(_panel,"Error",16,FruitLabStyle.OpponentPlayer,true);_error.textWrappingMode=TextWrappingModes.Normal;
-            _growthRule=GardenUi.Text(_panel,"GrowthRule",16,FruitLabStyle.Muted,true);_growthRule.text=GardenUi.PurchaseRule;_growthRule.textWrappingMode=TextWrappingModes.Normal;
+            _growthRule=GardenUi.Text(_panel,"GrowthRule",16,PopupArtStyle.Body,true);_growthRule.text=GardenUi.PurchaseRule;_growthRule.textWrappingMode=TextWrappingModes.Normal;
             _confirm=GardenUi.Button(_panel,"Confirm","Satın al",true);_confirm.onClick.AddListener(()=>Confirm?.Invoke());
             _cancel=GardenUi.Button(_panel,"Cancel","Vazgeç");_cancel.onClick.AddListener(()=>Cancel?.Invoke());
         }
@@ -135,7 +135,8 @@ namespace Menu
             FruitLabStyle.Place((RectTransform)_minus.transform,_panel,16,216,48,48);
             FruitLabStyle.Place(_quantity.GetComponent<RectTransform>(),_panel,72,216,bodyWidth-112,48);
             FruitLabStyle.Place((RectTransform)_plus.transform,_panel,bodyWidth-32,216,48,48);
-            FruitLabStyle.Place(_totalLabel.rectTransform,_panel,16,176,90,32);_total.Place(_panel,110,176,width-126,32,24);
+            _total.Amount.color=PopupArtStyle.Ink;
+            FruitLabStyle.Place(_totalLabel.rectTransform,_panel,16,176,90,32);_total.Place(_panel,110,176,width-126,32,24);_total.Amount.color=PopupArtStyle.Ink;
             FruitLabStyle.Place(_growthRule.rectTransform,_panel,16,118,bodyWidth,52);
             FruitLabStyle.Place(_error.rectTransform,_panel,16,118,bodyWidth,52);
             FruitLabStyle.Place((RectTransform)_confirm.transform,_panel,16,66,width-32,48);

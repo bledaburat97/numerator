@@ -12,7 +12,7 @@ namespace Scripts.Economy
 
     public sealed class PlayerProfileData
     {
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 7;
         [JsonProperty(Required=Required.Always)] public int Version = CurrentVersion;
         public long Revision;
         // Optional additive field: older v5 profiles default to no pending powerup checkpoint.
@@ -70,6 +70,8 @@ namespace Scripts.Economy
         public int PlantedUtcDay;
         public int LastGrowthUtcDay;
         public GardenGrowthStage Stage;
+        public DateTime GrowthStartedAtUtc = DateTime.UtcNow;
+        public int GrowthStageHours = 12;
         // -1 is reserved for the migration-only queue. New purchases always own a cell.
         public int CellIndex = -1;
         public bool IsLegacyOverflow;

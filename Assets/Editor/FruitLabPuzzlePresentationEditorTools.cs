@@ -21,6 +21,7 @@ public static partial class FruitLabTutorialEditorTools
         if(opened)scene=EditorSceneManager.OpenScene("Assets/Scenes/Game.unity",OpenSceneMode.Additive);
         try
         {
+            Find<FruitLabGameLayout>(scene).ApplyLayout();
             var popup=Find<LevelFinishPopupView>(scene);FruitLabStyle.Font=popup.GetText().font;
             popup.SetOutcome(true);popup.SetText("Çözdün!");popup.ApplyLabLayout();popup.SetStatus(false);
             var strip=popup.GetComponentInChildren<FruitCollectionAwardView>(true);
@@ -51,7 +52,7 @@ public static partial class FruitLabTutorialEditorTools
             Require(before==Profile(),"Presentation checks preserve real PlayerPrefs");
             Require(errors.Count==0,"No Unity errors: "+string.Join(" | ",errors));
             File.WriteAllText(Folder+"/puzzle-presentation-review.json",JsonConvert.SerializeObject(new {passed=true,
-                checks=new[]{"single-player solved title","answer before reward details","continue during reward animation","token cancellation","actual fruit order and quantity","four phone sizes","board and history remain visible","goal/crystal/collection do not overlap","new result only","no resume or scroll replay","pooled tween reset","split feedback","multiplayer and failure preserved","real player prefs unchanged"}},Formatting.Indented));
+                checks=new[]{"single-player solved title","answer before reward details","continue during reward animation","token cancellation","actual fruit order and quantity","four phone sizes","board and history remain visible","unlabelled crystal reward below fruit summary","wide gameplay powerup row","new result only","no resume or scroll replay","pooled tween reset","split feedback","multiplayer and failure preserved","real player prefs unchanged"}},Formatting.Indented));
         }
         finally {Application.logMessageReceived-=collect;DOTween.defaultUpdateType=oldUpdate;}
     }
@@ -85,14 +86,14 @@ public static partial class FruitLabTutorialEditorTools
     private static void ReviewPuzzleLayouts(Canvas canvas,Camera camera)
     {
         foreach(var size in new[]{new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932)})
-        foreach(int slots in new[]{2,5})foreach(int crystals in new[]{0,2})foreach(bool goal in new[]{false,true})
+        foreach(int slots in new[]{2,5})foreach(int crystals in new[]{0,2})
         {
             ClearPreviewActors(canvas);((RectTransform)canvas.transform).sizeDelta=size;canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();
             using(var game=new Fixture(canvas,camera,new LevelData {NumOfBoardHolders=slots,NumOfCards=9,MaxNumOfTries=9}))
             {
                 game.BuildActors();var popup=canvas.GetComponentInChildren<LevelFinishPopupView>(true);
                 var fruits=new[]{3,1,5,7,9}.Take(slots).ToArray();popup.SetOutcome(true,crystals);
-                popup.SetAchievementTarget(goal?"Meyve Koleksiyoncusu: 48/50":null);popup.PrepareRewardDetails(fruits);
+                popup.PrepareRewardDetails(fruits);
                 popup.SetText("Çözdün!");popup.GetText().rectTransform.localScale=Vector3.one;popup.SetStatus(true);
                 var controller=new LevelEndPopupController(popup);controller.InitButton(LevelFinishButtonType.Game,"Bölüm 2",()=>{});controller.InitButton(LevelFinishButtonType.Menu,"Menü",()=>{});
                 popup.RevealRewardDetails(.18f).Complete(true);controller.ChangeFadeButtons(0,1).Complete(true);Canvas.ForceUpdateCanvases();
@@ -104,13 +105,20 @@ public static partial class FruitLabTutorialEditorTools
                 Require(((RectTransform)((Component)popup.GetButton(LevelFinishButtonType.Game)).transform).rect.height>=44,"The success continuation target is at least 44 units");
                 var subtitle=popup.GetSubtitle();var bar=(RectTransform)((Component)popup.GetVerticalCrystalProgressView()).transform;
                 Rect awardBounds=BoundsIn((RectTransform)strip.transform,panel),barBounds=BoundsIn(bar,panel);
-                if(goal)Require(awardBounds.yMin>=BoundsIn(subtitle.rectTransform,panel).yMax-.1f,"Fruit and goal rows do not overlap");
-                if(crystals>0)Require((goal?BoundsIn(subtitle.rectTransform,panel).yMin:awardBounds.yMin)>=barBounds.yMax-.1f,"Crystal bar stays below the collection and goal");
-                if(slots==5 && goal && crystals==2)
+                Require(!subtitle.gameObject.activeSelf,"The fruit summary is not followed by an achievement target");
+                if(crystals>0)
+                {
+                    Require(awardBounds.yMin>=barBounds.yMax-.1f,"Crystal bar stays below the fruit summary");
+                    Require(!bar.Find("CrystalTitle").gameObject.activeSelf && !bar.Find("CrystalCount").gameObject.activeSelf,"Result progress has no heading or fraction");
+                    Require(((RectTransform)bar.Find("RewardHolder")).rect.width>=40,"The upcoming reward has a larger, readable preview");
+                }
+                var powers=canvas.GetComponent<FruitLabGameLayout>().PowerUpArea;
+                Require(powers.rect.width>=size.x*.97f && BoundsIn(powers,canvas.transform).xMin>=((RectTransform)canvas.transform).rect.xMin,"The powerup row nearly fills the screen and stays inside it");
+                if(slots==5 && crystals==2)
                 {Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-puzzle-solved-"+(int)size.y+".png");}
                 popup.SetRewardPresentation();Require(popup.GetText().text=="Çözdün!","Powerup presentation retains the solved title");
-                popup.SetMultiplayerResult(true,false,RewardType.Bomb);popup.SetText("Kazandın!");
-                Require(!strip.gameObject.activeSelf && popup.GetText().text=="Kazandın!","Duel result keeps its own reward presentation");
+                popup.SetMultiplayerResult(true,false,RewardType.Bomb);popup.SetText("Çözdün!");
+                Require(!strip.gameObject.activeSelf && popup.GetText().text=="Çözdün!","Duel result keeps its own reward presentation");
                 popup.SetOutcome(false);Require(!strip.gameObject.activeSelf,"Failure does not show earned fruits");popup.SetStatus(false);
             }
         }
@@ -137,14 +145,14 @@ public static partial class FruitLabTutorialEditorTools
                 Tick(.59f);Require(details.alpha==0,"The board's left-to-right reveal gets the first attention");
                 Tick(.37f);Require(details.alpha>.99f,"Collection details follow the solved answer");
                 Require(popup.GetComponentInChildren<FruitCollectionAwardView>(true).Count==5,"The real win uses the committed answer's fruits");
-                Require(popup.GetSubtitle().text.Contains("1/10"),"The goal line reflects the same committed fruit award");
+                Require(!popup.GetSubtitle().gameObject.activeSelf,"A real win has no closest-achievement subtitle");
                 Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-puzzle-solved-game.png");
                 int next=game.Tracker.GetLevelId();ClickContractGameButton(canvas);
                 Require(session.State==LevelFlowState.Transitioning,"Continue is clickable before reward flights finish");
                 for(int i=0;i<25;i++)Tick(.1f);game.Gate.Clear();
                 Require(session.State==LevelFlowState.Playing && game.Tracker.GetLevelId()==next,"Early continuation creates the next playable level without advancing twice");
                 Require(tokens.All(token=>token.GetRectTransform()==null),"Early continuation cleans up old life-bar rewards");
-                game._guess.FailRound();for(int i=0;i<25;i++)Tick(.1f);
+                session.FinishRound(false);for(int i=0;i<25;i++)Tick(.1f);
                 Require(popup.GetText().text=="Tekrar dene" && !popup.GetComponentInChildren<FruitCollectionAwardView>(true).gameObject.activeSelf,"A later loss clears the previous collection summary");
             }
         }

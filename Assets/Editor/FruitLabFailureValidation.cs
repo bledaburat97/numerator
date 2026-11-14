@@ -241,6 +241,7 @@ public static class FruitLabFailureValidation
         public IBaseButtonController GetButton(GameUIButtonType type) => null;
         public Sequence ChangeFadeUserText(float duration, float alpha) => DOTween.Sequence();
         public void RefreshCoinCounter() { }
+        public void SetCoinCounterVisible(bool visible) { }
         public Sequence PlayCoinCounterHit(int count, float duration) => DOTween.Sequence();
         public RectTransform GetCoinImageRectTransform() => null;
     }

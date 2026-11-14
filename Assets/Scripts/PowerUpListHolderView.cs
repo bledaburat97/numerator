@@ -44,25 +44,25 @@ namespace Scripts
                 if (!assigned.Contains(oldButton)) oldButton.gameObject.SetActive(false);
             foreach (var oldGlyph in GetComponentsInChildren<FruitLabGlyph>(true))
                 if (oldGlyph.GetComponentInParent<PowerUpButtonView>() == null) oldGlyph.gameObject.SetActive(false);
-            var visible = DisplayOrder.Where(t => PowerUpTypeUtility.IsUnlocked(t, _levelId)).ToArray();
             const float gap = 2f;
-            int columns = Mathf.Max(1, Mathf.CeilToInt(visible.Length / (float)_rows));
+            // Both screens reserve every slot, including powers not introduced yet.
+            int slots=DisplayOrder.Count;
+            int columns = Mathf.Max(1, Mathf.CeilToInt(slots / (float)_rows));
             float buttonWidth = (width - gap * (columns - 1)) / columns;
             float buttonHeight = (height - gap * (_rows - 1)) / _rows;
             int index = 0;
             foreach (var type in DisplayOrder)
             {
                 var button = (PowerUpButtonView)GetPowerUpButton(type);
-                bool unlocked = visible.Contains(type);
-                button.gameObject.SetActive(unlocked);
-                if (!unlocked) continue;
+                button.transform.Find("UseLock")?.gameObject.SetActive(false);
+                bool unlocked = PowerUpTypeUtility.IsUnlocked(type, _levelId) && !_locked;
                 int row = index / columns, column = index % columns;
-                int rowCount = Mathf.Min(columns, visible.Length - row * columns);
+                int rowCount = Mathf.Min(columns, slots - row * columns);
                 float left = (width - rowCount * buttonWidth - (rowCount - 1) * gap) * .5f;
                 FruitLabStyle.Place(button.GetButtonRectTransform(), transform, left + column * (buttonWidth + gap),
                     (_rows - row - 1) * (buttonHeight + gap), buttonWidth, buttonHeight);
                 button.ApplyLayout(type,buttonWidth,buttonHeight);
-                RenderLock(button);
+                button.gameObject.SetActive(unlocked);
                 index++;
             }
         }
@@ -71,16 +71,7 @@ namespace Scripts
         public void SetLocked(bool locked)
         {
             if(_locked==locked)return;_locked=locked;
-            foreach(var type in DisplayOrder)RenderLock((PowerUpButtonView)GetPowerUpButton(type));
-        }
-        private void RenderLock(PowerUpButtonView button)
-        {
-            var mark=button.transform.Find("UseLock")?.GetComponent<FruitLabGlyph>();
-            if(mark==null && !_locked)return;
-            if(mark==null){mark=FruitLabGlyph.Create(button.transform,FruitLabGlyph.Symbol.Lock,FruitLabStyle.Text);mark.name="UseLock";}
-            mark.gameObject.SetActive(_locked);mark.transform.SetAsLastSibling();
-            var size=button.GetButtonRectTransform().rect.size;
-            FruitLabStyle.Place(mark.rectTransform,button.transform,2,size.y-19,17,17);
+            if(_width>0)ApplyLabLayout(_width,_height,_rows);
         }
 
         private TMP_Text CountText(RewardType type)=>GetAssignedButton(type).CountText;

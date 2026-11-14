@@ -8,6 +8,8 @@ namespace Scripts
         private int _card = -1, _board = -1;
         private bool _guess;
         private bool _settings;
+        private bool _navigationLocked;
+        public void SetNavigationLocked(bool locked)=>_navigationLocked=locked;
         private int _noteCard=-1;
         private GameUIButtonType? _power;
         public event Action<int> NoteOpened;
@@ -29,8 +31,9 @@ namespace Scripts
         {if(PositionExcluded!=null)foreach(Action<int,int> handler in PositionExcluded.GetInvocationList())ObserverNotification.Run(()=>handler(card,slot));}
         public bool AllowsCard(int card) => !_restricted || card == _card || card==_noteCard;
         public bool AllowsPlacement(int card, int board) => !_restricted || (card == _card && board == _board);
-        public bool AllowsButton(GameUIButtonType type) => !_restricted || (_guess && type == GameUIButtonType.Check)
-            || (_settings && type == GameUIButtonType.Settings) || _power==type;
+        public bool AllowsButton(GameUIButtonType type) => !(_navigationLocked && type==GameUIButtonType.Settings)
+            && (!_restricted || (_guess && type == GameUIButtonType.Check)
+            || (_settings && type == GameUIButtonType.Settings) || _power==type);
         public bool TryExplain(GameUIButtonType type) => FirstUseHandler?.Invoke(type) == true;
     }
 }

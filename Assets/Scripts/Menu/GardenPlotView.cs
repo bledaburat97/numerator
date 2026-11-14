@@ -30,7 +30,7 @@ namespace Menu
             _sign = Art(transform, "FruitSign", null); _sign.color = Color.clear;
             var legacyFruit = _sign.transform.Find("Fruit"); if (legacyFruit != null) legacyFruit.gameObject.SetActive(false);
             _plaque = Art(_sign.transform, "Plaque", GardenArtwork.Get("GardenProps", "Sign"));
-            _fruit = Art(_plaque.transform, "Fruit", FruitLabStyle.Icon(fruit.ToString()));
+            _fruit = Art(_plaque.transform, "Fruit", FruitLabStyle.Icon(fruit.ToString()));_fruit.preserveAspect=true;
             _details = _sign.GetComponent<Button>() ?? _sign.gameObject.AddComponent<Button>();
             _sign.raycastTarget = true; _details.targetGraphic = _sign;
             _details.navigation = new Navigation { mode = Navigation.Mode.None };
@@ -55,7 +55,7 @@ namespace Menu
 
         public void ApplyLayout(float width, float height)
         {
-            const float signHeight = 28;
+            const float signHeight = 38;
             float soilHeight = Mathf.Max(1, height - signHeight);
             FruitLabStyle.Place(_soil.rectTransform, transform, 0, signHeight, width, soilHeight);
             // Art has a slightly top-down projection. All cells have identical
@@ -68,12 +68,15 @@ namespace Menu
                     innerY + (1 - i / 2) * soilHeight * .42f, cellWidth, cellHeight);
                 _cells[i].Layout(cellWidth, cellHeight);
             }
-            FruitLabStyle.Place(_sign.rectTransform, transform, (width-56)*.5f, -5, 56, 40);
-            FruitLabStyle.Place(_plaque.rectTransform, _sign.transform, 0, 2, 56, 38);
-            FruitLabStyle.Place(_fruit.rectTransform, _plaque.transform, 14, 10, 28, 28);
-            FruitLabStyle.Place(_overflow.rectTransform, _sign.transform, 43, 0, 28, 17);
+            FruitLabStyle.Place(_sign.rectTransform, transform, (width-76)*.5f, -5, 76, 50);
+            FruitLabStyle.Place(_plaque.rectTransform, _sign.transform, 0, 0, 76, 50);
+            _plaque.preserveAspect=true;
+            FruitLabStyle.Place(_fruit.rectTransform, _plaque.transform, 18, 7, 40, 40);
+            FruitLabStyle.Place(_overflow.rectTransform, _sign.transform, 59, 0, 28, 17);
         }
 
+        public void UpdateCountdowns(DateTime now){foreach(var cell in _cells)cell.UpdateCountdown(now);}
+        public TMP_Text CellCountdown(int index)=>_cells[index].Countdown;
         public RectTransform CellRect(int index) => _cells[index].Root;
         public TMP_Text CellCount(int index) => _cells[index].Count;
         public Image CellArt(int index) => _cells[index].Art;
@@ -97,11 +100,20 @@ namespace Menu
             image.preserveAspect = false; image.raycastTarget = false; return image;
         }
 
+        public static string FormatRemaining(TimeSpan remaining)
+        {
+            long seconds=(long)Math.Max(0,Math.Ceiling(remaining.TotalSeconds));
+            if(seconds>=86400)return (seconds/86400)+" gün "+(seconds%86400/3600)+" saat";
+            if(seconds>=3600)return (seconds/3600)+" saat "+(seconds%3600/60)+" dk";
+            return (seconds/60)+" dk "+(seconds%60)+" s";
+        }
+
         private sealed class Cell
         {
             public readonly RectTransform Root;
             public readonly Image Art;
-            public readonly TMP_Text Count;
+            public readonly TMP_Text Count,Countdown;
+            private DateTime _matureAt;
             private readonly Image _badge;
             private readonly Image _ready, _hit;
             private readonly GardenHarvestCell _harvest;
@@ -119,6 +131,10 @@ namespace Menu
                 _badge = GardenPlotView.Art(root, "CountBadge", GardenArtwork.Get("GardenProps", "CountBadge"));
                 FruitLabStyle.AddSurface(_badge.gameObject,new Color32(255,239,203,248));
                 Count = GardenUi.Text(_badge.transform, "Quantity", 14, new Color32(81, 48, 27, 255),true);
+                Countdown=GardenUi.Text(root,"Countdown",10.5f,new Color32(255,82,140,255));
+                Countdown.fontStyle=FontStyles.Bold;Countdown.enableAutoSizing=true;Countdown.fontSizeMin=8.5f;Countdown.fontSizeMax=10.5f;
+                Countdown.textWrappingMode=TextWrappingModes.NoWrap;
+                Countdown.raycastTarget=false;
                 Count.enableAutoSizing = true; Count.fontSizeMin = 12; Count.fontSizeMax = 14;Count.textWrappingMode=TextWrappingModes.NoWrap;
                 _animation=root.GetComponent<GardenCellAnimationView>() ?? root.gameObject.AddComponent<GardenCellAnimationView>();
                 _animation.Configure(Art,_badge.rectTransform);
@@ -129,6 +145,8 @@ namespace Menu
                 if(changed)_animation.Cancel();
                 _id=id;_quantity=batch?.Quantity??0;
                 Art.gameObject.SetActive(batch != null); _badge.gameObject.SetActive(batch != null);
+                Countdown.gameObject.SetActive(batch!=null && batch.Stage!=GardenGrowthStage.Fruit);
+                if(batch!=null)_matureAt=GardenGrowth.MatureAt(batch);
                 bool ready=batch!=null && batch.Stage==GardenGrowthStage.Fruit;
                 _hit.raycastTarget=ready;_ready.gameObject.SetActive(ready);_harvest.Bind(ready?id:null,harvest);
                 if (batch == null) return;
@@ -143,7 +161,10 @@ namespace Menu
                 _animation.Layout(width,height,_stage);
                 FruitLabStyle.Place(_badge.rectTransform, Root, 0, -2, width, 18);
                 FruitLabStyle.Stretch(Count.rectTransform, 1);
+                FruitLabStyle.Place(Countdown.rectTransform,Root,0,height-14,width,16);
             }
+            public void UpdateCountdown(DateTime now)
+            {if(Countdown.gameObject.activeSelf)Countdown.text=FormatRemaining(_matureAt-now);}
             public void PlayPlanting(string id){if(_id==id)_animation.PlayPlanting(.18f);}
             public void CancelEffect()=>_animation.Cancel();
             public bool PlayGrowth(FruitId fruit,GardenBatchChange change,float delay)

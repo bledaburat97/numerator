@@ -15,6 +15,7 @@ namespace Menu
         bool IsVisible {get;}
         void Render(IReadOnlyDictionary<string, PlantingBatch> batches);
         void SetCoins(int coins);
+        void UpdateCountdowns(DateTime now);
         void FocusFruit(FruitId fruit);
         void PlayPlanting(string batchId);
         void PlayGrowth(IReadOnlyList<GardenBatchChange> changes);
@@ -103,6 +104,7 @@ namespace Menu
             ApplyLayout();
         }
 
+        public void UpdateCountdowns(DateTime now){foreach(var plot in _plots)plot.UpdateCountdowns(now);}
         public void SetCoins(int coins) { EnsureUi(); _coins.SetAmount(coins); }
         public void FocusFruit(FruitId fruit)
         {

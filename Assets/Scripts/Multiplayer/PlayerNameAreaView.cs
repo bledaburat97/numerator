@@ -16,6 +16,8 @@ namespace Scripts
             {
                 var old = transform.Find("EmptyPlayer" + i) as RectTransform;
                 if (old == null) old = FruitLabOnlineLayout.Panel("EmptyPlayer" + i, transform);
+                FruitLabStyle.Surface(old.GetComponent<UnityEngine.UI.Image>(),new Color32(227,230,209,255));
+                var rim=old.Find("LabRim");if(rim!=null)rim.gameObject.SetActive(false);
                 old.gameObject.SetActive(i >= count && i < VisibleSlots);
                 float width = (((RectTransform)transform).rect.width - 10) * .5f;
                 float height = VisibleSlots <= 2 ? Mathf.Min(194, ((RectTransform)transform).rect.height) : (((RectTransform)transform).rect.height - 10) * .5f;
@@ -23,7 +25,7 @@ namespace Scripts
                 old.sizeDelta = new Vector2(width, height); old.anchoredPosition = new Vector2(i % 2 * (width + 10), -(i / 2) * (height + 10));
                 var icon = FruitLabStyle.Detail(old, "WaitingIcon", new Color(1, 1, 1, .38f)); icon.sprite = FruitLabStyle.Icon("Pair"); icon.type = UnityEngine.UI.Image.Type.Simple; icon.preserveAspect = true;
                 FruitLabStyle.Place(icon.rectTransform, old, (width - 44) * .5f, height - 58, 44, 44);
-                var text = FriendUi.Text(old, "WaitingText", "Arkadaşın\nbekleniyor…", 17); text.color = FruitLabStyle.Muted;
+                var text = FriendUi.Text(old, "WaitingText", "Arkadaşın\nbekleniyor…", 17); text.color = PopupArtStyle.Body;
                 FruitLabStyle.Place(text.rectTransform, old, 5, 8, width - 10, 48);
             }
             foreach (var row in GetComponentsInChildren<PlayerNameView>()) row.ApplyRowLayout();

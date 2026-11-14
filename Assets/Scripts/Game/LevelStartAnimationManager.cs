@@ -29,10 +29,11 @@ namespace Game
             float fallBoxesDuration = 0.8f;
             float buttonsFadeInDuration = 0.1f;
 
-            return DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
-                .Append(FallBoxes(fallBoxesDuration))
-                .Insert(0,_environment!=null?_environment.PlayIntro():DOTween.Sequence())
-                .Append(FadeInTopAreaButtons(buttonsFadeInDuration))
+            var sequence=DOTween.Sequence().Append(FadeInInitialHolderArea(initialAreaFadeInDuration))
+                .Append(FallBoxes(fallBoxesDuration));
+            var intro=_environment?.PlayIntro();
+            if(intro!=null)sequence.Insert(0,intro);
+            return sequence.Append(FadeInTopAreaButtons(buttonsFadeInDuration))
                 .Join(FadeInLifeBar(buttonsFadeInDuration))
                 .Join(FadeInMiddleGameButtons(buttonsFadeInDuration))
                 .Join(FadeInResultArea(buttonsFadeInDuration));

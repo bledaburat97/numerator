@@ -43,7 +43,7 @@ public static class FruitLabReleaseEditorTools
         var report=new {passed=true,profile_version=PlayerProfileData.CurrentVersion,typed_sdk_events=true,
             outbox_bounded=ProfileTelemetryJournal.Capacity,consent_scoped=true,original_build_preserved=true,
             retry_event_ids_stable=true,exactly_once_rewards=true,source_and_activity_days=true,
-            checks=new[]{"planting day", "same UTC day", "missed days advance once", "fourth visit ripens; tap harvests", "duplicate/parallel purchase", "insufficient balance", "one million seed single batch", "atomic transaction interruption", "delivery acknowledgement interruption", "disk restart", "legacy schema migration", "consent off/re-enable", "bounded queue and activity checkpoints", "Int64/boolean SDK encoding"},
+            checks=new[]{"12-hour boundaries", "repeated checks are idempotent", "offline time catches up", "48-hour ripening; tap harvests", "duplicate/parallel purchase", "insufficient balance", "one million seed single batch", "atomic transaction interruption", "delivery acknowledgement interruption", "disk restart", "legacy schema migration", "consent off/re-enable", "bounded queue and activity checkpoints", "Int64/boolean SDK encoding"},
             portrait=portraits,required_scenes=requiredScenes,diagnostics=true,configuration_ready=warnings.Count==0,public_store_ready=false,warnings,
             physical_device_verified=false,event_browser_verified=false,artifacts=folder,
             examples=examples.Select(item=>item.Parameters())};

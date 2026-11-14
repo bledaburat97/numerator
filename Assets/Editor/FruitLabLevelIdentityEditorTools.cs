@@ -22,7 +22,7 @@ public static partial class FruitLabTutorialEditorTools
         if(opened)scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
         try
         {
-            var canvas=Find<Canvas>(scene);
+            var canvas=Find<Canvas>(scene);Find<FruitLabGameLayout>(scene).ApplyLayout();
             var environment=LevelEnvironmentView.Ensure(canvas);environment.ResetPresentation();
             PowerUpRewardView.Ensure(canvas).Hide();
             EditorUtility.SetDirty(environment);EditorSceneManager.MarkSceneDirty(scene);Require(EditorSceneManager.SaveScene(scene),"Save level identity component");
@@ -46,7 +46,9 @@ public static partial class FruitLabTutorialEditorTools
                 new LevelData {NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=10,Mechanic=LevelMechanic.Split},
                 new LevelData {NumOfBoardHolders=2,NumOfCards=9,MaxNumOfTries=8,Mechanic=LevelMechanic.Growing},
                 new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=8,Mechanic=LevelMechanic.Dynamite},
-                new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9,BonusReward=RewardType.Ultra}};
+                new LevelData {NumOfBoardHolders=3,NumOfCards=7,MaxNumOfTries=9,BonusReward=RewardType.Ultra},
+                new LevelData {NumOfBoardHolders=4,NumOfCards=8,MaxNumOfTries=9,Mechanic=LevelMechanic.Ice},
+                new LevelData {NumOfBoardHolders=4,NumOfCards=9,MaxNumOfTries=10,DisablePowerUps=true}};
             foreach(var size in new[]{new Vector2(320,568),new Vector2(375,812)})
             foreach(var definition in definitions)
             {
@@ -58,9 +60,27 @@ public static partial class FruitLabTutorialEditorTools
                     new LevelMechanicsPresenter(game.View,game.Board).ShowStatus(definition.Mechanic,definition,definition.NumOfBoardHolders,0,definition.Mechanic==LevelMechanic.Split);
                     var environment=LevelEnvironmentView.Ensure(canvas);
                     Require(canvas.GetComponent<Image>().color==id.Background,"First-frame background matches actual content");
-                    var intro=environment.PlayIntro();Tick(.20f);
-                    var panel=canvas.transform.Find("LevelIntro");Require(panel!=null && panel.gameObject.activeSelf && !panel.GetComponent<CanvasGroup>().blocksRaycasts,"Intro never requires a tap or blocks input");
-                    Tick(1);Require(!panel.gameObject.activeSelf,"Short introduction dismisses automatically");
+                    var intro=environment.PlayIntro();
+                    var panel=canvas.transform.Find("LevelIntro");
+                    if(id.Group==LevelGroup.Normal)
+                    {
+                        Require(intro==null && (panel==null || !panel.gameObject.activeSelf),"Normal levels have no opening banner or banner delay, including five-slot puzzles");
+                    }
+                    else
+                    {
+                        string expected=definition.BonusReward.HasValue?"Bonus":definition.DisablePowerUps?"Güçlendirici Yasağı":definition.Mechanic==LevelMechanic.Helper?"Üçte Bir İpucu":definition.Mechanic==LevelMechanic.Pair?"Bağlı Ardışık Kartlar":definition.Mechanic==LevelMechanic.Split?"Bölünmüş Tahta":definition.Mechanic==LevelMechanic.Growing?"Büyüyen Tahta":definition.Mechanic==LevelMechanic.Dynamite?"Dinamit":"Dondurulmuş";
+                        Require(intro!=null && panel.Find("Title").GetComponent<TMP_Text>().text==expected,"Special level opening uses the requested name");
+                        Tick(.20f);Require(panel.gameObject.activeSelf && !panel.GetComponent<CanvasGroup>().blocksRaycasts,"Intro never requires a tap or blocks input");
+                        var introRect=(RectTransform)panel;var introGroup=panel.GetComponent<CanvasGroup>();
+                        Tick(.85f);Require(panel.gameObject.activeSelf && Mathf.Abs(introRect.anchoredPosition.x)<.1f && introGroup.alpha>.99f,"The title remains fully readable for one second");
+                        Tick(.2f);Require(panel.gameObject.activeSelf && introRect.anchoredPosition.x>0 && introGroup.alpha>.99f,"The introduction exits toward the right without fading out");
+                        Tick(.4f);Require(!panel.gameObject.activeSelf,"Introduction dismisses after moving offscreen");
+                    }
+                    var rear=canvas.transform.Find("SafeArea/MiddleArea/GameBackground").GetComponent<Image>();
+                    var front=canvas.transform.Find("SafeArea/MiddleArea/GameForeground").GetComponent<Image>();
+                    Require(rear.sprite!=null && rear.sprite.name=="first" && rear.color==id.Background,"Supplied first image is the type-tinted rear layer");
+                    Require(!front.gameObject.activeSelf,"Gameplay foreground is retired without removing its source asset");
+                    Require(canvas.transform.Find("SafeArea/GameHeaderBand").GetComponent<Image>().color==id.Background,"Header and upper unsafe area use the selected gameplay color");
                     if(definition.Mechanic==LevelMechanic.Growing)
                         Require(canvas.GetComponentsInChildren<Image>().Count(image=>image.name.StartsWith("FutureSlot"))==2,"Two future-slot silhouettes are visible beside the initial growing board");
                     if(definition.Mechanic==LevelMechanic.Dynamite)
@@ -86,8 +106,8 @@ public static partial class FruitLabTutorialEditorTools
             }
             Require(File.ReadAllText("Assets/Resources/LevelPlaytestConfig.json")==cycle,"The production test cycle is unchanged");
             Require(before==Profile() && errors.Count==0,"Player preferences and tween checks: "+string.Join(" | ",errors));
-            File.WriteAllText(Folder+"/level-identity-review.json",JsonConvert.SerializeObject(new{passed=true,layouts=16,previewedLevels=100,
-                checks=new[]{"content-based groups","no number-ending distribution","first-frame themes","no-tap intro","future growing slots","retry and target buttons","bonus wallet preserved","idempotent bonus and fruit award","bonus win and acknowledgement","unchanged content cycle","unchanged real preferences"}},Formatting.Indented));
+            File.WriteAllText(Folder+"/level-identity-review.json",JsonConvert.SerializeObject(new{passed=true,layouts=definitions.Length*2,previewedLevels=100,
+                checks=new[]{"content-based groups","no number-ending distribution","first-frame themes","normal levels have no intro or intro delay","requested special-level names","one-second title followed by rightward exit","tinted rear background with hidden foreground","game-colored header and top unsafe area","future growing slots","retry and target buttons","bonus wallet preserved","idempotent bonus and fruit award","bonus win and acknowledgement","unchanged content cycle","unchanged real preferences"}},Formatting.Indented));
         }
         finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=old;}
     }

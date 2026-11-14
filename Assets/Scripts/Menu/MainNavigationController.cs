@@ -44,6 +44,7 @@ namespace Menu
                 Select(MainNavigationState.RequestedTab == MainTab.Multiplayer ? MainTab.Home : MainNavigationState.RequestedTab);
             }
             else _view.Render(MainTab.Multiplayer);
+            _view.BringForward();
         }
         public void Select(MainTab tab)
         {

@@ -45,7 +45,7 @@ namespace Menu
             if(notice==null)return;
             if(notice.Ready.Count==0)
             {
-                Show("Hoş geldin!","Bahçen bir aşama büyüdü.",null);
+                Show("Hoş geldin!","Bahçendeki bitkiler büyüdü.",null);
                 _growth=transform.Find("Growth")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(transform,FruitLabGlyph.Symbol.Sprout,FruitLabStyle.Mint);_growth.name="Growth";
                 _growth.gameObject.SetActive(true);_growth.Type=FruitLabGlyph.Symbol.Seed;_growth.SetVerticesDirty();
                 var stage=notice.ExampleGrowth?.CurrentStage ?? GardenGrowthStage.Sprout;

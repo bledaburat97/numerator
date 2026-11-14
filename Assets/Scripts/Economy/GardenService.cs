@@ -10,6 +10,7 @@ namespace Scripts.Economy
     {
         IReadOnlyDictionary<string,PlantingBatch> GetBatches();
         int SeedsPerPack { get; }
+        DateTime UtcNow { get; }
         SeedPurchaseQuote QuoteSeeds(FruitId fruit,long quantity);
         SeedPurchaseResult PurchaseSeeds(string purchaseId,FruitId fruit,long quantity);
         GardenVisitResult ProcessVisit();
@@ -36,11 +37,12 @@ namespace Scripts.Economy
 
         public IReadOnlyDictionary<string,PlantingBatch> GetBatches()=>_profiles.Snapshot().Garden;
         public int SeedsPerPack=>_settings.SeedsPerPack;
+        public DateTime UtcNow=>_clock.UtcNow;
 
         public SeedPurchaseQuote QuoteSeeds(FruitId fruit,long quantity)
         {
             ValidateSeeds(fruit,quantity);
-            return Quote(fruit,quantity,_profiles.Snapshot(),GardenDay.FromUtc(_clock.UtcNow));
+            return Quote(fruit,quantity,_profiles.Snapshot(),_clock.UtcNow);
         }
 
         public SeedPurchaseResult PurchaseSeeds(string purchaseId,FruitId fruit,long quantity)
@@ -54,17 +56,17 @@ namespace Scripts.Economy
             string request=JsonConvert.SerializeObject(new {fruit,quantity});
             SeedPurchaseResult result=null;
             var status=_profiles.Commit(transactionId,"seed_purchase",request,profile=>{
-                int day=GardenDay.FromUtc(_clock.UtcNow);
-                var quote=Quote(fruit,quantity,profile,day);
+                DateTime now=_clock.UtcNow;int day=GardenDay.FromUtc(now);
+                var quote=Quote(fruit,quantity,profile,now);
                 result=new SeedPurchaseResult {Fruit=fruit,Quantity=quantity,SeedsPerPack=quote.SeedsPerPack,PackCoinPrice=quote.PackCoinPrice,
                     Failure=quote.Failure,TotalCoinPrice=quote.TotalCoinPrice,CoinsAfter=profile.Wallet.Coins};
                 if(!quote.CanPurchase)return false;
-                var sameDay=SameDaySeeds(profile,fruit,day);
+                var sameDay=SameDaySeeds(profile,fruit,now);
                 string batchId=sameDay.Value!=null ? sameDay.Key : "plant:"+purchaseId;
                 int cell=sameDay.Value!=null ? sameDay.Value.CellIndex : GardenCellAllocator.FirstFree(profile.Garden,fruit);
                 if(sameDay.Value!=null)sameDay.Value.Quantity=checked(sameDay.Value.Quantity+quantity);
                 else profile.Garden.Add(batchId,new PlantingBatch {Fruit=fruit,Quantity=quantity,
-                    PlantedUtcDay=day,LastGrowthUtcDay=day,Stage=GardenGrowthStage.Seed,CellIndex=cell});
+                    PlantedUtcDay=day,LastGrowthUtcDay=day,Stage=GardenGrowthStage.Seed,CellIndex=cell,GrowthStartedAtUtc=now,GrowthStageHours=_settings.GrowthStageHours});
                 profile.Wallet.Coins=checked(profile.Wallet.Coins-(int)quote.TotalCoinPrice);
                 result.BatchId=batchId;result.CellIndex=cell;result.PlantedUtcDay=day;result.CoinsAfter=profile.Wallet.Coins;
                 return true;
@@ -76,18 +78,18 @@ namespace Scripts.Economy
 
         public GardenVisitResult ProcessVisit()
         {
-            int day=GardenDay.FromUtc(_clock.UtcNow);
-            string dayKey=day.ToString(CultureInfo.InvariantCulture);
-            string transactionId="garden:visit:"+dayKey;
+            DateTime now=_clock.UtcNow;int day=GardenDay.FromUtc(now);
+            string dayKey=now.Ticks.ToString(CultureInfo.InvariantCulture);
+            string transactionId="garden:time:"+Guid.NewGuid().ToString("N");
             var result=new GardenVisitResult {UtcDay=day};
             var status=_profiles.Commit(transactionId,"garden_visit",dayKey,profile=>{
                 foreach(var entry in profile.Garden.OrderBy(entry=>entry.Key,StringComparer.Ordinal).ToArray())
                 {
                     var batch=entry.Value;
-                    if(batch.Stage==GardenGrowthStage.Fruit || day<=batch.LastGrowthUtcDay)continue;
-                    var previous=batch.Stage;
-                    batch.Stage=(GardenGrowthStage)((int)batch.Stage+1);
-                    batch.LastGrowthUtcDay=day; // One visit, never catch up missed days.
+                    var next=GardenGrowth.StageAt(batch,now);
+                    if(next==batch.Stage)continue;
+                    var previous=batch.Stage;batch.Stage=next;
+                    batch.LastGrowthUtcDay=Math.Max(day,batch.LastGrowthUtcDay);
                     result.Changes.Add(new GardenBatchChange {BatchId=entry.Key,Fruit=batch.Fruit,
                         Quantity=batch.Quantity,PreviousStage=previous,CurrentStage=batch.Stage});
                     if(batch.Stage!=GardenGrowthStage.Fruit)continue;
@@ -113,7 +115,7 @@ namespace Scripts.Economy
             var status=_profiles.Commit(transactionId,"garden_harvest",batchId,profile=>{
                 if(!profile.Garden.TryGetValue(batchId,out var batch))
                 {result.Failure=GardenHarvestFailure.MissingBatch;return false;}
-                if(batch.Stage!=GardenGrowthStage.Fruit || batch.IsLegacyOverflow)
+                if(GardenGrowth.StageAt(batch,_clock.UtcNow)!=GardenGrowthStage.Fruit || batch.IsLegacyOverflow)
                 {result.Failure=GardenHarvestFailure.NotReady;return false;}
                 result.Fruit=batch.Fruit;result.Quantity=batch.Quantity;result.CellIndex=batch.CellIndex;
                 result.UtcDay=GardenDay.FromUtc(_clock.UtcNow);
@@ -131,7 +133,7 @@ namespace Scripts.Economy
             result.Status=status;return result;
         }
 
-        private SeedPurchaseQuote Quote(FruitId fruit,long quantity,PlayerProfileData profile,int day)
+        private SeedPurchaseQuote Quote(FruitId fruit,long quantity,PlayerProfileData profile,DateTime now)
         {
             _settings.Validate();
             var quote=new SeedPurchaseQuote {Fruit=fruit,Quantity=quantity,SeedsPerPack=_settings.SeedsPerPack,
@@ -141,16 +143,16 @@ namespace Scripts.Economy
             try {price=checked(quantity/_settings.SeedsPerPack*_settings.SeedPackCoinPrice);}
             catch(OverflowException) {throw new ArgumentOutOfRangeException(nameof(quantity),"Seed price exceeds supported amounts.");}
             quote.TotalCoinPrice=price;
-            var sameDay=SameDaySeeds(profile,fruit,day);
+            var sameDay=SameDaySeeds(profile,fruit,now);
             if(sameDay.Value==null && GardenCellAllocator.FirstFree(profile.Garden,fruit)<0)quote.Failure=SeedPurchaseFailure.PlotFull;
             else if(sameDay.Value!=null && sameDay.Value.Quantity>long.MaxValue-quantity)quote.Failure=SeedPurchaseFailure.QuantityTooLarge;
             else if(!quote.CanAfford)quote.Failure=SeedPurchaseFailure.InsufficientCoins;
             return quote;
         }
-        private static KeyValuePair<string,PlantingBatch> SameDaySeeds(PlayerProfileData profile,FruitId fruit,int day)
+        private static KeyValuePair<string,PlantingBatch> SameDaySeeds(PlayerProfileData profile,FruitId fruit,DateTime now)
             =>profile.Garden.OrderBy(entry=>entry.Key,StringComparer.Ordinal).FirstOrDefault(entry=>
-                entry.Value.Fruit==fruit && !entry.Value.IsLegacyOverflow && entry.Value.PlantedUtcDay==day
-                && entry.Value.LastGrowthUtcDay==day && entry.Value.Stage==GardenGrowthStage.Seed);
+                entry.Value.Fruit==fruit && !entry.Value.IsLegacyOverflow && entry.Value.PlantedUtcDay==GardenDay.FromUtc(now)
+                && GardenGrowth.StageAt(entry.Value,now)==GardenGrowthStage.Seed);
 
         private T Recorded<T>(string id) where T:class
         {

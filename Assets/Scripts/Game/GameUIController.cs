@@ -21,6 +21,7 @@ namespace Scripts
         [InjectOptional] private IMultiplayerGameController _multiplayer;
 
         private Dictionary<GameUIButtonType, IBaseButtonController> _buttonDictionary;
+        private bool _coinCounterVisible=true;
         
         public event EventHandler CheckFinalNumbers;
         public event EventHandler NotAbleToCheck;
@@ -47,6 +48,7 @@ namespace Scripts
 
         public void Initialize(bool isNewGame)
         {
+            _coinCounterVisible=true;
             ResetButtonInteraction();
             SetUserText("Bölüm " + (_levelTracker.GetLevelId() + 1));
             SetOpponentInfoStatus(false);
@@ -68,9 +70,10 @@ namespace Scripts
             RefreshCoinCounter();
         }
 
+        public void SetCoinCounterVisible(bool visible){_coinCounterVisible=visible;_view.SetCoinCounterStatus(visible);}
         public void RefreshCoinCounter()
         {
-            _view.SetCoinCounterStatus(true);
+            _view.SetCoinCounterStatus(_coinCounterVisible);
             _view.SetCoinCount(_levelTracker.GetCoinCount());
         }
 
@@ -115,7 +118,7 @@ namespace Scripts
                         else opponent = player.playerName.ToString();
                     }
             SetUserText(local); SetOpponentText(opponent); SetOpponentInfoStatus(true); SetCardInfoButtonStatus(false);
-            _view.SetCoinCounterStatus(false);
+            SetCoinCounterVisible(false);
             _view.GetTopButtonsCanvasGroup().alpha = _view.GetMiddleButtonsCanvasGroup().alpha = 1f;
         }
         public void SetMultiplayerAvatar(int avatar) => _view.SetMultiplayerAvatar(avatar);
@@ -315,6 +318,7 @@ namespace Scripts
         IBaseButtonController GetButton(GameUIButtonType buttonType);
         Sequence ChangeFadeUserText(float duration, float finalAlpha);
         void RefreshCoinCounter();
+        void SetCoinCounterVisible(bool visible);
         Sequence PlayCoinCounterHit(int coinCount, float duration);
         RectTransform GetCoinImageRectTransform();
         event EventHandler CheckFinalNumbers;

@@ -101,7 +101,7 @@ namespace Scripts
 
         public static string Status(LevelData definition)
         {
-            string content = definition.DisablePowerUps?"Powerupsız bölüm":definition.Mechanic == LevelMechanic.Helper ? "Bonus İpucu"
+            string content = definition.DisablePowerUps?"Güçlendirici Yasağı":definition.Mechanic == LevelMechanic.Helper ? "Bonus İpucu"
                 : definition.Mechanic == LevelMechanic.Pair ? "Ardışık Bağlı Meyveler"
                 : definition.Mechanic == LevelMechanic.Ice ? "Buzlu Tahta"
                 : definition.Mechanic == LevelMechanic.Dynamite ? "Dinamitli Tahta"

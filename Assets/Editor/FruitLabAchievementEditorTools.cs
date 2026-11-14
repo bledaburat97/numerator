@@ -72,14 +72,14 @@ public static partial class FruitLabTutorialEditorTools
             using(var game=new Fixture(canvas,camera,new LevelData {NumOfBoardHolders=4,NumOfCards=9,MaxNumOfTries=8}))
             {
                 game.BuildActors();var view=canvas.GetComponentInChildren<LevelFinishPopupView>(true);
-                view.SetOutcome(true,crystals);view.SetAchievementTarget("Çırak Çiftçi: 480/500");view.SetText("Kazandın!");view.SetStatus(true);view.GetText().rectTransform.localScale=Vector3.one;
+                view.SetOutcome(true,crystals);view.PrepareRewardDetails(new[]{1,2,3,4});view.SetText("Kazandın!");view.SetStatus(true);view.GetText().rectTransform.localScale=Vector3.one;
                 view.GetButton(LevelFinishButtonType.Game).SetText("Bölüm 2");view.GetButton(LevelFinishButtonType.Menu).SetText("Menü");
                 Canvas.ForceUpdateCanvases();var goal=view.GetSubtitle();
-                Require(goal.gameObject.activeSelf && goal.fontSize>=16 && !goal.isTextOverflowing,"Closest level-end goal is visible and readable");
+                Require(!goal.gameObject.activeSelf,"The level-end popup does not show the closest achievement target");
                 if(crystals>0)
                 {
                     var bar=(RectTransform)((Component)view.GetVerticalCrystalProgressView()).transform;
-                    Require(bar.anchoredPosition.y+bar.rect.yMax<=goal.rectTransform.anchoredPosition.y+goal.rectTransform.rect.yMin+.1f,"Goal does not overlap crystal progress");
+                    Require(!bar.Find("CrystalTitle").gameObject.activeSelf && !bar.Find("CrystalCount").gameObject.activeSelf,"Level-end progress is icon-only");
                 }
                 Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-achievement-goal-"+(int)size.y+"-"+crystals+".png");view.SetStatus(false);
             }

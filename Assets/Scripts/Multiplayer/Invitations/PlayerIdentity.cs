@@ -17,7 +17,7 @@ namespace Scripts
     public static class PlayerIdentityStore
     {
         private const string Key = "player_identity_v1";
-        public const int AvatarCount = 6;
+        public const int AvatarCount = 4;
         public static event Action Changed;
         private static PlayerIdentity _current;
 #if UNITY_EDITOR

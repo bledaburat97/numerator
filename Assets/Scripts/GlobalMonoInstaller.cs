@@ -23,7 +23,7 @@ namespace Scripts
             Container.Bind<Economy.IAchievementService>().To<Economy.AchievementService>().AsSingle();
             Container.Bind<Economy.IGardenClock>().To<Economy.SystemGardenClock>().AsSingle();
             Container.Bind<Economy.IGardenService>().To<Economy.GardenService>().AsSingle();
-            Container.Bind<Economy.GardenVisitCoordinator>().AsSingle();
+            Container.BindInterfacesAndSelfTo<Economy.GardenVisitCoordinator>().AsSingle();
             Container.Bind<ILevelTracker>().To<LevelTracker>().FromComponentsInHierarchy().AsSingle();
             Container.Bind<IHapticController>().To<HapticController>().AsSingle();
         }

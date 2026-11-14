@@ -8,6 +8,7 @@ namespace Scripts
 {
     public static class LevelInformation
     {
+        public const string NoPowerUpsDescription="Bu bölümde güçlendirici kullanamazsınız.";
         public static string Title(LevelMechanic mechanic)
         {
             switch(mechanic)
@@ -40,7 +41,10 @@ namespace Scripts
     public sealed class GameInformationPopup : MonoBehaviour
     {
         public static GameInformationPopup Open(Transform parent,LevelMechanic mechanic,Action closed)
+            =>Open(parent,new LevelData {Mechanic=mechanic},closed);
+        public static GameInformationPopup Open(Transform parent,LevelData definition,Action closed)
         {
+            var mechanic=definition.Mechanic;
             var root=new GameObject("GameInformation",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image),typeof(Button));
             root.transform.SetParent(parent,false);FruitLabStyle.Stretch((RectTransform)root.transform);
             root.GetComponent<Image>().color=new Color(0,0,0,.55f);
@@ -84,7 +88,8 @@ namespace Scripts
                 FruitLabStyle.Place(body.rectTransform,row,left,4,textWidth,rowHeight-36);
                 y+=rowHeight+6;
             }
-            if(LevelInformation.Title(mechanic)!=null)Row(LevelInformation.Title(mechanic),LevelInformation.Description(mechanic),null);
+            if(definition.DisablePowerUps)Row(LevelIdentity.For(definition).Name,LevelInformation.NoPowerUpsDescription,null);
+            else if(LevelInformation.Title(mechanic)!=null)Row(LevelInformation.Title(mechanic),LevelInformation.Description(mechanic),null);
             foreach(var type in PowerUpTypeUtility.OrderedRewardTypes)
                 Row(PowerUpTypeUtility.Name(type),PowerUpTypeUtility.Description(type),type);
             content.sizeDelta=new Vector2(0,y);content.anchoredPosition=Vector2.zero;scroller.verticalNormalizedPosition=1;

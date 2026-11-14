@@ -515,9 +515,44 @@ public static partial class FruitLabTutorialEditorTools
     private const string MessagePath = "Assets/Prefabs/TutorialMessagePopup.prefab";
     private const string ButtonPath = "Assets/Prefabs/Buttons/BaseButton.prefab";
 
+    private static void PrepareTutorialPresentationAssets()
+    {
+        foreach(string name in new[]{"first","second"})
+        {
+            string path="Assets/Resources/Art/Game/"+name+".png";
+            AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+            var importer=(TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
+            importer.spriteBorder=Vector4.zero;importer.alphaIsTransparency=name=="second";importer.mipmapEnabled=false;
+            importer.textureCompression=TextureImporterCompression.Uncompressed;importer.maxTextureSize=2048;
+            importer.SaveAndReimport();
+        }
+        Directory.CreateDirectory("Assets/Resources/Fonts/Tutorial");
+        CreateTutorialFont("Anton","TutorialTitle");CreateTutorialFont("Roboto-Bold","TutorialBody");
+        AssetDatabase.SaveAssets();
+    }
+    private static void CreateTutorialFont(string source,string name)
+    {
+        string path="Assets/Resources/Fonts/Tutorial/"+name+".asset";
+        if(AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path)!=null)return;
+        string fontPath="Assets/Fonts/Tutorial/"+source+".ttf";
+        AssetDatabase.ImportAsset(fontPath,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+        var font=AssetDatabase.LoadAssetAtPath<Font>(fontPath);
+        var asset=TMP_FontAsset.CreateFontAsset(font,64,8,UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,1024,1024,AtlasPopulationMode.Dynamic);
+        asset.name=name;
+        string characters=new string(Enumerable.Range(32,95).Select(value=>(char)value).ToArray())+"ÇçĞğİıÖöŞşÜü…“”‘’–—×";
+        Require(asset.TryAddCharacters(characters,out string missing),"Tutorial font must include all Turkish characters: "+source+" "+missing);
+        asset.atlasPopulationMode=AtlasPopulationMode.Static;
+        AssetDatabase.CreateAsset(asset,path);
+        foreach(var texture in asset.atlasTextures){texture.name=name+" Atlas";AssetDatabase.AddObjectToAsset(texture,asset);}
+        asset.material.name=name+" Material";AssetDatabase.AddObjectToAsset(asset.material,asset);
+        EditorUtility.SetDirty(asset);
+    }
+
     public static string Bake()
     {
         Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Stop Play mode before saving tutorials");
+        PrepareTutorialPresentationAssets();
         string backup = Folder + "/TutorialBackups/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
         Directory.CreateDirectory(backup);
         foreach (string path in new[] { MaskPath, MessagePath, "Assets/Scenes/Game.unity", "Assets/Prefabs/SettingsPopup.prefab" })
@@ -562,8 +597,10 @@ public static partial class FruitLabTutorialEditorTools
                 Dirty(root); PrefabUtility.SaveAsPrefabAsset(root, MessagePath);
             }
             finally { Object.DestroyImmediate(root); }
+            Find<FruitLabGameLayout>(scene).ApplyLayout();
+            Dirty(Find<Canvas>(scene).gameObject);
             EditorSceneManager.MarkSceneDirty(scene);
-            Require(EditorSceneManager.SaveScene(scene), "Game scene must retain the new mask binding");
+            Require(EditorSceneManager.SaveScene(scene), "Game scene must retain the new mask binding and backdrop");
         }
         finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
         return "Tutorial prefabs and Game scene saved; " + FruitLabSettingsEditorTools.Bake() + "; backup=" + backup;
@@ -635,6 +672,11 @@ public static partial class FruitLabTutorialEditorTools
                 Require(game.Round.GetTriedCardsList().Count == 3 && game.Round.GetRemainingGuessCount() == 4, "Three scripted guesses use exactly two wrong-guess lives");
                 Require(!game.Gate.IsRestricted && game.Message == null && canvas.GetComponentInChildren<UnmaskServiceView>(true) == null, "Win must remove tutorial masks, hands and input restrictions");
                 Require(!((Component)game.View.GetCardInfoButton()).gameObject.activeSelf, "Card-info tutorial stays disabled");
+                game.Bootstrap.ShowRewards(2,0);
+                Require(game.Message.GetComponentsInChildren<TMP_Text>().Any(label=>label.text=="Harikasın!"),"First victory uses its requested congratulation");
+                var coin=game.UI.GetCoinImageRectTransform();
+                Require(canvas.GetComponentInChildren<TutorialSpotlightView>().IsRaycastLocationValid(RectTransformUtility.WorldToScreenPoint(camera,coin.position),camera),"First victory has no coin spotlight hole");
+                Capture(camera,Folder+"/preview-tutorial-first-win.png");game.Next();flags.Remove(TutorialProgress.Currency);
 
                 Field(game.Tracker, "_levelId", 1);
                 Require(!game.Tracker.IsFirstLevelTutorial(), "Later levels cannot start the first lesson");
@@ -791,6 +833,9 @@ public static partial class FruitLabTutorialEditorTools
         public void BuildActors()
         {
             Board.CreateBoard(); Target.SetTargetNumber(_counts.GetBoardHolderCount()); _info.Initialize(); Initial.Initialize(false);
+            // Fixtures skip the session's entrance animation. Reset the shared
+            // preview canvas after a previous fixture's end-state fade.
+            Canvas.GetComponentInChildren<InitialCardAreaView>(true).GetCanvasGroup().alpha=1;
             _powers.Initialize(); UI.Initialize(false); Placement.Initialize(); _interaction.Initialize(); _area.Initialize(false); _guess.Initialize();
             Layer(Canvas.transform);
         }
@@ -875,9 +920,9 @@ public static partial class FruitLabTutorialEditorTools
                     var message = Object.Instantiate(AssetDatabase.LoadAssetAtPath<TutorialMessagePopupView>(MessagePath), Canvas.GetComponentInChildren<GamePopupCreator>(true).transform, false);
                     try
                     {
-                        message.Init(); message.Bind(_buttons, () => { }); message.Show("Meyvelerin yerini bul", "Elmayı soldaki alana yerleştir. Sürükleyebilir veya meyveye dokunabilirsin.", actions);
+                        message.Init(); message.Bind(_buttons, () => { }); message.Show("Tahmin Yapalım", "Elmayı sürükleyerek veya üstüne dokunarak gösterilen alana yerleştir.", actions);
                         Layer(message.transform); var panel = (RectTransform)message.transform;
-                        Require(panel.rect.width <= width - 23f && panel.rect.height + 100f <= height, "Lesson fits small and tall phones"); Draw(Camera);
+                        Require(Mathf.Abs(panel.rect.width - Canvas.GetComponentInChildren<BoardAreaView>().GetRectTransform().rect.width)<1f && panel.rect.height + 90f <= height, "Lesson fits small and tall phones"); Draw(Camera);
                         foreach (TMP_Text label in message.GetComponentsInChildren<TMP_Text>(true))
                             if (label.gameObject.activeInHierarchy) { label.ForceMeshUpdate(); Require(!label.isTextOverflowing, "Tutorial text fits: " + label.name); }
                         if (width == 320 && height == 568 && !actions) Capture(Camera, Folder + "/preview-tutorial-compact.png");

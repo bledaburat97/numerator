@@ -30,7 +30,7 @@ namespace Menu
             surface.sprite = null; surface.type = Image.Type.Simple;
             var art = Scripts.FruitLabStyle.Detail(root, "OrchardBackdrop", Color.white);
             art.sprite = Resources.Load<Sprite>(tab==MainTab.Collection?"Art/Menu/BadgeGarden":"Art/Menu/OrchardHome"); art.type = Image.Type.Simple;
-            art.preserveAspect = false; art.raycastTarget = false;
+            art.preserveAspect = false; art.raycastTarget = false;art.enabled=true;
             if (art.sprite == null) return;
             var source = art.sprite.rect.size;
             float scale = Mathf.Max(root.rect.width / source.x, root.rect.height / source.y);

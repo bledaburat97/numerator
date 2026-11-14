@@ -3,13 +3,12 @@ using UnityEngine.UI;
 
 namespace Scripts
 {
-    // The six fruit medallions reuse the game's artwork, surfaces and selection rim.
+    // Shared portraits keep the same player identity throughout invitations and matches.
     public sealed class PlayerAvatarView : MonoBehaviour
     {
-        private static readonly string[] Fruits = { "Apple", "Strawberry", "Pear", "Blueberry", "Orange", "Grape" };
-        private static readonly string[] Names = { "Elma", "Çilek", "Armut", "Yaban mersini", "Portakal", "Üzüm" };
+        private static readonly string[] Names = { "Bahçıvan 1", "Bahçıvan 2", "Bahçıvan 3", "Bahçıvan 4" };
         public int Avatar { get; private set; }
-        public static string AvatarName(int avatar) => Names[Mathf.Clamp(avatar, 0, Fruits.Length - 1)];
+        public static string AvatarName(int avatar) => Names[Mathf.Clamp(avatar, 0, PlayerIdentityStore.AvatarCount - 1)];
         public static PlayerAvatarView Ensure(Transform parent, string name = "Avatar")
         {
             var existing = parent.Find(name)?.GetComponent<PlayerAvatarView>();
@@ -19,13 +18,13 @@ namespace Scripts
         }
         public void Render(int avatar, bool selected = false)
         {
-            Avatar = Mathf.Clamp(avatar, 0, Fruits.Length - 1);
+            Avatar = Mathf.Clamp(avatar, 0, PlayerIdentityStore.AvatarCount - 1);
             FruitLabStyle.AddSurface(gameObject, selected ? Color.Lerp(FruitLabStyle.Tile, FruitLabStyle.Mint, .18f) : FruitLabStyle.Recess);
             var frame = FruitLabStyle.Detail(transform, "AvatarFrame", selected ? FruitLabStyle.Mint : FruitLabStyle.Border, true);
             FruitLabStyle.Stretch(frame.rectTransform, 1);
             var art = FruitLabStyle.Detail(transform, "Portrait", Color.white);
-            art.sprite = FruitLabStyle.Icon(Fruits[Avatar]); art.type = Image.Type.Simple; art.preserveAspect = true;
-            FruitLabStyle.Stretch(art.rectTransform, 9);
+            art.sprite = Resources.Load<Sprite>("Art/Multiplayer/Avatars/Gardener"+(Avatar+1).ToString("00")); art.type = Image.Type.Simple; art.preserveAspect = true;
+            FruitLabStyle.Stretch(art.rectTransform, 4);
         }
     }
 }

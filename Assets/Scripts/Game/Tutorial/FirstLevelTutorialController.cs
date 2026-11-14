@@ -92,23 +92,23 @@ namespace Scripts
                 RectTransform target = _board.GetRectTransformOfGarden(slot);
                 _mask.Highlight(source); _mask.Highlight(target);
                 _hand.StartDragAnimation(source.position, target.position);
-                _message.Show("Meyvelerin yerini bul", names[card] + (slot == 0 ? " soldaki" : " sağdaki")
-                    + " alana yerleştir. Sürükleyebilir veya meyveye dokunabilirsin.", false);
+                _message.Show(_step<2?"Tahmin Yapalım":"Başka Tahmin Yapalım", names[card]
+                    + " sürükleyerek veya üstüne dokunarak gösterilen alana yerleştir.", false);
             }
             else if (_step == 3 || _step == 7)
             {
                 _mask.Highlight(_latestResult());
                 _mask.Highlight(_lifeTarget?.Invoke());
-                _message.Show(_step == 3 ? "Sonuçları okuyalım" : "Bir meyve yerinde!",
-                    _step == 3 ? "Doğru yer: 0. Yanlış yer: 1. Bir meyve cevapta var, ama başka bir alanda olmalı. Her tahmin bir hak kullanır."
-                        : "Doğru yer: 1. Yanlış yer: 0. Sağdaki elma doğru yerde! Kartlar yeni tahmin için yuvalarına döndü.", true, true, "Devam et");
+                _message.Show("Sonucu Okuyalım",
+                    _step == 3 ? "Doğru yere yerleşmiş meyve yok. Yanlış yere yerleşmiş 1 meyve var. Her tahmin bir hak kullanır."
+                        : "Doğru yere yerleşmiş 1 meyve var bunun da elma olduğunu anlıyoruz.", true, true, "Devam et");
             }
             else
             {
                 _gate.AllowGuess();
                 RectTransform check = _ui.GetCheckButtonRectTransform();
                 _mask.Highlight(check); _hand.StartClickAnimation(check.position);
-                _message.Show("Tahminini gönder", _step == 10 ? "İki meyve de hazır. Son tahminini gönderelim!" : "Tahmin et butonuna dokun. Sonuçlar meyvelerin yerleri hakkında ipucu verecek.", false);
+                _message.Show("Tahmini Gönderelim", _step == 10 ? "Elmanın yerini biliyoruz umarım portakal da doğru yerdedir." : "Sonuçlar meyvelerin yerleri hakkında ipucu verecek", false);
             }
         }
         private void OnPlaced(object sender, (int cardIndex, int boardIndex) args)

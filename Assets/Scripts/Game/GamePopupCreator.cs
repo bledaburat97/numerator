@@ -143,7 +143,7 @@ namespace Scripts
             try
             {
                 _interactions.Value.CancelCurrentInteractions();
-                _information=GameInformationPopup.Open(safeAreaRectTransform,_levels.GetLevelData().Mechanic,()=>{_information=null;_tutorialBootstrapper.Resume(true);});
+                _information=GameInformationPopup.Open(safeAreaRectTransform,_levels.GetLevelData(),()=>{_information=null;_tutorialBootstrapper.Resume(true);});
             }
             catch{_tutorialBootstrapper.Resume(true);throw;}
         }

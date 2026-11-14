@@ -20,7 +20,7 @@ namespace Scripts
         [SerializeField] private TMP_Text joinError;
         [SerializeField] private Difficulty selectedDifficulty;
         [SerializeField] private RectTransform profileSection, gameSection;
-        private bool _joinOpen;
+        private bool _joinOpen,_hasResume;
         private RectTransform _profileOverlay, _profilePopup, _inviteOverlay, _invitePopup;
         private string _profileName;
         private int _profileAvatar, _editingAvatar;
@@ -42,7 +42,9 @@ namespace Scripts
             name.alignment = TextAlignmentOptions.MidlineLeft; name.enableAutoSizing = true;
             name.fontSizeMin = 17; name.fontSizeMax = 21; name.overflowMode = TextOverflowModes.Ellipsis;
             FruitLabStyle.Place(name.rectTransform, button.transform, 86, 34, profileSection.rect.width - 120, 32);
-            var edit = FriendUi.Text(button.transform, "EditHint", "Profili düzenle", 15); edit.color = FruitLabStyle.Muted;
+            var edit = FriendUi.Text(button.transform, "EditHint", "Profili düzenle", 15); edit.color = PopupArtStyle.Body;
+            name.color=PopupArtStyle.Ink;
+            button.GetComponent<Image>().color=Color.clear;
             edit.alignment = TextAlignmentOptions.MidlineLeft;
             FruitLabStyle.Place(edit.rectTransform, button.transform, 86, 12, profileSection.rect.width - 120, 24);
         }
@@ -52,7 +54,7 @@ namespace Scripts
             _profileOverlay = FriendUi.Overlay(canvas, "FriendProfileOverlay");
             _profilePopup = _profileOverlay.Find("ProfilePopup") as RectTransform ?? FruitLabOnlineLayout.Panel("ProfilePopup", _profileOverlay);
             float width = Mathf.Min(330, ((RectTransform)canvas).rect.width - 24);
-            FruitLabOnlineLayout.Center(_profilePopup, width, 340);
+            FruitLabOnlineLayout.Center(_profilePopup, width, 340);PopupArtStyle.Apply(_profilePopup.gameObject);
             FriendUi.Text(_profilePopup, "Title", "Profilin", 24).rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
             FruitLabStyle.Place((RectTransform)_profilePopup.Find("Title"), _profilePopup, 12, 292, width - 24, 36);
             FruitLabOnlineLayout.Input(playerNameInputField, _profilePopup, 230, width, "Kullanıcı adı giriniz.");
@@ -66,19 +68,22 @@ namespace Scripts
                 _profileOverlay.gameObject.SetActive(false); RefreshProfile();
             }, true);
             FruitLabStyle.Place((RectTransform)save.transform, _profilePopup, 20, 16, width - 40, 48);
+            _profilePopup.Find("Title").GetComponent<TMP_Text>().color=PopupArtStyle.Ink;
             _profileOverlay.gameObject.SetActive(true);
         }
         private void DrawAvatars()
         {
-            float width = _profilePopup.rect.width, cell = 52, gap = (width - 40 - cell * 3) * .5f;
+            float width = _profilePopup.rect.width, cell = 64, gap = 20;
+            float left=(width-cell*2-gap)*.5f;
             for (int i = 0; i < PlayerIdentityStore.AvatarCount; i++)
             {
                 int index = i;
                 var button = FriendUi.Button(_profilePopup, "AvatarChoice" + i, "", () => { _editingAvatar = index; DrawAvatars(); });
-                FruitLabStyle.Place((RectTransform)button.transform, _profilePopup, 20 + i % 3 * (cell + gap), 156 - i / 3 * 66, cell, cell);
+                FruitLabStyle.Place((RectTransform)button.transform, _profilePopup, left + i % 2 * (cell + gap), 152 - i / 2 * 76, cell, cell);
                 var portrait = PlayerAvatarView.Ensure(button.transform); portrait.Render(i, i == _editingAvatar);
                 FruitLabStyle.Stretch((RectTransform)portrait.transform);
             }
+            for(int i=PlayerIdentityStore.AvatarCount;_profilePopup.Find("AvatarChoice"+i) is Transform old;i++)old.gameObject.SetActive(false);
         }
         public void ConfigureInvitation(Action accept, Action dismiss, Action retry)
         { _acceptInvite = accept; _dismissInvite = dismiss; _retryInvite = retry; }
@@ -88,14 +93,14 @@ namespace Scripts
             _inviteOverlay = FriendUi.Overlay(canvas, "ReceivedFriendInvite");
             _invitePopup = _inviteOverlay.Find("Invitation") as RectTransform ?? FruitLabOnlineLayout.Panel("Invitation", _inviteOverlay);
             float width = Mathf.Min(330, ((RectTransform)canvas).rect.width - 24);
-            FruitLabOnlineLayout.Center(_invitePopup, width, 346);
+            FruitLabOnlineLayout.Center(_invitePopup, width, 346);PopupArtStyle.Apply(_invitePopup.gameObject);
             var avatar = PlayerAvatarView.Ensure(_invitePopup); avatar.Render(preview?.Avatar ?? 0);
             FruitLabStyle.Place((RectTransform)avatar.transform, _invitePopup, (width - 82) * .5f, 234, 82, 82);
             var title = FriendUi.Text(_invitePopup, "Title", loading ? "Davet açılıyor…" : preview != null ? preview.HostName + " seni oyuna davet ediyor" : "Davet açılamadı", 23);
-            title.enableAutoSizing = true; title.fontSizeMin = 20; title.fontSizeMax = 23;
+            title.color=PopupArtStyle.Ink;title.enableAutoSizing = true; title.fontSizeMin = 20; title.fontSizeMax = 23;
             FruitLabStyle.Place(title.rectTransform, _invitePopup, 20, 164, width - 40, 64);
             var detail = FriendUi.Text(_invitePopup, "Detail", error ?? (preview != null ? MultiplayerRules.For(preview.Difficulty).Name : "Biraz bekle…"), 17);
-            detail.color = error != null ? FruitLabStyle.OpponentPlayer : FruitLabStyle.Muted;
+            detail.color = error != null ? FruitLabStyle.OpponentPlayer : PopupArtStyle.Body;
             FruitLabStyle.Place(detail.rectTransform, _invitePopup, 20, 104, width - 40, 56);
             var accept = FriendUi.Button(_invitePopup, "Accept", preview != null ? "Katıl ve oyna" : "Tekrar dene",
                 preview != null ? _acceptInvite : _retryInvite, true); accept.interactable = !loading;
@@ -107,8 +112,7 @@ namespace Scripts
         public void SetResumeAction(bool available, Action resume)
         {
             var button = FriendUi.Button(gameSection, "ResumeInvitation", "Davetine dön", resume);
-            FruitLabStyle.Place((RectTransform)button.transform, gameSection, 20, 12, gameSection.rect.width - 40, 44);
-            button.gameObject.SetActive(available);
+            _hasResume=available;button.gameObject.SetActive(available);LayoutGameActions();
         }
         public bool IsJoinInputOpen => _joinOpen;
         public TMP_InputField CodeInput => codeInputField;
@@ -175,26 +179,31 @@ namespace Scripts
             if (profileSection == null) profileSection = FruitLabOnlineLayout.Panel("ProfileSection", transform);
             if (gameSection == null) gameSection = FruitLabOnlineLayout.Panel("GameSection", transform);
             FruitLabStyle.Place(profileSection, transform, 0, height - 100, width, 100);
-            FruitLabStyle.Place(gameSection, transform, 0, 0, width, height - 116);
+            FruitLabStyle.Place(gameSection, transform, 0, 0, width, height - 114);
+            FriendUi.Section(profileSection);FriendUi.Section(gameSection);
             foreach (var section in new[] { profileSection, gameSection })
             { var old = section.Find("OnlineTitle"); if (old != null) old.gameObject.SetActive(false); }
             if (_profilePopup == null) playerNameInputField.gameObject.SetActive(false);
             RefreshProfile();
-            var heading = FriendUi.Text(gameSection, "InviteHeading", "Birlikte çözün", 24);
-            FruitLabStyle.Place(heading.rectTransform, gameSection, 16, gameSection.rect.height - 54, width - 32, 38);
-            FruitLabOnlineLayout.Button(createLobbyButton, gameSection, 112, width, true);
-            FruitLabOnlineLayout.Button(joinWithCodeButton, gameSection, 60, width, false);
+            var heading = FriendUi.Text(gameSection, "InviteHeading", "Rakip Çağır", 24);heading.color=PopupArtStyle.Ink;
+            heading.alignment=TextAlignmentOptions.Midline;
+            FruitLabStyle.Place(heading.rectTransform, gameSection, 20, gameSection.rect.height - 58, width - 40, 38);
+            gameSection.Find("DuelMark")?.gameObject.SetActive(false);
+            gameSection.Find("DuelPreview")?.gameObject.SetActive(false);
+            FruitLabOnlineLayout.Button(createLobbyButton, gameSection, 68, width, true);
+            FruitLabOnlineLayout.Button(joinWithCodeButton, gameSection, 12, width, false);
+            LayoutGameActions();
             createLobbyButton.SetText("Davet et"); joinWithCodeButton.SetText("Kodla katıl");
             quickJoinButton.gameObject.SetActive(false);
             var canvas = (RectTransform)GetComponentInParent<Canvas>().transform;
             dialogOverlay.anchorMin = dialogOverlay.anchorMax = dialogOverlay.pivot = Vector2.one * .5f;
             dialogOverlay.sizeDelta = canvas.rect.size; dialogOverlay.position = canvas.TransformPoint(canvas.rect.center);
             float popupWidth = Mathf.Min(319, width);
-            FruitLabOnlineLayout.Center(joinPopup, popupWidth, 260);
+            FruitLabOnlineLayout.Center(joinPopup, popupWidth, 260);PopupArtStyle.Apply(joinPopup.gameObject);
             FruitLabOnlineLayout.Title(joinPopup, "Oyuna Katıl", popupWidth, 260);
             float optionWidth = (popupWidth - 56) / 3;
             for (int i = 0; i < 3; i++)
-                FruitLabStyle.Place(difficultyButtons[i].GetButtonRectTransform(), gameSection, 20 + i * (optionWidth + 8), 178, optionWidth, 46);
+                FruitLabStyle.Place(difficultyButtons[i].GetButtonRectTransform(), gameSection, 20 + i * (optionWidth + 8), 130, optionWidth, 46);
             SetSelectedDifficulty(selectedDifficulty);
             FruitLabOnlineLayout.Button(joinConfirmButton, joinPopup, 24, popupWidth, true); joinConfirmButton.SetText("Giriş");
             FruitLabOnlineLayout.Input(codeInputField, joinPopup, 128, popupWidth, "Kod giriniz.");
@@ -209,6 +218,14 @@ namespace Scripts
             FruitLabOnlineLayout.Settings(menuButton, canvas);
             if (!Application.isPlaying) { playerNameInputField.SetTextWithoutNotify(""); codeInputField.SetTextWithoutNotify(""); }
             ApplySectionVisibility();
+        }
+        private void LayoutGameActions()
+        {
+            if(gameSection==null)return;
+            float width=gameSection.rect.width;
+            FruitLabStyle.Place(joinWithCodeButton.GetButtonRectTransform(),gameSection,20,12,_hasResume?(width-48)*.5f:width-40,48);
+            var resume=gameSection.Find("ResumeInvitation") as RectTransform;
+            if(resume!=null)FruitLabStyle.Place(resume,gameSection,width*.5f+4,12,(width-48)*.5f,48);
         }
         public void InitPlayerNameInputField(string playerName, Action<string> onPlayerNameChanged)
         {

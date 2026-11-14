@@ -8,7 +8,7 @@ namespace Menu
 {
     public interface IFruitCollectionPresenter { void Open();void Open(GardenTab tab);void Close();void ShowPendingNotice();void FocusBadge(string id); }
 
-    public sealed class FruitCollectionPresenter : IFruitCollectionPresenter,IDisposable
+    public sealed class FruitCollectionPresenter : IFruitCollectionPresenter,IDisposable,Zenject.ITickable
     {
         private readonly IAchievementService _achievements;
         private readonly IFruitInventoryService _inventory;
@@ -21,6 +21,13 @@ namespace Menu
         private readonly IGardenNoticeView _notice;
         private bool _disposed,_purchaseOpen,_busy,_menuReady;
         private FruitId _fruit=FruitId.Apple;
+        private long _lastCountdownSecond=-1;
+        public void Tick()
+        {
+            if(_disposed || !_view.IsVisible || !_gardenView.IsVisible)return;
+            var now=_garden.UtcNow;long second=now.Ticks/TimeSpan.TicksPerSecond;
+            if(second==_lastCountdownSecond)return;_lastCountdownSecond=second;_gardenView.UpdateCountdowns(now);
+        }
         private string _quantity="1",_purchaseId,_error;
 
         public FruitCollectionPresenter(IFruitInventoryService inventory,IPlayerProfileRepository profiles,
@@ -67,7 +74,7 @@ namespace Menu
             if(change.Includes(ProfileArea.Collection))_view.Render(_inventory.GetCollection());
             if(change.Includes(ProfileArea.Collection|ProfileArea.Achievements|ProfileArea.Progress))_view.RenderAchievements(_achievements.GetAchievements());
             if(change.Includes(ProfileArea.Achievements))_view.SetBadgeCount(_achievements.BadgeCount);
-            if(change.Includes(ProfileArea.Garden))_gardenView.Render(_garden.GetBatches());
+            if(change.Includes(ProfileArea.Garden)){_gardenView.Render(_garden.GetBatches());_gardenView.UpdateCountdowns(_garden.UtcNow);}
             if(change.Includes(ProfileArea.Coins))_gardenView.SetCoins(_profiles.Snapshot().Wallet.Coins);
             if(_purchaseOpen && change.Includes(ProfileArea.Coins|ProfileArea.Garden))RefreshQuote();
         }
@@ -76,7 +83,7 @@ namespace Menu
             if(_disposed || !_view.IsVisible)return;
             _view.SetBadgeCount(_achievements.BadgeCount);_view.Render(_inventory.GetCollection());_view.RenderAchievements(_achievements.GetAchievements());_gardenView.Render(_garden.GetBatches());
             _gardenView.SetCoins(_profiles.Snapshot().Wallet.Coins);
-            if(_gardenView.IsVisible)_gardenView.PlayGrowth(_visits.TakeVisualChanges());
+            if(_gardenView.IsVisible){_gardenView.PlayGrowth(_visits.TakeVisualChanges());_gardenView.UpdateCountdowns(_garden.UtcNow);}
             if(_purchaseOpen)RefreshQuote();
         }
         private void OpenPurchase()

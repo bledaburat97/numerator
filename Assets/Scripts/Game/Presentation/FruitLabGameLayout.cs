@@ -91,7 +91,7 @@ namespace Scripts
             FruitLabStyle.Atmosphere(middleArea);
             FruitLabStyle.Place(header, safeArea, layout.Padding,
                 layout.Height - layout.HeaderHeight, width, layout.HeaderHeight);
-            var band=FruitLabStyle.Detail(safeArea,"GameHeaderBand",Menu.MenuChrome.Sky);
+            var band=FruitLabStyle.Detail(safeArea,"GameHeaderBand",LevelIdentity.For(null).Background);
             band.sprite=null;band.type=Image.Type.Simple;
             var canvas=GetComponent<Canvas>();float inset=Menu.MenuChrome.SafeTopAndSides(canvas).y;
             float canvasWidth=((RectTransform)canvas.transform).rect.width;
@@ -110,7 +110,8 @@ namespace Scripts
             FruitLabStyle.Place(gameArea, middleArea, layout.Padding, layout.BottomPadding, width, layout.GameAreaHeight - reclaimed);
             powerUpArea.gameObject.SetActive(true);
             float y = 0f;
-            FruitLabStyle.Place(powerUpArea, gameArea, 0f, y, width, powerHeight);
+            float powerWidth=layout.Width-layout.Padding*2f/3f;
+            FruitLabStyle.Place(powerUpArea, gameArea, (width-powerWidth)*.5f, y, powerWidth, powerHeight);
             y += powerHeight + layout.Gap;
             FruitLabStyle.Place(initialArea, gameArea, layout.ActionWidth + layout.Gap, y, layout.ChoicesWidth, layout.ChoicesHeight);
             FruitLabStyle.Place(actionArea, gameArea, 0f, y, width, layout.ChoicesHeight);
@@ -126,7 +127,7 @@ namespace Scripts
             FruitLabStyle.Rim(historyArea, .25f);
 
             gameView.ApplyLabLayout(header, actionArea, width, layout.HeaderHeight, layout.ActionWidth, layout.ChoicesHeight);
-            powerUpView.ApplyLabLayout(width, powerHeight);
+            powerUpView.ApplyLabLayout(powerWidth, powerHeight);
             lifeBar.ApplyLabLayout(header, width, layout.HeaderHeight);
             // Editing clips the bottom of history; rows retain their ordinary size.
             float clippedHistoryHeight = 0f;

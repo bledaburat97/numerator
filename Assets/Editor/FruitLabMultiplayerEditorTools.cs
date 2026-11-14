@@ -101,6 +101,9 @@ public static class FruitLabMultiplayerEditorTools
                     foreach (Graphic graphic in canvas.GetComponentsInChildren<Graphic>(true))
                         if (!graphic.transform.IsChildOf(panel) && (message == null || !graphic.transform.IsChildOf(message))
                             && !graphic.transform.IsChildOf(settings)
+                            && graphic.GetComponentInParent<Menu.MainNavigationView>(true)==null
+                            && graphic.GetComponentInParent<MenuHeaderView>(true)==null
+                            && graphic.name!="OrchardBackdrop"
                             && graphic.name != "LabRoom" && graphic.gameObject != canvas.gameObject) graphic.enabled = false;
                     if (name == "Lobby")
                     {
@@ -380,9 +383,18 @@ public static class FruitLabMultiplayerEditorTools
                 var view = clone.GetComponentInChildren<LobbyUIView>(true);
                 Require(!((Component)view.GetQuickJoinButton()).gameObject.activeSelf, "Unimplemented quick play is hidden");
                 Require(view.transform.Find("ProfileSection/EditProfile/Avatar") != null, "Persistent profile opens from avatar card");
+                Require(PlayerIdentityStore.AvatarCount==4,"Four gardener portraits are selectable");
+                foreach(string section in new[]{"ProfileSection","GameSection"})
+                    Require(view.transform.Find(section).GetComponent<Image>().sprite?.name=="FriendPanel","Permanent multiplayer sections use their own generated panel artwork");
+                var oldMark=view.transform.Find("GameSection/DuelMark");var oldPreview=view.transform.Find("GameSection/DuelPreview");
+                Require(view.transform.Find("GameSection/InviteHeading").GetComponent<TMPro.TMP_Text>().text=="Rakip Çağır"
+                    && (oldMark==null || !oldMark.gameObject.activeSelf) && (oldPreview==null || !oldPreview.gameObject.activeSelf),"The invitation section has the new heading and no fruit/card decorations");
                 Require(Enumerable.Range(0, 3).All(i => ((Component)view.GetDifficultyButton(i)).gameObject.activeInHierarchy), "Difficulty is selected without an extra confirmation");
                 Require(!view.JoinPopup.gameObject.activeSelf, "Entry dialogs start closed");
                 view.ConfigureProfile("Elif", 1, (_, __) => { }); view.OpenProfile();
+                var choices=clone.transform.Find("FriendProfileOverlay/ProfilePopup").GetComponentsInChildren<PlayerAvatarView>();
+                Require(choices.Length==4 && choices.Select(choice=>choice.transform.Find("Portrait").GetComponent<Image>().sprite).Distinct().Count()==4
+                    && choices.All(choice=>choice.transform.Find("Portrait").GetComponent<Image>().sprite.name.StartsWith("Gardener")),"All four choices display distinct gardener art");
                 foreach (Transform child in clone.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = 30;
                 Capture(camera, Folder + "/preview-multiplayer-profile" + (phoneHeight == 667 ? "" : "-" + phoneHeight) + ".png");
                 clone.transform.Find("FriendProfileOverlay").gameObject.SetActive(false);

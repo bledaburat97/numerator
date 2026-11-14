@@ -116,8 +116,9 @@ namespace Scripts.Economy
         private void Load()
         {
             if(_current!=null)return;
-            var loaded=_storage.Load();
-            PlayerProfileValidation.Upgrade(loaded);
+            var loaded=_storage.Load();int? originalVersion=loaded?.Version;
+            PlayerProfileValidation.Upgrade(loaded,_utcNow());
+            if(loaded!=null && loaded.Version!=originalVersion)_storage.Save(loaded);
             if(loaded==null)
             {
                 loaded=_initialProfile();loaded.Revision=1;

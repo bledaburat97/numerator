@@ -29,9 +29,9 @@ public static class FruitLabEconomyEditorTools
             TrackerCompatibility(folder,checks);
             ValidateGlobalBindings(checks);
             var settings=PlayerProfileRuntime.LoadSettings();
-            Require(settings.SeedsPerPack==2 && settings.SeedPackCoinPrice==1 && settings.RequiredGrowthVisits==4,"Central initial economy settings");
+            Require(settings.SeedsPerPack==2 && settings.SeedPackCoinPrice==1 && settings.GrowthStageHours==12,"Central initial economy settings");
             Expect<InvalidOperationException>(()=>new EconomySettings {SeedPackCoinPrice=0}.Validate());
-            checks.Add("Central pack pricing and four-entry-day growth settings validated");
+            checks.Add("Central pack pricing and twelve-hour growth settings validated");
         }
         Require(before==LegacySnapshot(),"Real PlayerPrefs are unchanged");
         Require(persistentBefore==PersistentFiles(),"Real profile files are unchanged");

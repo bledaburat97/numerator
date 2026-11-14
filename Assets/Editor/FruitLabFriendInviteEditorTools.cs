@@ -10,6 +10,12 @@ public static class FruitLabFriendInviteEditorTools
 {
     public static string Review()
     {
+        AssetDatabase.ImportAsset("Assets/Resources/Art/Multiplayer",ImportAssetOptions.ImportRecursive|ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+        foreach(string path in Directory.GetFiles("Assets/Resources/Art/Multiplayer","*.png",SearchOption.AllDirectories))
+        {
+            AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+            Require(AssetDatabase.LoadAssetAtPath<Sprite>(path)!=null,"Generated artwork imports as a sprite: "+path);
+        }
         FriendInviteBuildTools.EnsureSettings();
         var config = ScriptableObject.CreateInstance<FriendInviteSettings>(); config.httpsOrigin = "https://friends.example.com";
         try
@@ -30,16 +36,19 @@ public static class FruitLabFriendInviteEditorTools
             using (PlayerIdentityStore.UseForTests(store))
             {
                 Require(PlayerIdentityStore.Current.name == "Elif", "Legacy name migrates without asking for a form");
-                id = PlayerIdentityStore.Current.id; PlayerIdentityStore.Set("Deniz", 4);
+                id = PlayerIdentityStore.Current.id; PlayerIdentityStore.Set("Deniz", 3);
             }
             using (PlayerIdentityStore.UseForTests(store))
             {
-                Require(PlayerIdentityStore.Current.id == id && PlayerIdentityStore.Current.name == "Deniz" && PlayerIdentityStore.Current.avatar == 4,
+                Require(PlayerIdentityStore.Current.id == id && PlayerIdentityStore.Current.name == "Deniz" && PlayerIdentityStore.Current.avatar == 3,
                     "Cold reload remembers the same identity, selected name and avatar");
                 PlayerIdentityStore.Set("", 99);
-                Require(PlayerIdentityStore.Current.name == PlayerIdentityStore.GuestName(id) && PlayerIdentityStore.Current.avatar == 5,
+                Require(PlayerIdentityStore.Current.name == PlayerIdentityStore.GuestName(id) && PlayerIdentityStore.Current.avatar == PlayerIdentityStore.AvatarCount-1,
                     "Empty input yields a stable guest name and bounds avatar IDs");
             }
+            store["player_identity_v1"]=JsonUtility.ToJson(new PlayerIdentity {id=id,name="Deniz",avatar=5});
+            using(PlayerIdentityStore.UseForTests(store))
+                Require(PlayerIdentityStore.Current.id==id && PlayerIdentityStore.Current.name=="Deniz" && PlayerIdentityStore.Current.avatar==3,"Legacy fruit avatar IDs migrate into the four gardener choices without losing the profile");
             Require(realIdentity == PlayerPrefs.GetString("player_identity_v1", "") && realName == PlayerPrefs.GetString("player_name_multiplayer", ""),
                 "Identity checks never alter the real player's preferences");
             Require(FriendInvitation.Lookup(tokens[0]) != FriendInvitation.Lookup(tokens[1]), "Invitation lookup is scoped to random token");

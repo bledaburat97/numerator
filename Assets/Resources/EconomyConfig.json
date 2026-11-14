@@ -1,7 +1,7 @@
 {
   "SeedsPerPack": 2,
   "SeedPackCoinPrice": 1,
-  "RequiredGrowthVisits": 4,
+  "GrowthStageHours": 12,
   "Missions": {
     "FirstFruit": 3,
     "SecondFruit": 4,

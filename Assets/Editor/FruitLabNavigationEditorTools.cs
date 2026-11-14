@@ -67,7 +67,7 @@ public static class FruitLabNavigationEditorTools
             ImportMenuArtwork();
             Bake();
             foreach (var size in new[] { new Vector2(320,568),new Vector2(375,667),new Vector2(375,812),new Vector2(430,932) }) Preview(size);
-            foreach (var sceneName in new[] { "Lobby", "WaitingScene" }) CheckOnline(sceneName);
+            foreach (var sceneName in new[] { "Lobby", "WaitingScene" })foreach(var size in new[]{new Vector2(320,568),new Vector2(375,812)})CheckOnline(sceneName,size);
             var game = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Game.unity");
             try { Require(!game.GetRootGameObjects().Any(root => root.GetComponentInChildren<MainNavigationView>(true) != null), "Game has no bottom navigation"); }
             finally { EditorSceneManager.ClosePreviewScene(game); }
@@ -209,6 +209,12 @@ public static class FruitLabNavigationEditorTools
                     Require(!menu.GetCollectionView().GetComponentsInChildren<TMP_Text>().Any(text=>text.text=="Görevler" || text.text=="Koleksiyon" || text.text.StartsWith("Toplam ")),"Badges page has no redundant headings");
                     var tracks=menu.GetCollectionView().GetComponentsInChildren<Image>().Where(item=>item.name=="Track").ToArray();
                     Require(tracks.All(track=>track.rectTransform.rect.height>=13),"Mission progress bars are thicker");
+                    foreach(var track in tracks)
+                    {
+                        var row=(RectTransform)track.transform.parent;
+                        Require(Mathf.Abs(row.rect.height-100.8f)<.1f,"Badge rows are ten percent shorter");
+                        Require(row.Find("Progress").GetComponent<TMP_Text>().fontSize==20 && row.Find("Name").GetComponent<TMP_Text>().fontSizeMax==19,"Badge row typography retains its original sizes");
+                    }
                     Require(tracks.Select(track=>track.transform.Find("Fill").GetComponent<Image>().color).Distinct().Count()==tracks.Length,"Mission channels have distinct progress colors");
                 }
             }
@@ -235,15 +241,17 @@ public static class FruitLabNavigationEditorTools
         }
         finally { EditorSceneManager.CloseScene(scene, true); EditorSceneManager.ClosePreviewScene(source); }
     }
-    private static void CheckOnline(string name)
+    private static void CheckOnline(string name,Vector2 size)
     {
+        using var profileIsolation=PlayerProfileRuntime.UseForTests();
+        using var identityIsolation=PlayerIdentityStore.UseForTests(new Dictionary<string,string>());
         var source = EditorSceneManager.OpenPreviewScene("Assets/Scenes/" + name + ".unity");
         var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);
         try
         {
             var clone=Object.Instantiate(Find<Canvas>(source).gameObject);SceneManager.MoveGameObjectToScene(clone,scene);
             var canvas=clone.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;canvas.transform.localScale=Vector3.one;
-            ((RectTransform)canvas.transform).sizeDelta=new Vector2(375,812);canvas.transform.position=Vector3.zero;
+            ((RectTransform)canvas.transform).sizeDelta=size;canvas.transform.position=Vector3.zero;
             canvas.GetComponent<FruitLabOnlineLayout>().ApplyLayout();
             var view = MainNavigationView.Ensure(canvas); Require(view != null, "Online navigation exists");
             var root = new GameObject("OnlineNavigationTracker"); root.SetActive(false);
@@ -257,12 +265,38 @@ public static class FruitLabNavigationEditorTools
                 using var header=new MenuHeaderController(MenuHeaderView.Ensure(canvas),PlayerProfileRuntime.Current);header.Initialize();
                 using var controller = new MainNavigationController(view, tracker, buttons, null, requests.Add, () => shutdowns++);
                 controller.Initialize(); Require(view.SettingsButton.gameObject.activeSelf, "Shared header settings are visible online");
-                view.BringForward();
-                Capture(canvas,scene,Folder+"/preview-navigation-"+name.ToLowerInvariant()+"-812.png");
+                var lobby=canvas.GetComponentInChildren<LobbyUIView>();
+                if(lobby!=null)
+                {
+                    lobby.ConfigureProfile("Elif",1,(value,avatar)=>PlayerIdentityStore.Set(value,avatar));
+                    Click(canvas,lobby.transform.Find("ProfileSection/EditProfile").GetComponent<Button>());
+                    Require(canvas.transform.Find("FriendProfileOverlay").gameObject.activeSelf,"The redesigned profile card accepts real input");
+                    var profile=canvas.transform.Find("FriendProfileOverlay/ProfilePopup");
+                    for(int avatar=0;avatar<PlayerIdentityStore.AvatarCount;avatar++)
+                        Click(canvas,profile.Find("AvatarChoice"+avatar).GetComponent<Button>());
+                    Click(canvas,canvas.transform.Find("FriendProfileOverlay/ProfilePopup/SaveProfile").GetComponent<Button>());
+                    Require(!canvas.transform.Find("FriendProfileOverlay").gameObject.activeSelf && PlayerIdentityStore.Current.avatar==3,"All four gardener choices accept real taps and the selected portrait is saved");
+                }
+                else
+                {
+                    var waiting=canvas.GetComponentInChildren<WaitingSceneUIView>();var players=canvas.GetComponentInChildren<PlayerNameAreaView>();
+                    players.SetParticipantCount(4);
+                    for(int i=0;i<4;i++)
+                    {
+                        var player=players.CreatePlayerNameView();player.Init(i,_=>{});player.SetPlayerName(new[]{"Elif","Deniz","Bleda","Berra"}[i]);
+                        player.SetAvatar(i);player.SetRole(i==0,i==0,i>0);player.SetReadyStatus(i%2==0);
+                    }
+                    players.SetParticipantCount(4);
+                    var guest=players.GetComponentsInChildren<PlayerNameView>()[1];var options=guest.transform.Find("PlayerOptions").GetComponent<Button>();
+                    Click(canvas,options);Require(((Component)guest.GetKickButton()).gameObject.activeSelf,"The host options menu still opens its player-removal action");Click(canvas,options);
+                    waiting.SetStartAvailability(true,false);waiting.ConfigureShare(()=>{});waiting.ApplyOnlineLayout(((RectTransform)waiting.transform).rect.width,((RectTransform)waiting.transform).rect.height);
+                    Require(players.GetComponentsInChildren<PlayerNameView>().All(player=>((RectTransform)player.transform).rect.height>=60),"Four players fit the short and tall waiting layouts");
+                }
+                Capture(canvas,scene,Folder+"/preview-navigation-"+name.ToLowerInvariant()+"-"+(int)size.y+".png");
+                Click(canvas,view.GetTab(MainTab.Garden));
+                Require(shutdowns == 1 && requests.SequenceEqual(new[] { "Menu" }) && MainNavigationState.RequestedTab == MainTab.Garden, "Online tab leaves the room and opens the requested page through a real raycast");
                 Click(canvas,view.SettingsButton);
                 Require(canvas.GetComponentInChildren<SettingsPopupView>()!=null,"Shared online settings opens from real raycast");
-                controller.Select(MainTab.Garden);
-                Require(shutdowns == 1 && requests.SequenceEqual(new[] { "Menu" }) && MainNavigationState.RequestedTab == MainTab.Garden, "Online tab leaves the room and opens the requested page");
             }
             finally { Object.DestroyImmediate(root); }
         }
@@ -278,6 +312,9 @@ public static class FruitLabNavigationEditorTools
         apply.Invoke(header,new object[]{new Vector2(0,47)});
         var navigation=canvas.GetComponentInChildren<MainNavigationView>(true);
         navigation.SafeArea.anchorMin=safe.anchorMin;navigation.SafeArea.anchorMax=safe.anchorMax;
+        navigation.ApplyBottomSafeFill();
+        var bottomFill=(RectTransform)navigation.transform.Find("BottomSafeFill");var bottomCorners=new Vector3[4];bottomFill.GetWorldCorners(bottomCorners);
+        Require(Mathf.Abs(((RectTransform)canvas.transform).InverseTransformPoint(bottomCorners[0]).y-((RectTransform)canvas.transform).rect.yMin)<.1f,"Petrol tab surface extends through the bottom unsafe area");
         Canvas.ForceUpdateCanvases();
         var headerRect=(RectTransform)header.transform;var canvasRect=(RectTransform)canvas.transform;
         var corners=new Vector3[4];headerRect.GetWorldCorners(corners);
@@ -380,7 +417,9 @@ public static class FruitLabNavigationEditorTools
         {
             var sign=plot.transform.Find("FruitSign") as RectTransform;
             Require(sign.anchoredPosition.x==plot.Root.rect.width*.5f,"Fruit plaque is centered below its plot");
-            Require((sign.Find("Plaque") as RectTransform).rect.width>=56,"Fruit plaque is enlarged");
+            Require((sign.Find("Plaque") as RectTransform).rect.width>=76,"Fruit plaque is enlarged");
+            var fruit=sign.Find("Plaque/Fruit").GetComponent<Image>();
+            Require(fruit.preserveAspect && fruit.rectTransform.rect.width>=40 && fruit.rectTransform.rect.height>=40,"Plaque fruit is larger and keeps its aspect ratio");
         }
     }
     private static void CheckGardenModal(Canvas canvas,RectTransform root,RectTransform panel)
@@ -556,7 +595,7 @@ public static class FruitLabGardenWorldEditorTools
             foreach(FruitId fruit in Enum.GetValues(typeof(FruitId)))
                 for(int i=0;i<4;i++)data.Garden["showcase:"+fruit+":"+i]=new PlantingBatch {CellIndex=i,Fruit=fruit,Quantity=12+i*6,
                     PlantedUtcDay=20000+i,LastGrowthUtcDay=20005,Stage=(GardenGrowthStage)i};
-            return new PlayerProfileRepository(new PresentationStorage(),()=>data);
+            PreparePreviewTimes(data);return new PlayerProfileRepository(new PresentationStorage(),()=>data);
         }
         int index = 0;
         foreach (var fruit in new[] { FruitId.Apple, FruitId.Strawberry })
@@ -564,8 +603,10 @@ public static class FruitLabGardenWorldEditorTools
                 CellIndex=i,Fruit = fruit, Quantity = 12 + i * 6, PlantedUtcDay = 20000 + i, LastGrowthUtcDay = 20005,
                 Stage = (GardenGrowthStage)(fruit == FruitId.Strawberry ? 4 - i : 3 - i)
             };
-        return new PlayerProfileRepository(new MemoryPlayerProfileStorage(), () => data);
+        PreparePreviewTimes(data);return new PlayerProfileRepository(new MemoryPlayerProfileStorage(), () => data);
     }
+    private static void PreparePreviewTimes(PlayerProfileData data)
+    {foreach(var batch in data.Garden.Values)batch.GrowthStartedAtUtc=DateTime.UtcNow.AddHours(-12*(int)batch.Stage);}
     private sealed class PresentationStorage:IPlayerProfileStorage
     {
         private readonly MemoryPlayerProfileStorage _inner=new MemoryPlayerProfileStorage();

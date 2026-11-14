@@ -71,11 +71,15 @@ namespace Scripts
             Center(_hero.rectTransform,Vector2.zero,Vector2.one*size);
             Center(_burst.rectTransform,Vector2.zero,Vector2.one*size*2.1f);
             Center(_title.rectTransform,new Vector2(0,size*.5f+82),new Vector2(width-40,76));
+            LayoutInventory(size);
+            Center((RectTransform)_claim.transform,new Vector2(0,-size*.5f-158),new Vector2(Mathf.Min(280,width-48),56));
+        }
+        private void LayoutInventory(float size)
+        {
             float countWidth=Mathf.Max(24,_count.GetPreferredValues().x+4);
             float totalWidth=40+10+countWidth;
             Center(_inventory.rectTransform,new Vector2(-totalWidth*.5f+20,-size*.5f-70),Vector2.one*40);
             Center(_count.rectTransform,new Vector2(-totalWidth*.5f+50+countWidth*.5f,-size*.5f-70),new Vector2(countWidth,42));
-            Center((RectTransform)_claim.transform,new Vector2(0,-size*.5f-158),new Vector2(Mathf.Min(280,width-48),56));
         }
         public void Bind(RewardType reward, int finalCount, Action claim,bool bonus=false)
         {
@@ -88,7 +92,7 @@ namespace Scripts
             _hero.rectTransform.localScale = Vector3.one*.35f;
             _burst.rectTransform.localScale = Vector3.one*.65f; _burst.rectTransform.localRotation = Quaternion.identity;
             _count.rectTransform.localScale = Vector3.one; _claim.gameObject.SetActive(true);
-            _count.text = _finalCount.ToString();Layout();
+            _count.text = (_finalCount-1).ToString();Layout();
             FruitLabStyle.SetIcon(_hero,PowerUpTypeUtility.IconName(reward));
             FruitLabStyle.SetIcon(_inventory,PowerUpTypeUtility.IconName(reward));
             _claim.interactable = false; _claim.onClick.RemoveAllListeners(); _claim.onClick.AddListener(claim.Invoke);
@@ -111,7 +115,11 @@ namespace Scripts
                 .Append(_hero.rectTransform.DOAnchorPos(_inventory.rectTransform.anchoredPosition,.34f).SetEase(Ease.InOutCubic))
                 .Join(_hero.rectTransform.DOSizeDelta(Vector2.one*40,.34f).SetEase(Ease.InOutCubic))
                 .Join(_burst.DOFade(0,.22f))
-                .AppendCallback(()=>_count.text=_finalCount.ToString())
+                .AppendCallback(()=>{
+                    _count.text=_finalCount.ToString();
+                    LayoutInventory(Mathf.Clamp(((RectTransform)transform).rect.width/3f,100,152));
+                    _hero.rectTransform.anchoredPosition=_inventory.rectTransform.anchoredPosition;
+                })
                 .Append(_count.rectTransform.DOPunchScale(Vector3.one*.16f,.18f,3,.6f))
                 .Join(_inventory.DOColor(FruitLabStyle.Gold,.09f).SetLoops(2,LoopType.Yoyo))
                 .Append(_group.DOFade(0,.15f)).SetLink(gameObject,LinkBehaviour.KillOnDisable);

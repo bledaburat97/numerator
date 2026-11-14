@@ -113,6 +113,7 @@ namespace Menu
                 _safe.anchorMax = new Vector2(Screen.safeArea.xMax / Screen.width, Screen.safeArea.yMax / Screen.height);
             }
             float width = _safe.rect.width;
+            ApplyBottomSafeFill();
             FruitLabStyle.Place(_bar, _safe, 0, 0, width, BarHeight);
             float cell = width / 5;
             for (int position = 0; position < VisualOrder.Length; position++)
@@ -125,6 +126,20 @@ namespace Menu
             _header.ApplyLayout();
             foreach (var page in _pages) if (page != null) PlacePage(page);
         }
+        public void ApplyBottomSafeFill()
+        {
+            var canvas=(RectTransform)GetComponentInParent<Canvas>().transform;
+            var min=_safe.InverseTransformPoint(canvas.TransformPoint(canvas.rect.min));
+            float bottom=min.y-_safe.rect.yMin;
+            var fill=FruitLabStyle.Detail(_safe,"BottomSafeFill",FruitLabStyle.Background);
+            fill.sprite=null;fill.type=Image.Type.Simple;
+            FruitLabStyle.Place(fill.rectTransform,_safe,min.x-_safe.rect.xMin,bottom,canvas.rect.width,Mathf.Max(0,-bottom)+1);
+            fill.transform.SetAsFirstSibling();
+            var barImage=FruitLabStyle.AddSurface(_bar.gameObject,FruitLabStyle.Background);
+            barImage.sprite=null;barImage.type=Image.Type.Simple;barImage.enabled=true;
+            var rim=_bar.Find("LabRim");if(rim!=null)rim.gameObject.SetActive(false);
+        }
+
         public void FramePage(RectTransform page)
         {
             if (!_pages.Contains(page)) _pages.Add(page);

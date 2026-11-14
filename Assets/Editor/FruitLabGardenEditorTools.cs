@@ -77,6 +77,7 @@ public static class FruitLabGardenEditorTools
         Directory.CreateDirectory(folder);
         string before=PlayerFingerprint();
         var checks=new List<string>();
+        TimedGrowthAndMigration(checks);
         PurchaseAndBatches(checks);
         VisitsAndHarvest(checks);
         LimitsAndClock(checks);
@@ -87,6 +88,45 @@ public static class FruitLabGardenEditorTools
         string report=JsonConvert.SerializeObject(new {passed=true,checks,artifacts=folder},Formatting.Indented);
         File.WriteAllText("Library/FruitLabEditor/garden-review.json",report);
         return report;
+    }
+
+    private static void TimedGrowthAndMigration(List<string> checks)
+    {
+        var clock=new Clock();var settings=new EconomySettings();var profiles=Profiles(20);
+        var garden=new GardenService(profiles,settings,clock,new AchievementRules(settings));
+        using var coordinator=new GardenVisitCoordinator(garden,profiles);coordinator.Initialize();
+        var planted=garden.PurchaseSeeds(Id(),FruitId.Apple,2);var start=clock.UtcNow;coordinator.Tick();
+        long revision=profiles.Snapshot().Revision;
+        clock.UtcNow=start.AddHours(12).AddTicks(-1);coordinator.Tick();
+        Require(profiles.Snapshot().Revision==revision && garden.GetBatches()[planted.BatchId].Stage==GardenGrowthStage.Seed,"No stage advances before its exact deadline");
+        clock.UtcNow=start.AddHours(12);coordinator.Tick();
+        Require(garden.GetBatches()[planted.BatchId].Stage==GardenGrowthStage.Sprout,"Foreground timer grows a crop without reopening the application");
+        clock.UtcNow=start.AddHours(48);coordinator.Tick();
+        Require(garden.GetBatches()[planted.BatchId].Stage==GardenGrowthStage.Fruit && profiles.Snapshot().Collection[FruitId.Apple].Current==0,"An offline gap catches up to mature fruit after 48 hours without harvesting");
+        revision=profiles.Snapshot().Revision;coordinator.Tick();garden.ProcessVisit();
+        Require(profiles.Snapshot().Revision==revision,"Repeated ticks and visits never rewrite the same stage");
+        var migrated=Initial(19);migrated.Version=6;migrated.Garden["old"]=new PlantingBatch {Fruit=FruitId.Kiwi,Quantity=10,CellIndex=0,Stage=GardenGrowthStage.Leaves};
+        PlayerProfileValidation.Upgrade(migrated,start);PlayerProfileValidation.Validate(migrated);
+        var batch=migrated.Garden["old"];
+        Require(migrated.Version==7 && batch.Stage==GardenGrowthStage.Leaves && GardenGrowth.MatureAt(batch)==start.AddHours(24) && migrated.Wallet.Coins==19,"Version-six migration preserves stage, quantity and wallet; only remaining stages get timers");
+        var reopened=JsonConvert.DeserializeObject<PlayerProfileData>(JsonConvert.SerializeObject(migrated));PlayerProfileValidation.Upgrade(reopened,start.AddDays(3));
+        Require(reopened.Garden["old"].GrowthStartedAtUtc==batch.GrowthStartedAtUtc,"Restart never resets an already migrated growth timer");
+        var legacy=Initial(20);legacy.Version=6;legacy.Garden["seed"]=new PlantingBatch {Fruit=FruitId.Apple,Quantity=2,CellIndex=0};
+        var storage=new MemoryPlayerProfileStorage();storage.Save(legacy);
+        var migrating=new PlayerProfileRepository(storage,()=>throw new Exception("No reset"),()=>start);var first=migrating.Snapshot();
+        var restarting=new PlayerProfileRepository(storage,()=>throw new Exception("No reset"),()=>start.AddHours(1));
+        Require(storage.Load().Version==7 && first.Garden["seed"].GrowthStartedAtUtc==restarting.Snapshot().Garden["seed"].GrowthStartedAtUtc,"Migration is persisted immediately even without purchases, quits or growth transactions");
+        Require(GardenPlotView.FormatRemaining(TimeSpan.FromHours(48))=="2 gün 0 saat" && GardenPlotView.FormatRemaining(TimeSpan.FromHours(25))=="1 gün 1 saat","Long countdowns use days and hours");
+        Require(GardenPlotView.FormatRemaining(TimeSpan.FromMinutes(61))=="1 saat 1 dk" && GardenPlotView.FormatRemaining(TimeSpan.FromSeconds(3599))=="59 dk 59 s" && GardenPlotView.FormatRemaining(TimeSpan.FromSeconds(-1))=="0 dk 0 s","Short countdowns change units at hour boundaries and never go negative");
+        string path="Library/FruitLabEditor/GardenTests/migration-"+Id()+".json";
+        string payload=JsonConvert.SerializeObject(legacy);
+        using(var sha=System.Security.Cryptography.SHA256.Create())File.WriteAllText(path,JsonConvert.SerializeObject(new {Payload=payload,Checksum=Convert.ToBase64String(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload)))}));
+        byte[] original=File.ReadAllBytes(path);
+        Expect<IOException>(()=>new AtomicPlayerProfileStorage(path,beforePublish:()=>throw new IOException("migration interrupted")).Load());
+        Require(original.SequenceEqual(File.ReadAllBytes(path)),"Interrupted timer migration preserves the original profile on disk");
+        var disk=new AtomicPlayerProfileStorage(path);var migratedDisk=disk.Load();
+        Require(disk.Load().Garden["seed"].GrowthStartedAtUtc==migratedDisk.Garden["seed"].GrowthStartedAtUtc && migratedDisk.Version==7,"Atomic storage immediately persists migration timestamps");
+        checks.Add("Exact twelve-hour boundaries, 48-hour offline catch-up, live scheduling, no automatic harvest, version-six timer migration and countdown formats");
     }
 
     private static void PurchaseAndBatches(List<string> checks)
@@ -108,7 +148,7 @@ public static class FruitLabGardenEditorTools
         Expect<InvalidOperationException>(()=>garden.PurchaseSeeds(id,FruitId.Apple,10));
         garden.ProcessVisit();var fresh=garden.PurchaseSeeds(Id(),FruitId.Strawberry,2);
         Require(fresh.BatchId!=first.BatchId && fresh.CellIndex==1,"Different-day planting uses next cell");
-        Require(garden.ProcessVisit().IsReplay && garden.GetBatches()[fresh.BatchId].Stage==GardenGrowthStage.Seed,"Reopening on same day does not grow new seeds");
+        Require(!garden.ProcessVisit().HasProgress && garden.GetBatches()[fresh.BatchId].Stage==GardenGrowthStage.Seed,"Reopening on same day does not grow new seeds");
         clock.Day(2);garden.ProcessVisit();var batches=garden.GetBatches();
         Require(batches[first.BatchId].Stage==GardenGrowthStage.Leaves && batches[fresh.BatchId].Stage==GardenGrowthStage.Sprout && batches[fresh.BatchId].CellIndex==1,"Ages advance independently in stable cells");
         batches[first.BatchId].Quantity=999;Require(garden.GetBatches()[first.BatchId].Quantity==12,"Snapshots cannot change committed plants");
@@ -121,7 +161,7 @@ public static class FruitLabGardenEditorTools
         var garden=new GardenService(profiles,new EconomySettings(),clock,rules);
         new FruitInventoryService(profiles,rules).Grant("game-fruit",FruitGainSource.SinglePlayer,new Dictionary<FruitId,long>{{FruitId.Strawberry,2}});
         var purchase=garden.PurchaseSeeds(Id(),FruitId.Strawberry,10);
-        foreach(int day in new[]{1,40,41,42})
+        foreach(int day in new[]{1,2,3,4})
         {
             clock.Day(day);var visit=garden.ProcessVisit();
             Require(visit.HasProgress && visit.Harvested.Count==0,"Visit advances one step without collecting");
@@ -139,7 +179,7 @@ public static class FruitLabGardenEditorTools
         garden.Harvest(first.BatchId);
         Require(garden.GetBatches()[second.BatchId].CellIndex==1,"Harvest never shifts another batch into the emptied slot");
         garden.Harvest(second.BatchId);Require(profiles.Snapshot().Collection[FruitId.Kiwi].Current==12,"Separate batch taps give their quantities exactly once");
-        checks.Add("Four visited days without catch-up, mature waiting, manual whole-batch harvest, stable cells and idempotent collection");
+        checks.Add("Four twelve-hour stages with offline catch-up, mature waiting, manual whole-batch harvest, stable cells and idempotent collection");
     }
 
     private static void LimitsAndClock(List<string> checks)
@@ -163,11 +203,12 @@ public static class FruitLabGardenEditorTools
         var first=garden.PurchaseSeeds(Id(),FruitId.Apple,2);clock.Day(1);garden.ProcessVisit();clock.Day(0);
         Require(!garden.ProcessVisit().HasProgress,"Clock rollback cannot advance a batch");
         var rollback=garden.PurchaseSeeds(Id(),FruitId.Apple,2);Require(rollback.BatchId!=first.BatchId,"Clock rollback cannot merge new seeds into a sprout");
-        clock.Day(1);Require(!garden.ProcessVisit().HasProgress,"Processed date cannot advance again");clock.Day(2);garden.ProcessVisit();
-        Require(garden.GetBatches()[rollback.BatchId].Stage==GardenGrowthStage.Sprout,"Rollback seeds grow on a new entry day");
+        clock.Day(1);Require(garden.ProcessVisit().HasProgress,"A later seed grows after its own twelve-hour deadline");clock.Day(2);garden.ProcessVisit();
+        Require(garden.GetBatches()[rollback.BatchId].Stage==GardenGrowthStage.Leaves,"Rollback seeds retain their independent elapsed-time schedule");
         clock=new Clock {UtcNow=new DateTime(2026,11,5,23,59,59,DateTimeKind.Utc)};
         garden=new GardenService(Profiles(10),new EconomySettings(),clock,new AchievementRules(new EconomySettings()));garden.PurchaseSeeds(Id(),FruitId.Grape,2);
-        Require(!garden.ProcessVisit().HasProgress,"Planting day before midnight");clock.UtcNow=clock.UtcNow.AddSeconds(1);Require(garden.ProcessVisit().HasProgress,"UTC boundary starts next entry day");
+        Require(!garden.ProcessVisit().HasProgress,"Planting day before midnight");clock.UtcNow=clock.UtcNow.AddSeconds(1);Require(!garden.ProcessVisit().HasProgress,"Midnight alone cannot advance an elapsed-time crop");
+        clock.UtcNow=clock.UtcNow.AddHours(12).AddSeconds(-1);Require(garden.ProcessVisit().HasProgress,"Only the twelve-hour elapsed deadline advances the stage");
         clock.UtcNow=DateTime.SpecifyKind(clock.UtcNow,DateTimeKind.Unspecified);Expect<ArgumentException>(()=>garden.ProcessVisit());
         var concurrentProfiles=Profiles(1000);clock=new Clock();garden=new GardenService(concurrentProfiles,new EconomySettings(),clock,new AchievementRules(new EconomySettings()));
         id=Id();var statuses=new ProfileCommitResult[8];
@@ -262,8 +303,8 @@ public static class FruitLabGardenEditorTools
     private static string Id()=>Guid.NewGuid().ToString("N");
     private sealed class Clock : IGardenClock
     {
-        public DateTime UtcNow {get;set;}=new DateTime(2026,11,1,12,0,0,DateTimeKind.Utc);
-        public void Day(int day) {UtcNow=new DateTime(2026,11,1,12,0,0,DateTimeKind.Utc).AddDays(day);}
+        public DateTime UtcNow {get;set;}=new DateTime(2026,11,1,0,0,0,DateTimeKind.Utc);
+        public void Day(int day) {UtcNow=new DateTime(2026,11,1,0,0,0,DateTimeKind.Utc).AddHours(day*12);}
     }
     private static string PlayerFingerprint()
     {

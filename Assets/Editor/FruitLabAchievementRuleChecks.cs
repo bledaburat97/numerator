@@ -87,7 +87,7 @@ public static class FruitLabAchievementRuleChecks
         data.Achievements["old-name"]=new AchievementProgress{Unlocked=true,RewardGranted=true,Progress=1,UnlockedAtUtc=DateTime.UtcNow,RewardTransactionId="old-badge"};
         for(int turn=0;turn<2;turn++)data.Transactions["old-duel:"+turn]=new ProfileTransactionRecord{Kind="duel_win",Request="{}",AppliedAtUtc=DateTime.UtcNow};
         var profiles=new PlayerProfileRepository(new MemorySnapshot(data),()=>throw new Exception("No legacy reset"));var service=new AchievementService(profiles,new AchievementRules(settings,_=>0));service.Reconcile();
-        var migrated=profiles.Snapshot();Require(migrated.Version==6 && migrated.Missions.Badges==2 && migrated.Progress.DuelWins==2 && migrated.Wallet.Coins==77 && migrated.Wallet.PowerUps[RewardType.Life]==2,"Migration keeps the old badge, reconstructs duel wins, then grants the retrospective duel tier once");
+        var migrated=profiles.Snapshot();Require(migrated.Version==PlayerProfileData.CurrentVersion && migrated.Missions.Badges==2 && migrated.Progress.DuelWins==2 && migrated.Wallet.Coins==77 && migrated.Wallet.PowerUps[RewardType.Life]==2,"Migration keeps the old badge, reconstructs duel wins, then grants the retrospective duel tier once");
         Require(service.GetAchievements().Count==5 && service.GetAchievements().All(goal=>goal.Id!="old-name"),"Legacy completed task history is not exposed in the active list");
         long revision=migrated.Revision;service.Reconcile();Require(profiles.Snapshot().Revision==revision,"Migration and retrospective awards never repeat");
     }

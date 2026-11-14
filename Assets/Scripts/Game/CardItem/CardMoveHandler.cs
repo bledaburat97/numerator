@@ -7,6 +7,7 @@ namespace Scripts
 {
 public class CardMoveHandler : ICardMoveHandler
 {
+    public const float LongPressDuration = .7f;
     private readonly IHapticController _hapticController;
     private Action<int> _onDragStart;
     private Action<Vector2, int> _onDragContinue;
@@ -21,7 +22,7 @@ public class CardMoveHandler : ICardMoveHandler
     private bool _isMovementLocked;
     private int _cardIndex;
     private int _pointerId=int.MinValue;
-    public bool CanHandleDrag(PointerEventData data)=>_isPressed && !_isMovementLocked
+    public bool CanHandleDrag(PointerEventData data)=>_isPressed && !_isMovementLocked && !_longPressConsumed
         && (_pointerId==int.MinValue || data!=null && data.pointerId==_pointerId);
 
     public CardMoveHandler(IHapticController hapticController, int cardIndex)
@@ -32,7 +33,7 @@ public class CardMoveHandler : ICardMoveHandler
 
     public void HandleDrag(Vector2 position)
     {
-        if (_isMovementLocked || !_isPressed) return;
+        if (_isMovementLocked || !_isPressed || _longPressConsumed) return;
         CancelHoldTimer();
 
         if (!_isDragStart)
@@ -126,7 +127,7 @@ public class CardMoveHandler : ICardMoveHandler
         _isPressed = true;
         _pointerId=data?.pointerId??int.MinValue;
         if (_onLongPress != null)
-            _holdTween = DOVirtual.DelayedCall(.5f, () => {
+            _holdTween = DOVirtual.DelayedCall(LongPressDuration, () => {
                 _holdTween = null;
                 if (_isPressed && !_isDragStart && !_isMovementLocked)
                     _longPressConsumed = _onLongPress?.Invoke(_cardIndex) == true;

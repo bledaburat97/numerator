@@ -37,7 +37,8 @@ namespace Scripts
         private CardAnnotationController _annotations;
         private Sequence _lessonDelay;
         private bool _suspended,_modalSuspended;
-        private bool _rewardTipShown;
+        private bool _rewardTipShown,_coinHiddenForTip;
+        private bool _basicsRound;
         private bool _resumeInPlace;
         private int _suspendedFirstStep=-1;
         private int _lastGuess=-1,_lastRevision=-1;
@@ -71,6 +72,7 @@ namespace Scripts
             Cancel(); _ready = true; _roundEnded = false; _rewardTipShown=false; _gate.Clear();
             if (_tracker.GetGameOption() != GameOption.SinglePlayer) return;
             _definition=_levels?.GetLevelData();
+            _basicsRound=TutorialLessonController.IsBasics(_definition,_tracker.IsFirstLevelTutorial());
             var pendingLesson=_save?.GetLevelSaveData().Tutorial;
             if(_definition?.Lesson==TutorialLessonId.None && pendingLesson!=null && !pendingLesson.Completed && TutorialLessonController.PowerFor(pendingLesson.Lesson).HasValue)
             {_definition=_definition.Copy();_definition.Lesson=pendingLesson.Lesson;_definition.TrialPowerUp=TutorialLessonController.PowerFor(pendingLesson.Lesson);}
@@ -82,10 +84,11 @@ namespace Scripts
             if (TutorialLessonController.IsBasics(_definition,_tracker.IsFirstLevelTutorial()))
             {
                 CreatePresentation();
+                _gate.SetNavigationLocked(true);
                 _first = new FirstLevelTutorialController(_initial, _board, _placement, _results, _round, _info, _ui,
                     _gate, _mask, _hand, _message, _buttons, LatestResult, () =>
                     {
-                        _first = null; ClosePresentation(false);
+                        _first = null; _gate.SetNavigationLocked(false); ClosePresentation(false);
                     },()=>Find<LifeBarView>()?.GetRectTransform(),(step,completed)=>{
                         var state=_save?.GetLevelSaveData().Tutorial;
                         if(state==null)return;state.Step=step;state.Completed=completed;CheckpointLesson();
@@ -159,21 +162,23 @@ namespace Scripts
         public void ShowRewards(int coins, int crystals)
         {
             if(_rewardTipShown)return;
+            if(_basicsRound && coins>0)
+            {
+                _rewardTipShown=true;
+                ShowTip("Harikasın!", "Bulduğun meyveleri koleksiyonuna, altınları cüzdanına ekliyorum",TutorialProgress.Currency);
+                return;
+            }
             if(_definition?.Lesson==TutorialLessonId.Crystal && crystals>0)
             {
                 _rewardTipShown=true;
                 ShowTip("Kristal Etkisi", "Kristaller güçlendirici kazandırır",TutorialProgress.Currency,
-                    _ui.GetCoinImageRectTransform(),Find<VerticalCrystalProgressView>()?.GetRectTransform());
-                _message?.ShowCurrencyFlow();
+                    Find<VerticalCrystalProgressView>()?.GetRectTransform());
+                _message?.ShowCrystalFlow();
+                _coinHiddenForTip=true;_ui.SetCoinCounterVisible(false);
                 return;
             }
             if(_definition?.Lesson!=TutorialLessonId.None && _definition!=null)
             {
-                if(_definition.Lesson==TutorialLessonId.Basics && coins>0)
-                {
-                    _rewardTipShown=true;
-                    ShowTip("Çözdün!", "Meyveler koleksiyonuna, coinler cüzdanına eklendi.",TutorialProgress.Currency,_ui.GetCoinImageRectTransform());
-                }
                 return;
             }
             if ((coins <= 0 && crystals <= 0) || TutorialProgress.Seen(TutorialProgress.Currency)) return;
@@ -206,7 +211,7 @@ namespace Scripts
         {
             if (_message != null) return;
             GameTelemetry.Tutorial("tutorial_started", key);
-            CreatePresentation(); _gate.Block(); LockCards(-1);
+            CreatePresentation(); _gate.Block(); _gate.SetNavigationLocked(true); LockCards(-1);
             foreach (var target in targets) _mask.Highlight(target);
             _message.ShowAt(title, text, true, TutorialMessagePlacement.Center, "Tamam");
             var presentation=_message;
@@ -216,7 +221,7 @@ namespace Scripts
                 if(closed || _message==null || _message!=presentation)return;
                 closed=true;
                 GameTelemetry.Tutorial("tutorial_completed", key);
-                TutorialProgress.Mark(key); ClosePresentation(!_roundEnded);
+                TutorialProgress.Mark(key); _gate.SetNavigationLocked(false); ClosePresentation(!_roundEnded);
                 // Acknowledging an introduction never activates or spends a powerup.
             }
             _message.Bind(_buttons,Dismiss);
@@ -255,6 +260,7 @@ namespace Scripts
         }
         private void ClosePresentation(bool restoreCards)
         {
+            if(_coinHiddenForTip){_coinHiddenForTip=false;_ui.SetCoinCounterVisible(true);}
             if (_hand != null) _hand.Destroy(); _hand = null;
             if (_message != null) _message.Destroy(); _message = null;
             if(!(_mask is UnityEngine.Object owner) || owner!=null)_mask.CloseTutorialFade();
@@ -266,6 +272,7 @@ namespace Scripts
         }
         public void Cancel()
         {
+            _gate.SetNavigationLocked(false);
             if(_ready && !_roundEnded && !_suspended && !_resumeInPlace && _lesson!=null && !_lesson.State.Completed)
                 GameTelemetry.Tutorial("tutorial_abandoned","lesson_"+_lesson.State.Lesson,_lesson.State.Step);
             StopLesson();_suspended=_modalSuspended=false;
@@ -277,7 +284,7 @@ namespace Scripts
         {
             if(_save==null)return;
             var state=_save.GetLevelSaveData().Tutorial??(_save.GetLevelSaveData().Tutorial=new TutorialLessonState {Lesson=_definition.Lesson});
-            _lesson=new TutorialLessonController(_definition.Lesson,state,CheckpointLesson);
+            _lesson=new TutorialLessonController(_definition.Lesson,state,CheckpointLesson,_round.GetTriedCardsList().FirstOrDefault());
             _lesson.RewindUnplacedCards(keepPlacements);
             _lesson.Changed+=RenderLesson;
             _placement.CardPlacedEvent+=OnLessonPlaced;_results.GuessResolved+=OnLessonGuess;
@@ -289,6 +296,7 @@ namespace Scripts
         }
         private void StopLesson()
         {
+            _gate.SetNavigationLocked(false);
             _lessonDelay?.Kill();_lessonDelay=null;
             if(_lesson==null)return;
             _lesson.Changed-=RenderLesson;
@@ -311,12 +319,19 @@ namespace Scripts
         private void OnLessonGuess(object sender,GuessEvaluation guess)
         {
             if(_lesson==null || _suspended)return;
+            _lesson.BindFirstGuess(_round.GetTriedCardsList().FirstOrDefault());
             if(guess.Submission.Slots.Any(slot=>slot.Kind==GuessSlotKind.Frozen))_lesson.Accept(LessonSignal.FrozenGuess);
             _lesson.Accept(LessonSignal.Guess);Tick();
         }
         public void Tick()
         {
             if(_lesson==null || _suspended || _roundEnded)return;
+            if(_annotations!=null && !_annotations.IsSelecting
+                && (_lesson.Current?.Expected==LessonSignal.PositionExcluded || _lesson.Current?.Expected==LessonSignal.FruitExcluded))
+            {
+                // Dismissing the editor must leave a way back to the required note.
+                _lesson.RewindUnplacedCards(true);CheckpointLesson();_lesson.Start();return;
+            }
             int guess=_round.GetTriedCardsList().Count,revision=_save.GetLevelSaveData().PowerUpUseRevision;
             if(guess==_lastGuess && revision==_lastRevision)return;
             _lastGuess=guess;_lastRevision=revision;
@@ -338,6 +353,9 @@ namespace Scripts
             _lessonDelay?.Kill();_lessonDelay=null;
             if(step?.Expected==LessonSignal.NoteOpened)_annotations?.Cancel();
             ClosePresentation(true);
+            // Waiting for a power to become usable is ordinary play, without a
+            // teaching overlay. Keep settings available until the guided action.
+            _gate.SetNavigationLocked(step!=null && !(step.Wait && step.Expected==LessonSignal.Available));
             if(step==null)
             {
                 if(_lesson?.State.Completed==true)
@@ -353,14 +371,14 @@ namespace Scripts
             SetLessonGate(step);
             // State and checkpoint have already advanced. This delay only waits for
             // cards returning home; cancelling it cannot cancel an applied game rule.
-            _lessonDelay=DOTween.Sequence().AppendInterval(.4f).AppendCallback(()=>PresentLesson(step));
+            float delay=_definition.Lesson==TutorialLessonId.PositionNote ? .75f : .4f;
+            _lessonDelay=DOTween.Sequence().AppendInterval(delay).AppendCallback(()=>PresentLesson(step));
         }
         private void PresentLesson(TutorialLessonStep step)
         {
             if(_lesson?.Current!=step || _suspended || _roundEnded)return;
             CreatePresentation();
             SetLessonGate(step);
-            _mask.Highlight(_ui.GetButton(GameUIButtonType.Settings).GetView().GetButtonRectTransform());
             RectTransform target=LessonTargetRect(step);
             _mask.Highlight(target);
             if(step.Drag)
@@ -376,12 +394,15 @@ namespace Scripts
             if(step.Power==RewardType.Ultra)_mask.Highlight(Find<InitialCardAreaView>()?.GetRectTransform());
             bool instruction=step.Expected!=LessonSignal.Continue;
             string open=(_definition.NumOfBoardHolders-1).ToString();
-            _message.ShowAt(step.Title.Replace("{open}",open),step.Text.Replace("{open}",open),!instruction,instruction?TutorialMessagePlacement.Top:TutorialMessagePlacement.Center);
+            bool positionLesson=_definition.Lesson==TutorialLessonId.PositionNote;
+            _message.ShowAt(step.Title.Replace("{open}",open),step.Text.Replace("{open}",open),!instruction,
+                instruction && !positionLesson?TutorialMessagePlacement.Top:TutorialMessagePlacement.Center);
             _message.Bind(_buttons,()=>{
                 if(_lesson?.Current!=step)return;
                 if(!instruction)_lesson?.Accept(LessonSignal.Continue);
                 _lastGuess=_lastRevision=-1;Tick();
             });
+            if(positionLesson)_message.FadeIn(.25f);
             _mask.SetOutsideDismiss(null);
             GameTelemetry.Tutorial("tutorial_step","lesson_"+_definition.Lesson,_lesson.State.Step);
         }
@@ -394,7 +415,6 @@ namespace Scripts
             else if(step.Expected==LessonSignal.Continue){_gate.Block();LockCards(-1);}
             else if(step.Expected==LessonSignal.PowerApplied && step.Power.HasValue){_gate.AllowPower(PowerUpTypeUtility.ToGameButtonType(step.Power.Value));LockCards(-1);}
             else _gate.Clear();
-            _gate.AllowSettings();
         }
         private RectTransform LessonTargetRect(TutorialLessonStep step)
         {

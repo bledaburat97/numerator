@@ -18,8 +18,9 @@ namespace Scripts
         public void ApplyLayout()
         {
             _size = ((RectTransform)transform).rect.size;
-            FruitLabStyle.AddSurface(gameObject, FruitLabStyle.Background);
-            FruitLabStyle.Atmosphere((RectTransform)transform);
+            Menu.MenuChrome.ApplyBackdrop(GetComponent<Canvas>(),Menu.MainTab.Multiplayer);
+            foreach(string retired in new[]{"GameBackground","GameForeground","LabRoom","LabBackdrop","LevelTint"})
+                transform.Find(retired)?.gameObject.SetActive(false);
             var canvas = GetComponent<Canvas>(); MenuHeaderView.Ensure(canvas);
             var lobby = GetComponentInChildren<LobbyUIView>(true);
             var waiting = GetComponentInChildren<WaitingSceneUIView>(true);
@@ -32,7 +33,8 @@ namespace Scripts
             panel.anchoredPosition = new Vector2(0, (bottom-top)*.5f);
             var surface = FruitLabStyle.AddSurface(panel.gameObject, FruitLabStyle.Panel);
             surface.enabled = lobby == null;
-            FruitLabStyle.Rim(panel); panel.Find("LabRim").gameObject.SetActive(lobby == null);
+            if(lobby==null)PopupArtStyle.Apply(panel.gameObject);
+            var oldRim=panel.Find("LabRim");if(oldRim!=null)oldRim.gameObject.SetActive(false);
             foreach (LayoutGroup group in panel.GetComponents<LayoutGroup>()) group.enabled = false;
             foreach (ContentSizeFitter fitter in panel.GetComponents<ContentSizeFitter>()) fitter.enabled = false;
             if (lobby == null) Title(panel, "Lobi", width, height, true);
@@ -40,6 +42,7 @@ namespace Scripts
             Transform detail = panel.Find("OnlineDetail"); if (detail != null) detail.gameObject.SetActive(false);
             if (lobby != null) lobby.ApplyOnlineLayout(width, height);
             else waiting.ApplyOnlineLayout(width, height);
+            GetComponentInChildren<Menu.MainNavigationView>(true)?.BringForward();
             var popup = GetComponentInChildren<LobbyMessagePopupView>(true);
             if (popup != null) { popup.ApplyOnlineLayout(); popup.transform.SetAsLastSibling(); }
         }
@@ -66,6 +69,7 @@ namespace Scripts
             var heading = panel.Find("OnlineTitle")?.GetComponent<TMP_Text>();
             if (heading == null) heading = FruitLabStyle.CreateText("OnlineTitle", panel, 23, FruitLabStyle.Text);
             heading.text = value; heading.gameObject.SetActive(true);
+            heading.color=PopupArtStyle.Ink;heading.fontSize=24;
             heading.alignment = centered ? TextAlignmentOptions.Midline : TextAlignmentOptions.MidlineLeft;
             FruitLabStyle.Place(heading.rectTransform, panel, 20, height - 62, width - (centered ? 40 : 76), 36);
         }

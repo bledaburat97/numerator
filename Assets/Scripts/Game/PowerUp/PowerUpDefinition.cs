@@ -40,7 +40,9 @@ namespace Scripts
             new PowerUpDefinition(RewardType.Ultra,GameUIButtonType.UltraPowerUp,"Ultra","Bu bölümde konum notlarını otomatik hesaplar.","Ultra",TutorialProgress.Ultra)
         };
         public static IReadOnlyList<RewardType> RewardOrder {get;}=Array.AsReadOnly(All.Select(definition=>definition.Type).ToArray());
-        public static IReadOnlyList<RewardType> DisplayOrder {get;}=Array.AsReadOnly(All.OrderBy(definition=>definition.Type==RewardType.Bomb?-1:(int)definition.Type).Select(definition=>definition.Type).ToArray());
+        // Visual slots follow introduction order; reward rotation and saved ids stay unchanged.
+        public static IReadOnlyList<RewardType> DisplayOrder {get;}=Array.AsReadOnly(new[]{
+            RewardType.Revealing,RewardType.Life,RewardType.Bomb,RewardType.Helper,RewardType.Pair,RewardType.Ultra,RewardType.Split});
         public static bool TryGet(GameUIButtonType button,out PowerUpDefinition definition)
         {definition=All.FirstOrDefault(item=>item.ButtonType==button);return definition!=null;}
         public static PowerUpDefinition Get(RewardType type)

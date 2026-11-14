@@ -94,7 +94,9 @@ namespace Scripts
                 return;
             }
 
-            var tutorialAnswer=CrystalTutorialAnswer.Choose(_levels?.GetLevelData(),finalCards,_roundStateManager.GetTriedCardsList(),_targetNumberCreator.GetTargetCardsList(),_knowledge?.GetCardItemInfoList());
+            var tutorialAnswer=EliminationTutorialAnswer.Choose(_levels?.GetLevelData(),finalCards,_roundStateManager.GetTriedCardsList().Count)
+                ??PositionTutorialAnswer.Choose(_levels?.GetLevelData(),finalCards,_roundStateManager.GetTriedCardsList().Count)
+                ??CrystalTutorialAnswer.Choose(_levels?.GetLevelData(),finalCards,_roundStateManager.GetTriedCardsList(),_targetNumberCreator.GetTargetCardsList(),_knowledge?.GetCardItemInfoList());
             if(tutorialAnswer!=null)_targetNumberCreator.ApplyCommittedTarget(tutorialAnswer);
             var submission=_ice?.IsActive==true?_ice.Capture(finalCards):GuessSubmission.FullBoard(finalCards,_targetNumberCreator.GetTargetCardsList().Count);
             var evaluation=_split!=null?_split.Evaluate(_roundStateManager.GetTriedCardsList().Count+1,submission,_targetNumberCreator.GetTargetCardsList())

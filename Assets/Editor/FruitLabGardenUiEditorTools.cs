@@ -67,7 +67,7 @@ public static partial class FruitLabTutorialEditorTools
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
                 TapGarden(canvas,camera,eventSystem,popup.FruitButton(FruitId.Strawberry));popup.QuantityInput.text="10";
                 Require(popup.ConfirmButton.interactable && popup.transform.Find("Panel/TotalCounter/Value").GetComponent<TMP_Text>().text=="5"
-                    && popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text=="Kalan: 45"),"Purchase preview shows fruit, quantity, total and remaining coins");
+                    && !popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.StartsWith("Kalan") || t.text=="Bakiye"),"Purchase preview shows fruit, quantity and total without redundant balance text");
                 TapGarden(canvas,camera,eventSystem,popup.CancelButton);
                 Require(profiles.Snapshot().Wallet.Coins==50 && garden.GetBatches().Count==0,"Cancel never spends coins");
                 TapGarden(canvas,camera,eventSystem,panel.BuyButton);
@@ -85,7 +85,8 @@ public static partial class FruitLabTutorialEditorTools
                     "Actual UI purchase debits once, creates a batch and ignores a duplicate confirmation");
                 Require(clone.GetComponentInChildren<MenuHeaderView>(true).GetComponentsInChildren<TMP_Text>(true).Any(t=>t.text=="45"),"Menu coin counter refreshes after purchase");
                 var planted=panel.Plots.Single(plot=>plot.Fruit==FruitId.Strawberry);
-                Require(planted.CellCount(0).text=="10" && planted.CellArt(0).sprite.name=="Seed","New batch is displayed with its real amount and seed artwork");
+                Require(planted.CellCount(0).text=="10 tohum" && planted.CellArt(0).sprite.name=="Seed","New batch is displayed with its real amount and seed artwork");
+                Require(planted.CellCountdown(0).text=="2 gün 0 saat" && planted.CellCountdown(0).fontStyle==FontStyles.Bold,"New seeds display the 48-hour countdown in bold");
                 notice.Hide();Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-seeds.png");
                 TapCollectionButton(canvas,camera,eventSystem,(BaseButtonView)view.CloseButton);
                 Require(!view.IsVisible && !garden.ProcessVisit().HasProgress,"Closing and reopening menu cannot grow purchase-day seeds");
@@ -99,15 +100,15 @@ public static partial class FruitLabTutorialEditorTools
                 GardenApp(app,"OnApplicationPause",false);GardenApp(app,"OnApplicationFocus",true);GardenApp(app,"Start");
                 Require(profiles.Snapshot().Revision==revision,"Duplicate foreground/start events never advance twice");
                 Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-growth-notice.png");
-                presenter.Dispose();clock.Day(40);GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
-                Require(!notice.IsVisible && garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Leaves,"Growth continues in another scene and long absence gives one stage");
+                presenter.Dispose();clock.Day(2);GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
+                Require(!notice.IsVisible && garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Leaves,"Growth continues in another scene and elapsed time advances to the next scheduled stage");
                 using(var returning=new FruitCollectionPresenter(inventory,profiles,view,buttons,garden,visits,notice,new Scripts.Economy.AchievementService(profiles,new Scripts.Economy.AchievementRules(new Scripts.Economy.EconomySettings()))))
                 {
                     returning.ShowPendingNotice();Require(notice.IsVisible,"Queued game-scene progress is shown when the menu is ready");
                     notice.Hide();returning.ShowPendingNotice();Require(!notice.IsVisible,"Menu recreation never repeats an already shown notice");
-                    clock.Day(41);GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
+                    clock.Day(3);GardenApp(app,"OnApplicationPause",true);GardenApp(app,"OnApplicationPause",false);
                     Require(garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Flower,"Third entry reaches flower");
-                    clock.Day(42);GardenApp(app,"OnApplicationFocus",false);GardenApp(app,"OnApplicationFocus",true);
+                    clock.Day(4);GardenApp(app,"OnApplicationFocus",false);GardenApp(app,"OnApplicationFocus",true);
                     Require(garden.GetBatches().Single().Value.Stage==GardenGrowthStage.Fruit && inventory.GetCollection()[FruitId.Strawberry].Current==0,"Fourth entry ripens but does not collect");
                     Require(notice.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("dokun")) && !notice.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("koleksiyonuna eklendi")),"Ready notice teaches tapping and never claims an uncollected reward");
                     Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-ready-notice.png");
@@ -184,25 +185,26 @@ public static partial class FruitLabTutorialEditorTools
             foreach(FruitId fruit in Enum.GetValues(typeof(FruitId)))TapGarden(canvas,camera,events,popup.FruitButton(fruit));
             Require(popup.GetComponentsInChildren<NonDraggableCardItemView>().Length==9,"Seed choices use nine shared fruit cards");
             var rule=popupPanel.Find("GrowthRule").GetComponent<TMP_Text>();
-            Require(rule.gameObject.activeSelf && rule.text.Contains("Bugün sayılmaz") && rule.text.Contains("4 farklı gün"),"Purchase-day exclusion is visible before confirming");
+            Require(rule.gameObject.activeSelf && rule.text.Contains("2 gün"),"The 48-hour growing rule is visible before confirming");
             Require(rule.fontSize>=16 && !rule.GetComponentInParent<ScrollRect>(),"Growth explanation remains readable outside the scrolling options");
             var options=popupPanel.Find("Options").GetComponent<ScrollRect>();
             Canvas.ForceUpdateCanvases();popup.ApplyLayout();Canvas.ForceUpdateCanvases();
             Require(options.content.rect.height<=options.viewport.rect.height+.1f,"Nine fruit choices and quantity fit without scrolling on supported phones");
-            foreach(string counter in new[]{"BalanceCounter","TotalCounter"})
+            foreach(string counter in new[]{"TotalCounter"})
             {
                 var amount=popupPanel.Find(counter+"/Value").GetComponent<TMP_Text>();var icon=popupPanel.Find(counter+"/Coin").GetComponent<Image>();
-                Require(amount.fontSize>=22 && amount.color==FruitLabStyle.Text && icon.sprite==FruitLabStyle.Icon("Coin"),"Price counters share the game coin artwork and readable values");
+                Require(amount.fontSize>=22 && amount.color==PopupArtStyle.Ink && icon.sprite==FruitLabStyle.Icon("Coin"),"Price counters share the game coin artwork and readable values");
             }
             foreach(var label in popup.GetComponentsInChildren<TMP_Text>(false))
             {label.ForceMeshUpdate();Require(!label.isTextOverflowing,"Purchase text fits: "+label.name+" "+label.text);}
             Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-purchase-"+(int)size.y+".png");
             TapGarden(canvas,camera,events,popup.CancelButton);
-            TapGarden(canvas,camera,events,view.GetTabButton(GardenTab.Collection));
+            TapGarden(canvas,camera,events,panel.CollectionButton);
+            Require(view.CollectionPopup.IsVisible,"Garden album opens the current collection popup");
             foreach(var cell in (FruitCollectionCell[])Get(view,"cells"))
             {
                 Require(((RectTransform)cell.Card.transform).rect.width>=50,"Collection fruit remains readable on small screens");
-                Require(cell.Amount.color==FruitLabStyle.Text && cell.Amount.fontSize>=22,"Collection quantities use the shared cream counter style");
+                Require(cell.Amount.color==PopupArtStyle.Ink && cell.Amount.fontSize>=22,"Collection quantities use the shared cream counter style");
                 foreach(var text in new[]{cell.Name,cell.Amount}){text.ForceMeshUpdate();Require(!text.isTextOverflowing,"Collection labels fit: "+text.text);}
             }
             if(size.x==375 && size.y==812){view.SelectTab(GardenTab.Garden);Layer(clone.transform);Draw(camera);Capture(camera,Folder+"/preview-garden-batches.png");}
@@ -225,6 +227,6 @@ public static partial class FruitLabTutorialEditorTools
     private sealed class GardenUiClock : IGardenClock
     {
         public DateTime UtcNow {get;private set;}=new DateTime(2026,11,1,12,0,0,DateTimeKind.Utc);
-        public void Day(int day)=>UtcNow=new DateTime(2026,11,1,12,0,0,DateTimeKind.Utc).AddDays(day);
+        public void Day(int day)=>UtcNow=new DateTime(2026,11,1,12,0,0,DateTimeKind.Utc).AddHours(day*12);
     }
 }

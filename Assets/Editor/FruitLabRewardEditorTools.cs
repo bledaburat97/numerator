@@ -37,8 +37,8 @@ public static class FruitLabRewardEditorTools
             Canvas.ForceUpdateCanvases();
             popup.ApplyLabLayout();
             var view = (VerticalCrystalProgressView)popup.GetVerticalCrystalProgressView();
-            Require(view.transform.Find("CrystalTitle").GetComponent<TMPro.TMP_Text>().text == "Güçlendirici Barı",
-                "Level-end progress uses the powerup bar heading");
+            Require(!view.transform.Find("CrystalTitle").gameObject.activeSelf && !view.transform.Find("CrystalCount").gameObject.activeSelf,
+                "Level-end progress has no heading or fraction");
             Require(view.transform.Find("NextReward") == null || !view.transform.Find("NextReward").gameObject.activeSelf,
                 "Level-end progress does not show a reward subtitle");
             var fill = (SlicedFilledImage)new SerializedObject(view).FindProperty("progressImage").objectReferenceValue;
@@ -230,7 +230,15 @@ public static class FruitLabRewardEditorTools
             {
                 var visible=PowerUpTypeUtility.OrderedRewardTypes.Where(type=>PowerUpTypeUtility.IsUnlocked(type,levelId)).Select(type=>powers.GetPowerUpButton(type).GetButtonRectTransform()).ToArray();
                 Require(powers.GetComponentsInChildren<PowerUpButtonView>(false).Length==visible.Length,"Only assigned powers are visible in the menu");
-                Require(visible.Select(item=>Mathf.RoundToInt(item.anchoredPosition.y)).Distinct().Count()==Mathf.Min(2,visible.Length),"Menu uses up to two rows as powers unlock");
+                int visibleRows=PowerUpDefinition.DisplayOrder.Select((type,index)=>new {type,index}).Where(item=>PowerUpTypeUtility.IsUnlocked(item.type,levelId)).Select(item=>item.index/4).Distinct().Count();
+                Require(visible.Select(item=>Mathf.RoundToInt(item.anchoredPosition.y)).Distinct().Count()==visibleRows,"Menu powers keep their assigned row as they unlock");
+                var slots=PowerUpDefinition.DisplayOrder.ToDictionary(type=>type,type=>powers.GetPowerUpButton(type).GetButtonRectTransform());
+                var positions=slots.ToDictionary(item=>item.Key,item=>item.Value.anchoredPosition);
+                var sizes=slots.ToDictionary(item=>item.Key,item=>item.Value.rect.size);
+                powers.SetProgression(int.MaxValue-1);
+                foreach(var slot in slots)
+                    Require(Vector2.Distance(slot.Value.anchoredPosition,positions[slot.Key])<.1f && Vector2.Distance(slot.Value.rect.size,sizes[slot.Key])<.1f,"Every menu power keeps its full-inventory slot and size, including hidden powers");
+                powers.SetProgression(levelId);
                 foreach(var item in visible)
                 {
                     Require(item.GetComponentsInChildren<TMPro.TMP_Text>(false).Length==1,"Menu power buttons contain only their count");

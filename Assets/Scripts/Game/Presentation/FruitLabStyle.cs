@@ -121,26 +121,16 @@ namespace Scripts
         }
 
         public static void Atmosphere(RectTransform area)
+            =>ApplyGameBackdrop(area,LevelIdentity.For(null).Background);
+
+        public static void ApplyGameBackdrop(RectTransform area,Color tint)
         {
-            Sprite room = Resources.Load<Sprite>("Art/FruitLabRoomV1");
-            Image art = null;
-            if (room != null)
-            {
-                art = Detail(area, "LabRoom", Color.white);
-                art.sprite = room; art.type = Image.Type.Simple; art.preserveAspect = false;
-                Stretch(art.rectTransform); art.transform.SetAsFirstSibling();
-            }
-            FruitLabBackdrop backdrop = area.Find("LabBackdrop")?.GetComponent<FruitLabBackdrop>();
-            if (backdrop == null)
-            {
-                GameObject item = new GameObject("LabBackdrop", typeof(RectTransform), typeof(CanvasRenderer), typeof(FruitLabBackdrop));
-                item.transform.SetParent(area, false); backdrop = item.GetComponent<FruitLabBackdrop>();
-            }
-            backdrop.raycastTarget = false;
-            backdrop.UseRoomArt = room != null;
-            Stretch(backdrop.rectTransform);
-            if (art != null) backdrop.transform.SetSiblingIndex(1); else backdrop.transform.SetAsFirstSibling();
-            backdrop.SetVerticesDirty();
+            foreach(string retired in new[]{"LabRoom","LabBackdrop","LevelTint"})
+                area.Find(retired)?.gameObject.SetActive(false);
+            var background=Detail(area,"GameBackground",tint);
+            background.sprite=Resources.Load<Sprite>("Art/Game/first");background.type=Image.Type.Simple;
+            background.preserveAspect=false;Stretch(background.rectTransform);background.transform.SetAsFirstSibling();
+            area.Find("GameForeground")?.gameObject.SetActive(false);
         }
 
         public static void SetIcon(Image image, string name)

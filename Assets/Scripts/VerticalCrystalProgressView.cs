@@ -18,6 +18,7 @@ namespace Scripts
         [SerializeField] private SlicedFilledImage progressImage;
         [SerializeField] private ParticleSystem completedParticle;
         [SerializeField] private Image crystalIcon;
+        [SerializeField] private bool resultPresentation;
 
         private float _currentPercentage;
         private TMP_Text _countLabel;
@@ -26,6 +27,7 @@ namespace Scripts
         private void Awake() => ApplyLabStyle();
 
         public void SetPresentationTarget(RectTransform target) => _presentationTarget = target;
+        public void SetResultPresentation(){resultPresentation=true;ApplyLabStyle();}
 
         public void ApplyLabStyle()
         {
@@ -93,6 +95,25 @@ namespace Scripts
             ShowRewardPreview(_rewardType);
             UpdateCountLabel();
             if (rectTransform.rect.height < 90f) ApplyCompactLayout(width, rectTransform.rect.height, title, holder);
+            if (resultPresentation) ApplyResultLayout(width, rectTransform.rect.height, title, holder);
+        }
+
+        private void ApplyResultLayout(float width, float height, TMP_Text title, Transform holder)
+        {
+            title.gameObject.SetActive(false);
+            _countLabel.gameObject.SetActive(false);
+            float rewardSize=Mathf.Min(44f,Mathf.Max(28f,height-4f));
+            float crystalSize=Mathf.Min(32f,Mathf.Max(24f,height-4f));
+            if(crystalIcon!=null)FruitLabStyle.Place(crystalIcon.rectTransform,crystalIcon.transform.parent,8f,(height-crystalSize)*.5f,crystalSize,crystalSize);
+            FruitLabStyle.Place((RectTransform)holder,transform,width-rewardSize-8f,(height-rewardSize)*.5f,rewardSize,rewardSize);
+            float fillWidth=width-rewardSize-66f;
+            float trackY=(height-8f)*.5f;
+            FruitLabStyle.Place(GetSurface("CrystalTrack").rectTransform,transform,46f,trackY-2f,fillWidth+4f,12f);
+            FruitLabStyle.Place(GetSurface("GlassRim").rectTransform,transform,45f,trackY-3f,fillWidth+6f,14f);
+            FruitLabStyle.Place(progressImage.rectTransform,progressImage.transform.parent,48f,trackY,fillWidth,8f);
+            FruitLabStyle.Place(GetSurface("GlassShine").rectTransform,transform,51f,trackY+5f,fillWidth-6f,1f);
+            for(int index=1;index<ConstantValues.NUM_OF_STARS_FOR_WILD;index++)
+                FruitLabStyle.Place(GetSurface("CrystalTick"+index).rectTransform,transform,48f+fillWidth*index/ConstantValues.NUM_OF_STARS_FOR_WILD,trackY+1f,1f,6f);
         }
 
         private void ApplyCompactLayout(float width, float height, TMP_Text title, Transform holder)

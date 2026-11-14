@@ -16,6 +16,7 @@ namespace Scripts
             _gardenVisits.Failed+=OnGardenFailure;
             _gardenVisits.Initialize();
         }
+        private void Update()=>_gardenVisits?.Tick();
         private void OnApplicationPause(bool paused)=>_gardenVisits?.SetPaused(paused);
         private void OnApplicationFocus(bool focused)=>_gardenVisits?.SetFocused(focused);
         private void OnGardenFailure(System.Exception error)=>Debug.LogWarning("Garden visit deferred: "+error.GetType().Name);

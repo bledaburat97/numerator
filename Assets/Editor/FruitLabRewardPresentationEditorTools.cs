@@ -98,11 +98,26 @@ public static partial class FruitLabTutorialEditorTools
                         Tick(2);Require(presenter.IsPresenting && view.IsVisible && closed==0,"Reward waits for player acknowledgement");
                         if(reward==RewardType.Ultra){Layer(canvas.transform);Draw(camera);Capture(camera,Folder+"/preview-powerup-earned-"+(int)size.y+".png");}
                         TapGarden(canvas,camera,EventSystem.current,view.ClaimButton);view.ClaimButton.onClick.Invoke();
-                        Tick(.8f);
+                        string beforeClaim=Mathf.Max(0,stock-1).ToString();
+                        Tick(.2f);Require(amount.GetComponent<TMP_Text>().text==beforeClaim,"Inventory amount stays at the previous count during flight");
+                        Tick(.15f);Require(amount.GetComponent<TMP_Text>().text==Mathf.Max(1,stock).ToString(),"Inventory amount advances when the reward arrives");
+                        Require(Vector2.Distance(view.Hero.anchoredPosition,small.anchoredPosition)<.1f,"Reward stays at its destination after the count updates");
+                        Tick(.5f);
                         Require(!presenter.IsPresenting && !view.IsVisible && closed==1,"Double claim finishes exactly once and removes its blocker");
                         Require(game.Tracker.GetPowerUpCount(reward)==stock,"Presentation never writes inventory");presentations++;
                     }
                 }
+            }
+            var receipt=PowerUpRewardView.Ensure(canvas);
+            foreach(int finalCount in new[]{8,10})
+            {
+                receipt.Bind(RewardType.Ultra,finalCount,()=>{});var arrival=receipt.PlayIntro();Tick(.5f);
+                var label=receipt.transform.Find("InventoryCount").GetComponent<TMP_Text>();
+                Require(label.text==(finalCount-1).ToString(),"Saved stock is presented as its pre-award count");
+                var flight=receipt.PlayClaim();Tick(.2f);Require(label.text==(finalCount-1).ToString(),"7-to-8 and 9-to-10 keep the old count until arrival");
+                Tick(.15f);Require(label.text==finalCount.ToString(),"The counter changes at the arrival milestone");
+                Require(Vector2.Distance(receipt.Hero.anchoredPosition,((RectTransform)receipt.transform.Find("InventoryReward")).anchoredPosition)<.1f,"Digit growth keeps the arriving reward on the small icon");
+                Tick(.5f);receipt.Hide();
             }
             ClearPreviewActors(canvas);((RectTransform)canvas.transform).sizeDelta=new Vector2(375,812);canvas.GetComponent<FruitLabGameLayout>().ApplyLayout();camera.orthographicSize=Mathf.Max(406,375/(2*camera.aspect));
             var definition=new LevelData {NumOfBoardHolders=5,NumOfCards=9,MaxNumOfTries=10};
@@ -141,7 +156,7 @@ public static partial class FruitLabTutorialEditorTools
                 Require(PowerUpRewardPresenter.EarnsReward(previous,earned)==(previous+earned>=6),"Reward threshold agrees with committed wallet rules");
             Require(before==Profile() && errors.Count==0,"No preference mutations or Unity/tween errors: "+string.Join(" | ",errors));
             File.WriteAllText(Folder+"/powerup-reward-review.json",JsonConvert.SerializeObject(new{passed=true,presentations,
-                checks=new[]{"7 rewards x 4 phone layouts","true screen center","wait for claim","actual claim raycast","double tap","no inventory writes","real singleplayer win and crystal flow","continue blocked until claim","next round input","cancel during intro and flight","real PlayerPrefs unchanged"}},Formatting.Indented));
+                checks=new[]{"7 rewards x 4 phone layouts","true screen center","wait for claim","actual claim raycast","double tap","no inventory writes","previous count until arrival","7 to 8 and 9 to 10 receipt","real singleplayer win and crystal flow","continue blocked until claim","next round input","cancel during intro and flight","real PlayerPrefs unchanged"}},Formatting.Indented));
         }
         finally{Application.logMessageReceived-=collect;DOTween.defaultUpdateType=oldUpdate;}
     }

@@ -40,30 +40,32 @@ namespace Scripts
         public void SetStatus(string message)
         {
             var status = transform.Find("WaitingStatus")?.GetComponent<TMP_Text>();
-            if (status == null) status = FruitLabStyle.CreateText("WaitingStatus", transform, 12, FruitLabStyle.Muted);
+            if (status == null) status = FruitLabStyle.CreateText("WaitingStatus", transform, 16, PopupArtStyle.Body);
             status.text = message; status.textWrappingMode = TextWrappingModes.Normal;
         }
         public void ApplyOnlineLayout(float width, float height)
         {
             var heading = transform.Find("OnlineTitle") as RectTransform;
-            if (heading != null) FruitLabStyle.Place(heading, transform, 20, height - 42, width - 40, 30);
-            FruitLabStyle.Place(lobbyNameText.rectTransform, transform, 14, height - 68, 84, 22);
-            lobbyNameText.fontSize = 17; lobbyNameText.color = FruitLabStyle.Muted;
-            FruitLabStyle.Place(lobbyCodeText.rectTransform, transform, 108, height - 68, width - 122, 22);
-            lobbyCodeText.fontSize = 16; lobbyCodeText.color = FruitLabStyle.Muted;
+            if (heading != null) FruitLabStyle.Place(heading, transform, 20, height - 46, width - 40, 30);
+            FruitLabStyle.Place(lobbyNameText.rectTransform, transform, 14, height - 77, 84, 22);
+            lobbyNameText.fontSize = 17; lobbyNameText.color = PopupArtStyle.Body;
+            FruitLabStyle.Place(lobbyCodeText.rectTransform, transform, 18, height - 111, width - 136, 32);
+            lobbyCodeText.fontSize = 20; lobbyCodeText.color = PopupArtStyle.Ink;
             if (transform.Find("WaitingStatus") == null) SetStatus("Arkadaşın bekleniyor…");
-            var status = transform.Find("WaitingStatus").GetComponent<TMP_Text>(); status.fontSize = 16;
+            var status = transform.Find("WaitingStatus").GetComponent<TMP_Text>(); status.fontSize = 16;status.color=PopupArtStyle.Body;
             FruitLabStyle.Place(status.rectTransform, transform, 16, 68, width - 32, 30);
             var oldTitle = transform.Find("PlayersTitle"); if (oldTitle != null) oldTitle.gameObject.SetActive(false);
             var names = GetComponentInParent<Canvas>().GetComponentInChildren<PlayerNameAreaView>(true);
             foreach (var group in names.GetComponents<UnityEngine.UI.LayoutGroup>()) group.enabled = false;
-            FruitLabStyle.Place((RectTransform)names.transform, transform, 14, 104, width - 28, height - 232);
+            var oldSurface=names.GetComponent<UnityEngine.UI.Image>();if(oldSurface!=null)oldSurface.enabled=false;
+            var oldRim=names.transform.Find("LabRim");if(oldRim!=null)oldRim.gameObject.SetActive(false);
+            FruitLabStyle.Place((RectTransform)names.transform, transform, 14, 104, width - 28, height - 224);
             names.SetParticipantCount(names.GetComponentsInChildren<PlayerNameView>().Length);
             GetStartButton();
             FruitLabOnlineLayout.Button(readyButton, transform, 8, width, true); readyButton.SetText("Hazırım");
             FruitLabOnlineLayout.Button(startButton, transform, 8, width, true); startButton.SetText("Oyunu Başlat");
             if (_share == null) ConfigureShare(null);
-            FruitLabStyle.Place((RectTransform)_share.transform, transform, 20, height - 118, width - 40, 44);
+            FruitLabStyle.Place((RectTransform)_share.transform, transform, width-112, height - 113, 94, 44);
             FruitLabOnlineLayout.Settings(menuButton, (RectTransform)GetComponentInParent<Canvas>().transform);
             foreach (var row in names.GetComponentsInChildren<PlayerNameView>()) row.ApplyRowLayout();
         }

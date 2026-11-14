@@ -8,14 +8,14 @@ namespace Scripts.Economy
     {
         public int SeedsPerPack = 2;
         public int SeedPackCoinPrice = 1;
-        public int RequiredGrowthVisits = 4;
+        public int GrowthStageHours = 12;
         // Legacy configuration/receipt DTOs remain readable; current tasks use Missions.
         public AchievementDefinition[] Achievements = Array.Empty<AchievementDefinition>();
         public MissionSettings Missions = new MissionSettings();
         public void Validate()
         {
-            if(SeedsPerPack<=0 || SeedPackCoinPrice<=0 || RequiredGrowthVisits!=4)
-                throw new InvalidOperationException("Economy settings require a positive seed price and four growth visits.");
+            if(SeedsPerPack<=0 || SeedPackCoinPrice<=0 || GrowthStageHours<=0 || GrowthStageHours>8760)
+                throw new InvalidOperationException("Economy settings require a positive seed price and a positive growth stage duration.");
             Missions?.Validate();
             if(Missions==null)throw new InvalidOperationException("Mission settings are required.");
             if(Achievements==null)throw new InvalidOperationException("Achievement settings are required.");

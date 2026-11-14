@@ -49,7 +49,9 @@ namespace Scripts
             if (_notes==null || !_notes.CanEditNotes || !_notes.CanEditFruit(cardIndex+1) || _layout == null || !_canInteract() || (_gate != null && !_gate.AllowsNotes(cardIndex))
                 || !_cards.TryGetCardItem(cardIndex, out var card) || card.GetCardMoveHandler().IsMovementLocked()
                 || !card.GetView().CanAnnotate || !card.GetView().GetRectTransform().gameObject.activeInHierarchy) return false;
-            Cancel();
+            // The hold opens an editing mode, ending every in-flight gesture.
+            // Old pointer callbacks must not turn this selection into a drag.
+            CancelAllGestures();
             _notes.Suspend();
             _notes.Refresh();
             _selectedFruit=cardIndex+1;_selected = card.GetView(); _selectedMove = card.GetCardMoveHandler();
@@ -84,6 +86,7 @@ namespace Scripts
         public void Cancel()
         {
             if (IsSelecting) _selected.SetCardAnimation(false);
+            _selectedMove?.CancelPress();
             _selected = null; _selectedMove = null;
             _view.Hide();
         }

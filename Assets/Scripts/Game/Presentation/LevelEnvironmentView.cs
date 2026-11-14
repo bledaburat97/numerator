@@ -47,15 +47,10 @@ namespace Scripts
             if(_definition==null || _game==null || _game.IsMultiplayer)return;
             var identity=LevelIdentity.For(_definition);
             FruitLabStyle.AddSurface(gameObject,identity.Background);
+            var headerBand=transform.Find("SafeArea/GameHeaderBand")?.GetComponent<Image>();
+            if(headerBand!=null)headerBand.color=identity.Background;
             var middle=transform.Find("SafeArea/MiddleArea") as RectTransform ?? _middle;
-            if(middle!=null)
-            {
-                FruitLabStyle.AddSurface(middle.gameObject,identity.Background);
-                var room=middle.Find("LabRoom")?.GetComponent<Image>();
-                if(room!=null)room.color=Color.Lerp(Color.white,identity.Accent,.32f);
-                var tint=FruitLabStyle.Detail(middle,"LevelTint",new Color(identity.Background.r,identity.Background.g,identity.Background.b,.40f));
-                FruitLabStyle.Stretch(tint.rectTransform);tint.transform.SetSiblingIndex(Mathf.Min(2,middle.childCount-1));
-            }
+            if(middle!=null)FruitLabStyle.ApplyGameBackdrop(middle,identity.Background);
             var layout=GetComponent<FruitLabGameLayout>();
             if(layout!=null)FruitLabStyle.AddSurface(layout.HistoryArea.gameObject,Color.Lerp(identity.Background,identity.Panel,.55f));
             if(_board.parent!=null)FruitLabStyle.AddSurface(_board.parent.gameObject,Color.Lerp(identity.Background,FruitLabStyle.Panel,.35f));
@@ -91,8 +86,10 @@ namespace Scripts
             float right=float.NegativeInfinity,centerY=0,side=0,holderWidth=0;
             foreach(var holder in holders)
             {
-                var rect=holder.GetRectTransform();var corners=new Vector3[4];rect.GetWorldCorners(corners);
-                right=Mathf.Max(right,_board.InverseTransformPoint(corners[2]).x);centerY=_board.InverseTransformPoint(rect.position).y;side=rect.rect.height;holderWidth=rect.rect.width;
+                var rect=holder.GetRectTransform();var center=_board.InverseTransformPoint(rect.position);
+                // Growth scales the new holder. Future slots use its final bounds,
+                // so their positions never depend on an animation's current scale.
+                right=Mathf.Max(right,center.x+rect.rect.width*.5f);centerY=center.y;side=rect.rect.height;holderWidth=rect.rect.width;
             }
             if(side<=0){remaining=0;right=0;}
             float ghostWidth=holderWidth;
@@ -108,8 +105,10 @@ namespace Scripts
         }
         public Sequence PlayIntro()
         {
-            if(_definition==null || _game==null || _game.IsMultiplayer)return DOTween.Sequence();
-            _transition?.Kill();var identity=LevelIdentity.For(_definition);
+            ResetPresentation();
+            if(_definition==null || _game==null || _game.IsMultiplayer)return null;
+            var identity=LevelIdentity.For(_definition);
+            if(string.IsNullOrEmpty(identity.IntroTitle))return null;
             if(_intro==null)
             {
                 _intro=FruitLabOnlineLayout.Panel("LevelIntro",transform);
@@ -125,11 +124,13 @@ namespace Scripts
             FruitLabStyle.AddSurface(_intro.gameObject,identity.Panel);
             _introIcon.Type=identity.Symbol;_introIcon.color=identity.Accent;_introIcon.SetAllDirty();
             FruitLabStyle.Place(_introIcon.rectTransform,_intro,14,30,40,40);
-            _introTitle.text=identity.Name;FruitLabStyle.Place(_introTitle.rectTransform,_intro,66,18,_intro.rect.width-80,64);
+            _introTitle.text=identity.IntroTitle;FruitLabStyle.Place(_introTitle.rectTransform,_intro,66,18,_intro.rect.width-80,64);
             _introReward.gameObject.SetActive(_definition.BonusReward.HasValue);
             if(_definition.BonusReward.HasValue){FruitLabStyle.SetIcon(_introReward,PowerUpTypeUtility.IconName(_definition.BonusReward.Value));FruitLabStyle.Place(_introReward.rectTransform,_intro,_intro.rect.width-58,30,40,40);FruitLabStyle.Place(_introTitle.rectTransform,_intro,66,18,_intro.rect.width-130,64);}
-            return _transition=DOTween.Sequence().Append(_introGroup.DOFade(1,.14f)).AppendInterval(.62f)
-                .Append(_introGroup.DOFade(0,.20f)).AppendCallback(()=>_intro.gameObject.SetActive(false)).SetLink(gameObject);
+            float exitX=(((RectTransform)transform).rect.width+_intro.rect.width)*.5f+24;
+            return _transition=DOTween.Sequence().Append(_introGroup.DOFade(1,.14f)).AppendInterval(1f)
+                .Append(_intro.DOAnchorPosX(exitX,.38f).SetEase(Ease.InCubic))
+                .AppendCallback(()=>_intro.gameObject.SetActive(false)).SetLink(gameObject);
         }
         public void ResetPresentation(){_transition?.Kill();if(_intro!=null)_intro.gameObject.SetActive(false);}
         private void OnDestroy(){_transition?.Kill();_hintFill?.Kill();}

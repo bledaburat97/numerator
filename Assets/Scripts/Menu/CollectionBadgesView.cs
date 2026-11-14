@@ -45,7 +45,7 @@ namespace Menu
         {
             _pendingTitle.gameObject.SetActive(false);
             _earnedTitle.gameObject.SetActive(false);_empty.gameObject.SetActive(false);
-            foreach(var item in _items){_rows[item.Id].Layout(width,top,false);top+=120;}
+            foreach(var item in _items){_rows[item.Id].Layout(width,top,false);top+=108;}
             return top+12;
         }
         public RectTransform Focus(string id)
@@ -91,13 +91,13 @@ namespace Menu
             }
             public void Layout(float width, float offset, bool earned)
             {
-                float height = 112;
+                float height = 100.8f;
                 Top(Root, width, offset, height);
                 FruitLabStyle.Place(_badge.rectTransform, Root, 10, (height - 56) * .5f, 56, 56);
-                FruitLabStyle.Place(_name.rectTransform, Root, 78, 52, width - 90, 52);
+                FruitLabStyle.Place(_name.rectTransform, Root, 78, 45, width - 90, 48);
                 _progress.gameObject.SetActive(!earned); _track.gameObject.SetActive(!earned);
-                FruitLabStyle.Place(_progress.rectTransform, Root, 78, 28, width - 90, 26);
-                FruitLabStyle.Place(_track.rectTransform, Root, 78, 12, width - 94, 13);
+                FruitLabStyle.Place(_progress.rectTransform, Root, 78, 24, width - 90, 26);
+                FruitLabStyle.Place(_track.rectTransform, Root, 78, 8, width - 94, 13);
             }
             private static Color ProgressColor(MissionKind kind)
             {

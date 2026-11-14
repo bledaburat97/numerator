@@ -29,13 +29,16 @@ namespace Scripts
             _readyCheck = readyImage.transform.Find("Check")?.GetComponent<FruitLabGlyph>() ?? FruitLabGlyph.Create(readyImage.transform, FruitLabGlyph.Symbol.Check, FruitLabStyle.Mint);
             var legacy = readyImage.transform.Find("Image"); if (legacy != null) legacy.gameObject.SetActive(false);
             readyImage.gameObject.SetActive(true); readyImage.raycastTarget = false;
-            FruitLabStyle.AddSurface(gameObject, FruitLabStyle.Tile); FruitLabStyle.Rim(rectTransform, .2f);
+            FruitLabStyle.AddSurface(gameObject,new Color32(231,239,218,255));
+            var rim=transform.Find("LabRim");if(rim!=null)rim.gameObject.SetActive(false);
             playerName.alignment = TextAlignmentOptions.Midline; playerName.raycastTarget = false; playerName.richText = false;
             playerName.fontSize = 19; playerName.enableAutoSizing = true; playerName.fontSizeMin = 15; playerName.fontSizeMax = 19;
-            playerName.color = FruitLabStyle.Text; playerName.overflowMode = TextOverflowModes.Ellipsis;
+            playerName.color = PopupArtStyle.Ink; playerName.overflowMode = TextOverflowModes.Ellipsis;
             _avatar = PlayerAvatarView.Ensure(transform); _avatar.Render(0);
             // The existing BaseButton is the actual removal action, behind a small options menu.
             _remove = FriendUi.Button(transform, "PlayerOptions", "…", () => { _menuOpen = !_menuOpen; ApplyRowLayout(); });
+            _remove.GetComponent<Image>().color=Color.clear;
+            var optionsLabel=_remove.GetComponentInChildren<TMP_Text>();optionsLabel.color=PopupArtStyle.Body;optionsLabel.fontSize=24;
             kickButton.SetOnPointerDownCallBack(null); kickButton.SetOnPointerUpCallBack(null); kickButton.SetOnPointerClickCallBack(null);
             SetReadyStatus(false); ApplyRowLayout();
             if (Application.isPlaying)
@@ -49,7 +52,7 @@ namespace Scripts
         {
             _canKick = canKick;
             if (!canKick) _menuOpen = false;
-            _role.text = isLocal ? "Sen" : "";
+            _role.text = isLocal ? "Sen" : "";_role.color=PopupArtStyle.Body;
             ButtonAppearance.For(kickButton).SetActionStyle(false); kickButton.SetText("Çıkar");
             ApplyRowLayout();
         }
@@ -79,9 +82,9 @@ namespace Scripts
         public void SetReadyStatus(bool ready)
         {
             _ready = ready;
-            FruitLabStyle.Surface(readyImage, ready ? Color.Lerp(FruitLabStyle.Tile, FruitLabStyle.Mint, .16f) : FruitLabStyle.Recess);
-            if (_readyLabel != null) { _readyLabel.text = ready ? "Hazır" : "Bekliyor"; _readyLabel.color = ready ? FruitLabStyle.Mint : FruitLabStyle.Muted; }
-            if (_readyCheck != null) _readyCheck.gameObject.SetActive(ready);
+            FruitLabStyle.Surface(readyImage, ready ? new Color32(178,218,168,255) : new Color32(211,220,198,255));
+            if (_readyLabel != null) { _readyLabel.text = ready ? "Hazır" : "Bekliyor"; _readyLabel.color = ready ? new Color32(43,89,54,255) : PopupArtStyle.Body; }
+            if (_readyCheck != null){_readyCheck.color=new Color32(43,89,54,255);_readyCheck.gameObject.SetActive(ready);}
             ApplyRowLayout();
         }
         private void OnDestroy() => _entry?.Kill();

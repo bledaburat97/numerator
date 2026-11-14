@@ -56,15 +56,13 @@ namespace Game
                 _crystals.PrepareForCollection(result.PreviousCrystalProgress, result.PreviousReward);
             _popup.SetOutcome(result.Won, result.EarnedCrystals);
             _popup.SetContinuationIdentity(result.Won?LevelDefinitionPreview.Resolve(result.NextLevelNumber-1):result.CurrentDefinition);
-            var goal=result.AchievementTarget;
-            _popup.SetAchievementTarget(goal==null?null:string.Format(System.Globalization.CultureInfo.GetCultureInfo("tr-TR"),"{0}: {1:N0}/{2:N0}",goal.Title,goal.Progress,goal.Target));
             if(result.Won)_popup.PrepareRewardDetails(result.EarnedFruits);
             _popup.SetPopupStatus(!result.Won);
             _popup.InitButton(LevelFinishButtonType.Game,
                 result.Won ? "Bölüm " + result.NextLevelNumber : "Tekrar oyna",
                 result.Won ? (Action)progression.GoToNextLevel : progression.Retry);
             _popup.InitButton(LevelFinishButtonType.Menu, "Menü", () => SceneManager.LoadScene("Menu"));
-            _popup.InitText(result.Won ? "Çözdün!" : "Tekrar dene");
+            _popup.InitText(result.Won ? result.CurrentDefinition?.Lesson==TutorialLessonId.Basics?"Harikasın!":"Çözdün!" : "Tekrar dene");
             if (!result.Won)
             {
                 _ending = _failure.FailLevelAnimation();

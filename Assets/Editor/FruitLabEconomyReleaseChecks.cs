@@ -32,9 +32,9 @@ public static class FruitLabEconomyReleaseChecks
         long revision=data.Revision;
         Require(garden.PurchaseSeeds(Id(),FruitId.Kiwi,1000).Status==ProfileCommitResult.Rejected && profiles.Snapshot().Revision==revision,"Insufficient funds creates neither a success event nor a receipt");
         garden.ProcessVisit();Require(profiles.Snapshot().TelemetryOutbox.Count==1,"Planting-day visits do not emit growth");
-        foreach(int day in new[]{20001,20025,20026,20027})
+        foreach(int day in new[]{1,2,3,4})
         {
-            clock.Day=day;context.UtcDay=day;garden.ProcessVisit();revision=profiles.Snapshot().Revision;garden.ProcessVisit();
+            clock.HalfStep=day;context.UtcDay=clock.Day+day/2;garden.ProcessVisit();revision=profiles.Snapshot().Revision;garden.ProcessVisit();
             Require(profiles.Snapshot().Revision==revision,"Same-day returns never re-emit growth or harvest");
         }
         data=profiles.Snapshot();
@@ -43,7 +43,7 @@ public static class FruitLabEconomyReleaseChecks
         data=profiles.Snapshot();
         Require(data.Garden.Count==0 && data.Collection[FruitId.Strawberry].Current==10 && data.Wallet.PowerUps.Values.All(amount=>amount==0) && data.Missions.Badges==2,"Manual harvest pays fruit and earned badges once");
         var events=data.TelemetryOutbox.Values.ToList();
-        Require(events.Count(ev=>ev.Action=="garden_grown")==4 && events.Where(ev=>ev.Action=="garden_grown").All(ev=>ev.Batches==2),"A long absence advances one step and emits one growth observation per visit");
+        Require(events.Count(ev=>ev.Action=="garden_grown")==4 && events.Where(ev=>ev.Action=="garden_grown").All(ev=>ev.Batches==2),"Each twelve-hour transition emits one growth observation for the affected batches");
         Require(events.Count(ev=>ev.Action=="garden_harvested")==2 && events.Count(ev=>ev.Action=="garden_harvested" && ev.First)==1,"A grouped first harvest emits quantities for both fruit types");
         Require(events.Count(ev=>ev.Action=="achievement_unlocked")==2 && events.Where(ev=>ev.Action=="achievement_unlocked").All(ev=>ev.Source=="garden" && !ev.Powerup.HasValue && !ev.Parameters().ContainsKey("flPowerup")),"Achievement events come from actual newly committed reward receipts");
         revision=data.Revision;new AchievementService(profiles,rules).Reconcile();
@@ -123,7 +123,7 @@ public static class FruitLabEconomyReleaseChecks
     private static PlayerProfileData Initial(int coins){var profile=new PlayerProfileData();profile.Wallet.Coins=coins;return profile;}
     private static EconomyTelemetryContext Context()=>new EconomyTelemetryContext {ConsentScope=Id(),UtcDay=20000,BuildChannel="beta",Version="1",Build="17"};
     private static string Id()=>Guid.NewGuid().ToString("N");
-    private sealed class Clock:IGardenClock {public int Day=20000;public DateTime UtcNow=>new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc).AddDays(Day);}
+    private sealed class Clock:IGardenClock {public int Day=20000,HalfStep;public DateTime UtcNow=>new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc).AddDays(Day).AddHours(HalfStep*12);}
     private static void ExpectWriteFailure(Action action){try{action();}catch(IOException){return;}throw new Exception("Expected interrupted write");}
     private static void Require(bool condition,string message){if(!condition)throw new InvalidOperationException("Release check: "+message);}
 }

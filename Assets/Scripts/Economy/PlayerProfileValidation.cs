@@ -12,7 +12,7 @@ namespace Scripts.Economy
 
     public static class PlayerProfileValidation
     {
-        public static void Upgrade(PlayerProfileData data)
+        public static void Upgrade(PlayerProfileData data,DateTime? utcNow=null)
         {
             // v2 adds optional durable outcome data to transaction receipts; balances are unchanged.
             if(data?.Version==1)data.Version=2;
@@ -39,6 +39,14 @@ namespace Scripts.Economy
                 if(data.Progress!=null && data.Transactions!=null)
                     data.Progress.DuelWins=Math.Max(data.Progress.DuelWins,data.Transactions.Values.LongCount(item=>item.Kind=="duel_win"));
                 data.Version=6;
+            }
+            if(data?.Version==6)
+            {
+                // Preserve the earned stage; remaining stages now take twelve hours each.
+                DateTime migratedAt=utcNow??DateTime.UtcNow;
+                foreach(var batch in data.Garden.Values)
+                {batch.GrowthStageHours=12;batch.GrowthStartedAtUtc=migratedAt.AddHours(-12*(int)batch.Stage);}
+                data.Version=7;
             }
         }
         public static void Validate(PlayerProfileData data)
@@ -96,7 +104,10 @@ namespace Scripts.Economy
                 var batch = entry.Value;
                 Require(!string.IsNullOrWhiteSpace(entry.Key) && batch != null && Enum.IsDefined(typeof(FruitId),batch.Fruit)
                     && batch.Quantity > 0 && batch.PlantedUtcDay >= 0 && batch.LastGrowthUtcDay >= batch.PlantedUtcDay
-                    && Enum.IsDefined(typeof(GardenGrowthStage),batch.Stage),"planting batch");
+                    && Enum.IsDefined(typeof(GardenGrowthStage),batch.Stage)
+                    && batch.GrowthStartedAtUtc.Kind==DateTimeKind.Utc && batch.GrowthStartedAtUtc.Year>=1970
+                    && batch.GrowthStageHours>0 && batch.GrowthStageHours<=8760
+                    && batch.GrowthStartedAtUtc.Ticks<=DateTime.MaxValue.Ticks-TimeSpan.TicksPerHour*batch.GrowthStageHours*4L,"planting batch");
                 Require(batch.IsLegacyOverflow ? batch.CellIndex==-1 : batch.CellIndex>=0 && batch.CellIndex<GardenCellAllocator.CellsPerPlot,"planting cell");
             }
             Require(!data.Garden.Values.Where(batch=>!batch.IsLegacyOverflow).GroupBy(batch=>new {batch.Fruit,batch.CellIndex}).Any(group=>group.Count()>1),"duplicate planting cell");

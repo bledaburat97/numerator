@@ -5,16 +5,28 @@ using System.Linq;
 namespace Scripts.Economy
 {
     // Application-session lifetime. Scene/menu navigation never calls ProcessVisit.
-    public sealed class GardenVisitCoordinator
+    public sealed class GardenVisitCoordinator : IDisposable
     {
         private readonly IGardenService _garden;
         private bool _started, _paused, _focused=true;
+        private DateTime _nextGrowth=DateTime.MinValue;
+        private readonly IPlayerProfileRepository _profiles;
         private GardenVisitNotice _pending;
         private readonly Dictionary<string,GardenBatchChange> _visualChanges=new Dictionary<string,GardenBatchChange>();
         public event Action NoticeAvailable;
         public event Action<Exception> Failed;
 
-        public GardenVisitCoordinator(IGardenService garden) { _garden=garden; }
+        public GardenVisitCoordinator(IGardenService garden,IPlayerProfileRepository profiles=null)
+        { _garden=garden;_profiles=profiles;if(_profiles!=null)_profiles.Updated+=OnProfileChanged; }
+        private void OnProfileChanged(ProfileChange change){if(change.Includes(ProfileArea.Garden))_nextGrowth=DateTime.MinValue;}
+        public void Tick(){if(_started && !_paused && _focused && _garden.UtcNow>=_nextGrowth)Visit();}
+        public void Dispose(){if(_profiles!=null)_profiles.Updated-=OnProfileChanged;}
+        private void ScheduleNext()
+        {
+            _nextGrowth=DateTime.MaxValue;
+            foreach(var batch in _garden.GetBatches().Values)
+                if(batch.Stage!=GardenGrowthStage.Fruit && GardenGrowth.NextStageAt(batch)<_nextGrowth)_nextGrowth=GardenGrowth.NextStageAt(batch);
+        }
         public void Initialize()
         {
             if(_started)return;
@@ -53,6 +65,7 @@ namespace Scripts.Economy
             try
             {
                 var result=_garden.ProcessVisit();
+                ScheduleNext();
                 if(!result.HasProgress)return;
                 // Only the 9 x 4 on-screen cells need animation history. Legacy
                 // overflow still grows, without an unbounded presentation queue.
@@ -73,7 +86,7 @@ namespace Scripts.Economy
                     _pending.Ready[fruit.Key]=checked(previous+fruit.Value);
                 }
             }
-            catch(Exception error) { Failed?.Invoke(error);return; }
+            catch(Exception error) { _nextGrowth=_garden.UtcNow.AddSeconds(5);Failed?.Invoke(error);return; }
             NoticeAvailable?.Invoke();
         }
     }

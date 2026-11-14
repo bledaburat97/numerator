@@ -24,11 +24,9 @@ namespace Scripts
         private bool _multiplayer;
         private string _multiplayerSubtitle;
         private Game.RewardType? _multiplayerReward;
-        private string _achievementTarget;
         private string _saveStatus;
         private LevelData _continuation;
         public void SetContinuationIdentity(LevelData definition){_continuation=definition?.Copy();ApplyLabLayout();}
-        public void SetAchievementTarget(string value){_achievementTarget=value;ApplyLabLayout();}
         public void SetSaveStatus(string value){_saveStatus=value;ApplyLabLayout();}
         public TMP_Text GetSubtitle()=>rewardDetails?.Find("ResultSubtitle")?.GetComponent<TMP_Text>() ?? transform.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
         public void PrepareRewardDetails(IReadOnlyList<int> fruits)
@@ -129,14 +127,13 @@ namespace Scripts
             text.alignment = _success ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Midline;
             TMP_Text subtitle = rewardDetails.Find("ResultSubtitle")?.GetComponent<TMP_Text>() ?? transform.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
             if (subtitle == null) subtitle = FruitLabStyle.CreateText("ResultSubtitle", rewardDetails, 12f, FruitLabStyle.Muted);
-            bool hasTarget=_success && !_multiplayer && !string.IsNullOrEmpty(_achievementTarget);
             bool hasSaveStatus=!string.IsNullOrEmpty(_saveStatus);
-            subtitle.text = hasSaveStatus?_saveStatus:_multiplayer ? _multiplayerSubtitle : hasTarget?_achievementTarget : _success ? "Bölüm tamamlandı." : "Sonucu incele, tekrar dene.";
-            subtitle.gameObject.SetActive(hasSaveStatus || (_multiplayer ? height >= 90f : _success ? hasTarget || (!hasFruits && height >= 144f) : height >= 100f));
-            subtitle.fontSize = hasTarget?16f:_success ? 11f : 10f;
+            subtitle.text = hasSaveStatus?_saveStatus:_multiplayer ? _multiplayerSubtitle : _success ? "Bölüm tamamlandı." : "Sonucu incele, tekrar dene.";
+            subtitle.gameObject.SetActive(hasSaveStatus || (_multiplayer ? height >= 90f : _success ? !hasFruits && height >= 144f : height >= 100f));
+            subtitle.fontSize = _success ? 11f : 10f;
             subtitle.alignment = _success ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Midline;
             subtitle.enableAutoSizing=false;
-            FruitLabStyle.Place(subtitle.rectTransform, rewardDetails, 12f, height - (hasFruits?86f:hasTarget?70f:_success ? 52f : 48f), width - (hasTarget?24f:_success ? 72f : 24f), hasTarget?20f:14f);
+            FruitLabStyle.Place(subtitle.rectTransform, rewardDetails, 12f, height - (hasFruits?86f:_success ? 52f : 48f), width - (_success ? 72f : 24f), 14f);
             if (_multiplayer) { subtitle.enableAutoSizing = true; subtitle.fontSizeMin = 9f; subtitle.fontSizeMax = 11f; }
             if(hasSaveStatus)
             {
@@ -174,10 +171,10 @@ namespace Scripts
             if (rewardIcon != null) rewardIcon.gameObject.SetActive(_multiplayerReward.HasValue);
             if (verticalCrystalProgressView != null)
             {
-                float crystalHeight = height - (hasFruits?(hasTarget?146f:124f):hasTarget?120f:104f);
+                float crystalHeight = height - (hasFruits?124f:104f);
                 FruitLabStyle.Place(verticalCrystalProgressView.GetRectTransform(), rewardDetails, 12f, hasFruits?56f:44f, width - 24f, Mathf.Max(hasFruits?24f:28f, crystalHeight));
                 verticalCrystalProgressView.SetPresentationTarget((RectTransform)GetComponentInParent<Canvas>().rootCanvas.transform);
-                verticalCrystalProgressView.ApplyLabStyle();
+                verticalCrystalProgressView.SetResultPresentation();
                 verticalCrystalProgressView.SetStatus(_success && !_multiplayer && _hasCrystalReward);
             }
             foreach (LevelFinishButtonModel button in buttonModels)
@@ -234,7 +231,6 @@ namespace Scripts
         public void SetOutcome(bool success, int earnedCrystalCount = 0)
         {
             _rewardIntro?.Kill();_earnedFruits=Array.Empty<int>();_rewardsRevealed=true;
-            _achievementTarget=null;
             _saveStatus=null;
             _multiplayer = false; _multiplayerReward = null;
             _success = success;
@@ -254,7 +250,7 @@ namespace Scripts
             Transform mark = transform.Find("RewardStage/Outcome");
             if (mark != null) mark.gameObject.SetActive(false);
             TMP_Text subtitle = rewardDetails?.Find("ResultSubtitle")?.GetComponent<TMP_Text>();
-            if (subtitle != null && string.IsNullOrEmpty(_achievementTarget)) subtitle.text = "Yeni powerup kazandın!";
+            if (subtitle != null) subtitle.text = "Yeni powerup kazandın!";
         }
 
         public void SetStatus(bool status)
